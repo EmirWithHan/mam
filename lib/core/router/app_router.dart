@@ -1,10 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/auth_page.dart';
 import '../../features/auth/auth_models.dart';
-import '../../features/auth/auth_provider.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/auth/register_page.dart';
 import '../../features/chat/event_chat_page.dart';
@@ -14,12 +11,13 @@ import '../../features/events/events_page.dart';
 import '../../features/feed/create_post_page.dart';
 import '../../features/feed/feed_page.dart';
 import '../../features/feed/post_comments_page.dart';
+import '../../features/home/create_hub_page.dart';
+import '../../features/home/home_page.dart';
 import '../../features/profile/profile_completion_page.dart';
 import '../../features/profile/profile_page.dart';
+import '../../features/social/social_page.dart';
 import '../../features/trust_score/trust_score_history_page.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_spacing.dart';
-import '../widgets/app_button.dart';
+import '../widgets/main_navigation_shell.dart';
 import 'route_names.dart';
 
 GoRouter createAppRouter(AuthState authState) {
@@ -47,8 +45,7 @@ GoRouter createAppRouter(AuthState authState) {
       GoRoute(
         path: RoutePaths.splash,
         name: RouteNames.splash,
-        builder: (context, state) =>
-            const _PlaceholderPage(title: 'Match A Man Foundation Ready'),
+        builder: (context, state) => const HomePage(),
       ),
       GoRoute(
         path: RoutePaths.auth,
@@ -73,7 +70,10 @@ GoRouter createAppRouter(AuthState authState) {
       GoRoute(
         path: RoutePaths.profile,
         name: RouteNames.profile,
-        builder: (context, state) => const ProfilePage(),
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 4,
+          child: ProfilePage(),
+        ),
       ),
       GoRoute(
         path: RoutePaths.trustScoreHistory,
@@ -83,7 +83,18 @@ GoRouter createAppRouter(AuthState authState) {
       GoRoute(
         path: RoutePaths.feed,
         name: RouteNames.feed,
-        builder: (context, state) => const FeedPage(),
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 1,
+          child: FeedPage(),
+        ),
+      ),
+      GoRoute(
+        path: RoutePaths.create,
+        name: RouteNames.create,
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 2,
+          child: CreateHubPage(),
+        ),
       ),
       GoRoute(
         path: RoutePaths.createPost,
@@ -101,7 +112,18 @@ GoRouter createAppRouter(AuthState authState) {
       GoRoute(
         path: RoutePaths.events,
         name: RouteNames.events,
-        builder: (context, state) => const EventsPage(),
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 0,
+          child: EventsPage(),
+        ),
+      ),
+      GoRoute(
+        path: RoutePaths.social,
+        name: RouteNames.social,
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 3,
+          child: SocialPage(),
+        ),
       ),
       GoRoute(
         path: RoutePaths.createEvent,
@@ -127,107 +149,8 @@ GoRouter createAppRouter(AuthState authState) {
       GoRoute(
         path: RoutePaths.home,
         name: RouteNames.home,
-        builder: (context, state) => const _HomePlaceholderPage(),
+        builder: (context, state) => const HomePage(),
       ),
     ],
   );
-}
-
-class _PlaceholderPage extends StatelessWidget {
-  const _PlaceholderPage({required this.title});
-
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Text(
-              title,
-              style: Theme.of(context).textTheme.headlineMedium,
-              textAlign: TextAlign.center,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _HomePlaceholderPage extends ConsumerWidget {
-  const _HomePlaceholderPage();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authControllerProvider);
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Home')),
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Match A Man',
-                  style: Theme.of(context).textTheme.headlineMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                const Text(
-                  'Home placeholder',
-                  style: TextStyle(color: AppColors.textSecondary),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                AppButton(
-                  label: 'Events',
-                  onPressed: () => context.goNamed(RouteNames.events),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                AppButton(
-                  label: 'Profile',
-                  onPressed: () => context.goNamed(RouteNames.profile),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                AppButton(
-                  label: 'Feed',
-                  onPressed: () => context.goNamed(RouteNames.feed),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                AppButton(
-                  label: 'Create post',
-                  onPressed: () => context.goNamed(RouteNames.createPost),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                AppButton(
-                  label: 'Create event',
-                  onPressed: () => context.goNamed(RouteNames.createEvent),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                AppButton(
-                  label: 'Complete profile',
-                  onPressed: () =>
-                      context.goNamed(RouteNames.profileComplete),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                AppButton(
-                  label: 'Logout',
-                  isLoading: authState.isLoading,
-                  onPressed: () =>
-                      ref.read(authControllerProvider.notifier).signOut(),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
