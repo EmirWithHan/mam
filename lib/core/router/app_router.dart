@@ -7,6 +7,9 @@ import '../../features/auth/auth_models.dart';
 import '../../features/auth/auth_provider.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/auth/register_page.dart';
+import '../../features/events/create_event_page.dart';
+import '../../features/events/event_detail_page.dart';
+import '../../features/events/events_page.dart';
 import '../../features/profile/profile_completion_page.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -60,6 +63,24 @@ GoRouter createAppRouter(AuthState authState) {
         path: RoutePaths.profileComplete,
         name: RouteNames.profileComplete,
         builder: (context, state) => const ProfileCompletionPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.events,
+        name: RouteNames.events,
+        builder: (context, state) => const EventsPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.createEvent,
+        name: RouteNames.createEvent,
+        builder: (context, state) => const CreateEventPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.eventDetail,
+        name: RouteNames.eventDetail,
+        builder: (context, state) {
+          final eventId = state.pathParameters['eventId'] ?? '';
+          return EventDetailPage(eventId: eventId);
+        },
       ),
       GoRoute(
         path: RoutePaths.home,
@@ -123,6 +144,16 @@ class _HomePlaceholderPage extends ConsumerWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.lg),
+                AppButton(
+                  label: 'Events',
+                  onPressed: () => context.goNamed(RouteNames.events),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppButton(
+                  label: 'Create event',
+                  onPressed: () => context.goNamed(RouteNames.createEvent),
+                ),
+                const SizedBox(height: AppSpacing.md),
                 AppButton(
                   label: 'Complete profile',
                   onPressed: () =>
