@@ -5,6 +5,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
+import '../auth/auth_provider.dart';
 import 'feed_models.dart';
 import 'feed_provider.dart';
 import 'widgets/comment_tile.dart';
@@ -57,6 +58,7 @@ class _PostCommentsPageState extends ConsumerState<PostCommentsPage> {
   @override
   Widget build(BuildContext context) {
     final feedState = ref.watch(feedControllerProvider);
+    final authState = ref.watch(authControllerProvider);
     final comments = feedState.commentsByPostId[widget.postId] ?? const [];
 
     return Scaffold(
@@ -67,6 +69,7 @@ class _PostCommentsPageState extends ConsumerState<PostCommentsPage> {
             Expanded(
               child: _CommentsBody(
                 comments: comments,
+                currentUserId: authState.userId,
                 isLoading: feedState.commentsLoading,
                 message: feedState.commentsMessage,
               ),
@@ -86,11 +89,13 @@ class _PostCommentsPageState extends ConsumerState<PostCommentsPage> {
 class _CommentsBody extends StatelessWidget {
   const _CommentsBody({
     required this.comments,
+    required this.currentUserId,
     required this.isLoading,
     required this.message,
   });
 
   final List<PostComment> comments;
+  final String? currentUserId;
   final bool isLoading;
   final String? message;
 
@@ -128,7 +133,10 @@ class _CommentsBody extends StatelessWidget {
       itemCount: comments.length,
       separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
       itemBuilder: (context, index) {
-        return CommentTile(comment: comments[index]);
+        return CommentTile(
+          comment: comments[index],
+          currentUserId: currentUserId,
+        );
       },
     );
   }

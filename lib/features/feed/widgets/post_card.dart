@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../auth/auth_provider.dart';
 import '../../follow/widgets/follow_button.dart';
+import '../../reports/reports_models.dart';
+import '../../reports/widgets/block_button.dart';
+import '../../reports/widgets/report_button.dart';
 import '../feed_models.dart';
 
-class PostCard extends StatelessWidget {
+class PostCard extends ConsumerWidget {
   const PostCard({
     super.key,
     required this.item,
@@ -20,9 +25,11 @@ class PostCard extends StatelessWidget {
   final VoidCallback onOpenComments;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final post = item.post;
     final caption = post.caption?.trim();
+    final currentUserId = ref.watch(authControllerProvider).userId;
+    final isMine = currentUserId != null && post.userId == currentUserId;
 
     return Card(
       clipBehavior: Clip.antiAlias,
@@ -59,12 +66,33 @@ class PostCard extends StatelessWidget {
                         style: AppTextStyles.caption,
                       ),
                     ),
-                    FollowButton(
-                      targetUserId: post.userId,
-                      compact: true,
-                    ),
+                    if (!isMine)
+                      FollowButton(
+                        targetUserId: post.userId,
+                        compact: true,
+                      ),
                   ],
                 ),
+                if (!isMine)
+                  Wrap(
+                    spacing: AppSpacing.xs,
+                    children: [
+                      ReportButton(
+                        targetType: ReportTargetType.post,
+                        targetId: post.id,
+                        compact: true,
+                      ),
+                      ReportButton(
+                        targetType: ReportTargetType.user,
+                        targetId: post.userId,
+                        compact: true,
+                      ),
+                      BlockButton(
+                        targetUserId: post.userId,
+                        compact: true,
+                      ),
+                    ],
+                  ),
                 const SizedBox(height: AppSpacing.sm),
                 if (post.eventId != null) ...[
                   const Text(

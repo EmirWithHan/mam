@@ -1,20 +1,29 @@
 import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
+import '../reports/blocks_service.dart';
 import 'feed_models.dart';
 
 class FeedService {
-  const FeedService({StorageService storageService = const StorageService()})
-      : _storageService = storageService;
+  const FeedService({
+    StorageService storageService = const StorageService(),
+    BlocksService blocksService = const BlocksService(),
+  })  : _storageService = storageService,
+        _blocksService = blocksService;
 
   final StorageService _storageService;
+  final BlocksService _blocksService;
 
   Future<List<Post>> fetchPosts() async {
     final data = await SupabaseService.client
         .from('posts')
         .select()
         .order('created_at', ascending: false);
+    final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
 
-    return data.map(Post.fromJson).toList();
+    return data
+        .map(Post.fromJson)
+        .where((post) => !blockedUserIds.contains(post.userId))
+        .toList();
   }
 
   Future<List<PostWithStats>> fetchPostsWithStats() async {
@@ -96,8 +105,12 @@ class FeedService {
         .select()
         .eq('post_id', postId)
         .order('created_at');
+    final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
 
-    return data.map(PostComment.fromJson).toList();
+    return data
+        .map(PostComment.fromJson)
+        .where((comment) => !blockedUserIds.contains(comment.userId))
+        .toList();
   }
 
   Future<PostComment> addComment({

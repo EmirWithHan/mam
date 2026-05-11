@@ -10,6 +10,9 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
 import '../auth/auth_provider.dart';
 import '../profile/profile_provider.dart';
+import '../reports/reports_models.dart';
+import '../reports/widgets/block_button.dart';
+import '../reports/widgets/report_button.dart';
 import 'events_models.dart';
 import 'events_provider.dart';
 import 'widgets/event_call_button.dart';
@@ -137,6 +140,27 @@ class _EventDetailBody extends ConsumerWidget {
         _DetailLine(label: 'Location', value: event.locationText ?? '-'),
         _DetailLine(label: 'Date', value: _formatDateTime(event.eventDate)),
         _DetailLine(label: 'Capacity', value: event.capacityLabel),
+        const SizedBox(height: AppSpacing.sm),
+        if (!isHost)
+          Wrap(
+            spacing: AppSpacing.sm,
+            children: [
+              ReportButton(
+                targetType: ReportTargetType.event,
+                targetId: event.id,
+                compact: true,
+              ),
+              ReportButton(
+                targetType: ReportTargetType.user,
+                targetId: event.hostId,
+                compact: true,
+              ),
+              BlockButton(
+                targetUserId: event.hostId,
+                compact: true,
+              ),
+            ],
+          ),
         const SizedBox(height: AppSpacing.lg),
         if (isHost || isApprovedParticipant) ...[
           AppButton(

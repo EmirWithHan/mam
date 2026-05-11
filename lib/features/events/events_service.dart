@@ -1,8 +1,12 @@
 import '../../services/supabase_service.dart';
+import '../reports/blocks_service.dart';
 import 'events_models.dart';
 
 class EventsService {
-  const EventsService();
+  const EventsService({BlocksService blocksService = const BlocksService()})
+      : _blocksService = blocksService;
+
+  final BlocksService _blocksService;
 
   Future<List<Event>> fetchEvents() async {
     final data = await SupabaseService.client
@@ -10,8 +14,12 @@ class EventsService {
         .select()
         .inFilter('status', ['active', 'completed'])
         .order('event_date');
+    final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
 
-    return data.map(Event.fromJson).toList();
+    return data
+        .map(Event.fromJson)
+        .where((event) => !blockedUserIds.contains(event.hostId))
+        .toList();
   }
 
   Future<Event> fetchEventById(String eventId) async {
