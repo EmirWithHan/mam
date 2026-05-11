@@ -7,6 +7,8 @@ class AuthService {
 
   supabase.User? get currentUser => SupabaseService.client.auth.currentUser;
 
+  bool get isAuthenticated => currentUser != null;
+
   Stream<supabase.AuthState> get authStateChanges =>
       SupabaseService.client.auth.onAuthStateChange;
 

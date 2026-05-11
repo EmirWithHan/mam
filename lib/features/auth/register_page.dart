@@ -7,7 +7,6 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
-import 'auth_models.dart';
 import 'auth_provider.dart';
 
 class RegisterPage extends ConsumerStatefulWidget {
@@ -41,11 +40,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
 
     if (!mounted) return;
     final authState = ref.read(authControllerProvider);
-
-    if (authState.status == AuthStatus.authenticated) {
-      context.goNamed(RouteNames.home);
-      return;
-    }
 
     if (authState.message != null) {
       ScaffoldMessenger.of(context).showSnackBar(

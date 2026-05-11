@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
@@ -14,13 +16,24 @@ final authControllerProvider =
 });
 
 class AuthController extends StateNotifier<AuthState> {
-  AuthController(this._authService) : super(_initialState(_authService));
+  AuthController(this._authService) : super(_initialState(_authService)) {
+    _authSubscription = _authService.authStateChanges.listen((authState) {
+      final user = authState.session?.user;
+      if (user == null) {
+        state = const AuthState.unauthenticated();
+        return;
+      }
+
+      state = AuthState.authenticated(userId: user.id);
+    });
+  }
 
   final AuthService _authService;
+  late final StreamSubscription<supabase.AuthState> _authSubscription;
 
   static AuthState _initialState(AuthService authService) {
     final user = authService.currentUser;
-    if (user == null) return const AuthState.initial();
+    if (user == null) return const AuthState.unauthenticated();
     return AuthState.authenticated(userId: user.id);
   }
 
@@ -87,5 +100,11 @@ class AuthController extends StateNotifier<AuthState> {
     } catch (_) {
       state = const AuthState.error(message: 'Something went wrong.');
     }
+  }
+
+  @override
+  void dispose() {
+    _authSubscription.cancel();
+    super.dispose();
   }
 }
