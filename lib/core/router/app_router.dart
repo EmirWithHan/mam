@@ -15,6 +15,8 @@ import '../../features/feed/create_post_page.dart';
 import '../../features/feed/feed_page.dart';
 import '../../features/feed/post_comments_page.dart';
 import '../../features/profile/profile_completion_page.dart';
+import '../../features/profile/profile_page.dart';
+import '../../features/trust_score/trust_score_history_page.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/app_button.dart';
@@ -67,6 +69,16 @@ GoRouter createAppRouter(AuthState authState) {
         path: RoutePaths.profileComplete,
         name: RouteNames.profileComplete,
         builder: (context, state) => const ProfileCompletionPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.profile,
+        name: RouteNames.profile,
+        builder: (context, state) => const ProfilePage(),
+      ),
+      GoRoute(
+        path: RoutePaths.trustScoreHistory,
+        name: RouteNames.trustScoreHistory,
+        builder: (context, state) => const TrustScoreHistoryPage(),
       ),
       GoRoute(
         path: RoutePaths.feed,
@@ -177,6 +189,11 @@ class _HomePlaceholderPage extends ConsumerWidget {
                 AppButton(
                   label: 'Events',
                   onPressed: () => context.goNamed(RouteNames.events),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppButton(
+                  label: 'Profile',
+                  onPressed: () => context.goNamed(RouteNames.profile),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppButton(

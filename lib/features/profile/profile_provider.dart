@@ -69,6 +69,8 @@ class ProfileController extends StateNotifier<ProfileState> {
     }
   }
 
+  Future<void> refreshMyProfile() => loadMyProfile();
+
   Future<Profile?> createEmptyProfileIfMissing() async {
     state = state.copyWith(status: ProfileStatus.loading);
 

@@ -35,6 +35,24 @@ class Profile {
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
+  int get trustScoreValue => trustScore ?? 50;
+
+  String get trustLabel {
+    final score = trustScoreValue;
+    if (score <= 39) return 'Low trust';
+    if (score <= 59) return 'New user';
+    if (score <= 79) return 'Reliable participant';
+    return 'Highly trusted';
+  }
+
+  String get trustDescription {
+    final score = trustScoreValue;
+    if (score <= 39) return 'Build reliability through positive participation.';
+    if (score <= 59) return 'A fresh reliability profile with room to grow.';
+    if (score <= 79) return 'Shows consistent event participation.';
+    return 'Strong reliability signal in the community.';
+  }
+
   factory Profile.fromJson(Map<String, dynamic> json) {
     return Profile(
       id: json['id'] as String,
