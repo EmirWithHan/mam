@@ -12,6 +12,7 @@ import '../auth/auth_provider.dart';
 import '../profile/profile_provider.dart';
 import 'events_models.dart';
 import 'events_provider.dart';
+import 'widgets/event_call_button.dart';
 import 'join_requests_provider.dart';
 import 'widgets/host_join_request_tile.dart';
 import 'widgets/join_request_button.dart';
@@ -109,6 +110,7 @@ class _EventDetailBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(profileControllerProvider);
     final requestState = ref.watch(joinRequestControllerProvider(event.id));
+    final isApprovedParticipant = requestState.myRequest?.isApproved == true;
     final requestController = ref.read(
       joinRequestControllerProvider(event.id).notifier,
     );
@@ -136,7 +138,7 @@ class _EventDetailBody extends ConsumerWidget {
         _DetailLine(label: 'Date', value: _formatDateTime(event.eventDate)),
         _DetailLine(label: 'Capacity', value: event.capacityLabel),
         const SizedBox(height: AppSpacing.lg),
-        if (isHost || requestState.myRequest?.isApproved == true) ...[
+        if (isHost || isApprovedParticipant) ...[
           AppButton(
             label: 'Open chat',
             onPressed: () => context.goNamed(
@@ -146,8 +148,17 @@ class _EventDetailBody extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
         ],
+        if (!isHost && isApprovedParticipant) ...[
+          EventCallButton(
+            eventId: event.id,
+            targetUserId: event.hostId,
+            label: 'Call host',
+          ),
+          const SizedBox(height: AppSpacing.lg),
+        ],
         if (isHost)
           _HostRequestsSection(
+            eventId: event.id,
             state: requestState,
             onApprove: (requestId) async {
               await requestController.approveRequest(requestId);
@@ -190,11 +201,13 @@ class _EventDetailBody extends ConsumerWidget {
 
 class _HostRequestsSection extends StatelessWidget {
   const _HostRequestsSection({
+    required this.eventId,
     required this.state,
     required this.onApprove,
     required this.onReject,
   });
 
+  final String eventId;
   final JoinRequestsState state;
   final Future<void> Function(String requestId) onApprove;
   final Future<void> Function(String requestId) onReject;
@@ -219,11 +232,25 @@ class _HostRequestsSection extends StatelessWidget {
               Text('No join requests yet.', style: AppTextStyles.body)
             else
               ...state.hostRequests.map(
-                (request) => HostJoinRequestTile(
-                  request: request,
-                  isLoading: state.loading,
-                  onApprove: () => onApprove(request.id),
-                  onReject: () => onReject(request.id),
+                (request) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    HostJoinRequestTile(
+                      request: request,
+                      isLoading: state.loading,
+                      onApprove: () => onApprove(request.id),
+                      onReject: () => onReject(request.id),
+                    ),
+                    if (request.isApproved) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      EventCallButton(
+                        eventId: eventId,
+                        targetUserId: request.userId,
+                        label: 'Call participant',
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                    ],
+                  ],
                 ),
               ),
           ],
