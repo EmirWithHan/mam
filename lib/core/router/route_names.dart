@@ -6,6 +6,8 @@ class RouteNames {
   static const login = 'login';
   static const register = 'register';
   static const profileComplete = 'profileComplete';
+  static const feed = 'feed';
+  static const createPost = 'createPost';
   static const events = 'events';
   static const eventDetail = 'eventDetail';
   static const eventChat = 'eventChat';
@@ -21,6 +23,8 @@ class RoutePaths {
   static const login = '/auth/login';
   static const register = '/auth/register';
   static const profileComplete = '/profile/complete';
+  static const feed = '/feed';
+  static const createPost = '/feed/create';
   static const events = '/events';
   static const eventDetail = '/events/:eventId';
   static const eventChat = '/events/:eventId/chat';

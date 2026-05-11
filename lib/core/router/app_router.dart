@@ -11,6 +11,8 @@ import '../../features/chat/event_chat_page.dart';
 import '../../features/events/create_event_page.dart';
 import '../../features/events/event_detail_page.dart';
 import '../../features/events/events_page.dart';
+import '../../features/feed/create_post_page.dart';
+import '../../features/feed/feed_page.dart';
 import '../../features/profile/profile_completion_page.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -64,6 +66,16 @@ GoRouter createAppRouter(AuthState authState) {
         path: RoutePaths.profileComplete,
         name: RouteNames.profileComplete,
         builder: (context, state) => const ProfileCompletionPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.feed,
+        name: RouteNames.feed,
+        builder: (context, state) => const FeedPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.createPost,
+        name: RouteNames.createPost,
+        builder: (context, state) => const CreatePostPage(),
       ),
       GoRoute(
         path: RoutePaths.events,
@@ -156,6 +168,16 @@ class _HomePlaceholderPage extends ConsumerWidget {
                 AppButton(
                   label: 'Events',
                   onPressed: () => context.goNamed(RouteNames.events),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppButton(
+                  label: 'Feed',
+                  onPressed: () => context.goNamed(RouteNames.feed),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppButton(
+                  label: 'Create post',
+                  onPressed: () => context.goNamed(RouteNames.createPost),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppButton(
