@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../follow/widgets/follow_button.dart';
 import '../feed_models.dart';
 
 class PostCard extends StatelessWidget {
@@ -49,6 +50,22 @@ class PostCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        _shortUserId(post.userId),
+                        style: AppTextStyles.caption,
+                      ),
+                    ),
+                    FollowButton(
+                      targetUserId: post.userId,
+                      compact: true,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
                 if (post.eventId != null) ...[
                   const Text(
                     'Linked event',
@@ -96,5 +113,10 @@ class PostCard extends StatelessWidget {
     final hour = value.hour.toString().padLeft(2, '0');
     final minute = value.minute.toString().padLeft(2, '0');
     return '$year-$month-$day $hour:$minute';
+  }
+
+  String _shortUserId(String userId) {
+    if (userId.length <= 8) return 'User $userId';
+    return 'User ${userId.substring(0, 8)}';
   }
 }
