@@ -8,6 +8,7 @@ class RouteNames {
   static const profileComplete = 'profileComplete';
   static const events = 'events';
   static const eventDetail = 'eventDetail';
+  static const eventChat = 'eventChat';
   static const createEvent = 'createEvent';
   static const home = 'home';
 }
@@ -22,6 +23,7 @@ class RoutePaths {
   static const profileComplete = '/profile/complete';
   static const events = '/events';
   static const eventDetail = '/events/:eventId';
+  static const eventChat = '/events/:eventId/chat';
   static const createEvent = '/events/create';
   static const home = '/home';
 }

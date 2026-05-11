@@ -7,6 +7,7 @@ import '../../features/auth/auth_models.dart';
 import '../../features/auth/auth_provider.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/auth/register_page.dart';
+import '../../features/chat/event_chat_page.dart';
 import '../../features/events/create_event_page.dart';
 import '../../features/events/event_detail_page.dart';
 import '../../features/events/events_page.dart';
@@ -73,6 +74,14 @@ GoRouter createAppRouter(AuthState authState) {
         path: RoutePaths.createEvent,
         name: RouteNames.createEvent,
         builder: (context, state) => const CreateEventPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.eventChat,
+        name: RouteNames.eventChat,
+        builder: (context, state) {
+          final eventId = state.pathParameters['eventId'] ?? '';
+          return EventChatPage(eventId: eventId);
+        },
       ),
       GoRoute(
         path: RoutePaths.eventDetail,

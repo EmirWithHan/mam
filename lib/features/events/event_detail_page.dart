@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/widgets/app_button.dart';
 import '../auth/auth_provider.dart';
 import '../profile/profile_provider.dart';
 import 'events_models.dart';
@@ -133,6 +136,16 @@ class _EventDetailBody extends ConsumerWidget {
         _DetailLine(label: 'Date', value: _formatDateTime(event.eventDate)),
         _DetailLine(label: 'Capacity', value: event.capacityLabel),
         const SizedBox(height: AppSpacing.lg),
+        if (isHost || requestState.myRequest?.isApproved == true) ...[
+          AppButton(
+            label: 'Open chat',
+            onPressed: () => context.goNamed(
+              RouteNames.eventChat,
+              pathParameters: {'eventId': event.id},
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+        ],
         if (isHost)
           _HostRequestsSection(
             state: requestState,
