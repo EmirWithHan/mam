@@ -26,7 +26,7 @@ class AuthPage extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.md),
               Text(
-                'Join sports events, meet teammates, and keep the match day energy moving.',
+                'Find real sports and social events around you.',
                 style: AppTextStyles.body,
                 textAlign: TextAlign.center,
               ),
@@ -37,7 +37,7 @@ class AuthPage extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.md),
               AppButton(
-                label: 'Register',
+                label: 'Create account',
                 onPressed: () => context.goNamed(RouteNames.register),
               ),
             ],
