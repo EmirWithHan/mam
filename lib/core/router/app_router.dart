@@ -7,6 +7,7 @@ import '../../features/auth/auth_models.dart';
 import '../../features/auth/auth_provider.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/auth/register_page.dart';
+import '../../features/profile/profile_completion_page.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/app_button.dart';
@@ -54,6 +55,11 @@ GoRouter createAppRouter(AuthState authState) {
         path: RoutePaths.register,
         name: RouteNames.register,
         builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.profileComplete,
+        name: RouteNames.profileComplete,
+        builder: (context, state) => const ProfileCompletionPage(),
       ),
       GoRoute(
         path: RoutePaths.home,
@@ -117,6 +123,12 @@ class _HomePlaceholderPage extends ConsumerWidget {
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.lg),
+                AppButton(
+                  label: 'Complete profile',
+                  onPressed: () =>
+                      context.goNamed(RouteNames.profileComplete),
+                ),
+                const SizedBox(height: AppSpacing.md),
                 AppButton(
                   label: 'Logout',
                   isLoading: authState.isLoading,
