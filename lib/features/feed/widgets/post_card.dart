@@ -9,13 +9,18 @@ import '../feed_models.dart';
 class PostCard extends StatelessWidget {
   const PostCard({
     super.key,
-    required this.post,
+    required this.item,
+    required this.onToggleLike,
+    required this.onOpenComments,
   });
 
-  final Post post;
+  final PostWithStats item;
+  final VoidCallback onToggleLike;
+  final VoidCallback onOpenComments;
 
   @override
   Widget build(BuildContext context) {
+    final post = item.post;
     final caption = post.caption?.trim();
 
     return Card(
@@ -56,6 +61,26 @@ class PostCard extends StatelessWidget {
                   const SizedBox(height: AppSpacing.sm),
                 ],
                 Text(_formatDate(post.createdAt), style: AppTextStyles.caption),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    TextButton.icon(
+                      onPressed: onToggleLike,
+                      icon: Icon(
+                        item.isLikedByMe
+                            ? Icons.favorite
+                            : Icons.favorite_border,
+                      ),
+                      label: Text('${item.likeCount}'),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    TextButton.icon(
+                      onPressed: onOpenComments,
+                      icon: const Icon(Icons.mode_comment_outlined),
+                      label: Text('${item.commentCount}'),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

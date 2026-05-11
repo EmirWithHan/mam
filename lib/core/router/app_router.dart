@@ -13,6 +13,7 @@ import '../../features/events/event_detail_page.dart';
 import '../../features/events/events_page.dart';
 import '../../features/feed/create_post_page.dart';
 import '../../features/feed/feed_page.dart';
+import '../../features/feed/post_comments_page.dart';
 import '../../features/profile/profile_completion_page.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
@@ -76,6 +77,14 @@ GoRouter createAppRouter(AuthState authState) {
         path: RoutePaths.createPost,
         name: RouteNames.createPost,
         builder: (context, state) => const CreatePostPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.postComments,
+        name: RouteNames.postComments,
+        builder: (context, state) {
+          final postId = state.pathParameters['postId'] ?? '';
+          return PostCommentsPage(postId: postId);
+        },
       ),
       GoRoute(
         path: RoutePaths.events,

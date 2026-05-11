@@ -92,7 +92,17 @@ class _FeedBody extends ConsumerWidget {
         separatorBuilder: (context, index) =>
             const SizedBox(height: AppSpacing.md),
         itemBuilder: (context, index) {
-          return PostCard(post: feedState.posts[index]);
+          final item = feedState.posts[index];
+          return PostCard(
+            item: item,
+            onToggleLike: () {
+              ref.read(feedControllerProvider.notifier).toggleLike(item);
+            },
+            onOpenComments: () => context.goNamed(
+              RouteNames.postComments,
+              pathParameters: {'postId': item.post.id},
+            ),
+          );
         },
       ),
     );

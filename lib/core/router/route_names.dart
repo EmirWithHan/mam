@@ -8,6 +8,7 @@ class RouteNames {
   static const profileComplete = 'profileComplete';
   static const feed = 'feed';
   static const createPost = 'createPost';
+  static const postComments = 'postComments';
   static const events = 'events';
   static const eventDetail = 'eventDetail';
   static const eventChat = 'eventChat';
@@ -25,6 +26,7 @@ class RoutePaths {
   static const profileComplete = '/profile/complete';
   static const feed = '/feed';
   static const createPost = '/feed/create';
+  static const postComments = '/feed/:postId/comments';
   static const events = '/events';
   static const eventDetail = '/events/:eventId';
   static const eventChat = '/events/:eventId/chat';

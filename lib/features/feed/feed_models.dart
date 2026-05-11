@@ -83,6 +83,75 @@ class CreatePostInput {
   final String? eventId;
 }
 
+class PostComment {
+  const PostComment({
+    required this.id,
+    required this.postId,
+    required this.userId,
+    required this.comment,
+    required this.createdAt,
+    this.updatedAt,
+  });
+
+  final String id;
+  final String postId;
+  final String userId;
+  final String comment;
+  final DateTime createdAt;
+  final DateTime? updatedAt;
+
+  bool isMine(String? currentUserId) {
+    return currentUserId != null && userId == currentUserId;
+  }
+
+  factory PostComment.fromJson(Map<String, dynamic> json) {
+    return PostComment(
+      id: json['id'] as String,
+      postId: json['post_id'] as String,
+      userId: json['user_id'] as String,
+      comment: json['comment'] as String,
+      createdAt: DateTime.parse(json['created_at'].toString()),
+      updatedAt: _dateTimeFromJson(json['updated_at']),
+    );
+  }
+
+  Map<String, dynamic> toCreateJson() {
+    return {
+      'post_id': postId,
+      'user_id': userId,
+      'comment': comment.trim(),
+    };
+  }
+}
+
+class PostWithStats {
+  const PostWithStats({
+    required this.post,
+    required this.likeCount,
+    required this.commentCount,
+    required this.isLikedByMe,
+  });
+
+  final Post post;
+  final int likeCount;
+  final int commentCount;
+  final bool isLikedByMe;
+
+  PostWithStats copyWith({
+    Post? post,
+    int? likeCount,
+    int? commentCount,
+    bool? isLikedByMe,
+  }) {
+    return PostWithStats(
+      post: post ?? this.post,
+      likeCount: likeCount ?? this.likeCount,
+      commentCount: commentCount ?? this.commentCount,
+      isLikedByMe: isLikedByMe ?? this.isLikedByMe,
+    );
+  }
+}
+
 DateTime? _dateTimeFromJson(Object? value) {
   if (value == null) return null;
   return DateTime.tryParse(value.toString());
