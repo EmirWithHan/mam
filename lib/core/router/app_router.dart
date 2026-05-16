@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/auth_page.dart';
@@ -12,12 +13,15 @@ import '../../features/feed/create_post_page.dart';
 import '../../features/feed/feed_page.dart';
 import '../../features/feed/post_comments_page.dart';
 import '../../features/home/create_hub_page.dart';
-import '../../features/home/home_page.dart';
 import '../../features/profile/profile_completion_page.dart';
 import '../../features/profile/profile_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/social/social_page.dart';
 import '../../features/trust_score/trust_score_history_page.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
+import '../widgets/app_loader.dart';
 import '../widgets/main_navigation_shell.dart';
 import 'route_names.dart';
 
@@ -46,7 +50,7 @@ GoRouter createAppRouter(AuthState authState) {
       GoRoute(
         path: RoutePaths.splash,
         name: RouteNames.splash,
-        builder: (context, state) => const HomePage(),
+        builder: (context, state) => const _SplashPage(),
       ),
       GoRoute(
         path: RoutePaths.auth,
@@ -171,4 +175,27 @@ GoRouter createAppRouter(AuthState authState) {
       ),
     ],
   );
+}
+
+class _SplashPage extends StatelessWidget {
+  const _SplashPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('MaM', style: AppTextStyles.logo),
+              SizedBox(height: AppSpacing.lg),
+              SizedBox(width: 32, height: 32, child: AppLoader()),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/route_names.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
@@ -51,7 +53,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final authState = ref.watch(authControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('MaM')),
+      appBar: AppBar(
+        centerTitle: true,
+        title: const Text('MaM', style: AppTextStyles.logo),
+      ),
       body: SafeArea(
         child: Form(
           key: _formKey,
@@ -60,46 +65,102 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             children: [
               Text('Tekrar hoş geldin', style: AppTextStyles.headline),
               const SizedBox(height: AppSpacing.sm),
-              Text('Etkinliklere ve ekibine geri dön.', style: AppTextStyles.body),
+              Text(
+                'Etkinliklere dönmek için giriş yap.',
+                style: AppTextStyles.body,
+              ),
               const SizedBox(height: AppSpacing.lg),
-              AppTextField(
-                label: 'E-posta',
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                prefixIcon: const Icon(Icons.mail_outline),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Email is required.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: 'Şifre',
-                controller: _passwordController,
-                obscureText: true,
-                prefixIcon: const Icon(Icons.lock_outline),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Password is required.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: AppSpacing.xl),
-              AppButton(
-                label: 'Giriş Yap',
-                isLoading: authState.isLoading,
-                onPressed: _submit,
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  border: Border.all(color: AppColors.border),
+                  borderRadius: AppRadius.xlBorder,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.textPrimary.withValues(alpha: 0.05),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (authState.message != null) ...[
+                        _AuthErrorCard(message: authState.message!),
+                        const SizedBox(height: AppSpacing.md),
+                      ],
+                      AppTextField(
+                        label: 'E-posta',
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        prefixIcon: const Icon(Icons.mail_outline),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'E-posta gerekli.';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      AppTextField(
+                        label: 'Şifre',
+                        controller: _passwordController,
+                        obscureText: true,
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Şifre gerekli.';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      AppButton(
+                        label: 'Giriş Yap',
+                        isLoading: authState.isLoading,
+                        onPressed: _submit,
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
               TextButton(
                 onPressed: () => context.goNamed(RouteNames.register),
-                child: const Text('Kayıt Ol'),
+                child: const Text('Hesabın yok mu? Kayıt ol'),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _AuthErrorCard extends StatelessWidget {
+  const _AuthErrorCard({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.primarySoft,
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.18)),
+        borderRadius: AppRadius.mdBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          children: [
+            const Icon(Icons.info_outline, color: AppColors.error, size: 20),
+            const SizedBox(width: AppSpacing.sm),
+            Expanded(child: Text(message, style: AppTextStyles.bodySmall)),
+          ],
         ),
       ),
     );
