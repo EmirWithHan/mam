@@ -71,7 +71,7 @@ class PublicProfilePreviewTile extends ConsumerWidget {
               ),
               if (trailing != null) ...[
                 const SizedBox(width: AppSpacing.sm),
-                trailing!,
+                ?trailing,
               ],
             ],
           ),
@@ -94,7 +94,7 @@ class PublicProfilePreviewTile extends ConsumerWidget {
                 style: compact ? AppTextStyles.caption : AppTextStyles.bodyStrong,
               ),
             ),
-            if (trailing != null) trailing!,
+            ?trailing,
           ],
         ),
       ),

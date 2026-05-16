@@ -68,7 +68,7 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
           ),
           const SizedBox(height: AppSpacing.md),
           DropdownButtonFormField<ReportReason>(
-            value: _reason,
+            initialValue: _reason,
             decoration: const InputDecoration(labelText: 'Reason'),
             items: ReportReason.values
                 .map(

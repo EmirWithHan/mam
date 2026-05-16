@@ -23,19 +23,16 @@ class AuthState {
       message = null,
       userId = null;
 
-  const AuthState.unauthenticated({String? message})
+  const AuthState.unauthenticated({this.message})
     : status = AuthStatus.unauthenticated,
-      message = message,
       userId = null;
 
-  const AuthState.authenticated({required String userId})
+  const AuthState.authenticated({required this.userId})
     : status = AuthStatus.authenticated,
-      message = null,
-      userId = userId;
+      message = null;
 
-  const AuthState.error({required String message})
+  const AuthState.error({required this.message})
     : status = AuthStatus.error,
-      message = message,
       userId = null;
 
   final AuthStatus status;
