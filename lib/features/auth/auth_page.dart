@@ -47,7 +47,7 @@ class AuthPage extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Yakınındaki etkinliklere katıl, yeni insanlarla doğal şekilde tanış.',
+                      'Yakınındaki etkinliklere katıl, takımını kur ve sahaya çık.',
                       style: AppTextStyles.body,
                       textAlign: TextAlign.center,
                     ),

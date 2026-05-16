@@ -8,6 +8,7 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../profile/profile_provider.dart';
@@ -110,7 +111,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
 
     if (!profileState.canCreateEvent) {
       return Scaffold(
-        appBar: AppBar(title: const Text('MaM')),
+        appBar: AppBar(title: const AppLogo(size: 32, showText: true)),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -137,7 +138,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppButton(
-                  label: 'Browse events',
+                  label: 'Etkinlikleri keşfet',
                   variant: AppButtonVariant.secondary,
                   onPressed: () => context.goNamed(RouteNames.events),
                 ),
@@ -149,16 +150,19 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('MaM')),
+      appBar: AppBar(title: const AppLogo(size: 32, showText: true)),
       body: SafeArea(
         child: Form(
           key: _formKey,
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
-              Text('Host an Event', style: AppTextStyles.headline),
+              Text('Etkinlik oluştur', style: AppTextStyles.headline),
               const SizedBox(height: AppSpacing.sm),
-              Text('Gather your squad, let\'s play.', style: AppTextStyles.body),
+              Text(
+                'Spor planını paylaş, katılım isteklerini yönet ve sahaya çık.',
+                style: AppTextStyles.body,
+              ),
               const SizedBox(height: AppSpacing.lg),
               _SportChips(
                 selectedSport: _sportTypeController.text,

@@ -8,6 +8,7 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
@@ -35,7 +36,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
     final feedState = ref.watch(feedControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('MaM')),
+      appBar: AppBar(title: const AppLogo(size: 32, showText: true)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),

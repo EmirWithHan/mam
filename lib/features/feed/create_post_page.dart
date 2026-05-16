@@ -11,6 +11,7 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_text_field.dart';
 import 'feed_models.dart';
 import 'feed_provider.dart';
@@ -94,7 +95,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
     final feedState = ref.watch(feedControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('MaM')),
+      appBar: AppBar(title: const AppLogo(size: 32, showText: true)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -119,7 +120,8 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
             ),
             const SizedBox(height: AppSpacing.md),
             AppTextField(
-              label: 'Event ID (optional)',
+              label: 'Linked event (optional)',
+              hintText: 'Leave empty for a standalone photo',
               controller: _eventIdController,
               prefixIcon: const Icon(Icons.event_outlined),
             ),

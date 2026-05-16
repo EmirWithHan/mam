@@ -8,6 +8,7 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/error_view.dart';
 import '../auth/auth_provider.dart';
@@ -72,7 +73,7 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
     final eventAsync = ref.watch(eventDetailProvider(widget.eventId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('MaM')),
+      appBar: AppBar(title: const AppLogo(size: 32, showText: true)),
       body: SafeArea(
         child: eventAsync.when(
           loading: () => const AppLoader(),

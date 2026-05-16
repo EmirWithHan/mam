@@ -13,6 +13,7 @@ import '../../features/feed/create_post_page.dart';
 import '../../features/feed/feed_page.dart';
 import '../../features/feed/post_comments_page.dart';
 import '../../features/home/create_hub_page.dart';
+import '../../features/home/home_page.dart';
 import '../../features/profile/profile_completion_page.dart';
 import '../../features/profile/profile_page.dart';
 import '../../features/reports/blocked_users_page.dart';
@@ -127,14 +128,20 @@ GoRouter createAppRouter(AuthState authState) {
       GoRoute(
         path: RoutePaths.createPost,
         name: RouteNames.createPost,
-        builder: (context, state) => const CreatePostPage(),
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 2,
+          child: CreatePostPage(),
+        ),
       ),
       GoRoute(
         path: RoutePaths.postComments,
         name: RouteNames.postComments,
         builder: (context, state) {
           final postId = state.pathParameters['postId'] ?? '';
-          return PostCommentsPage(postId: postId);
+          return MainNavigationShell(
+            currentIndex: 0,
+            child: PostCommentsPage(postId: postId),
+          );
         },
       ),
       GoRoute(
@@ -188,7 +195,7 @@ GoRouter createAppRouter(AuthState authState) {
         name: RouteNames.home,
         builder: (context, state) => const MainNavigationShell(
           currentIndex: 0,
-          child: FeedPage(),
+          child: HomePage(),
         ),
       ),
     ],
