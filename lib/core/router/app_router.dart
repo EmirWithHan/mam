@@ -15,6 +15,7 @@ import '../../features/feed/post_comments_page.dart';
 import '../../features/home/create_hub_page.dart';
 import '../../features/profile/profile_completion_page.dart';
 import '../../features/profile/profile_page.dart';
+import '../../features/reports/blocked_users_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/social/social_page.dart';
 import '../../features/trust_score/trust_score_history_page.dart';
@@ -89,6 +90,14 @@ GoRouter createAppRouter(AuthState authState) {
         builder: (context, state) => const MainNavigationShell(
           currentIndex: 4,
           child: SettingsPage(),
+        ),
+      ),
+      GoRoute(
+        path: RoutePaths.blockedUsers,
+        name: RouteNames.blockedUsers,
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 4,
+          child: BlockedUsersPage(),
         ),
       ),
       GoRoute(

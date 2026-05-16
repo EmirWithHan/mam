@@ -83,11 +83,11 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               trailing: Text('Yakında', style: AppTextStyles.caption),
             ),
             const SizedBox(height: AppSpacing.md),
-            const SettingsMenuTile(
+            SettingsMenuTile(
               icon: Icons.block_outlined,
               title: 'Engellenenler',
-              subtitle: 'Engellenen kullanıcılar listesi yakında',
-              trailing: Text('Yakında', style: AppTextStyles.caption),
+              subtitle: 'Engellediğin kullanıcıları yönet',
+              onTap: () => context.goNamed(RouteNames.blockedUsers),
             ),
             const SizedBox(height: AppSpacing.xl),
             AppButton(

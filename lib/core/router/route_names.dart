@@ -8,6 +8,7 @@ class RouteNames {
   static const profile = 'profile';
   static const profileComplete = 'profileComplete';
   static const settings = 'settings';
+  static const blockedUsers = 'blockedUsers';
   static const trustScoreHistory = 'trustScoreHistory';
   static const feed = 'feed';
   static const create = 'create';
@@ -31,6 +32,7 @@ class RoutePaths {
   static const profile = '/profile';
   static const profileComplete = '/profile/complete';
   static const settings = '/settings';
+  static const blockedUsers = '/settings/blocked-users';
   static const trustScoreHistory = '/profile/trust-score';
   static const feed = '/feed';
   static const create = '/create';

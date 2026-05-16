@@ -1,4 +1,5 @@
 import '../../services/supabase_service.dart';
+import 'blocks_models.dart';
 
 class BlocksService {
   const BlocksService();
@@ -15,6 +16,21 @@ class BlocksService {
         .eq('blocker_id', userId);
 
     return data.map((row) => row['blocked_id'] as String).toList();
+  }
+
+  Future<List<Block>> fetchMyBlocks() async {
+    final userId = currentUserId;
+    if (userId == null) {
+      throw StateError('You must be signed in to view blocked members.');
+    }
+
+    final data = await SupabaseService.client
+        .from('blocks')
+        .select('id, blocker_id, blocked_id, created_at')
+        .eq('blocker_id', userId)
+        .order('created_at', ascending: false);
+
+    return data.map((row) => Block.fromJson(row)).toList();
   }
 
   Future<bool> isUserBlocked(String targetUserId) async {

@@ -11,6 +11,8 @@ class Block {
   final String blockedId;
   final DateTime createdAt;
 
+  String get blockedUserId => blockedId;
+
   factory Block.fromJson(Map<String, dynamic> json) {
     return Block(
       id: json['id'] as String,
