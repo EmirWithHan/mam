@@ -95,7 +95,14 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
     final feedState = ref.watch(feedControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const AppLogo(size: 32, showText: true)),
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Back',
+          onPressed: () => _goBack(context),
+          icon: const Icon(Icons.arrow_back),
+        ),
+        title: const AppLogo(size: 32, showText: true),
+      ),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -143,6 +150,14 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
         ),
       ),
     );
+  }
+
+  void _goBack(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.goNamed(RouteNames.create);
   }
 }
 

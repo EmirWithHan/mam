@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/route_names.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_logo.dart';
@@ -52,6 +53,17 @@ class _SocialPageState extends ConsumerState<SocialPage> {
       appBar: AppBar(
         centerTitle: true,
         title: const AppLogo(size: 32, showText: true),
+        actions: [
+          IconButton(
+            tooltip: 'Bildirimler',
+            onPressed: () => context.goNamed(RouteNames.notifications),
+            icon: const Icon(
+              Icons.notifications_none_rounded,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+        ],
       ),
       body: SafeArea(
         child: RefreshIndicator(

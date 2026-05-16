@@ -45,7 +45,21 @@ class _EventsPageState extends ConsumerState<EventsPage> {
     final eventsState = ref.watch(eventsControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const AppLogo(size: 32, showText: true)),
+      appBar: AppBar(
+        centerTitle: true,
+        title: const AppLogo(size: 32, showText: true),
+        actions: [
+          IconButton(
+            tooltip: 'Bildirimler',
+            onPressed: () => context.goNamed(RouteNames.notifications),
+            icon: const Icon(
+              Icons.notifications_none_rounded,
+              color: AppColors.primary,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),

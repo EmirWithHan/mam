@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
@@ -49,7 +51,14 @@ class _BlockedUsersPageState extends ConsumerState<BlockedUsersPage> {
     final state = ref.watch(myBlocksControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Engellenenler')),
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Geri',
+          onPressed: () => _goBack(context),
+          icon: const Icon(Icons.arrow_back),
+        ),
+        title: const Text('Engellenenler'),
+      ),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: () =>
@@ -98,6 +107,14 @@ class _BlockedUsersPageState extends ConsumerState<BlockedUsersPage> {
         ),
       ),
     );
+  }
+
+  void _goBack(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.goNamed(RouteNames.settings);
   }
 }
 

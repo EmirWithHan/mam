@@ -157,7 +157,14 @@ class _ProfileCompletionPageState
     final profileState = ref.watch(profileControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('MaM')),
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Back',
+          onPressed: () => _goBack(context),
+          icon: const Icon(Icons.arrow_back),
+        ),
+        title: const Text('MaM'),
+      ),
       body: SafeArea(
         child: Form(
           key: _formKey,
@@ -259,6 +266,14 @@ class _ProfileCompletionPageState
         ),
       ),
     );
+  }
+
+  void _goBack(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.goNamed(RouteNames.profile);
   }
 
   String? Function(String?) _requiredValidator(String label) {

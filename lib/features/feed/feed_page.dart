@@ -16,7 +16,14 @@ import 'feed_provider.dart';
 import 'widgets/post_card.dart';
 
 class FeedPage extends ConsumerStatefulWidget {
-  const FeedPage({super.key});
+  const FeedPage({
+    super.key,
+    this.showCreatePrompt = true,
+    this.showNotificationBell = false,
+  });
+
+  final bool showCreatePrompt;
+  final bool showNotificationBell;
 
   @override
   ConsumerState<FeedPage> createState() => _FeedPageState();
@@ -36,7 +43,23 @@ class _FeedPageState extends ConsumerState<FeedPage> {
     final feedState = ref.watch(feedControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const AppLogo(size: 32, showText: true)),
+      appBar: AppBar(
+        centerTitle: true,
+        title: const AppLogo(size: 32, showText: true),
+        actions: [
+          if (widget.showNotificationBell)
+            IconButton(
+              tooltip: 'Bildirimler',
+              onPressed: () => context.goNamed(RouteNames.notifications),
+              icon: const Icon(
+                Icons.notifications_none_rounded,
+                color: AppColors.primary,
+              ),
+            ),
+          if (widget.showNotificationBell)
+            const SizedBox(width: AppSpacing.sm),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -66,45 +89,55 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                 style: AppTextStyles.body,
               ),
               const SizedBox(height: AppSpacing.md),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: AppRadius.lgBorder,
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.textPrimary.withValues(alpha: 0.04),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.add_photo_alternate_outlined,
-                          color: AppColors.primary),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Text(
-                          'Share a photo from your day or activity.',
-                          style: AppTextStyles.bodySmall,
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.sm),
-                      SizedBox(
-                        width: 132,
-                        child: AppButton(
-                          label: 'Post photo',
-                          onPressed: () => context.goNamed(RouteNames.createPost),
-                        ),
+              if (widget.showCreatePrompt) ...[
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: AppRadius.lgBorder,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.textPrimary.withValues(alpha: 0.04),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.add_photo_alternate_outlined,
+                          color: AppColors.primary,
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(
+                          child: Text(
+                            'Share a photo from your day or activity.',
+                            style: AppTextStyles.bodySmall,
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        SizedBox(
+                          width: 132,
+                          child: AppButton(
+                            label: 'Post photo',
+                            onPressed: () =>
+                                context.goNamed(RouteNames.createPost),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+              ],
+              Expanded(
+                child: _FeedBody(
+                  feedState: feedState,
+                  showCreateAction: widget.showCreatePrompt,
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
-              Expanded(child: _FeedBody(feedState: feedState)),
             ],
           ),
         ),
@@ -114,9 +147,13 @@ class _FeedPageState extends ConsumerState<FeedPage> {
 }
 
 class _FeedBody extends ConsumerWidget {
-  const _FeedBody({required this.feedState});
+  const _FeedBody({
+    required this.feedState,
+    required this.showCreateAction,
+  });
 
   final FeedState feedState;
+  final bool showCreateAction;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -135,8 +172,9 @@ class _FeedBody extends ConsumerWidget {
         title: 'Henüz paylaşım yok',
         message: 'Bir fotoğraf paylaşarak topluluğa ilk anı sen bırakabilirsin.',
         icon: Icons.add_photo_alternate_outlined,
-        actionLabel: 'Fotoğraf paylaş',
-        onAction: () => context.goNamed(RouteNames.createPost),
+        actionLabel: showCreateAction ? 'Fotoğraf paylaş' : null,
+        onAction:
+            showCreateAction ? () => context.goNamed(RouteNames.createPost) : null,
         secondaryActionLabel: 'Etkinlikleri keşfet',
         onSecondaryAction: () => context.goNamed(RouteNames.events),
       );

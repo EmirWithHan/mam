@@ -111,7 +111,14 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
 
     if (!profileState.canCreateEvent) {
       return Scaffold(
-        appBar: AppBar(title: const AppLogo(size: 32, showText: true)),
+        appBar: AppBar(
+          leading: IconButton(
+            tooltip: 'Back',
+            onPressed: () => _goBack(context),
+            icon: const Icon(Icons.arrow_back),
+          ),
+          title: const AppLogo(size: 32, showText: true),
+        ),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -150,7 +157,14 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const AppLogo(size: 32, showText: true)),
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Back',
+          onPressed: () => _goBack(context),
+          icon: const Icon(Icons.arrow_back),
+        ),
+        title: const AppLogo(size: 32, showText: true),
+      ),
       body: SafeArea(
         child: Form(
           key: _formKey,
@@ -277,6 +291,14 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
         ),
       ),
     );
+  }
+
+  void _goBack(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.goNamed(RouteNames.events);
   }
 
   String? Function(String?) _requiredValidator(String label) {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
@@ -33,11 +35,26 @@ class _TrustScoreHistoryPageState extends ConsumerState<TrustScoreHistoryPage> {
     final state = ref.watch(trustScoreControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Trust Score')),
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Back',
+          onPressed: () => _goBack(context),
+          icon: const Icon(Icons.arrow_back),
+        ),
+        title: const Text('Trust Score'),
+      ),
       body: SafeArea(
         child: _TrustScoreHistoryBody(state: state),
       ),
     );
+  }
+
+  void _goBack(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.goNamed(RouteNames.profile);
   }
 }
 

@@ -73,7 +73,14 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
     final eventAsync = ref.watch(eventDetailProvider(widget.eventId));
 
     return Scaffold(
-      appBar: AppBar(title: const AppLogo(size: 32, showText: true)),
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Back',
+          onPressed: () => _goBack(context),
+          icon: const Icon(Icons.arrow_back),
+        ),
+        title: const AppLogo(size: 32, showText: true),
+      ),
       body: SafeArea(
         child: eventAsync.when(
           loading: () => const AppLoader(),
@@ -92,6 +99,14 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
         ),
       ),
     );
+  }
+
+  void _goBack(BuildContext context) {
+    if (context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.goNamed(RouteNames.events);
   }
 }
 
