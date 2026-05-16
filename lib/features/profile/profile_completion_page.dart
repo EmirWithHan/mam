@@ -1,8 +1,10 @@
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
@@ -33,8 +35,13 @@ class _ProfileCompletionPageState
   final _cityController = TextEditingController();
   final _districtController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _imagePicker = ImagePicker();
 
   String? _tag;
+  String? _avatarUrl;
+  Uint8List? _avatarBytes;
+  String? _avatarFileName;
+  String? _avatarContentType;
 
   @override
   void initState() {
@@ -56,7 +63,9 @@ class _ProfileCompletionPageState
     _cityController.text = profile.city ?? '';
     _districtController.text = profile.district ?? '';
     _phoneController.text = profile.phone ?? '';
+    _avatarUrl = profile.avatarUrl;
     _tag = profile.tag;
+    setState(() {});
   }
 
   @override
@@ -75,6 +84,26 @@ class _ProfileCompletionPageState
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
+    var avatarUrl = _avatarUrl;
+    final avatarBytes = _avatarBytes;
+    final avatarFileName = _avatarFileName;
+    if (avatarBytes != null && avatarFileName != null) {
+      avatarUrl = await ref.read(profileControllerProvider.notifier).uploadAvatar(
+            bytes: avatarBytes,
+            fileName: avatarFileName,
+            contentType: _avatarContentType,
+          );
+
+      if (!mounted) return;
+      if (avatarUrl == null) {
+        final message = ref.read(profileControllerProvider).message;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message ?? 'Avatar upload failed.')),
+        );
+        return;
+      }
+    }
+
     final formData = ProfileFormData(
       username: _usernameController.text,
       tag: _tag?.isNotEmpty == true ? _tag! : _generateTag(),
@@ -85,6 +114,7 @@ class _ProfileCompletionPageState
       city: _cityController.text,
       district: _districtController.text,
       phone: _phoneController.text,
+      avatarUrl: avatarUrl,
     );
 
     final profile = await ref
@@ -103,6 +133,23 @@ class _ProfileCompletionPageState
         SnackBar(content: Text(message)),
       );
     }
+  }
+
+  Future<void> _pickAvatar() async {
+    final image = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 88,
+    );
+    if (image == null) return;
+
+    final bytes = await image.readAsBytes();
+    if (!mounted) return;
+
+    setState(() {
+      _avatarBytes = bytes;
+      _avatarFileName = image.name;
+      _avatarContentType = image.mimeType;
+    });
   }
 
   @override
@@ -127,6 +174,12 @@ class _ProfileCompletionPageState
               _FormCard(
                 child: Column(
                   children: [
+                    _AvatarPicker(
+                      imageBytes: _avatarBytes,
+                      avatarUrl: _avatarUrl,
+                      onPickAvatar: _pickAvatar,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
                     AppTextField(
                       label: 'Username',
                       controller: _usernameController,
@@ -264,6 +317,81 @@ class _FormCard extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.md),
         child: child,
       ),
+    );
+  }
+}
+
+class _AvatarPicker extends StatelessWidget {
+  const _AvatarPicker({
+    required this.imageBytes,
+    required this.avatarUrl,
+    required this.onPickAvatar,
+  });
+
+  final Uint8List? imageBytes;
+  final String? avatarUrl;
+  final VoidCallback onPickAvatar;
+
+  @override
+  Widget build(BuildContext context) {
+    final currentAvatarUrl = avatarUrl?.trim();
+
+    return Column(
+      children: [
+        InkWell(
+          borderRadius: AppRadius.pillBorder,
+          onTap: onPickAvatar,
+          child: Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              CircleAvatar(
+                radius: 48,
+                backgroundColor: AppColors.primarySoft,
+                backgroundImage: imageBytes == null &&
+                        currentAvatarUrl != null &&
+                        currentAvatarUrl.isNotEmpty
+                    ? NetworkImage(currentAvatarUrl)
+                    : null,
+                child: imageBytes != null
+                    ? ClipOval(
+                        child: Image.memory(
+                          imageBytes!,
+                          width: 96,
+                          height: 96,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : currentAvatarUrl == null || currentAvatarUrl.isEmpty
+                        ? const Icon(
+                            Icons.person,
+                            color: AppColors.primary,
+                            size: 46,
+                          )
+                        : null,
+              ),
+              Container(
+                width: 34,
+                height: 34,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.photo_camera_outlined,
+                  color: Colors.white,
+                  size: 18,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        TextButton.icon(
+          onPressed: onPickAvatar,
+          icon: const Icon(Icons.upload_outlined),
+          label: const Text('Upload avatar'),
+        ),
+      ],
     );
   }
 }

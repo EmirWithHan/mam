@@ -8,6 +8,7 @@ class StorageService {
   const StorageService();
 
   static const postImagesBucket = 'post-images';
+  static const avatarsBucket = 'avatars';
 
   Future<String> uploadPostImage({
     required Uint8List bytes,
@@ -33,6 +34,33 @@ class StorageService {
 
     return SupabaseService.client.storage
         .from(postImagesBucket)
+        .getPublicUrl(path);
+  }
+
+  Future<String> uploadAvatar({
+    required Uint8List bytes,
+    required String fileName,
+    String? contentType,
+  }) async {
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    if (userId == null) {
+      throw StateError('You must be signed in to upload an avatar.');
+    }
+
+    final safeFileName = fileName
+        .trim()
+        .replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final path =
+        '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}_$safeFileName';
+
+    await SupabaseService.client.storage.from(avatarsBucket).uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(contentType: contentType),
+        );
+
+    return SupabaseService.client.storage
+        .from(avatarsBucket)
         .getPublicUrl(path);
   }
 }

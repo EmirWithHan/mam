@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'profile_models.dart';
@@ -93,6 +95,29 @@ class ProfileController extends StateNotifier<ProfileState> {
       return profile;
     } catch (error) {
       state = ProfileState(status: ProfileStatus.error, message: '$error');
+      return null;
+    }
+  }
+
+  Future<String?> uploadAvatar({
+    required Uint8List bytes,
+    required String fileName,
+    String? contentType,
+  }) async {
+    state = state.copyWith(status: ProfileStatus.loading);
+
+    try {
+      return await _profileService.uploadAvatar(
+        bytes: bytes,
+        fileName: fileName,
+        contentType: contentType,
+      );
+    } catch (error) {
+      state = ProfileState(
+        status: ProfileStatus.error,
+        profile: state.profile,
+        message: '$error',
+      );
       return null;
     }
   }

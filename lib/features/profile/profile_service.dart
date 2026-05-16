@@ -1,8 +1,15 @@
+import 'dart:typed_data';
+
+import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
 import 'profile_models.dart';
 
 class ProfileService {
-  const ProfileService();
+  const ProfileService({
+    StorageService storageService = const StorageService(),
+  }) : _storageService = storageService;
+
+  final StorageService _storageService;
 
   Future<Profile?> getMyProfile() async {
     final userId = _currentUserId();
@@ -40,6 +47,18 @@ class ProfileService {
         .single();
 
     return Profile.fromJson(data);
+  }
+
+  Future<String> uploadAvatar({
+    required Uint8List bytes,
+    required String fileName,
+    String? contentType,
+  }) {
+    return _storageService.uploadAvatar(
+      bytes: bytes,
+      fileName: fileName,
+      contentType: contentType,
+    );
   }
 
   String _currentUserId() {

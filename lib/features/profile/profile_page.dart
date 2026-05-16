@@ -286,10 +286,40 @@ class _Avatar extends StatelessWidget {
           ? null
           : NetworkImage(avatarUrl),
       child: avatarUrl == null || avatarUrl.trim().isEmpty
-          ? const Icon(Icons.person, color: AppColors.primary, size: 42)
+          ? Text(
+              _initials(profile),
+              style: const TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w800,
+                fontSize: 30,
+              ),
+            )
           : null,
     );
   }
+}
+
+String _initials(Profile profile) {
+  final firstName = profile.firstName?.trim();
+  final lastName = profile.lastName?.trim();
+  final username = profile.username?.trim();
+  final parts = [firstName, lastName]
+      .where((part) => part != null && part.isNotEmpty)
+      .cast<String>()
+      .toList();
+
+  if (parts.isNotEmpty) {
+    return parts
+        .take(2)
+        .map((part) => part.characters.first.toUpperCase())
+        .join();
+  }
+
+  if (username != null && username.isNotEmpty) {
+    return username.characters.first.toUpperCase();
+  }
+
+  return 'M';
 }
 
 String _displayHandle(Profile profile) {
