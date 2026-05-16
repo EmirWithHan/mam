@@ -1,98 +1,128 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
-import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_loader.dart';
+import '../../core/widgets/app_text_field.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/error_view.dart';
+import '../chat/event_chat_list_models.dart';
+import '../chat/event_chat_list_provider.dart';
+import 'widgets/social_chat_group_card.dart';
+import 'widgets/social_future_messages_card.dart';
 
-class SocialPage extends StatelessWidget {
+class SocialPage extends ConsumerStatefulWidget {
   const SocialPage({super.key});
 
   @override
+  ConsumerState<SocialPage> createState() => _SocialPageState();
+}
+
+class _SocialPageState extends ConsumerState<SocialPage> {
+  final _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(() {
+      setState(() => _query = _searchController.text.trim().toLowerCase());
+    });
+    Future.microtask(() {
+      ref.read(eventChatListControllerProvider.notifier).loadChatGroups();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final state = ref.watch(eventChatListControllerProvider);
+    final groups = _filteredGroups(state.groups);
+
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
         title: const Text('MaM', style: AppTextStyles.logo),
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          children: [
-            DecoratedBox(
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                border: Border.all(color: AppColors.border),
-                borderRadius: AppRadius.xlBorder,
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.textPrimary.withValues(alpha: 0.05),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
+        child: RefreshIndicator(
+          onRefresh: () => ref
+              .read(eventChatListControllerProvider.notifier)
+              .refreshChatGroups(),
+          child: ListView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            children: [
+              Text('Chats', style: AppTextStyles.headline),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Your event conversations and community activity.',
+                style: AppTextStyles.body,
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xl),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Center(
-                      child: Container(
-                        width: 64,
-                        height: 64,
-                        decoration: const BoxDecoration(
-                          color: AppColors.primarySoft,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.groups_outlined,
-                          color: AppColors.primary,
-                          size: 34,
-                        ),
+              const SizedBox(height: AppSpacing.lg),
+              AppTextField(
+                label: 'Search',
+                hintText: 'Find event chats...',
+                controller: _searchController,
+                prefixIcon: const Icon(Icons.search),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              const SocialFutureMessagesCard(),
+              const SizedBox(height: AppSpacing.xl),
+              Text('Event Chats', style: AppTextStyles.title),
+              const SizedBox(height: AppSpacing.md),
+              if (state.isLoading && state.groups.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                  child: AppLoader(),
+                )
+              else if (state.message != null)
+                ErrorView(
+                  message: state.message!,
+                  onRetry: () => ref
+                      .read(eventChatListControllerProvider.notifier)
+                      .refreshChatGroups(),
+                )
+              else if (groups.isEmpty)
+                const EmptyState(
+                  title: 'Approved event chats will appear here.',
+                  message: 'Join or host an event to start coordinating.',
+                )
+              else
+                ...groups.map(
+                  (group) => Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: SocialChatGroupCard(
+                      group: group,
+                      onTap: () => context.goNamed(
+                        RouteNames.eventChat,
+                        pathParameters: {'eventId': group.eventId},
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.md),
-                    Text('Social', style: AppTextStyles.headline, textAlign: TextAlign.center),
-                    const SizedBox(height: AppSpacing.md),
-                    Text(
-                      'Event chats and community activity will live here.',
-                      style: AppTextStyles.body,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      'No one-to-one messaging here yet. Social stays centered on events.',
-                      style: AppTextStyles.caption,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                    AppButton(
-                      label: 'Go to Events',
-                      onPressed: () => context.goNamed(RouteNames.events),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppButton(
-                      label: 'Go to Feed',
-                      variant: AppButtonVariant.secondary,
-                      onPressed: () => context.goNamed(RouteNames.feed),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppButton(
-                      label: 'Create something',
-                      variant: AppButtonVariant.outlined,
-                      onPressed: () => context.goNamed(RouteNames.create),
-                    ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  List<EventChatGroup> _filteredGroups(List<EventChatGroup> groups) {
+    if (_query.isEmpty) return groups;
+    return groups.where((group) {
+      return group.title.toLowerCase().contains(_query) ||
+          group.sportType.toLowerCase().contains(_query) ||
+          group.locationLabel.toLowerCase().contains(_query) ||
+          group.displaySubtitle.toLowerCase().contains(_query);
+    }).toList();
   }
 }
