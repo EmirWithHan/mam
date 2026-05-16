@@ -20,17 +20,21 @@ class TrustScoreBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final clampedScore = score.clamp(0, 100).toInt();
     final label = trustScoreLabel(clampedScore);
+    final accentColor = _colorForScore(clampedScore);
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.border),
-        borderRadius: AppRadius.lgBorder,
+        color: compact ? accentColor.withValues(alpha: 0.12) : AppColors.surface,
+        border: Border.all(color: accentColor.withValues(alpha: 0.24)),
+        borderRadius: compact ? AppRadius.pillBorder : AppRadius.lgBorder,
       ),
       child: Padding(
         padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.md),
         child: compact
-            ? Text('$clampedScore - $label', style: AppTextStyles.caption)
+            ? Text(
+                '$clampedScore - $label',
+                style: AppTextStyles.label.copyWith(color: accentColor),
+              )
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -38,13 +42,20 @@ class TrustScoreBadge extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     '$clampedScore',
-                    style: AppTextStyles.headline.copyWith(color: AppColors.primaryDark),
+                    style: AppTextStyles.headline.copyWith(color: accentColor),
                   ),
                   const SizedBox(height: AppSpacing.xs),
-                  Text(label, style: AppTextStyles.body),
+                  Text(label, style: AppTextStyles.bodyStrong),
                 ],
               ),
       ),
     );
+  }
+
+  Color _colorForScore(int score) {
+    if (score <= 39) return AppColors.error;
+    if (score <= 59) return AppColors.warning;
+    if (score <= 79) return AppColors.primary;
+    return AppColors.success;
   }
 }

@@ -109,7 +109,6 @@ class _SettingsUserCard extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        border: Border.all(color: AppColors.border),
         borderRadius: AppRadius.xlBorder,
         boxShadow: [
           BoxShadow(
@@ -154,7 +153,10 @@ class _SettingsUserCard extends StatelessWidget {
   String _displayHandle(Profile? profile) {
     final username = profile?.username?.trim();
     final tag = profile?.tag?.trim();
-    if (username != null && username.isNotEmpty && tag != null && tag.isNotEmpty) {
+    if (username != null &&
+        username.isNotEmpty &&
+        tag != null &&
+        tag.isNotEmpty) {
       return '$username#$tag';
     }
     if (username != null && username.isNotEmpty) return username;
@@ -173,7 +175,7 @@ class _Avatar extends StatelessWidget {
 
     return CircleAvatar(
       radius: 30,
-      backgroundColor: AppColors.surfaceSoft,
+      backgroundColor: AppColors.primarySoft,
       backgroundImage: avatarUrl == null || avatarUrl.trim().isEmpty
           ? null
           : NetworkImage(avatarUrl),

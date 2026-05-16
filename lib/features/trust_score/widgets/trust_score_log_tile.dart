@@ -21,31 +21,60 @@ class TrustScoreLogTile extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        border: Border.all(color: AppColors.border),
         borderRadius: AppRadius.lgBorder,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.textPrimary.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              log.formattedDelta,
-              style: AppTextStyles.title.copyWith(color: deltaColor),
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: deltaColor.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                log.isNegative ? Icons.trending_down : Icons.trending_up,
+                color: deltaColor,
+              ),
             ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              '${log.previousScore} -> ${log.newScore}',
-              style: AppTextStyles.body,
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    log.formattedDelta,
+                    style: AppTextStyles.title.copyWith(color: deltaColor),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    '${log.previousScore} -> ${log.newScore}',
+                    style: AppTextStyles.bodyStrong,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(log.reason, style: AppTextStyles.caption),
+                  if (log.sourceType != null) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      'Source: ${log.sourceType}',
+                      style: AppTextStyles.caption,
+                    ),
+                  ],
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(_formatDate(log.createdAt), style: AppTextStyles.caption),
+                ],
+              ),
             ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(log.reason, style: AppTextStyles.caption),
-            if (log.sourceType != null) ...[
-              const SizedBox(height: AppSpacing.xs),
-              Text('Source: ${log.sourceType}', style: AppTextStyles.caption),
-            ],
-            const SizedBox(height: AppSpacing.xs),
-            Text(_formatDate(log.createdAt), style: AppTextStyles.caption),
           ],
         ),
       ),

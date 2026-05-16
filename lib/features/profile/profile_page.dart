@@ -83,15 +83,37 @@ class _ProfileBody extends StatelessWidget {
         const SizedBox(height: AppSpacing.lg),
         _TrustCard(profile: profile),
         const SizedBox(height: AppSpacing.lg),
-        AppButton(
-          label: profile.isProfileCompleted ? 'Edit profile' : 'Complete profile',
-          onPressed: () => context.goNamed(RouteNames.profileComplete),
-        ),
-        const SizedBox(height: AppSpacing.md),
-        AppButton(
-          label: 'Trust score history',
-          variant: AppButtonVariant.secondary,
-          onPressed: () => context.goNamed(RouteNames.trustScoreHistory),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: AppRadius.lgBorder,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.textPrimary.withValues(alpha: 0.04),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              children: [
+                AppButton(
+                  label: profile.isProfileCompleted
+                      ? 'Edit profile'
+                      : 'Complete profile',
+                  onPressed: () => context.goNamed(RouteNames.profileComplete),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppButton(
+                  label: 'Trust score history',
+                  variant: AppButtonVariant.secondary,
+                  onPressed: () => context.goNamed(RouteNames.trustScoreHistory),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -145,6 +167,8 @@ class _ProfileHeader extends StatelessWidget {
             ],
             const SizedBox(height: AppSpacing.md),
             _ProfileStatusPill(isCompleted: profile.isProfileCompleted),
+            const SizedBox(height: AppSpacing.md),
+            TrustScoreBadge(score: profile.trustScoreValue, compact: true),
           ],
         ),
       ),
@@ -257,7 +281,7 @@ class _Avatar extends StatelessWidget {
 
     return CircleAvatar(
       radius: 42,
-      backgroundColor: AppColors.surfaceSoft,
+      backgroundColor: AppColors.primarySoft,
       backgroundImage: avatarUrl == null || avatarUrl.trim().isEmpty
           ? null
           : NetworkImage(avatarUrl),

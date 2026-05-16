@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_loader.dart';
@@ -31,7 +33,7 @@ class _TrustScoreHistoryPageState extends ConsumerState<TrustScoreHistoryPage> {
     final state = ref.watch(trustScoreControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('MaM')),
+      appBar: AppBar(title: const Text('Trust Score')),
       body: SafeArea(
         child: _TrustScoreHistoryBody(state: state),
       ),
@@ -56,8 +58,9 @@ class _TrustScoreHistoryBody extends ConsumerWidget {
 
     if (state.logs.isEmpty) {
       return const EmptyState(
-        title: 'No trust score changes yet.',
-        message: 'Reliable event behavior will appear here over time.',
+        title: 'Henüz trust score değişikliği yok.',
+        message:
+            'Güven puanın etkinlik davranışların ve güvenlik sinyalleriyle zamanla şekillenir.',
       );
     }
 
@@ -70,7 +73,33 @@ class _TrustScoreHistoryBody extends ConsumerWidget {
         children: [
           Text('Trust Score', style: AppTextStyles.headline),
           const SizedBox(height: AppSpacing.sm),
-          Text('Your reliability history across events.', style: AppTextStyles.body),
+          Text(
+            'Güven puanın etkinlik davranışların ve güvenlik sinyalleriyle zamanla şekillenir.',
+            style: AppTextStyles.body,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.primarySoft,
+              borderRadius: AppRadius.lgBorder,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                children: [
+                  const Icon(Icons.verified_user_outlined,
+                      color: AppColors.primary),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      'Daha güvenilir etkinlik davranışları daha güçlü sosyal sinyaller oluşturur.',
+                      style: AppTextStyles.bodySmall,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
           const SizedBox(height: AppSpacing.lg),
           ...state.logs.map(
             (log) => Padding(

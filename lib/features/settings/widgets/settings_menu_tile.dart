@@ -26,7 +26,7 @@ class SettingsMenuTile extends StatelessWidget {
     final isEnabled = onTap != null;
 
     return Material(
-      color: AppColors.surface,
+      color: Colors.transparent,
       borderRadius: AppRadius.lgBorder,
       child: InkWell(
         onTap: onTap,
@@ -34,7 +34,7 @@ class SettingsMenuTile extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.border),
+            color: AppColors.surface,
             borderRadius: AppRadius.lgBorder,
             boxShadow: [
               BoxShadow(
