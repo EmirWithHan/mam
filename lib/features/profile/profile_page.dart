@@ -8,6 +8,8 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_loader.dart';
+import '../../core/widgets/error_view.dart';
 import '../trust_score/widgets/trust_score_badge.dart';
 import 'profile_models.dart';
 import 'profile_provider.dart';
@@ -33,7 +35,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final profileState = ref.watch(profileControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profile')),
+      appBar: AppBar(
+        title: const Text('MaM'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.menu_rounded),
+            onPressed: () => context.goNamed(RouteNames.settings),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+        ],
+      ),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -52,15 +63,12 @@ class _ProfileBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (profileState.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoader();
     }
 
     if (profileState.status == ProfileStatus.error) {
-      return Center(
-        child: Text(
-          profileState.message ?? 'Could not load profile.',
-          textAlign: TextAlign.center,
-        ),
+      return ErrorView(
+        message: profileState.message ?? 'Could not load profile.',
       );
     }
 
@@ -71,19 +79,9 @@ class _ProfileBody extends StatelessWidget {
 
     return ListView(
       children: [
-        Text(_displayHandle(profile), style: AppTextStyles.headline),
-        const SizedBox(height: AppSpacing.sm),
-        Text(_displayName(profile), style: AppTextStyles.body),
-        if (profile.city?.trim().isNotEmpty == true) ...[
-          const SizedBox(height: AppSpacing.xs),
-          Text(profile.city!, style: AppTextStyles.caption),
-        ],
+        _ProfileHeader(profile: profile),
         const SizedBox(height: AppSpacing.lg),
-        TrustScoreBadge(score: profile.trustScoreValue),
-        const SizedBox(height: AppSpacing.sm),
-        Text(profile.trustDescription, style: AppTextStyles.caption),
-        const SizedBox(height: AppSpacing.lg),
-        _ProfileStatusCard(profile: profile),
+        _TrustCard(profile: profile),
         const SizedBox(height: AppSpacing.lg),
         AppButton(
           label: profile.isProfileCompleted ? 'Edit profile' : 'Complete profile',
@@ -92,32 +90,65 @@ class _ProfileBody extends StatelessWidget {
         const SizedBox(height: AppSpacing.md),
         AppButton(
           label: 'Trust score history',
+          variant: AppButtonVariant.secondary,
           onPressed: () => context.goNamed(RouteNames.trustScoreHistory),
         ),
       ],
     );
   }
+}
 
-  String _displayHandle(Profile profile) {
-    final username = profile.username?.trim();
-    final tag = profile.tag?.trim();
-    if (username != null && username.isNotEmpty && tag != null && tag.isNotEmpty) {
-      return '$username#$tag';
-    }
-    if (username != null && username.isNotEmpty) return username;
-    return 'Your profile';
-  }
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({required this.profile});
 
-  String _displayName(Profile profile) {
-    final firstName = profile.firstName?.trim();
-    final lastName = profile.lastName?.trim();
-    final name = [
-      firstName,
-      lastName,
-    ].where((part) => part != null && part.isNotEmpty).join(' ');
+  final Profile profile;
 
-    if (name.isNotEmpty) return name;
-    return 'Add your name to complete your player card.';
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
+        borderRadius: AppRadius.xlBorder,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.textPrimary.withValues(alpha: 0.05),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          children: [
+            _Avatar(profile: profile),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              _displayName(profile),
+              style: AppTextStyles.headline,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              _displayHandle(profile),
+              style: AppTextStyles.bodySmall,
+              textAlign: TextAlign.center,
+            ),
+            if (profile.city?.trim().isNotEmpty == true) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                profile.city!,
+                style: AppTextStyles.caption,
+                textAlign: TextAlign.center,
+              ),
+            ],
+            const SizedBox(height: AppSpacing.md),
+            _ProfileStatusPill(isCompleted: profile.isProfileCompleted),
+          ],
+        ),
+      ),
+    );
   }
 }
 
@@ -145,8 +176,8 @@ class _ProfileEmptyState extends StatelessWidget {
   }
 }
 
-class _ProfileStatusCard extends StatelessWidget {
-  const _ProfileStatusCard({required this.profile});
+class _TrustCard extends StatelessWidget {
+  const _TrustCard({required this.profile});
 
   final Profile profile;
 
@@ -156,22 +187,105 @@ class _ProfileStatusCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: AppRadius.lgBorder,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.textPrimary.withValues(alpha: 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Profile status', style: AppTextStyles.caption),
-            const SizedBox(height: AppSpacing.xs),
+            Text('Trust score', style: AppTextStyles.title),
+            const SizedBox(height: AppSpacing.md),
+            TrustScoreBadge(score: profile.trustScoreValue),
+            const SizedBox(height: AppSpacing.sm),
             Text(
-              profile.isProfileCompleted ? 'Completed' : 'Incomplete',
-              style: AppTextStyles.body,
+              profile.trustDescription,
+              style: AppTextStyles.caption,
             ),
           ],
         ),
       ),
     );
   }
+}
+
+class _ProfileStatusPill extends StatelessWidget {
+  const _ProfileStatusPill({required this.isCompleted});
+
+  final bool isCompleted;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: isCompleted
+            ? AppColors.success.withValues(alpha: 0.12)
+            : AppColors.warning.withValues(alpha: 0.16),
+        borderRadius: AppRadius.pillBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        child: Text(
+          isCompleted ? 'Profile completed' : 'Profile incomplete',
+          style: AppTextStyles.label.copyWith(
+            color: isCompleted ? AppColors.success : AppColors.warning,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.profile});
+
+  final Profile profile;
+
+  @override
+  Widget build(BuildContext context) {
+    final avatarUrl = profile.avatarUrl;
+
+    return CircleAvatar(
+      radius: 42,
+      backgroundColor: AppColors.surfaceSoft,
+      backgroundImage: avatarUrl == null || avatarUrl.trim().isEmpty
+          ? null
+          : NetworkImage(avatarUrl),
+      child: avatarUrl == null || avatarUrl.trim().isEmpty
+          ? const Icon(Icons.person, color: AppColors.primary, size: 42)
+          : null,
+    );
+  }
+}
+
+String _displayHandle(Profile profile) {
+  final username = profile.username?.trim();
+  final tag = profile.tag?.trim();
+  if (username != null && username.isNotEmpty && tag != null && tag.isNotEmpty) {
+    return '$username#$tag';
+  }
+  if (username != null && username.isNotEmpty) return username;
+  return 'Your profile';
+}
+
+String _displayName(Profile profile) {
+  final firstName = profile.firstName?.trim();
+  final lastName = profile.lastName?.trim();
+  final name = [
+    firstName,
+    lastName,
+  ].where((part) => part != null && part.isNotEmpty).join(' ');
+
+  if (name.isNotEmpty) return name;
+  return 'MaM player';
 }

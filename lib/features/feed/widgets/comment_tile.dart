@@ -25,8 +25,9 @@ class CommentTile extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
+        color: AppColors.surface,
         border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: AppRadius.lgBorder,
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),

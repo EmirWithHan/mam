@@ -24,6 +24,7 @@ class EventCallButton extends ConsumerWidget {
 
     return AppButton(
       label: label,
+      variant: AppButtonVariant.secondary,
       isLoading: isCalling,
       onPressed: callState.loading
           ? null

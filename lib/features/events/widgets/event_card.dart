@@ -19,17 +19,19 @@ class EventCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: AppRadius.lgBorder,
+        side: const BorderSide(color: AppColors.border),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: AppRadius.lgBorder,
         onTap: () => context.goNamed(
           RouteNames.eventDetail,
           pathParameters: {'eventId': event.id},
         ),
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -40,23 +42,45 @@ class EventCard extends StatelessWidget {
                     child: Text(event.title, style: AppTextStyles.title),
                   ),
                   if (event.isSponsored)
-                    const Text(
-                      'Sponsored',
-                      style: TextStyle(color: AppColors.accent),
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySoft,
+                        borderRadius: AppRadius.pillBorder,
+                      ),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: AppSpacing.xs,
+                        ),
+                        child: Text('Sponsored', style: AppTextStyles.label),
+                      ),
                     ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(event.sportType, style: AppTextStyles.body),
-              const SizedBox(height: AppSpacing.xs),
-              Text(event.locationLabel, style: AppTextStyles.caption),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                _formatDateTime(event.eventDate),
-                style: AppTextStyles.caption,
+              const SizedBox(height: AppSpacing.md),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  _InfoChip(
+                    icon: Icons.sports_soccer,
+                    label: event.sportType,
+                    color: AppColors.primarySoft,
+                  ),
+                  _InfoChip(
+                    icon: Icons.group_outlined,
+                    label: event.capacityLabel,
+                    color: AppColors.tertiarySoft,
+                  ),
+                ],
               ),
               const SizedBox(height: AppSpacing.sm),
-              Text(event.capacityLabel, style: AppTextStyles.caption),
+              _MetaLine(icon: Icons.place_outlined, label: event.locationLabel),
+              const SizedBox(height: AppSpacing.xs),
+              _MetaLine(
+                icon: Icons.schedule,
+                label: _formatDateTime(event.eventDate),
+              ),
             ],
           ),
         ),
@@ -71,5 +95,59 @@ class EventCard extends StatelessWidget {
     final hour = value.hour.toString().padLeft(2, '0');
     final minute = value.minute.toString().padLeft(2, '0');
     return '$year-$month-$day $hour:$minute';
+  }
+}
+
+class _InfoChip extends StatelessWidget {
+  const _InfoChip({
+    required this.icon,
+    required this.label,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: AppRadius.pillBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: AppColors.primary),
+            const SizedBox(width: AppSpacing.xs),
+            Text(label, style: AppTextStyles.caption),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MetaLine extends StatelessWidget {
+  const _MetaLine({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Icon(icon, size: 17, color: AppColors.textMuted),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(child: Text(label, style: AppTextStyles.caption)),
+      ],
+    );
   }
 }

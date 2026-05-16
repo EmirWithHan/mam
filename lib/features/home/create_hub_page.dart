@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/route_names.dart';
+import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
@@ -18,6 +19,8 @@ class CreateHubPage extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             Text('Create', style: AppTextStyles.headline),
+            const SizedBox(height: AppSpacing.sm),
+            Text('Host an event or share a match-day moment.', style: AppTextStyles.body),
             const SizedBox(height: AppSpacing.lg),
             _CreateActionCard(
               title: 'Create event',
@@ -55,17 +58,27 @@ class _CreateActionCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
+      elevation: 0,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: AppRadius.lgBorder,
+        side: const BorderSide(color: AppColors.border),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: AppRadius.lgBorder,
         onTap: onTap,
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Row(
             children: [
-              Icon(icon, size: 32),
+              Container(
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: AppColors.surfaceSoft,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: AppColors.primary),
+              ),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(

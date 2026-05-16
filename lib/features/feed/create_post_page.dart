@@ -94,7 +94,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
     final feedState = ref.watch(feedControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Create post')),
+      appBar: AppBar(title: const Text('MaM')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -114,6 +114,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
             AppTextField(
               label: 'Caption',
               controller: _captionController,
+              maxLines: 3,
             ),
             const SizedBox(height: AppSpacing.md),
             AppTextField(
@@ -162,15 +163,20 @@ class _ImagePickerPreview extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             border: Border.all(color: AppColors.border),
-            borderRadius: BorderRadius.circular(AppRadius.md),
+            borderRadius: AppRadius.lgBorder,
+            color: AppColors.surface,
           ),
           child: ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.md),
+            borderRadius: AppRadius.lgBorder,
             child: bytes == null
                 ? Center(
-                    child: Text(
-                      'Choose photo',
-                      style: AppTextStyles.body,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary),
+                        const SizedBox(height: AppSpacing.sm),
+                        Text('Choose photo', style: AppTextStyles.body),
+                      ],
                     ),
                   )
                 : Image.memory(bytes, fit: BoxFit.cover),

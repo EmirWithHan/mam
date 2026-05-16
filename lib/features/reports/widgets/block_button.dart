@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../../auth/auth_provider.dart';
 import '../blocks_provider.dart';
 
@@ -68,6 +69,7 @@ class _BlockButtonState extends ConsumerState<BlockButton> {
     if (widget.compact) {
       return TextButton.icon(
         onPressed: state.loading || blockState == null ? null : _toggleBlock,
+        style: TextButton.styleFrom(foregroundColor: AppColors.textMuted),
         icon: state.loading
             ? const SizedBox.square(
                 dimension: 16,
@@ -80,6 +82,11 @@ class _BlockButtonState extends ConsumerState<BlockButton> {
 
     return OutlinedButton.icon(
       onPressed: state.loading || blockState == null ? null : _toggleBlock,
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.textSecondary,
+        side: const BorderSide(color: AppColors.border),
+        shape: const StadiumBorder(),
+      ),
       icon: state.loading
           ? const SizedBox.square(
               dimension: 16,

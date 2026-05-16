@@ -108,14 +108,14 @@ class _ProfileCompletionPageState
     final profileState = ref.watch(profileControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Complete profile')),
+      appBar: AppBar(title: const Text('MaM')),
       body: SafeArea(
         child: Form(
           key: _formKey,
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
-              Text('Build your player card', style: AppTextStyles.title),
+              Text('Build your player card', style: AppTextStyles.headline),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Help people recognize you around sports and social events.',
@@ -125,18 +125,21 @@ class _ProfileCompletionPageState
               AppTextField(
                 label: 'Username',
                 controller: _usernameController,
+                prefixIcon: const Icon(Icons.alternate_email),
                 validator: _requiredValidator('Username'),
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
                 label: 'First name',
                 controller: _firstNameController,
+                prefixIcon: const Icon(Icons.person_outline),
                 validator: _requiredValidator('First name'),
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
                 label: 'Last name',
                 controller: _lastNameController,
+                prefixIcon: const Icon(Icons.person_outline),
                 validator: _requiredValidator('Last name'),
               ),
               const SizedBox(height: AppSpacing.md),
@@ -145,30 +148,35 @@ class _ProfileCompletionPageState
                 hintText: 'YYYY-MM-DD',
                 controller: _birthDateController,
                 keyboardType: TextInputType.datetime,
+                prefixIcon: const Icon(Icons.calendar_today_outlined),
                 validator: _birthDateValidator,
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
                 label: 'Gender',
                 controller: _genderController,
+                prefixIcon: const Icon(Icons.badge_outlined),
                 validator: _requiredValidator('Gender'),
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
                 label: 'City',
                 controller: _cityController,
+                prefixIcon: const Icon(Icons.location_city_outlined),
                 validator: _requiredValidator('City'),
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
                 label: 'District',
                 controller: _districtController,
+                prefixIcon: const Icon(Icons.place_outlined),
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
                 label: 'Phone',
                 controller: _phoneController,
                 keyboardType: TextInputType.phone,
+                prefixIcon: const Icon(Icons.phone_outlined),
               ),
               const SizedBox(height: AppSpacing.xl),
               AppButton(

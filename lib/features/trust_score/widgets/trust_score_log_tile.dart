@@ -16,12 +16,13 @@ class TrustScoreLogTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final deltaColor = log.isNegative ? AppColors.error : AppColors.primary;
+    final deltaColor = log.isNegative ? AppColors.error : AppColors.success;
 
     return DecoratedBox(
       decoration: BoxDecoration(
+        color: AppColors.surface,
         border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: AppRadius.lgBorder,
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),

@@ -5,6 +5,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_loader.dart';
+import '../../core/widgets/app_text_field.dart';
 import '../auth/auth_provider.dart';
 import 'feed_models.dart';
 import 'feed_provider.dart';
@@ -62,7 +64,7 @@ class _PostCommentsPageState extends ConsumerState<PostCommentsPage> {
     final comments = feedState.commentsByPostId[widget.postId] ?? const [];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Comments')),
+      appBar: AppBar(title: const Text('MaM')),
       body: SafeArea(
         child: Column(
           children: [
@@ -102,15 +104,15 @@ class _CommentsBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading && comments.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoader();
     }
 
     if (message != null) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Text(
-            message!,
+            child: Text(
+              message!,
             style: const TextStyle(color: AppColors.error),
             textAlign: TextAlign.center,
           ),
@@ -161,18 +163,15 @@ class _CommentComposer extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Expanded(
-            child: TextField(
+            child: AppTextField(
+              label: 'Comment',
+              hintText: 'Add a quick thought',
               controller: controller,
-              minLines: 1,
               maxLines: 4,
               textInputAction: TextInputAction.send,
-              onSubmitted: (_) {
+              onFieldSubmitted: (_) {
                 if (!isLoading) onSend();
               },
-              decoration: const InputDecoration(
-                labelText: 'Comment',
-                hintText: 'Add a quick thought',
-              ),
             ),
           ),
           const SizedBox(width: AppSpacing.sm),

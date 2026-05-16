@@ -8,6 +8,8 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_loader.dart';
+import '../../core/widgets/error_view.dart';
 import '../auth/auth_provider.dart';
 import '../profile/profile_provider.dart';
 import '../reports/reports_models.dart';
@@ -68,19 +70,11 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
     final eventAsync = ref.watch(eventDetailProvider(widget.eventId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Event detail')),
+      appBar: AppBar(title: const Text('MaM')),
       body: SafeArea(
         child: eventAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Center(
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              child: Text(
-                '$error',
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
+          loading: () => const AppLoader(),
+          error: (error, _) => ErrorView(message: '$error'),
           data: (event) {
             final authState = ref.watch(authControllerProvider);
             final isHost = event.isHost(authState.userId);
@@ -121,25 +115,44 @@ class _EventDetailBody extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(child: Text(event.title, style: AppTextStyles.headline)),
-            if (event.isSponsored)
-              const Text(
-                'Sponsored',
-                style: TextStyle(color: AppColors.accent),
-              ),
-          ],
+        DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            border: Border.all(color: AppColors.border),
+            borderRadius: AppRadius.xlBorder,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(child: Text(event.title, style: AppTextStyles.headline)),
+                    if (event.isSponsored)
+                      Text(
+                        'Sponsored',
+                        style: AppTextStyles.label.copyWith(color: AppColors.warning),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(event.sportType, style: AppTextStyles.subtitle),
+              ],
+            ),
+          ),
         ),
         const SizedBox(height: AppSpacing.sm),
-        Text(event.sportType, style: AppTextStyles.title),
-        const SizedBox(height: AppSpacing.lg),
-        _DetailLine(label: 'Description', value: event.description ?? '-'),
-        _DetailLine(label: 'Area', value: event.locationLabel),
-        _DetailLine(label: 'Location', value: event.locationText ?? '-'),
-        _DetailLine(label: 'Date', value: _formatDateTime(event.eventDate)),
-        _DetailLine(label: 'Capacity', value: event.capacityLabel),
+        _DetailCard(
+          children: [
+            _DetailLine(label: 'Description', value: event.description ?? '-'),
+            _DetailLine(label: 'Area', value: event.locationLabel),
+            _DetailLine(label: 'Location', value: event.locationText ?? '-'),
+            _DetailLine(label: 'Date', value: _formatDateTime(event.eventDate)),
+            _DetailLine(label: 'Capacity', value: event.capacityLabel),
+          ],
+        ),
         const SizedBox(height: AppSpacing.sm),
         if (!isHost)
           Wrap(
@@ -240,8 +253,9 @@ class _HostRequestsSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
+        color: AppColors.surface,
         border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: AppRadius.lgBorder,
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -278,6 +292,30 @@ class _HostRequestsSection extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DetailCard extends StatelessWidget {
+  const _DetailCard({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
+        borderRadius: AppRadius.lgBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: children,
         ),
       ),
     );

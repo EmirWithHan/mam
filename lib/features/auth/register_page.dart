@@ -53,19 +53,22 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     final authState = ref.watch(authControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Create account')),
+      appBar: AppBar(title: const Text('MaM')),
       body: SafeArea(
         child: Form(
           key: _formKey,
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
-              Text('Start playing', style: AppTextStyles.title),
+              Text('Aramıza katıl', style: AppTextStyles.headline),
+              const SizedBox(height: AppSpacing.sm),
+              Text('Etkinliklere katılmak ve ev sahipliği yapmak için hesabını oluştur.', style: AppTextStyles.body),
               const SizedBox(height: AppSpacing.lg),
               AppTextField(
-                label: 'Email',
+                label: 'E-posta',
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
+                prefixIcon: const Icon(Icons.mail_outline),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Email is required.';
@@ -75,9 +78,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
-                label: 'Password',
+                label: 'Şifre',
                 controller: _passwordController,
                 obscureText: true,
+                prefixIcon: const Icon(Icons.lock_outline),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Password is required.';
@@ -87,9 +91,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
-                label: 'Confirm password',
+                label: 'Şifre tekrar',
                 controller: _confirmPasswordController,
                 obscureText: true,
+                prefixIcon: const Icon(Icons.lock_outline),
                 validator: (value) {
                   if (value != _passwordController.text) {
                     return 'Passwords do not match.';
@@ -99,14 +104,14 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               ),
               const SizedBox(height: AppSpacing.xl),
               AppButton(
-                label: 'Create account',
+                label: 'Kayıt Ol',
                 isLoading: authState.isLoading,
                 onPressed: _submit,
               ),
               const SizedBox(height: AppSpacing.md),
               TextButton(
                 onPressed: () => context.goNamed(RouteNames.login),
-                child: const Text('Login'),
+                child: const Text('Giriş Yap'),
               ),
             ],
           ),

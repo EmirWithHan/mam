@@ -51,19 +51,22 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final authState = ref.watch(authControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Login')),
+      appBar: AppBar(title: const Text('MaM')),
       body: SafeArea(
         child: Form(
           key: _formKey,
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
-              Text('Welcome back', style: AppTextStyles.title),
+              Text('Tekrar hoş geldin', style: AppTextStyles.headline),
+              const SizedBox(height: AppSpacing.sm),
+              Text('Etkinliklere ve ekibine geri dön.', style: AppTextStyles.body),
               const SizedBox(height: AppSpacing.lg),
               AppTextField(
-                label: 'Email',
+                label: 'E-posta',
                 controller: _emailController,
                 keyboardType: TextInputType.emailAddress,
+                prefixIcon: const Icon(Icons.mail_outline),
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
                     return 'Email is required.';
@@ -73,9 +76,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
-                label: 'Password',
+                label: 'Şifre',
                 controller: _passwordController,
                 obscureText: true,
+                prefixIcon: const Icon(Icons.lock_outline),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Password is required.';
@@ -85,14 +89,14 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               ),
               const SizedBox(height: AppSpacing.xl),
               AppButton(
-                label: 'Login',
+                label: 'Giriş Yap',
                 isLoading: authState.isLoading,
                 onPressed: _submit,
               ),
               const SizedBox(height: AppSpacing.md),
               TextButton(
                 onPressed: () => context.goNamed(RouteNames.register),
-                child: const Text('Create account'),
+                child: const Text('Kayıt Ol'),
               ),
             ],
           ),

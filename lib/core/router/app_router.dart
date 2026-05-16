@@ -15,6 +15,7 @@ import '../../features/home/create_hub_page.dart';
 import '../../features/home/home_page.dart';
 import '../../features/profile/profile_completion_page.dart';
 import '../../features/profile/profile_page.dart';
+import '../../features/settings/settings_page.dart';
 import '../../features/social/social_page.dart';
 import '../../features/trust_score/trust_score_history_page.dart';
 import '../widgets/main_navigation_shell.dart';
@@ -32,7 +33,7 @@ GoRouter createAppRouter(AuthState authState) {
       final isSplashRoute = location == RoutePaths.splash;
 
       if (isAuthenticated && (isAuthRoute || isSplashRoute)) {
-        return RoutePaths.home;
+        return RoutePaths.events;
       }
 
       if (!isAuthenticated && !isAuthRoute) {
@@ -76,6 +77,11 @@ GoRouter createAppRouter(AuthState authState) {
         ),
       ),
       GoRoute(
+        path: RoutePaths.settings,
+        name: RouteNames.settings,
+        builder: (context, state) => const SettingsPage(),
+      ),
+      GoRoute(
         path: RoutePaths.trustScoreHistory,
         name: RouteNames.trustScoreHistory,
         builder: (context, state) => const TrustScoreHistoryPage(),
@@ -84,7 +90,7 @@ GoRouter createAppRouter(AuthState authState) {
         path: RoutePaths.feed,
         name: RouteNames.feed,
         builder: (context, state) => const MainNavigationShell(
-          currentIndex: 1,
+          currentIndex: 0,
           child: FeedPage(),
         ),
       ),
@@ -113,7 +119,7 @@ GoRouter createAppRouter(AuthState authState) {
         path: RoutePaths.events,
         name: RouteNames.events,
         builder: (context, state) => const MainNavigationShell(
-          currentIndex: 0,
+          currentIndex: 1,
           child: EventsPage(),
         ),
       ),
@@ -128,14 +134,20 @@ GoRouter createAppRouter(AuthState authState) {
       GoRoute(
         path: RoutePaths.createEvent,
         name: RouteNames.createEvent,
-        builder: (context, state) => const CreateEventPage(),
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 1,
+          child: CreateEventPage(),
+        ),
       ),
       GoRoute(
         path: RoutePaths.eventChat,
         name: RouteNames.eventChat,
         builder: (context, state) {
           final eventId = state.pathParameters['eventId'] ?? '';
-          return EventChatPage(eventId: eventId);
+          return MainNavigationShell(
+            currentIndex: 1,
+            child: EventChatPage(eventId: eventId),
+          );
         },
       ),
       GoRoute(
@@ -143,13 +155,19 @@ GoRouter createAppRouter(AuthState authState) {
         name: RouteNames.eventDetail,
         builder: (context, state) {
           final eventId = state.pathParameters['eventId'] ?? '';
-          return EventDetailPage(eventId: eventId);
+          return MainNavigationShell(
+            currentIndex: 1,
+            child: EventDetailPage(eventId: eventId),
+          );
         },
       ),
       GoRoute(
         path: RoutePaths.home,
         name: RouteNames.home,
-        builder: (context, state) => const HomePage(),
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 0,
+          child: FeedPage(),
+        ),
       ),
     ],
   );

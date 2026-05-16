@@ -83,6 +83,11 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
         children: [
           OutlinedButton(
             onPressed: followState.loading ? null : _toggleFollow,
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.primaryDark,
+              side: const BorderSide(color: AppColors.border),
+              shape: const StadiumBorder(),
+            ),
             child: followState.loading
                 ? const SizedBox.square(
                     dimension: 16,
@@ -103,6 +108,9 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
       children: [
         AppButton(
           label: label,
+          variant: stats.isFollowedByMe
+              ? AppButtonVariant.secondary
+              : AppButtonVariant.primary,
           isLoading: followState.loading,
           onPressed: _toggleFollow,
         ),

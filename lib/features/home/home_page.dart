@@ -12,7 +12,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Match A Man')),
+      appBar: AppBar(title: const Text('MaM')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -21,8 +21,8 @@ class HomePage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Match A Man',
-                style: AppTextStyles.headline,
+                'MaM',
+                style: AppTextStyles.logo,
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -38,8 +38,9 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.md),
               AppButton(
-                label: 'Create',
-                onPressed: () => context.goNamed(RouteNames.create),
+                label: 'Open feed',
+                variant: AppButtonVariant.secondary,
+                onPressed: () => context.goNamed(RouteNames.feed),
               ),
             ],
           ),

@@ -6,6 +6,9 @@ import '../../core/router/route_names.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_loader.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/error_view.dart';
 import 'feed_provider.dart';
 import 'widgets/post_card.dart';
 
@@ -30,14 +33,19 @@ class _FeedPageState extends ConsumerState<FeedPage> {
     final feedState = ref.watch(feedControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Feed')),
+      appBar: AppBar(title: const Text('MaM')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Moments from the community', style: AppTextStyles.title),
+              Text('Home', style: AppTextStyles.headline),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Moments from the community',
+                style: AppTextStyles.subtitle,
+              ),
               const SizedBox(height: AppSpacing.md),
               AppButton(
                 label: 'Share a moment',
@@ -61,25 +69,19 @@ class _FeedBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (feedState.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const AppLoader();
     }
 
     if (feedState.status == FeedStatus.error) {
-      return Center(
-        child: Text(
-          feedState.message ?? 'Could not load feed.',
-          textAlign: TextAlign.center,
-        ),
+      return ErrorView(
+        message: feedState.message ?? 'Could not load feed.',
       );
     }
 
     if (feedState.posts.isEmpty) {
-      return Center(
-        child: Text(
-          'No moments yet. Share the first photo from the community.',
-          style: AppTextStyles.body,
-          textAlign: TextAlign.center,
-        ),
+      return const EmptyState(
+        title: 'No moments yet.',
+        message: 'Share the first photo from the community.',
       );
     }
 

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../theme/app_colors.dart';
+import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
 
 class EmptyState extends StatelessWidget {
   const EmptyState({
@@ -17,19 +20,35 @@ class EmptyState extends StatelessWidget {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(title, style: Theme.of(context).textTheme.titleMedium),
-            if (message != null) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                message!,
-                style: Theme.of(context).textTheme.bodyMedium,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ],
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            border: Border.all(color: AppColors.border),
+            borderRadius: AppRadius.lgBorder,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.sports_handball, color: AppColors.primary),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  title,
+                  style: AppTextStyles.title,
+                  textAlign: TextAlign.center,
+                ),
+                if (message != null) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    message!,
+                    style: AppTextStyles.bodySmall,
+                    textAlign: TextAlign.center,
+                  ),
+                ],
+              ],
+            ),
+          ),
         ),
       ),
     );

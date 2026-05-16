@@ -3,9 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/route_names.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../profile/profile_provider.dart';
 import 'events_models.dart';
@@ -100,14 +103,14 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
         profileState.isLoading) {
       return const Scaffold(
         body: SafeArea(
-          child: Center(child: CircularProgressIndicator()),
+          child: AppLoader(),
         ),
       );
     }
 
     if (!profileState.canCreateEvent) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Create event')),
+        appBar: AppBar(title: const Text('MaM')),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -135,6 +138,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                 const SizedBox(height: AppSpacing.md),
                 AppButton(
                   label: 'Browse events',
+                  variant: AppButtonVariant.secondary,
                   onPressed: () => context.goNamed(RouteNames.events),
                 ),
               ],
@@ -145,15 +149,24 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Create event')),
+      appBar: AppBar(title: const Text('MaM')),
       body: SafeArea(
         child: Form(
           key: _formKey,
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
-              Text('Host a match', style: AppTextStyles.title),
+              Text('Host an Event', style: AppTextStyles.headline),
+              const SizedBox(height: AppSpacing.sm),
+              Text('Gather your squad, let\'s play.', style: AppTextStyles.body),
               const SizedBox(height: AppSpacing.lg),
+              _SportChips(
+                selectedSport: _sportTypeController.text,
+                onSelected: (sport) {
+                  setState(() => _sportTypeController.text = sport);
+                },
+              ),
+              const SizedBox(height: AppSpacing.md),
               AppTextField(
                 label: 'Title',
                 controller: _titleController,
@@ -163,6 +176,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
               AppTextField(
                 label: 'Description',
                 controller: _descriptionController,
+                maxLines: 3,
               ),
               const SizedBox(height: AppSpacing.md),
               AppTextField(
@@ -307,5 +321,42 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     if (value.length != 16) return null;
     final normalized = value.replaceFirst(' ', 'T');
     return DateTime.tryParse(normalized);
+  }
+}
+
+class _SportChips extends StatelessWidget {
+  const _SportChips({
+    required this.selectedSport,
+    required this.onSelected,
+  });
+
+  final String selectedSport;
+  final ValueChanged<String> onSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    const sports = ['Football', 'Tennis', 'Running'];
+
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      children: sports.map((sport) {
+        final isSelected = selectedSport.trim().toLowerCase() ==
+            sport.toLowerCase();
+
+        return ActionChip(
+          label: Text(sport),
+          onPressed: () => onSelected(sport),
+          backgroundColor: isSelected ? AppColors.primary : AppColors.surface,
+          labelStyle: AppTextStyles.label.copyWith(
+            color: isSelected ? Colors.white : AppColors.primary,
+          ),
+          side: BorderSide(
+            color: isSelected ? AppColors.primary : AppColors.border,
+          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.pillBorder),
+        );
+      }).toList(),
+    );
   }
 }

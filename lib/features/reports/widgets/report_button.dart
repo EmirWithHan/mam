@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_colors.dart';
 import '../reports_models.dart';
 import 'report_dialog.dart';
 
@@ -23,6 +24,7 @@ class ReportButton extends StatelessWidget {
       return TextButton.icon(
         onPressed: () => _openDialog(context),
         icon: const Icon(Icons.flag_outlined),
+        style: TextButton.styleFrom(foregroundColor: AppColors.textMuted),
         label: Text(label),
       );
     }
@@ -30,6 +32,11 @@ class ReportButton extends StatelessWidget {
     return OutlinedButton.icon(
       onPressed: () => _openDialog(context),
       icon: const Icon(Icons.flag_outlined),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.textSecondary,
+        side: const BorderSide(color: AppColors.border),
+        shape: const StadiumBorder(),
+      ),
       label: Text(label),
     );
   }

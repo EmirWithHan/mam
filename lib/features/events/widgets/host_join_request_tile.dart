@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../join_requests_models.dart';
@@ -20,25 +22,31 @@ class HostJoinRequestTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      title: Text(request.userId, style: AppTextStyles.body),
-      subtitle: Text(request.status, style: AppTextStyles.caption),
-      trailing: request.isPending
-          ? Wrap(
-              spacing: AppSpacing.xs,
-              children: [
-                TextButton(
-                  onPressed: isLoading ? null : onApprove,
-                  child: const Text('Approve'),
-                ),
-                TextButton(
-                  onPressed: isLoading ? null : onReject,
-                  child: const Text('Reject'),
-                ),
-              ],
-            )
-          : null,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: AppRadius.mdBorder,
+      ),
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        title: Text(request.userId, style: AppTextStyles.bodyStrong),
+        subtitle: Text(request.status, style: AppTextStyles.caption),
+        trailing: request.isPending
+            ? Wrap(
+                spacing: AppSpacing.xs,
+                children: [
+                  TextButton(
+                    onPressed: isLoading ? null : onApprove,
+                    child: const Text('Approve'),
+                  ),
+                  TextButton(
+                    onPressed: isLoading ? null : onReject,
+                    child: const Text('Reject'),
+                  ),
+                ],
+              )
+            : null,
+      ),
     );
   }
 }

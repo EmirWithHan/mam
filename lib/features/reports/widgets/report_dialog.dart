@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_button.dart';
 import '../reports_models.dart';
 import '../reports_provider.dart';
@@ -52,6 +54,8 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
     final state = ref.watch(reportsControllerProvider);
 
     return AlertDialog(
+      backgroundColor: AppColors.surface,
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.lgBorder),
       title: const Text('Report'),
       content: Column(
         mainAxisSize: MainAxisSize.min,
@@ -96,7 +100,7 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
       actions: [
         TextButton(
           onPressed: state.loading ? null : () => Navigator.of(context).pop(),
-          child: const Text('Cancel'),
+          child: Text('Cancel', style: AppTextStyles.bodySmall),
         ),
         SizedBox(
           width: 120,

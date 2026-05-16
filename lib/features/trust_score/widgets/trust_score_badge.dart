@@ -25,7 +25,7 @@ class TrustScoreBadge extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         border: Border.all(color: AppColors.border),
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: AppRadius.lgBorder,
       ),
       child: Padding(
         padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.md),
@@ -34,9 +34,12 @@ class TrustScoreBadge extends StatelessWidget {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Trust score', style: AppTextStyles.caption),
+                  Text('Trust score', style: AppTextStyles.label),
                   const SizedBox(height: AppSpacing.xs),
-                  Text('$clampedScore', style: AppTextStyles.headline),
+                  Text(
+                    '$clampedScore',
+                    style: AppTextStyles.headline.copyWith(color: AppColors.primaryDark),
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(label, style: AppTextStyles.body),
                 ],

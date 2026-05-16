@@ -7,6 +7,7 @@ class RouteNames {
   static const register = 'register';
   static const profile = 'profile';
   static const profileComplete = 'profileComplete';
+  static const settings = 'settings';
   static const trustScoreHistory = 'trustScoreHistory';
   static const feed = 'feed';
   static const create = 'create';
@@ -29,6 +30,7 @@ class RoutePaths {
   static const register = '/auth/register';
   static const profile = '/profile';
   static const profileComplete = '/profile/complete';
+  static const settings = '/settings';
   static const trustScoreHistory = '/profile/trust-score';
   static const feed = '/feed';
   static const create = '/create';

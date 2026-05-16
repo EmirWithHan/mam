@@ -32,9 +32,11 @@ class PostCard extends ConsumerWidget {
     final isMine = currentUserId != null && post.userId == currentUserId;
 
     return Card(
+      elevation: 0,
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(AppRadius.md),
+        borderRadius: AppRadius.lgBorder,
+        side: const BorderSide(color: AppColors.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -63,7 +65,7 @@ class PostCard extends ConsumerWidget {
                     Expanded(
                       child: Text(
                         _shortUserId(post.userId),
-                        style: AppTextStyles.caption,
+                        style: AppTextStyles.bodyStrong,
                       ),
                     ),
                     if (!isMine)
@@ -95,11 +97,20 @@ class PostCard extends ConsumerWidget {
                   ),
                 const SizedBox(height: AppSpacing.sm),
                 if (post.eventId != null) ...[
-                  const Text(
-                    'Linked event',
-                    style: TextStyle(color: AppColors.primary),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: AppColors.secondary.withValues(alpha: 0.16),
+                      borderRadius: AppRadius.pillBorder,
+                    ),
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
+                      child: Text('Linked event', style: AppTextStyles.label),
+                    ),
                   ),
-                  const SizedBox(height: AppSpacing.xs),
+                  const SizedBox(height: AppSpacing.sm),
                 ],
                 if (caption != null && caption.isNotEmpty) ...[
                   Text(caption, style: AppTextStyles.body),
@@ -115,6 +126,9 @@ class PostCard extends ConsumerWidget {
                         item.isLikedByMe
                             ? Icons.favorite
                             : Icons.favorite_border,
+                        color: item.isLikedByMe
+                            ? AppColors.primary
+                            : AppColors.textMuted,
                       ),
                       label: Text('${item.likeCount}'),
                     ),
