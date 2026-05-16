@@ -102,7 +102,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
             Text('Share a moment', style: AppTextStyles.headline),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Post a photo from your sports life. Linking an event is optional.',
+              'Post a photo from your day, match, or activity.',
               style: AppTextStyles.body,
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -114,12 +114,14 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
             AppTextField(
               label: 'Caption',
               controller: _captionController,
+              prefixIcon: const Icon(Icons.short_text),
               maxLines: 3,
             ),
             const SizedBox(height: AppSpacing.md),
             AppTextField(
               label: 'Event ID (optional)',
               controller: _eventIdController,
+              prefixIcon: const Icon(Icons.event_outlined),
             ),
             const SizedBox(height: AppSpacing.xl),
             AppButton(
@@ -156,15 +158,21 @@ class _ImagePickerPreview extends StatelessWidget {
     final bytes = imageBytes;
 
     return InkWell(
-      borderRadius: BorderRadius.circular(AppRadius.md),
+      borderRadius: AppRadius.xlBorder,
       onTap: onPickImage,
       child: AspectRatio(
         aspectRatio: 4 / 3,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            border: Border.all(color: AppColors.border),
             borderRadius: AppRadius.lgBorder,
             color: AppColors.surface,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.textPrimary.withValues(alpha: 0.05),
+                blurRadius: 22,
+                offset: const Offset(0, 10),
+              ),
+            ],
           ),
           child: ClipRRect(
             borderRadius: AppRadius.lgBorder,
@@ -173,9 +181,26 @@ class _ImagePickerPreview extends StatelessWidget {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        const Icon(Icons.add_photo_alternate_outlined, color: AppColors.primary),
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: const BoxDecoration(
+                            color: AppColors.primarySoft,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.add_photo_alternate_outlined,
+                            color: AppColors.primary,
+                          ),
+                        ),
                         const SizedBox(height: AppSpacing.sm),
-                        Text('Choose photo', style: AppTextStyles.body),
+                        Text('Choose photo', style: AppTextStyles.bodyStrong),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          'A match, activity, or community moment',
+                          style: AppTextStyles.caption,
+                          textAlign: TextAlign.center,
+                        ),
                       ],
                     ),
                   )

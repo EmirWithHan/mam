@@ -79,14 +79,22 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
     if (widget.compact) {
       return Wrap(
         crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: AppSpacing.sm,
+        spacing: AppSpacing.xs,
+        runSpacing: AppSpacing.xs,
         children: [
-          OutlinedButton(
+          FilledButton.tonal(
             onPressed: followState.loading ? null : _toggleFollow,
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.primaryDark,
-              side: const BorderSide(color: AppColors.border),
+            style: FilledButton.styleFrom(
+              backgroundColor: stats.isFollowedByMe
+                  ? AppColors.primarySoft
+                  : AppColors.primary,
+              foregroundColor:
+                  stats.isFollowedByMe ? AppColors.primary : Colors.white,
               shape: const StadiumBorder(),
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
             ),
             child: followState.loading
                 ? const SizedBox.square(

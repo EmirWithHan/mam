@@ -64,7 +64,7 @@ class _PostCommentsPageState extends ConsumerState<PostCommentsPage> {
     final comments = feedState.commentsByPostId[widget.postId] ?? const [];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('MaM')),
+      appBar: AppBar(title: const Text('Comments')),
       body: SafeArea(
         child: Column(
           children: [
@@ -111,8 +111,8 @@ class _CommentsBody extends StatelessWidget {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Text(
-              message!,
+          child: Text(
+            message!,
             style: const TextStyle(color: AppColors.error),
             textAlign: TextAlign.center,
           ),
@@ -122,10 +122,30 @@ class _CommentsBody extends StatelessWidget {
 
     if (comments.isEmpty) {
       return Center(
-        child: Text(
-          'No comments yet.',
-          style: AppTextStyles.body,
-          textAlign: TextAlign.center,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(
+                Icons.mode_comment_outlined,
+                color: AppColors.primary,
+                size: 36,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                'No comments yet.',
+                style: AppTextStyles.title,
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Start the conversation.',
+                style: AppTextStyles.body,
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -167,6 +187,7 @@ class _CommentComposer extends StatelessWidget {
               label: 'Comment',
               hintText: 'Add a quick thought',
               controller: controller,
+              prefixIcon: const Icon(Icons.mode_comment_outlined),
               maxLines: 4,
               textInputAction: TextInputAction.send,
               onFieldSubmitted: (_) {

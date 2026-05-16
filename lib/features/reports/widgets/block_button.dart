@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../auth/auth_provider.dart';
 import '../blocks_provider.dart';
 
@@ -69,7 +70,14 @@ class _BlockButtonState extends ConsumerState<BlockButton> {
     if (widget.compact) {
       return TextButton.icon(
         onPressed: state.loading || blockState == null ? null : _toggleBlock,
-        style: TextButton.styleFrom(foregroundColor: AppColors.textMuted),
+        style: TextButton.styleFrom(
+          foregroundColor: blockState?.isBlockedByMe == true
+              ? AppColors.error
+              : AppColors.textMuted,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          minimumSize: const Size(0, 36),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
         icon: state.loading
             ? const SizedBox.square(
                 dimension: 16,

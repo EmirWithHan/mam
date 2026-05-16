@@ -6,6 +6,7 @@ import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_text_field.dart';
 import '../reports_models.dart';
 import '../reports_provider.dart';
 
@@ -56,11 +57,16 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
     return AlertDialog(
       backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(borderRadius: AppRadius.lgBorder),
-      title: const Text('Report'),
+      title: Text('Report', style: AppTextStyles.title),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          Text(
+            'Help keep MaM safe and trustworthy.',
+            style: AppTextStyles.caption,
+          ),
+          const SizedBox(height: AppSpacing.md),
           DropdownButtonFormField<ReportReason>(
             value: _reason,
             decoration: const InputDecoration(labelText: 'Reason'),
@@ -80,13 +86,10 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
                   },
           ),
           const SizedBox(height: AppSpacing.md),
-          TextField(
+          AppTextField(
+            label: 'Description optional',
             controller: _descriptionController,
-            minLines: 2,
             maxLines: 4,
-            decoration: const InputDecoration(
-              labelText: 'Description optional',
-            ),
           ),
           if (state.message != null) ...[
             const SizedBox(height: AppSpacing.md),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../reports_models.dart';
 import 'report_dialog.dart';
 
@@ -24,7 +25,12 @@ class ReportButton extends StatelessWidget {
       return TextButton.icon(
         onPressed: () => _openDialog(context),
         icon: const Icon(Icons.flag_outlined),
-        style: TextButton.styleFrom(foregroundColor: AppColors.textMuted),
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.textMuted,
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
+          minimumSize: const Size(0, 36),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
         label: Text(label),
       );
     }

@@ -28,8 +28,14 @@ class CommentTile extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        border: Border.all(color: AppColors.border),
         borderRadius: AppRadius.lgBorder,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.textPrimary.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.md),
@@ -50,12 +56,23 @@ class CommentTile extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(comment.comment, style: AppTextStyles.body),
-            const SizedBox(height: AppSpacing.xs),
-            Text(_formatDate(comment.createdAt), style: AppTextStyles.caption),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                const Icon(
+                  Icons.schedule,
+                  color: AppColors.textMuted,
+                  size: 14,
+                ),
+                const SizedBox(width: AppSpacing.xs),
+                Text(_formatDate(comment.createdAt), style: AppTextStyles.caption),
+              ],
+            ),
             if (!isMine) ...[
-              const SizedBox(height: AppSpacing.xs),
+              const SizedBox(height: AppSpacing.sm),
               Wrap(
                 spacing: AppSpacing.xs,
+                runSpacing: AppSpacing.xs,
                 children: [
                   ReportButton(
                     targetType: ReportTargetType.comment,
@@ -79,6 +96,7 @@ class CommentTile extends StatelessWidget {
       ),
     );
   }
+
   String _formatDate(DateTime value) {
     final year = value.year.toString().padLeft(4, '0');
     final month = value.month.toString().padLeft(2, '0');

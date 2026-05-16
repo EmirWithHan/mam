@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/route_names.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
@@ -40,16 +42,65 @@ class _FeedPageState extends ConsumerState<FeedPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Home', style: AppTextStyles.headline),
+              Row(
+                children: [
+                  Expanded(child: Text('Moments', style: AppTextStyles.headline)),
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primarySoft,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.photo_camera_outlined,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Moments from the community',
-                style: AppTextStyles.subtitle,
+                'Sports days, match energy, and community snapshots.',
+                style: AppTextStyles.body,
               ),
               const SizedBox(height: AppSpacing.md),
-              AppButton(
-                label: 'Share a moment',
-                onPressed: () => context.goNamed(RouteNames.createPost),
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: AppRadius.lgBorder,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.textPrimary.withValues(alpha: 0.04),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.add_photo_alternate_outlined,
+                          color: AppColors.primary),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(
+                          'Share a photo from your day or activity.',
+                          style: AppTextStyles.bodySmall,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      SizedBox(
+                        width: 132,
+                        child: AppButton(
+                          label: 'Post photo',
+                          onPressed: () => context.goNamed(RouteNames.createPost),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: AppSpacing.lg),
               Expanded(child: _FeedBody(feedState: feedState)),
@@ -81,7 +132,7 @@ class _FeedBody extends ConsumerWidget {
     if (feedState.posts.isEmpty) {
       return const EmptyState(
         title: 'No moments yet.',
-        message: 'Share the first photo from the community.',
+        message: 'Share the first sports photo from the community.',
       );
     }
 

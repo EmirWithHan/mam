@@ -32,29 +32,21 @@ class PostCard extends ConsumerWidget {
     final currentUserId = ref.watch(authControllerProvider).userId;
     final isMine = currentUserId != null && post.userId == currentUserId;
 
-    return Card(
-      elevation: 0,
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: AppRadius.lgBorder,
-        side: const BorderSide(color: AppColors.border),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadius.xlBorder,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.textPrimary.withValues(alpha: 0.06),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AspectRatio(
-            aspectRatio: 4 / 3,
-            child: Image.network(
-              post.imageUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return const ColoredBox(
-                  color: AppColors.border,
-                  child: Center(child: Icon(Icons.image_not_supported)),
-                );
-              },
-            ),
-          ),
           Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Column(
@@ -73,6 +65,7 @@ class PostCard extends ConsumerWidget {
                 if (!isMine)
                   Wrap(
                     spacing: AppSpacing.xs,
+                    runSpacing: AppSpacing.xs,
                     children: [
                       ReportButton(
                         targetType: ReportTargetType.post,
@@ -90,19 +83,52 @@ class PostCard extends ConsumerWidget {
                       ),
                     ],
                   ),
-                const SizedBox(height: AppSpacing.sm),
+                const SizedBox(height: AppSpacing.md),
+                ClipRRect(
+                  borderRadius: AppRadius.lgBorder,
+                  child: AspectRatio(
+                    aspectRatio: 4 / 3,
+                    child: Image.network(
+                      post.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const ColoredBox(
+                          color: AppColors.border,
+                          child: Center(child: Icon(Icons.image_not_supported)),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
                 if (post.eventId != null) ...[
                   DecoratedBox(
                     decoration: BoxDecoration(
-                      color: AppColors.secondary.withValues(alpha: 0.16),
+                      color: AppColors.secondarySoft,
                       borderRadius: AppRadius.pillBorder,
                     ),
-                    child: const Padding(
-                      padding: EdgeInsets.symmetric(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
                         horizontal: AppSpacing.sm,
                         vertical: AppSpacing.xs,
                       ),
-                      child: Text('Linked event', style: AppTextStyles.label),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.event_outlined,
+                            color: AppColors.primary,
+                            size: 15,
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Text(
+                            'Linked event',
+                            style: AppTextStyles.label.copyWith(
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -113,27 +139,42 @@ class PostCard extends ConsumerWidget {
                 ],
                 Text(_formatDate(post.createdAt), style: AppTextStyles.caption),
                 const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    TextButton.icon(
-                      onPressed: onToggleLike,
-                      icon: Icon(
-                        item.isLikedByMe
-                            ? Icons.favorite
-                            : Icons.favorite_border,
-                        color: item.isLikedByMe
-                            ? AppColors.primary
-                            : AppColors.textMuted,
-                      ),
-                      label: Text('${item.likeCount}'),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: AppRadius.pillBorder,
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: AppSpacing.xs,
                     ),
-                    const SizedBox(width: AppSpacing.sm),
-                    TextButton.icon(
-                      onPressed: onOpenComments,
-                      icon: const Icon(Icons.mode_comment_outlined),
-                      label: Text('${item.commentCount}'),
+                    child: Row(
+                      children: [
+                        TextButton.icon(
+                          onPressed: onToggleLike,
+                          icon: Icon(
+                            item.isLikedByMe
+                                ? Icons.favorite
+                                : Icons.favorite_border,
+                            color: item.isLikedByMe
+                                ? AppColors.primary
+                                : AppColors.textMuted,
+                          ),
+                          label: Text('${item.likeCount}'),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        TextButton.icon(
+                          onPressed: onOpenComments,
+                          icon: const Icon(
+                            Icons.mode_comment_outlined,
+                            color: AppColors.textMuted,
+                          ),
+                          label: Text('${item.commentCount}'),
+                        ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
               ],
             ),
