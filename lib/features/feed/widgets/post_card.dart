@@ -56,33 +56,22 @@ class PostCard extends ConsumerWidget {
                   userId: post.userId,
                   compact: true,
                   trailing: !isMine
-                      ? FollowButton(
-                          targetUserId: post.userId,
-                          compact: true,
+                      ? Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            FollowButton(
+                              targetUserId: post.userId,
+                              compact: true,
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
+                            _PostOverflowButton(
+                              postId: post.id,
+                              userId: post.userId,
+                            ),
+                          ],
                         )
                       : null,
                 ),
-                if (!isMine)
-                  Wrap(
-                    spacing: AppSpacing.xs,
-                    runSpacing: AppSpacing.xs,
-                    children: [
-                      ReportButton(
-                        targetType: ReportTargetType.post,
-                        targetId: post.id,
-                        compact: true,
-                      ),
-                      ReportButton(
-                        targetType: ReportTargetType.user,
-                        targetId: post.userId,
-                        compact: true,
-                      ),
-                      BlockButton(
-                        targetUserId: post.userId,
-                        compact: true,
-                      ),
-                    ],
-                  ),
                 const SizedBox(height: AppSpacing.md),
                 ClipRRect(
                   borderRadius: AppRadius.lgBorder,
@@ -191,5 +180,82 @@ class PostCard extends ConsumerWidget {
     final hour = value.hour.toString().padLeft(2, '0');
     final minute = value.minute.toString().padLeft(2, '0');
     return '$year-$month-$day $hour:$minute';
+  }
+}
+
+class _PostOverflowButton extends StatelessWidget {
+  const _PostOverflowButton({
+    required this.postId,
+    required this.userId,
+  });
+
+  final String postId;
+  final String userId;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      visualDensity: VisualDensity.compact,
+      tooltip: 'Post actions',
+      icon: const Icon(Icons.more_horiz, color: AppColors.textMuted),
+      onPressed: () => _showPostActions(context),
+    );
+  }
+
+  Future<void> _showPostActions(BuildContext context) {
+    return showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.surface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xl),
+        ),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.lg,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: AppRadius.pillBorder,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text('Post actions', style: AppTextStyles.title),
+                const SizedBox(height: AppSpacing.sm),
+                ReportButton(
+                  targetType: ReportTargetType.post,
+                  targetId: postId,
+                  menuItem: true,
+                ),
+                ReportButton(
+                  targetType: ReportTargetType.user,
+                  targetId: userId,
+                  menuItem: true,
+                ),
+                BlockButton(
+                  targetUserId: userId,
+                  menuItem: true,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }

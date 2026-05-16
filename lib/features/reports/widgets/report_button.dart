@@ -13,11 +13,13 @@ class ReportButton extends ConsumerWidget {
     required this.targetType,
     required this.targetId,
     this.compact = false,
+    this.menuItem = false,
   });
 
   final ReportTargetType targetType;
   final String targetId;
   final bool compact;
+  final bool menuItem;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,6 +29,16 @@ class ReportButton extends ConsumerWidget {
     }
 
     final label = _labelForTarget();
+
+    if (menuItem) {
+      return ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: const Icon(Icons.flag_outlined, color: AppColors.error),
+        title: Text(label),
+        textColor: AppColors.textSecondary,
+        onTap: () => _openDialog(context),
+      );
+    }
 
     if (compact) {
       return TextButton.icon(
