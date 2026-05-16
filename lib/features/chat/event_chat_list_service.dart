@@ -25,21 +25,44 @@ class EventChatListService {
     }
 
     final eventIds = rolesByEventId.keys.toList();
-    if (eventIds.isEmpty) return const [];
 
-    final eventRows = await SupabaseService.client
+    final eventRows = <Map<String, dynamic>>[];
+    if (eventIds.isNotEmpty) {
+      final participantEventRows = await SupabaseService.client
+          .from('events')
+          .select('id,title,sport_type,city,district,event_date,status')
+          .inFilter('id', eventIds);
+
+      eventRows.addAll(
+        participantEventRows.map((row) => Map<String, dynamic>.from(row)),
+      );
+    }
+
+    final hostedEventRows = await SupabaseService.client
         .from('events')
         .select('id,title,sport_type,city,district,event_date,status')
-        .inFilter('id', eventIds);
+        .eq('host_id', userId);
 
-    final latestMessagesByEventId = await _fetchLatestMessages(eventIds);
+    for (final row in hostedEventRows) {
+      final eventJson = Map<String, dynamic>.from(row);
+      final eventId = eventJson['id'] as String?;
+      if (eventId == null) continue;
+      rolesByEventId[eventId] = 'host';
+      if (eventRows.any((event) => event['id'] == eventId)) continue;
+      eventRows.add(eventJson);
+    }
+
+    if (eventRows.isEmpty) return const [];
+
+    final visibleEventIds = rolesByEventId.keys.toList();
+
+    final latestMessagesByEventId = await _fetchLatestMessages(visibleEventIds);
 
     final groups = eventRows.map((row) {
-      final eventJson = Map<String, dynamic>.from(row);
-      final eventId = eventJson['id'] as String;
+      final eventId = row['id'] as String;
       final latestMessage = latestMessagesByEventId[eventId];
       return EventChatGroup.fromEventJson(
-        eventJson: eventJson,
+        eventJson: row,
         role: rolesByEventId[eventId] ?? 'participant',
       ).copyWith(
         lastMessage: latestMessage?['message'] as String?,
