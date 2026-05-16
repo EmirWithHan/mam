@@ -117,36 +117,13 @@ class _EventDetailBody extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            border: Border.all(color: AppColors.border),
-            borderRadius: AppRadius.xlBorder,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: Text(event.title, style: AppTextStyles.headline)),
-                    if (event.isSponsored)
-                      Text(
-                        'Sponsored',
-                        style: AppTextStyles.label.copyWith(color: AppColors.warning),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(event.sportType, style: AppTextStyles.subtitle),
-              ],
-            ),
-          ),
-        ),
+        _EventHeroCard(event: event),
+        const SizedBox(height: AppSpacing.lg),
+        const _SectionTitle(title: 'Host'),
         const SizedBox(height: AppSpacing.sm),
         _HostPreviewCard(hostId: event.hostId),
+        const SizedBox(height: AppSpacing.lg),
+        const _SectionTitle(title: 'Event info'),
         const SizedBox(height: AppSpacing.sm),
         _DetailCard(
           children: [
@@ -179,6 +156,8 @@ class _EventDetailBody extends ConsumerWidget {
             ],
           ),
         const SizedBox(height: AppSpacing.lg),
+        const _SectionTitle(title: 'Actions'),
+        const SizedBox(height: AppSpacing.sm),
         if (isHost || isApprovedParticipant) ...[
           AppButton(
             label: 'Open chat',
@@ -267,9 +246,14 @@ class _HostRequestsSection extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Text('You are the host', style: AppTextStyles.title),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'Review requests and keep your squad moving.',
+              style: AppTextStyles.caption,
+            ),
             const SizedBox(height: AppSpacing.md),
             if (state.loading && state.hostRequests.isEmpty)
-              const Center(child: CircularProgressIndicator())
+              const AppLoader()
             else if (state.hostRequests.isEmpty)
               Text('No join requests yet.', style: AppTextStyles.body)
             else
@@ -295,6 +279,71 @@ class _HostRequestsSection extends StatelessWidget {
                   ],
                 ),
               ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _EventHeroCard extends StatelessWidget {
+  const _EventHeroCard({required this.event});
+
+  final Event event;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadius.xlBorder,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.textPrimary.withValues(alpha: 0.06),
+            blurRadius: 24,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(child: Text(event.title, style: AppTextStyles.headline)),
+                if (event.isSponsored)
+                  _MiniChip(
+                    label: 'Sponsored',
+                    color: AppColors.tertiarySoft,
+                    textColor: AppColors.warning,
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                _MiniChip(
+                  label: event.sportType,
+                  color: AppColors.primary,
+                  textColor: Colors.white,
+                  icon: Icons.sports_soccer,
+                ),
+                _MiniChip(
+                  label: event.capacityLabel,
+                  color: AppColors.primarySoft,
+                  textColor: AppColors.primary,
+                  icon: Icons.groups_outlined,
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _DetailLine(label: 'Where', value: event.locationLabel),
+            _DetailLine(label: 'When', value: _formatDateTime(event.eventDate)),
           ],
         ),
       ),
@@ -388,6 +437,17 @@ class _HostPreviewCard extends ConsumerWidget {
   }
 }
 
+class _SectionTitle extends StatelessWidget {
+  const _SectionTitle({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(title, style: AppTextStyles.title);
+  }
+}
+
 class _DetailCard extends StatelessWidget {
   const _DetailCard({required this.children});
 
@@ -406,6 +466,49 @@ class _DetailCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: children,
+        ),
+      ),
+    );
+  }
+}
+
+class _MiniChip extends StatelessWidget {
+  const _MiniChip({
+    required this.label,
+    required this.color,
+    required this.textColor,
+    this.icon,
+  });
+
+  final String label;
+  final Color color;
+  final Color textColor;
+  final IconData? icon;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: AppRadius.pillBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (icon != null) ...[
+              Icon(icon, size: 15, color: textColor),
+              const SizedBox(width: AppSpacing.xs),
+            ],
+            Text(
+              label,
+              style: AppTextStyles.label.copyWith(color: textColor),
+            ),
+          ],
         ),
       ),
     );

@@ -19,76 +19,119 @@ class EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
         borderRadius: AppRadius.lgBorder,
-        side: const BorderSide(color: AppColors.border),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.textPrimary.withValues(alpha: 0.06),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
-      child: InkWell(
+      child: Material(
+        color: Colors.transparent,
         borderRadius: AppRadius.lgBorder,
-        onTap: () => context.goNamed(
-          RouteNames.eventDetail,
-          pathParameters: {'eventId': event.id},
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        child: InkWell(
+          borderRadius: AppRadius.lgBorder,
+          onTap: () => context.goNamed(
+            RouteNames.eventDetail,
+            pathParameters: {'eventId': event.id},
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(
-                    child: Text(event.title, style: AppTextStyles.title),
-                  ),
-                  if (event.isSponsored)
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: AppColors.primarySoft,
-                        borderRadius: AppRadius.pillBorder,
-                      ),
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm,
-                          vertical: AppSpacing.xs,
-                        ),
-                        child: Text('Sponsored', style: AppTextStyles.label),
-                      ),
+                  Container(
+                    width: 5,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: AppRadius.pillBorder,
                     ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                event.title,
+                                style: AppTextStyles.title,
+                              ),
+                            ),
+                            if (event.isSponsored)
+                              _Pill(
+                                label: 'Sponsored',
+                                color: AppColors.primarySoft,
+                                textColor: AppColors.primary,
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Wrap(
+                          spacing: AppSpacing.sm,
+                          runSpacing: AppSpacing.sm,
+                          children: [
+                            _InfoChip(
+                              icon: Icons.sports_soccer,
+                              label: event.sportType,
+                              color: AppColors.primarySoft,
+                            ),
+                            _InfoChip(
+                              icon: Icons.group_outlined,
+                              label: event.capacityLabel,
+                              color: AppColors.tertiarySoft,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        PublicProfilePreviewTile(
+                          userId: event.hostId,
+                          subtitle: 'Host',
+                          compact: true,
+                        ),
+                        const SizedBox(height: AppSpacing.sm),
+                        _MetaLine(
+                          icon: Icons.place_outlined,
+                          label: event.locationLabel,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        _MetaLine(
+                          icon: Icons.schedule,
+                          label: _formatDateTime(event.eventDate),
+                        ),
+                        const SizedBox(height: AppSpacing.md),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            Text(
+                              'View details',
+                              style: AppTextStyles.label.copyWith(
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            const SizedBox(width: AppSpacing.xs),
+                            const Icon(
+                              Icons.arrow_forward,
+                              color: AppColors.primary,
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-              const SizedBox(height: AppSpacing.md),
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [
-                  _InfoChip(
-                    icon: Icons.sports_soccer,
-                    label: event.sportType,
-                    color: AppColors.primarySoft,
-                  ),
-                  _InfoChip(
-                    icon: Icons.group_outlined,
-                    label: event.capacityLabel,
-                    color: AppColors.tertiarySoft,
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              PublicProfilePreviewTile(
-                userId: event.hostId,
-                subtitle: 'Host',
-                compact: true,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              _MetaLine(icon: Icons.place_outlined, label: event.locationLabel),
-              const SizedBox(height: AppSpacing.xs),
-              _MetaLine(
-                icon: Icons.schedule,
-                label: _formatDateTime(event.eventDate),
-              ),
-            ],
+            ),
           ),
         ),
       ),
@@ -151,10 +194,42 @@ class _MetaLine extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, size: 17, color: AppColors.textMuted),
+        Icon(icon, size: 17, color: AppColors.primary),
         const SizedBox(width: AppSpacing.xs),
         Expanded(child: Text(label, style: AppTextStyles.caption)),
       ],
+    );
+  }
+}
+
+class _Pill extends StatelessWidget {
+  const _Pill({
+    required this.label,
+    required this.color,
+    required this.textColor,
+  });
+
+  final String label;
+  final Color color;
+  final Color textColor;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: AppRadius.pillBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.label.copyWith(color: textColor),
+        ),
+      ),
     );
   }
 }

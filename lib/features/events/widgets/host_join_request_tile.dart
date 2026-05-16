@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../profile/widgets/public_profile_preview_tile.dart';
 import '../join_requests_models.dart';
 
@@ -24,28 +25,75 @@ class HostJoinRequestTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: AppRadius.mdBorder,
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
+        borderRadius: AppRadius.lgBorder,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.textPrimary.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
-      child: PublicProfilePreviewTile(
-        userId: request.userId,
-        subtitle: request.status,
-        compact: true,
-        trailing: request.isPending
-            ? Wrap(
-                spacing: AppSpacing.xs,
-                children: [
-                  TextButton(
-                    onPressed: isLoading ? null : onApprove,
-                    child: const Text('Approve'),
-                  ),
-                  TextButton(
-                    onPressed: isLoading ? null : onReject,
-                    child: const Text('Reject'),
-                  ),
-                ],
-              )
-            : null,
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.sm),
+        child: PublicProfilePreviewTile(
+          userId: request.userId,
+          subtitle: 'Join request',
+          compact: true,
+          trailing: Wrap(
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              _StatusChip(status: request.status),
+              if (request.isPending) ...[
+                TextButton(
+                  onPressed: isLoading ? null : onApprove,
+                  child: const Text('Approve'),
+                ),
+                TextButton(
+                  onPressed: isLoading ? null : onReject,
+                  child: const Text('Reject'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.status});
+
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (status) {
+      'approved' => AppColors.success,
+      'rejected' => AppColors.error,
+      'cancelled' => AppColors.textMuted,
+      _ => AppColors.warning,
+    };
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: AppRadius.pillBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        child: Text(
+          status,
+          style: AppTextStyles.label.copyWith(color: color),
+        ),
       ),
     );
   }

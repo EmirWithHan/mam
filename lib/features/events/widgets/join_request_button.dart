@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/route_names.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_button.dart';
@@ -38,19 +40,25 @@ class JoinRequestButton extends StatelessWidget {
     }
 
     if (event.isFull) {
-      return const AppButton(label: 'Event is full', onPressed: null);
+      return const _StatusPanel(
+        icon: Icons.lock_outline,
+        title: 'Event is full',
+        message: 'This event has reached its approved capacity.',
+        color: AppColors.textMuted,
+      );
     }
 
     if (!profileState.canRequestToJoinEvent) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(
-            'Complete your profile before requesting to join events.',
-            style: AppTextStyles.body,
-            textAlign: TextAlign.center,
+          const _StatusPanel(
+            icon: Icons.assignment_ind_outlined,
+            title: 'Complete your player card',
+            message: 'Finish your profile before requesting to join events.',
+            color: AppColors.primary,
           ),
-          const SizedBox(height: AppSpacing.md),
+          const SizedBox(height: AppSpacing.sm),
           AppButton(
             label: 'Complete profile',
             onPressed: () => context.goNamed(RouteNames.profileComplete),
@@ -72,10 +80,11 @@ class JoinRequestButton extends StatelessWidget {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          AppButton(
-            label: 'Request pending',
-            isLoading: isLoading,
-            onPressed: null,
+          const _StatusPanel(
+            icon: Icons.hourglass_top,
+            title: 'Request pending',
+            message: 'The host will review your request.',
+            color: AppColors.warning,
           ),
           const SizedBox(height: AppSpacing.sm),
           TextButton(
@@ -87,17 +96,78 @@ class JoinRequestButton extends StatelessWidget {
     }
 
     if (currentRequest.isApproved) {
-      return const AppButton(label: 'Approved', onPressed: null);
+      return const _StatusPanel(
+        icon: Icons.check_circle_outline,
+        title: 'Approved',
+        message: 'You are in. Chat and call actions are available when allowed.',
+        color: AppColors.success,
+      );
     }
 
     if (currentRequest.isRejected) {
-      return const AppButton(label: 'Request rejected', onPressed: null);
+      return const _StatusPanel(
+        icon: Icons.cancel_outlined,
+        title: 'Request rejected',
+        message: 'This request was not approved by the host.',
+        color: AppColors.error,
+      );
     }
 
     if (currentRequest.isCancelled) {
-      return const AppButton(label: 'Request cancelled', onPressed: null);
+      return const _StatusPanel(
+        icon: Icons.remove_circle_outline,
+        title: 'Request cancelled',
+        message: 'You cancelled this request.',
+        color: AppColors.textMuted,
+      );
     }
 
     return AppButton(label: currentRequest.status, onPressed: null);
+  }
+}
+
+class _StatusPanel extends StatelessWidget {
+  const _StatusPanel({
+    required this.icon,
+    required this.title,
+    required this.message,
+    required this.color,
+  });
+
+  final IconData icon;
+  final String title;
+  final String message;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: AppRadius.lgBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: AppTextStyles.bodyStrong.copyWith(color: color),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(message, style: AppTextStyles.caption),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }

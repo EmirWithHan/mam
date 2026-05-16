@@ -166,75 +166,92 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                   setState(() => _sportTypeController.text = sport);
                 },
               ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: 'Title',
-                controller: _titleController,
-                validator: _requiredValidator('Title'),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: 'Description',
-                controller: _descriptionController,
-                maxLines: 3,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: 'Sport type',
-                controller: _sportTypeController,
-                validator: _requiredValidator('Sport type'),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: 'City',
-                controller: _cityController,
-                validator: _requiredValidator('City'),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: 'District',
-                controller: _districtController,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: 'Location',
-                controller: _locationTextController,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: 'Event date',
-                hintText: 'YYYY-MM-DD HH:mm',
-                controller: _eventDateController,
-                keyboardType: TextInputType.datetime,
-                validator: _eventDateValidator,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: 'Capacity total',
-                controller: _capacityTotalController,
-                keyboardType: TextInputType.number,
-                validator: _capacityTotalValidator,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: 'Capacity male',
-                controller: _capacityMaleController,
-                keyboardType: TextInputType.number,
-                validator: _capacityPartValidator,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: 'Capacity female',
-                controller: _capacityFemaleController,
-                keyboardType: TextInputType.number,
-                validator: _capacityPartValidator,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              AppTextField(
-                label: 'Capacity any',
-                controller: _capacityAnyController,
-                keyboardType: TextInputType.number,
-                validator: _capacityPartValidator,
+              const SizedBox(height: AppSpacing.lg),
+              _FormCard(
+                child: Column(
+                  children: [
+                    AppTextField(
+                      label: 'Title',
+                      controller: _titleController,
+                      prefixIcon: const Icon(Icons.event_available_outlined),
+                      validator: _requiredValidator('Title'),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Description',
+                      controller: _descriptionController,
+                      prefixIcon: const Icon(Icons.notes_outlined),
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Sport type',
+                      controller: _sportTypeController,
+                      prefixIcon: const Icon(Icons.sports_soccer),
+                      validator: _requiredValidator('Sport type'),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'City',
+                      controller: _cityController,
+                      prefixIcon: const Icon(Icons.location_city_outlined),
+                      validator: _requiredValidator('City'),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'District',
+                      controller: _districtController,
+                      prefixIcon: const Icon(Icons.place_outlined),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Location',
+                      controller: _locationTextController,
+                      prefixIcon: const Icon(Icons.map_outlined),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Event date',
+                      hintText: 'YYYY-MM-DD HH:mm',
+                      controller: _eventDateController,
+                      keyboardType: TextInputType.datetime,
+                      prefixIcon: const Icon(Icons.schedule),
+                      validator: _eventDateValidator,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Capacity total',
+                      controller: _capacityTotalController,
+                      keyboardType: TextInputType.number,
+                      prefixIcon: const Icon(Icons.groups_outlined),
+                      validator: _capacityTotalValidator,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Capacity male',
+                      controller: _capacityMaleController,
+                      keyboardType: TextInputType.number,
+                      prefixIcon: const Icon(Icons.person_outline),
+                      validator: _capacityPartValidator,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Capacity female',
+                      controller: _capacityFemaleController,
+                      keyboardType: TextInputType.number,
+                      prefixIcon: const Icon(Icons.person_outline),
+                      validator: _capacityPartValidator,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Capacity any',
+                      controller: _capacityAnyController,
+                      keyboardType: TextInputType.number,
+                      prefixIcon: const Icon(Icons.diversity_3_outlined),
+                      validator: _capacityPartValidator,
+                    ),
+                  ],
+                ),
               ),
               const SizedBox(height: AppSpacing.xl),
               AppButton(
@@ -335,7 +352,14 @@ class _SportChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const sports = ['Football', 'Tennis', 'Running'];
+    const sports = [
+      'Football',
+      'Basketball',
+      'Tennis',
+      'Volleyball',
+      'Running',
+      'Yoga',
+    ];
 
     return Wrap(
       spacing: AppSpacing.sm,
@@ -357,6 +381,33 @@ class _SportChips extends StatelessWidget {
           shape: RoundedRectangleBorder(borderRadius: AppRadius.pillBorder),
         );
       }).toList(),
+    );
+  }
+}
+
+class _FormCard extends StatelessWidget {
+  const _FormCard({required this.child});
+
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadius.lgBorder,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.textPrimary.withValues(alpha: 0.05),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: child,
+      ),
     );
   }
 }
