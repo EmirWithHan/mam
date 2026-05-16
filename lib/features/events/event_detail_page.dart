@@ -11,7 +11,9 @@ import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/error_view.dart';
 import '../auth/auth_provider.dart';
+import '../profile/public_profile_provider.dart';
 import '../profile/profile_provider.dart';
+import '../profile/widgets/public_profile_avatar.dart';
 import '../reports/reports_models.dart';
 import '../reports/widgets/block_button.dart';
 import '../reports/widgets/report_button.dart';
@@ -143,6 +145,8 @@ class _EventDetailBody extends ConsumerWidget {
             ),
           ),
         ),
+        const SizedBox(height: AppSpacing.sm),
+        _HostPreviewCard(hostId: event.hostId),
         const SizedBox(height: AppSpacing.sm),
         _DetailCard(
           children: [
@@ -292,6 +296,92 @@ class _HostRequestsSection extends StatelessWidget {
                 ),
               ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HostPreviewCard extends ConsumerWidget {
+  const _HostPreviewCard({required this.hostId});
+
+  final String hostId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncProfile = ref.watch(publicProfilePreviewProvider(hostId));
+
+    return asyncProfile.maybeWhen(
+      data: (profile) {
+        final secondaryText = profile?.usernameTag ?? profile?.city ?? 'Host';
+        final trustScore = profile?.trustScore;
+
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            border: Border.all(color: AppColors.border),
+            borderRadius: AppRadius.lgBorder,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                PublicProfileAvatar(profile: profile, radius: 24),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        profile?.displayName ?? 'MaM User',
+                        style: AppTextStyles.bodyStrong,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(secondaryText, style: AppTextStyles.caption),
+                    ],
+                  ),
+                ),
+                if (trustScore != null)
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: AppColors.primarySoft,
+                      borderRadius: AppRadius.pillBorder,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
+                      child: Text(
+                        '$trustScore trust',
+                        style: AppTextStyles.label.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+      orElse: () => DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          border: Border.all(color: AppColors.border),
+          borderRadius: AppRadius.lgBorder,
+        ),
+        child: const Padding(
+          padding: EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              PublicProfileAvatar(radius: 24),
+              SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text('MaM User', style: AppTextStyles.bodyStrong),
+              ),
+            ],
+          ),
         ),
       ),
     );

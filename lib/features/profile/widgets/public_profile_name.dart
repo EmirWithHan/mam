@@ -1,0 +1,59 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../public_profile_provider.dart';
+
+class PublicProfileName extends ConsumerWidget {
+  const PublicProfileName({
+    super.key,
+    required this.userId,
+    this.showUsernameTag = true,
+    this.compact = false,
+  });
+
+  final String userId;
+  final bool showUsernameTag;
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final asyncProfile = ref.watch(publicProfilePreviewProvider(userId));
+
+    return asyncProfile.maybeWhen(
+      data: (profile) {
+        final usernameTag = profile?.usernameTag;
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              profile?.displayName ?? 'MaM User',
+              style: compact ? AppTextStyles.caption : AppTextStyles.bodyStrong,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (showUsernameTag && usernameTag != null && usernameTag.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                usernameTag,
+                style: AppTextStyles.caption,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
+        );
+      },
+      loading: () => Text(
+        'MaM User',
+        style: compact ? AppTextStyles.caption : AppTextStyles.bodyStrong,
+      ),
+      orElse: () => Text(
+        'MaM User',
+        style: compact ? AppTextStyles.caption : AppTextStyles.bodyStrong,
+      ),
+    );
+  }
+}

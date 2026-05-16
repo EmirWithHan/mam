@@ -4,6 +4,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../profile/widgets/public_profile_avatar.dart';
+import '../../profile/widgets/public_profile_name.dart';
 import '../../reports/reports_models.dart';
 import '../../reports/widgets/block_button.dart';
 import '../../reports/widgets/report_button.dart';
@@ -34,7 +36,18 @@ class CommentTile extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_shortUserId(comment.userId), style: AppTextStyles.caption),
+            Row(
+              children: [
+                PublicProfileAvatar(userId: comment.userId, radius: 16),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: PublicProfileName(
+                    userId: comment.userId,
+                    compact: true,
+                  ),
+                ),
+              ],
+            ),
             const SizedBox(height: AppSpacing.xs),
             Text(comment.comment, style: AppTextStyles.body),
             const SizedBox(height: AppSpacing.xs),
@@ -66,12 +79,6 @@ class CommentTile extends StatelessWidget {
       ),
     );
   }
-
-  String _shortUserId(String userId) {
-    if (userId.length <= 8) return userId;
-    return 'User ${userId.substring(0, 8)}';
-  }
-
   String _formatDate(DateTime value) {
     final year = value.year.toString().padLeft(4, '0');
     final month = value.month.toString().padLeft(2, '0');

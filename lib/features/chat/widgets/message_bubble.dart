@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../profile/widgets/public_profile_name.dart';
 import '../event_chat_models.dart';
 
 class MessageBubble extends StatelessWidget {
@@ -41,7 +42,11 @@ class MessageBubble extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (!isMine) ...[
-                  Text(message.senderId, style: AppTextStyles.caption),
+                  PublicProfileName(
+                    userId: message.senderId,
+                    showUsernameTag: false,
+                    compact: true,
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                 ],
                 Text(

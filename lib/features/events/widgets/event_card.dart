@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../profile/widgets/public_profile_preview_tile.dart';
 import '../events_models.dart';
 
 class EventCard extends StatelessWidget {
@@ -73,6 +74,12 @@ class EventCard extends StatelessWidget {
                     color: AppColors.tertiarySoft,
                   ),
                 ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              PublicProfilePreviewTile(
+                userId: event.hostId,
+                subtitle: 'Host',
+                compact: true,
               ),
               const SizedBox(height: AppSpacing.sm),
               _MetaLine(icon: Icons.place_outlined, label: event.locationLabel),

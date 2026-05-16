@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../auth/auth_provider.dart';
 import '../../follow/widgets/follow_button.dart';
+import '../../profile/widgets/public_profile_preview_tile.dart';
 import '../../reports/reports_models.dart';
 import '../../reports/widgets/block_button.dart';
 import '../../reports/widgets/report_button.dart';
@@ -59,21 +60,15 @@ class PostCard extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        _shortUserId(post.userId),
-                        style: AppTextStyles.bodyStrong,
-                      ),
-                    ),
-                    if (!isMine)
-                      FollowButton(
-                        targetUserId: post.userId,
-                        compact: true,
-                      ),
-                  ],
+                PublicProfilePreviewTile(
+                  userId: post.userId,
+                  compact: true,
+                  trailing: !isMine
+                      ? FollowButton(
+                          targetUserId: post.userId,
+                          compact: true,
+                        )
+                      : null,
                 ),
                 if (!isMine)
                   Wrap(
@@ -155,10 +150,5 @@ class PostCard extends ConsumerWidget {
     final hour = value.hour.toString().padLeft(2, '0');
     final minute = value.minute.toString().padLeft(2, '0');
     return '$year-$month-$day $hour:$minute';
-  }
-
-  String _shortUserId(String userId) {
-    if (userId.length <= 8) return 'User $userId';
-    return 'User ${userId.substring(0, 8)}';
   }
 }
