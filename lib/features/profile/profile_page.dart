@@ -9,6 +9,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_loader.dart';
+import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/error_view.dart';
 import '../trust_score/widgets/trust_score_badge.dart';
 import 'profile_models.dart';
@@ -36,7 +37,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MaM'),
+        title: const AppLogo(size: 32, showText: true),
         actions: [
           IconButton(
             icon: const Icon(Icons.menu_rounded),

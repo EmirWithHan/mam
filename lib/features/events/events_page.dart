@@ -9,6 +9,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_loader.dart';
+import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
 import 'events_provider.dart';
@@ -44,7 +45,7 @@ class _EventsPageState extends ConsumerState<EventsPage> {
     final eventsState = ref.watch(eventsControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('MaM')),
+      appBar: AppBar(title: const AppLogo(size: 32, showText: true)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
@@ -56,18 +57,7 @@ class _EventsPageState extends ConsumerState<EventsPage> {
                   Expanded(
                     child: Text('Find a Game!', style: AppTextStyles.headline),
                   ),
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: const BoxDecoration(
-                      color: AppColors.primarySoft,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.sports_soccer,
-                      color: AppColors.primary,
-                    ),
-                  ),
+                  const AppLogo(size: 44),
                 ],
               ),
               const SizedBox(height: AppSpacing.sm),

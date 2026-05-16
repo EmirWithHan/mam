@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/empty_state.dart';
@@ -50,7 +51,7 @@ class _SocialPageState extends ConsumerState<SocialPage> {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('MaM', style: AppTextStyles.logo),
+        title: const AppLogo(size: 32, showText: true),
       ),
       body: SafeArea(
         child: RefreshIndicator(

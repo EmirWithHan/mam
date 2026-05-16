@@ -7,6 +7,7 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_logo.dart';
 
 class AuthPage extends StatelessWidget {
   const AuthPage({super.key});
@@ -19,23 +20,7 @@ class AuthPage extends StatelessWidget {
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
             const SizedBox(height: AppSpacing.xl),
-            Text('MaM', style: AppTextStyles.logo, textAlign: TextAlign.center),
-            const SizedBox(height: AppSpacing.xl),
-            Center(
-              child: Container(
-                width: 96,
-                height: 96,
-                decoration: const BoxDecoration(
-                  color: AppColors.primarySoft,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.sports_soccer,
-                  color: AppColors.primary,
-                  size: 46,
-                ),
-              ),
-            ),
+            const Center(child: AppLogo(size: 84, showText: true)),
             const SizedBox(height: AppSpacing.lg),
             DecoratedBox(
               decoration: BoxDecoration(

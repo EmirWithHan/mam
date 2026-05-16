@@ -7,6 +7,7 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_logo.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -16,7 +17,7 @@ class HomePage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('MaM', style: AppTextStyles.logo),
+        title: const AppLogo(size: 32, showText: true),
       ),
       body: SafeArea(
         child: ListView(
@@ -40,11 +41,7 @@ class HomePage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(
-                      Icons.sports_soccer,
-                      color: AppColors.primary,
-                      size: 44,
-                    ),
+                    const Center(child: AppLogo(size: 56)),
                     const SizedBox(height: AppSpacing.md),
                     Text(
                       'Etkinliklerle başla',

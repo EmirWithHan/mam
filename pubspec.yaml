@@ -21,7 +21,42 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  flutter_launcher_icons: ^0.14.3
   flutter_lints: ^6.0.0
+  flutter_native_splash: ^2.4.4
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/branding/mam_logo.jpg
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/branding/mam_logo.jpg"
+  adaptive_icon_background: "#FDFBF9"
+  adaptive_icon_foreground: "assets/branding/mam_logo.jpg"
+  remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: "assets/branding/mam_logo.jpg"
+    background_color: "#FDFBF9"
+    theme_color: "#FF7E79"
+  windows:
+    generate: true
+    image_path: "assets/branding/mam_logo.jpg"
+    icon_size: 48
+  macos:
+    generate: true
+    image_path: "assets/branding/mam_logo.jpg"
+
+flutter_native_splash:
+  color: "#FDFBF9"
+  image: assets/branding/mam_logo.jpg
+  android: true
+  ios: true
+  web: true
+  android_12:
+    color: "#FDFBF9"
+    image: assets/branding/mam_logo.jpg
+    icon_background_color: "#FDFBF9"

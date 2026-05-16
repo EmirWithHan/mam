@@ -20,7 +20,7 @@ import '../../features/social/social_page.dart';
 import '../../features/trust_score/trust_score_history_page.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
-import '../theme/app_text_styles.dart';
+import '../widgets/app_logo.dart';
 import '../widgets/app_loader.dart';
 import '../widgets/main_navigation_shell.dart';
 import 'route_names.dart';
@@ -198,7 +198,7 @@ class _SplashPage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('MaM', style: AppTextStyles.logo),
+              AppLogo(size: 72, showText: true),
               SizedBox(height: AppSpacing.lg),
               SizedBox(width: 32, height: 32, child: AppLoader()),
             ],

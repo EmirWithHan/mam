@@ -8,6 +8,7 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/app_logo.dart';
 import '../auth/auth_provider.dart';
 import '../profile/profile_models.dart';
 import '../profile/profile_provider.dart';
@@ -36,7 +37,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MaM'),
+        title: const AppLogo(size: 32, showText: true),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
