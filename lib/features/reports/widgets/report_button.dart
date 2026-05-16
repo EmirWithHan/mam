@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../auth/auth_provider.dart';
 import '../reports_models.dart';
 import 'report_dialog.dart';
 
-class ReportButton extends StatelessWidget {
+class ReportButton extends ConsumerWidget {
   const ReportButton({
     super.key,
     required this.targetType,
@@ -18,7 +20,12 @@ class ReportButton extends StatelessWidget {
   final bool compact;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentUserId = ref.watch(authControllerProvider).userId;
+    if (targetType == ReportTargetType.user && targetId == currentUserId) {
+      return const SizedBox.shrink();
+    }
+
     final label = _labelForTarget();
 
     if (compact) {

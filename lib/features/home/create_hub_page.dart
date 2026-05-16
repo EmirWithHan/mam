@@ -84,44 +84,44 @@ class _CreateActionCard extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-        borderRadius: AppRadius.xlBorder,
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: accentBackground,
-                      shape: BoxShape.circle,
+          borderRadius: AppRadius.xlBorder,
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: accentBackground,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(icon, color: accentColor, size: 28),
                     ),
-                    child: Icon(icon, color: accentColor, size: 28),
-                  ),
-                  const Spacer(),
-                  Icon(Icons.arrow_forward_rounded, color: accentColor),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              Text(title, style: AppTextStyles.title),
-              const SizedBox(height: AppSpacing.xs),
-              Text(subtitle, style: AppTextStyles.bodySmall),
-              const SizedBox(height: AppSpacing.md),
-              Container(
-                width: 54,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: accentColor,
-                  borderRadius: AppRadius.pillBorder,
+                    const Spacer(),
+                    Icon(Icons.arrow_forward_rounded, color: accentColor),
+                  ],
                 ),
-              ),
-            ],
+                const SizedBox(height: AppSpacing.lg),
+                Text(title, style: AppTextStyles.title),
+                const SizedBox(height: AppSpacing.xs),
+                Text(subtitle, style: AppTextStyles.bodySmall),
+                const SizedBox(height: AppSpacing.md),
+                Container(
+                  width: 54,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: accentColor,
+                    borderRadius: AppRadius.pillBorder,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
         ),
       ),
     );

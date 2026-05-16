@@ -70,7 +70,10 @@ GoRouter createAppRouter(AuthState authState) {
       GoRoute(
         path: RoutePaths.profileComplete,
         name: RouteNames.profileComplete,
-        builder: (context, state) => const ProfileCompletionPage(),
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 4,
+          child: ProfileCompletionPage(),
+        ),
       ),
       GoRoute(
         path: RoutePaths.profile,
@@ -83,12 +86,18 @@ GoRouter createAppRouter(AuthState authState) {
       GoRoute(
         path: RoutePaths.settings,
         name: RouteNames.settings,
-        builder: (context, state) => const SettingsPage(),
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 4,
+          child: SettingsPage(),
+        ),
       ),
       GoRoute(
         path: RoutePaths.trustScoreHistory,
         name: RouteNames.trustScoreHistory,
-        builder: (context, state) => const TrustScoreHistoryPage(),
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 4,
+          child: TrustScoreHistoryPage(),
+        ),
       ),
       GoRoute(
         path: RoutePaths.feed,

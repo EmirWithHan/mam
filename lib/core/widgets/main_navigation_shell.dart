@@ -83,7 +83,7 @@ class MainNavigationShell extends StatelessWidget {
   void _goToTab(BuildContext context, int index) {
     switch (index) {
       case 0:
-        context.goNamed(RouteNames.feed);
+        context.goNamed(RouteNames.home);
         break;
       case 1:
         context.goNamed(RouteNames.events);
