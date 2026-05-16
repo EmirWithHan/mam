@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../auth/auth_provider.dart';
 import '../blocks_provider.dart';
 
@@ -71,7 +73,7 @@ class _BlockButtonState extends ConsumerState<BlockButton> {
 
     if (widget.menuItem) {
       return ListTile(
-        contentPadding: EdgeInsets.zero,
+        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         enabled: !state.loading && blockState != null,
         leading: state.loading
             ? const SizedBox.square(
@@ -84,10 +86,17 @@ class _BlockButtonState extends ConsumerState<BlockButton> {
                     ? AppColors.error
                     : AppColors.textMuted,
               ),
-        title: Text(label),
-        textColor: blockState?.isBlockedByMe == true
-            ? AppColors.error
-            : AppColors.textSecondary,
+        title: Text(
+          label,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: blockState?.isBlockedByMe == true
+                ? AppColors.error
+                : AppColors.textSecondary,
+          ),
+        ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(AppRadius.lg)),
+        ),
         onTap: state.loading || blockState == null ? null : _toggleBlock,
       );
     }

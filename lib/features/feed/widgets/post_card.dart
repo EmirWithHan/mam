@@ -52,25 +52,34 @@ class PostCard extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                PublicProfilePreviewTile(
-                  userId: post.userId,
-                  compact: true,
-                  trailing: !isMine
-                      ? Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            FollowButton(
-                              targetUserId: post.userId,
-                              compact: true,
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            _PostOverflowButton(
-                              postId: post.id,
-                              userId: post.userId,
-                            ),
-                          ],
-                        )
-                      : null,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: PublicProfilePreviewTile(
+                        userId: post.userId,
+                        compact: true,
+                      ),
+                    ),
+                    if (!isMine) ...[
+                      const SizedBox(width: AppSpacing.sm),
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.xs),
+                        child: FollowButton(
+                          targetUserId: post.userId,
+                          compact: true,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Padding(
+                        padding: const EdgeInsets.only(top: AppSpacing.xs),
+                        child: _PostOverflowButton(
+                          postId: post.id,
+                          userId: post.userId,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
                 const SizedBox(height: AppSpacing.md),
                 ClipRRect(
@@ -205,7 +214,7 @@ class _PostOverflowButton extends StatelessWidget {
   Future<void> _showPostActions(BuildContext context) {
     return showModalBottomSheet<void>(
       context: context,
-      backgroundColor: AppColors.surface,
+      backgroundColor: AppColors.background,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(AppRadius.xl),
@@ -237,19 +246,33 @@ class _PostOverflowButton extends StatelessWidget {
                 const SizedBox(height: AppSpacing.md),
                 Text('Post actions', style: AppTextStyles.title),
                 const SizedBox(height: AppSpacing.sm),
-                ReportButton(
-                  targetType: ReportTargetType.post,
-                  targetId: postId,
-                  menuItem: true,
-                ),
-                ReportButton(
-                  targetType: ReportTargetType.user,
-                  targetId: userId,
-                  menuItem: true,
-                ),
-                BlockButton(
-                  targetUserId: userId,
-                  menuItem: true,
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: AppRadius.lgBorder,
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ReportButton(
+                        targetType: ReportTargetType.post,
+                        targetId: postId,
+                        menuItem: true,
+                      ),
+                      const Divider(height: 1, color: AppColors.border),
+                      ReportButton(
+                        targetType: ReportTargetType.user,
+                        targetId: userId,
+                        menuItem: true,
+                      ),
+                      const Divider(height: 1, color: AppColors.border),
+                      BlockButton(
+                        targetUserId: userId,
+                        menuItem: true,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),

@@ -43,6 +43,7 @@ class CommentTile extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 PublicProfileAvatar(userId: comment.userId, radius: 16),
                 const SizedBox(width: AppSpacing.sm),
@@ -52,6 +53,10 @@ class CommentTile extends StatelessWidget {
                     compact: true,
                   ),
                 ),
+                if (!isMine) ...[
+                  const SizedBox(width: AppSpacing.xs),
+                  _CommentOverflowButton(comment: comment),
+                ],
               ],
             ),
             const SizedBox(height: AppSpacing.xs),
@@ -68,29 +73,6 @@ class CommentTile extends StatelessWidget {
                 Text(_formatDate(comment.createdAt), style: AppTextStyles.caption),
               ],
             ),
-            if (!isMine) ...[
-              const SizedBox(height: AppSpacing.sm),
-              Wrap(
-                spacing: AppSpacing.xs,
-                runSpacing: AppSpacing.xs,
-                children: [
-                  ReportButton(
-                    targetType: ReportTargetType.comment,
-                    targetId: comment.id,
-                    compact: true,
-                  ),
-                  ReportButton(
-                    targetType: ReportTargetType.user,
-                    targetId: comment.userId,
-                    compact: true,
-                  ),
-                  BlockButton(
-                    targetUserId: comment.userId,
-                    compact: true,
-                  ),
-                ],
-              ),
-            ],
           ],
         ),
       ),
@@ -104,5 +86,92 @@ class CommentTile extends StatelessWidget {
     final hour = value.hour.toString().padLeft(2, '0');
     final minute = value.minute.toString().padLeft(2, '0');
     return '$year-$month-$day $hour:$minute';
+  }
+}
+
+class _CommentOverflowButton extends StatelessWidget {
+  const _CommentOverflowButton({required this.comment});
+
+  final PostComment comment;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      visualDensity: VisualDensity.compact,
+      tooltip: 'Comment actions',
+      icon: const Icon(Icons.more_horiz, color: AppColors.textMuted),
+      onPressed: () => _showCommentActions(context),
+    );
+  }
+
+  Future<void> _showCommentActions(BuildContext context) {
+    return showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xl),
+        ),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.lg,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: AppRadius.pillBorder,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text('Comment actions', style: AppTextStyles.title),
+                const SizedBox(height: AppSpacing.sm),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: AppRadius.lgBorder,
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ReportButton(
+                        targetType: ReportTargetType.comment,
+                        targetId: comment.id,
+                        menuItem: true,
+                      ),
+                      const Divider(height: 1, color: AppColors.border),
+                      ReportButton(
+                        targetType: ReportTargetType.user,
+                        targetId: comment.userId,
+                        menuItem: true,
+                      ),
+                      const Divider(height: 1, color: AppColors.border),
+                      BlockButton(
+                        targetUserId: comment.userId,
+                        menuItem: true,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }

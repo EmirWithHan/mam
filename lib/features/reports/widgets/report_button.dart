@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text_styles.dart';
 import '../../auth/auth_provider.dart';
 import '../reports_models.dart';
 import 'report_dialog.dart';
@@ -32,10 +34,17 @@ class ReportButton extends ConsumerWidget {
 
     if (menuItem) {
       return ListTile(
-        contentPadding: EdgeInsets.zero,
+        contentPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         leading: const Icon(Icons.flag_outlined, color: AppColors.error),
-        title: Text(label),
-        textColor: AppColors.textSecondary,
+        title: Text(
+          label,
+          style: AppTextStyles.bodySmall.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(AppRadius.lg)),
+        ),
         onTap: () => _openDialog(context),
       );
     }

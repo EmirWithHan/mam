@@ -117,7 +117,7 @@ class _EventDetailBody extends ConsumerWidget {
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
-        _EventHeroCard(event: event),
+        _EventHeroCard(event: event, isHost: isHost),
         const SizedBox(height: AppSpacing.lg),
         const _SectionTitle(title: 'Host'),
         const SizedBox(height: AppSpacing.sm),
@@ -134,27 +134,6 @@ class _EventDetailBody extends ConsumerWidget {
             _DetailLine(label: 'Capacity', value: event.capacityLabel),
           ],
         ),
-        const SizedBox(height: AppSpacing.sm),
-        if (!isHost)
-          Wrap(
-            spacing: AppSpacing.sm,
-            children: [
-              ReportButton(
-                targetType: ReportTargetType.event,
-                targetId: event.id,
-                compact: true,
-              ),
-              ReportButton(
-                targetType: ReportTargetType.user,
-                targetId: event.hostId,
-                compact: true,
-              ),
-              BlockButton(
-                targetUserId: event.hostId,
-                compact: true,
-              ),
-            ],
-          ),
         const SizedBox(height: AppSpacing.lg),
         const _SectionTitle(title: 'Actions'),
         const SizedBox(height: AppSpacing.sm),
@@ -287,9 +266,10 @@ class _HostRequestsSection extends StatelessWidget {
 }
 
 class _EventHeroCard extends StatelessWidget {
-  const _EventHeroCard({required this.event});
+  const _EventHeroCard({required this.event, required this.isHost});
 
   final Event event;
+  final bool isHost;
 
   @override
   Widget build(BuildContext context) {
@@ -320,6 +300,10 @@ class _EventHeroCard extends StatelessWidget {
                     color: AppColors.tertiarySoft,
                     textColor: AppColors.warning,
                   ),
+                if (!isHost) ...[
+                  const SizedBox(width: AppSpacing.xs),
+                  _EventOverflowButton(event: event),
+                ],
               ],
             ),
             const SizedBox(height: AppSpacing.md),
@@ -347,6 +331,93 @@ class _EventHeroCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _EventOverflowButton extends StatelessWidget {
+  const _EventOverflowButton({required this.event});
+
+  final Event event;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      visualDensity: VisualDensity.compact,
+      tooltip: 'Event actions',
+      icon: const Icon(Icons.more_horiz, color: AppColors.textMuted),
+      onPressed: () => _showEventActions(context),
+    );
+  }
+
+  Future<void> _showEventActions(BuildContext context) {
+    return showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.xl),
+        ),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.lg,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Container(
+                    width: 44,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.border,
+                      borderRadius: AppRadius.pillBorder,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Text('Event actions', style: AppTextStyles.title),
+                const SizedBox(height: AppSpacing.sm),
+                DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: AppRadius.lgBorder,
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ReportButton(
+                        targetType: ReportTargetType.event,
+                        targetId: event.id,
+                        menuItem: true,
+                      ),
+                      const Divider(height: 1, color: AppColors.border),
+                      ReportButton(
+                        targetType: ReportTargetType.user,
+                        targetId: event.hostId,
+                        menuItem: true,
+                      ),
+                      const Divider(height: 1, color: AppColors.border),
+                      BlockButton(
+                        targetUserId: event.hostId,
+                        menuItem: true,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
