@@ -21,13 +21,17 @@ class CreateHubPage extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
-            Text('Create', style: AppTextStyles.headline),
+            Text('Oluştur', style: AppTextStyles.headline),
             const SizedBox(height: AppSpacing.sm),
-            Text('Start an event or share a moment.', style: AppTextStyles.body),
+            Text(
+              'Bir etkinlik başlat ya da topluluktan bir spor anı paylaş.',
+              style: AppTextStyles.body,
+            ),
             const SizedBox(height: AppSpacing.xl),
             _CreateActionCard(
-              title: 'Create Event',
-              subtitle: 'Gather people for a sport or social activity.',
+              title: 'Etkinlik oluştur',
+              subtitle:
+                  'Yakındaki insanları spor veya sosyal bir aktivite için bir araya getir.',
               icon: Icons.event_available,
               accentColor: AppColors.primary,
               accentBackground: AppColors.primarySoft,
@@ -35,8 +39,9 @@ class CreateHubPage extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             _CreateActionCard(
-              title: 'Share a Moment',
-              subtitle: 'Post a photo from your day, match, or activity.',
+              title: 'Fotoğraf paylaş',
+              subtitle:
+                  'Maçtan, antrenmandan veya etkinlik gününden bir anı paylaş.',
               icon: Icons.photo_camera_outlined,
               accentColor: AppColors.secondary,
               accentBackground: AppColors.secondarySoft,

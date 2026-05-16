@@ -146,9 +146,15 @@ class _EventsBody extends StatelessWidget {
     }).toList();
 
     if (eventsState.events.isEmpty) {
-      return const EmptyState(
-        title: 'No events yet.',
-        message: 'Create the first sports plan and bring people together.',
+      return EmptyState(
+        title: 'Henüz etkinlik yok',
+        message:
+            'İlk etkinliği sen oluşturabilir ya da daha sonra tekrar keşfe çıkabilirsin.',
+        icon: Icons.event_available_outlined,
+        actionLabel: 'Etkinlik oluştur',
+        onAction: () => context.goNamed(RouteNames.createEvent),
+        secondaryActionLabel: 'Profilini tamamla',
+        onSecondaryAction: () => context.goNamed(RouteNames.profileComplete),
       );
     }
 

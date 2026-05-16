@@ -194,10 +194,10 @@ class _ImagePickerPreview extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: AppSpacing.sm),
-                        Text('Choose photo', style: AppTextStyles.bodyStrong),
+                        Text('Fotoğraf seç', style: AppTextStyles.bodyStrong),
                         const SizedBox(height: AppSpacing.xs),
                         Text(
-                          'A match, activity, or community moment',
+                          'Bir anını paylaşmak için galerinden fotoğraf seç.',
                           style: AppTextStyles.caption,
                           textAlign: TextAlign.center,
                         ),

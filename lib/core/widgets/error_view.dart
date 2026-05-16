@@ -32,8 +32,25 @@ class ErrorView extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Icon(Icons.error_outline, color: AppColors.error),
+                Container(
+                  width: 52,
+                  height: 52,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primarySoft,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.refresh_rounded,
+                    color: AppColors.primary,
+                  ),
+                ),
                 const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Bir şey ters gitti',
+                  style: AppTextStyles.title,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.sm),
                 Text(
                   message,
                   style: AppTextStyles.bodySmall,
@@ -41,7 +58,7 @@ class ErrorView extends StatelessWidget {
                 ),
                 if (onRetry != null) ...[
                   const SizedBox(height: AppSpacing.md),
-                  AppButton(label: 'Try again', onPressed: onRetry),
+                  AppButton(label: 'Tekrar dene', onPressed: onRetry),
                 ],
               ],
             ),

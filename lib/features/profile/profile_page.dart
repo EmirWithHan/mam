@@ -81,6 +81,10 @@ class _ProfileBody extends StatelessWidget {
       children: [
         _ProfileHeader(profile: profile),
         const SizedBox(height: AppSpacing.lg),
+        if (!profile.isProfileCompleted) ...[
+          const _ProfileIncompleteGuidance(),
+          const SizedBox(height: AppSpacing.lg),
+        ],
         _TrustCard(profile: profile),
         const SizedBox(height: AppSpacing.lg),
         DecoratedBox(
@@ -116,6 +120,63 @@ class _ProfileBody extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _ProfileIncompleteGuidance extends StatelessWidget {
+  const _ProfileIncompleteGuidance();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceSoft,
+        border: Border.all(color: AppColors.border),
+        borderRadius: AppRadius.lgBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primarySoft,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.assignment_ind_outlined,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    'Profilini tamamla',
+                    style: AppTextStyles.title,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              'Etkinlik oluşturmak ve katılım isteği göndermek için temel profil bilgilerini tamamlamalısın.',
+              style: AppTextStyles.bodySmall,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            AppButton(
+              label: 'Profili tamamla',
+              onPressed: () => context.goNamed(RouteNames.profileComplete),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

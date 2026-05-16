@@ -130,9 +130,14 @@ class _FeedBody extends ConsumerWidget {
     }
 
     if (feedState.posts.isEmpty) {
-      return const EmptyState(
-        title: 'No moments yet.',
-        message: 'Share the first sports photo from the community.',
+      return EmptyState(
+        title: 'Henüz paylaşım yok',
+        message: 'Bir fotoğraf paylaşarak topluluğa ilk anı sen bırakabilirsin.',
+        icon: Icons.add_photo_alternate_outlined,
+        actionLabel: 'Fotoğraf paylaş',
+        onAction: () => context.goNamed(RouteNames.createPost),
+        secondaryActionLabel: 'Etkinlikleri keşfet',
+        onSecondaryAction: () => context.goNamed(RouteNames.events),
       );
     }
 

@@ -58,9 +58,10 @@ class _TrustScoreHistoryBody extends ConsumerWidget {
 
     if (state.logs.isEmpty) {
       return const EmptyState(
-        title: 'Henüz trust score değişikliği yok.',
+        title: 'Henüz değişiklik yok',
         message:
-            'Güven puanın etkinlik davranışların ve güvenlik sinyalleriyle zamanla şekillenir.',
+            'Trust score geçmişin zamanla etkinlik davranışların ve güvenlik sinyalleriyle oluşur.',
+        icon: Icons.verified_user_outlined,
       );
     }
 
@@ -74,7 +75,7 @@ class _TrustScoreHistoryBody extends ConsumerWidget {
           Text('Trust Score', style: AppTextStyles.headline),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Güven puanın etkinlik davranışların ve güvenlik sinyalleriyle zamanla şekillenir.',
+            'Trust score geçmişin zamanla etkinlik davranışların ve güvenlik sinyalleriyle oluşur.',
             style: AppTextStyles.body,
           ),
           const SizedBox(height: AppSpacing.lg),

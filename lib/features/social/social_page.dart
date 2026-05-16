@@ -91,9 +91,15 @@ class _SocialPageState extends ConsumerState<SocialPage> {
                       .refreshChatGroups(),
                 )
               else if (groups.isEmpty)
-                const EmptyState(
-                  title: 'Approved event chats will appear here.',
-                  message: 'Join or host an event to start coordinating.',
+                EmptyState(
+                  title: 'Henüz etkinlik sohbetin yok',
+                  message:
+                      'Bir etkinliğe katıldığında veya etkinlik oluşturduğunda sohbet grupların burada görünür.',
+                  icon: Icons.forum_outlined,
+                  actionLabel: 'Etkinlikleri keşfet',
+                  onAction: () => context.goNamed(RouteNames.events),
+                  secondaryActionLabel: 'Etkinlik oluştur',
+                  onSecondaryAction: () => context.goNamed(RouteNames.createEvent),
                 )
               else
                 ...groups.map(

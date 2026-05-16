@@ -148,8 +148,10 @@ class _ChatBody extends StatelessWidget {
 
     if (state.messages.isEmpty) {
       return const EmptyState(
-        title: 'No messages yet.',
-        message: 'Coordinate the event here once the group is ready.',
+        title: 'Sohbet yeni başladı',
+        message:
+            'Etkinlik öncesi detayları konuşmak için ilk mesajı gönderebilirsin.',
+        icon: Icons.forum_outlined,
       );
     }
 

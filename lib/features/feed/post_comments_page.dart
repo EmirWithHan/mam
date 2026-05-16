@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_text_field.dart';
+import '../../core/widgets/empty_state.dart';
 import '../auth/auth_provider.dart';
 import 'feed_models.dart';
 import 'feed_provider.dart';
@@ -121,32 +121,10 @@ class _CommentsBody extends StatelessWidget {
     }
 
     if (comments.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Icon(
-                Icons.mode_comment_outlined,
-                color: AppColors.primary,
-                size: 36,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                'No comments yet.',
-                style: AppTextStyles.title,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Start the conversation.',
-                style: AppTextStyles.body,
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
-        ),
+      return const EmptyState(
+        title: 'Henüz yorum yok',
+        message: 'İlk yorumu sen yazabilirsin.',
+        icon: Icons.mode_comment_outlined,
       );
     }
 

@@ -119,19 +119,19 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Complete your profile before creating an event.',
+                  'Etkinlik oluşturmak için profil gerekli',
                   style: AppTextStyles.title,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'You can keep browsing events now and finish your player card when you are ready to host.',
+                  'Topluluk güvenliği için etkinlik oluşturmadan önce temel profil bilgilerini tamamla.',
                   style: AppTextStyles.body,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 AppButton(
-                  label: 'Complete profile',
+                  label: 'Profili tamamla',
                   onPressed: () =>
                       context.goNamed(RouteNames.profileComplete),
                 ),
