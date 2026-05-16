@@ -2,15 +2,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/constants/sport_types.dart';
+import '../../core/constants/turkey_locations.dart';
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/utils/date_formatter.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_text_field.dart';
+import '../../services/location_service.dart';
 import '../profile/profile_provider.dart';
 import 'events_models.dart';
 import 'events_provider.dart';
@@ -27,6 +31,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _sportTypeController = TextEditingController();
+  final _customSportController = TextEditingController();
   final _cityController = TextEditingController();
   final _districtController = TextEditingController();
   final _locationTextController = TextEditingController();
@@ -35,6 +40,14 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   final _capacityMaleController = TextEditingController(text: '0');
   final _capacityFemaleController = TextEditingController(text: '0');
   final _capacityAnyController = TextEditingController(text: '0');
+  final _locationService = const LocationService();
+
+  DateTime? _selectedEventDate;
+  double? _locationLat;
+  double? _locationLng;
+  bool _locating = false;
+
+  bool get _usesCustomSport => _sportTypeController.text == SportTypes.other;
 
   @override
   void initState() {
@@ -49,6 +62,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     _titleController.dispose();
     _descriptionController.dispose();
     _sportTypeController.dispose();
+    _customSportController.dispose();
     _cityController.dispose();
     _districtController.dispose();
     _locationTextController.dispose();
@@ -66,11 +80,13 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     final input = CreateEventInput(
       title: _titleController.text,
       description: _descriptionController.text,
-      sportType: _sportTypeController.text,
+      sportType: _resolvedSportType(),
       city: _cityController.text,
       district: _districtController.text,
       locationText: _locationTextController.text,
-      eventDate: _parseEventDate(_eventDateController.text.trim())!,
+      locationLat: _locationLat,
+      locationLng: _locationLng,
+      eventDate: _selectedEventDate!,
       capacityTotal: int.parse(_capacityTotalController.text.trim()),
       capacityMale: _parseIntOrZero(_capacityMaleController.text),
       capacityFemale: _parseIntOrZero(_capacityFemaleController.text),
@@ -95,6 +111,129 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     }
   }
 
+  Future<void> _selectSport() async {
+    final selected = await _showOptionSheet(
+      title: 'Spor veya aktivite seç',
+      values: SportTypes.values,
+      selectedValue: _sportTypeController.text,
+      searchable: false,
+    );
+    if (selected == null) return;
+
+    setState(() {
+      _sportTypeController.text = selected;
+      if (selected != SportTypes.other) _customSportController.clear();
+    });
+  }
+
+  Future<void> _selectCity() async {
+    final selected = await _showOptionSheet(
+      title: 'Şehir seç',
+      values: TurkeyLocations.cities,
+      selectedValue: _cityController.text,
+      searchHint: 'Şehir ara',
+    );
+    if (selected == null) return;
+
+    setState(() {
+      _cityController.text = selected;
+      _districtController.clear();
+    });
+  }
+
+  Future<void> _selectDistrict() async {
+    final city = _cityController.text.trim();
+    if (city.isEmpty || !TurkeyLocations.hasDistrictData(city)) return;
+
+    final selected = await _showOptionSheet(
+      title: 'İlçe seç',
+      values: TurkeyLocations.getDistrictsForCity(city),
+      selectedValue: _districtController.text,
+      searchHint: 'İlçe ara',
+    );
+    if (selected == null) return;
+
+    setState(() => _districtController.text = selected);
+  }
+
+  Future<void> _pickDateTime() async {
+    final now = DateTime.now();
+    final initial = _selectedEventDate ?? now.add(const Duration(days: 1));
+    final date = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+                  primary: AppColors.primary,
+                ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (date == null || !mounted) return;
+
+    final time = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(initial),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+                  primary: AppColors.primary,
+                ),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (time == null) return;
+
+    final selected = DateTime(
+      date.year,
+      date.month,
+      date.day,
+      time.hour,
+      time.minute,
+    );
+    setState(() {
+      _selectedEventDate = selected;
+      _eventDateController.text = DateFormatter.dateTime(selected);
+    });
+  }
+
+  Future<void> _useCurrentLocation() async {
+    setState(() => _locating = true);
+
+    try {
+      final position = await _locationService.getCurrentPosition();
+      if (!mounted) return;
+
+      setState(() {
+        _locationLat = position.latitude;
+        _locationLng = position.longitude;
+        if (_locationTextController.text.trim().isEmpty) {
+          _locationTextController.text = 'Mevcut konum seçildi';
+        }
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Konum seçildi.')),
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$error')),
+      );
+    } finally {
+      if (mounted) setState(() => _locating = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileControllerProvider);
@@ -103,22 +242,13 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     if (profileState.status == ProfileStatus.initial ||
         profileState.isLoading) {
       return const Scaffold(
-        body: SafeArea(
-          child: AppLoader(),
-        ),
+        body: SafeArea(child: AppLoader()),
       );
     }
 
     if (!profileState.canCreateEvent) {
       return Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            tooltip: 'Back',
-            onPressed: () => _goBack(context),
-            icon: const Icon(Icons.arrow_back),
-          ),
-          title: const AppLogo(size: 32, showText: true),
-        ),
+        appBar: _CreateEventAppBar(onBack: () => _goBack(context)),
         body: SafeArea(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -140,8 +270,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                 const SizedBox(height: AppSpacing.lg),
                 AppButton(
                   label: 'Profili tamamla',
-                  onPressed: () =>
-                      context.goNamed(RouteNames.profileComplete),
+                  onPressed: () => context.goNamed(RouteNames.profileComplete),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppButton(
@@ -156,34 +285,20 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
       );
     }
 
+    final city = _cityController.text.trim();
+    final hasDistrictData = TurkeyLocations.hasDistrictData(city);
+
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          tooltip: 'Back',
-          onPressed: () => _goBack(context),
-          icon: const Icon(Icons.arrow_back),
-        ),
-        title: const AppLogo(size: 32, showText: true),
-      ),
+      appBar: _CreateEventAppBar(onBack: () => _goBack(context)),
       body: SafeArea(
         child: Form(
           key: _formKey,
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
-              Text('Etkinlik oluştur', style: AppTextStyles.headline),
+              Text('Host an Event', style: AppTextStyles.headline),
               const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Spor planını paylaş, katılım isteklerini yönet ve sahaya çık.',
-                style: AppTextStyles.body,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              _SportChips(
-                selectedSport: _sportTypeController.text,
-                onSelected: (sport) {
-                  setState(() => _sportTypeController.text = sport);
-                },
-              ),
+              Text('Gather your squad, let’s play.', style: AppTextStyles.body),
               const SizedBox(height: AppSpacing.lg),
               _FormCard(
                 child: Column(
@@ -205,38 +320,100 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                     AppTextField(
                       label: 'Sport type',
                       controller: _sportTypeController,
+                      readOnly: true,
+                      onTap: _selectSport,
                       prefixIcon: const Icon(Icons.sports_soccer),
-                      validator: _requiredValidator('Sport type'),
+                      suffixIcon: const Icon(Icons.expand_more),
+                      validator: (_) {
+                        if (_resolvedSportType().isEmpty) {
+                          return 'Sport type is required.';
+                        }
+                        return null;
+                      },
                     ),
+                    if (_usesCustomSport) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      AppTextField(
+                        label: 'Custom sport or activity',
+                        controller: _customSportController,
+                        prefixIcon: const Icon(Icons.edit_outlined),
+                        validator: (_) {
+                          if (_resolvedSportType().isEmpty) {
+                            return 'Custom activity is required.';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
                       label: 'City',
                       controller: _cityController,
+                      readOnly: true,
+                      onTap: _selectCity,
                       prefixIcon: const Icon(Icons.location_city_outlined),
+                      suffixIcon: const Icon(Icons.search),
                       validator: _requiredValidator('City'),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'District',
+                      label: hasDistrictData ? 'District' : 'District optional',
                       controller: _districtController,
+                      readOnly: hasDistrictData,
+                      onTap: hasDistrictData ? _selectDistrict : null,
                       prefixIcon: const Icon(Icons.place_outlined),
+                      suffixIcon:
+                          hasDistrictData ? const Icon(Icons.search) : null,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Event date',
+                      hintText: 'Tarih ve saat seç',
+                      controller: _eventDateController,
+                      readOnly: true,
+                      onTap: _pickDateTime,
+                      prefixIcon: const Icon(Icons.schedule),
+                      suffixIcon: const Icon(Icons.calendar_today_outlined),
+                      validator: (_) {
+                        if (_selectedEventDate == null) {
+                          return 'Event date is required.';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
                       label: 'Location',
                       controller: _locationTextController,
                       prefixIcon: const Icon(Icons.map_outlined),
+                      hintText: 'Adres, saha adı veya buluşma noktası',
                     ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppTextField(
-                      label: 'Event date',
-                      hintText: 'YYYY-MM-DD HH:mm',
-                      controller: _eventDateController,
-                      keyboardType: TextInputType.datetime,
-                      prefixIcon: const Icon(Icons.schedule),
-                      validator: _eventDateValidator,
+                    const SizedBox(height: AppSpacing.sm),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: OutlinedButton.icon(
+                        onPressed: _locating ? null : _useCurrentLocation,
+                        icon: _locating
+                            ? const SizedBox.square(
+                                dimension: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.my_location_outlined),
+                        label: Text(_locating ? 'Konum alınıyor' : 'Konumumu bul'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          side: const BorderSide(color: AppColors.border),
+                          shape: const StadiumBorder(),
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: AppSpacing.md),
+                  ],
+                ),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              _FormCard(
+                child: Column(
+                  children: [
                     AppTextField(
                       label: 'Capacity total',
                       controller: _capacityTotalController,
@@ -282,7 +459,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   eventsState.message!,
-                  style: Theme.of(context).textTheme.bodySmall,
+                  style: const TextStyle(color: AppColors.error),
                   textAlign: TextAlign.center,
                 ),
               ],
@@ -291,6 +468,11 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
         ),
       ),
     );
+  }
+
+  String _resolvedSportType() {
+    if (_usesCustomSport) return _customSportController.text.trim();
+    return _sportTypeController.text.trim();
   }
 
   void _goBack(BuildContext context) {
@@ -308,16 +490,6 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
       }
       return null;
     };
-  }
-
-  String? _eventDateValidator(String? value) {
-    if (value == null || value.trim().isEmpty) {
-      return 'Event date is required.';
-    }
-    if (_parseEventDate(value.trim()) == null) {
-      return 'Use YYYY-MM-DD HH:mm format.';
-    }
-    return null;
   }
 
   String? _capacityTotalValidator(String? value) {
@@ -360,54 +532,170 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     return int.tryParse(value.trim()) ?? 0;
   }
 
-  DateTime? _parseEventDate(String value) {
-    if (value.length != 16) return null;
-    final normalized = value.replaceFirst(' ', 'T');
-    return DateTime.tryParse(normalized);
+  Future<String?> _showOptionSheet({
+    required String title,
+    required List<String> values,
+    required String selectedValue,
+    bool searchable = true,
+    String searchHint = 'Ara',
+  }) {
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (context) {
+        return _OptionSheet(
+          title: title,
+          values: values,
+          selectedValue: selectedValue,
+          searchable: searchable,
+          searchHint: searchHint,
+        );
+      },
+    );
   }
 }
 
-class _SportChips extends StatelessWidget {
-  const _SportChips({
-    required this.selectedSport,
-    required this.onSelected,
-  });
+class _CreateEventAppBar extends StatelessWidget implements PreferredSizeWidget {
+  const _CreateEventAppBar({required this.onBack});
 
-  final String selectedSport;
-  final ValueChanged<String> onSelected;
+  final VoidCallback onBack;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
 
   @override
   Widget build(BuildContext context) {
-    const sports = [
-      'Football',
-      'Basketball',
-      'Tennis',
-      'Volleyball',
-      'Running',
-      'Yoga',
-    ];
-
-    return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.sm,
-      children: sports.map((sport) {
-        final isSelected = selectedSport.trim().toLowerCase() ==
-            sport.toLowerCase();
-
-        return ActionChip(
-          label: Text(sport),
-          onPressed: () => onSelected(sport),
-          backgroundColor: isSelected ? AppColors.primary : AppColors.surface,
-          labelStyle: AppTextStyles.label.copyWith(
-            color: isSelected ? Colors.white : AppColors.primary,
-          ),
-          side: BorderSide(
-            color: isSelected ? AppColors.primary : AppColors.border,
-          ),
-          shape: RoundedRectangleBorder(borderRadius: AppRadius.pillBorder),
-        );
-      }).toList(),
+    return AppBar(
+      leading: IconButton(
+        tooltip: 'Back',
+        onPressed: onBack,
+        icon: const Icon(Icons.arrow_back),
+      ),
+      title: const AppLogo(size: 32, showText: true),
     );
+  }
+}
+
+class _OptionSheet extends StatefulWidget {
+  const _OptionSheet({
+    required this.title,
+    required this.values,
+    required this.selectedValue,
+    required this.searchable,
+    required this.searchHint,
+  });
+
+  final String title;
+  final List<String> values;
+  final String selectedValue;
+  final bool searchable;
+  final String searchHint;
+
+  @override
+  State<_OptionSheet> createState() => _OptionSheetState();
+}
+
+class _OptionSheetState extends State<_OptionSheet> {
+  final _searchController = TextEditingController();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final query = _searchController.text;
+    final values = widget.searchable
+        ? widget.values.where((value) {
+            final normalizedValue = _normalize(value);
+            final normalizedQuery = _normalize(query);
+            if (normalizedQuery.isEmpty) return true;
+            return normalizedValue.startsWith(normalizedQuery) ||
+                normalizedValue.contains(normalizedQuery);
+          }).toList()
+        : widget.values;
+
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.only(
+          left: AppSpacing.lg,
+          right: AppSpacing.lg,
+          top: AppSpacing.md,
+          bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Center(
+              child: Container(
+                width: 44,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: AppRadius.pillBorder,
+                ),
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(widget.title, style: AppTextStyles.title),
+            if (widget.searchable) ...[
+              const SizedBox(height: AppSpacing.md),
+              TextField(
+                controller: _searchController,
+                autofocus: true,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: widget.searchHint,
+                  prefixIcon: const Icon(Icons.search),
+                ),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.md),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 360),
+              child: ListView.separated(
+                shrinkWrap: true,
+                itemCount: values.length,
+                separatorBuilder: (context, index) =>
+                    const Divider(height: 1, color: AppColors.border),
+                itemBuilder: (context, index) {
+                  final value = values[index];
+                  final selected = value == widget.selectedValue;
+                  return ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(value, style: AppTextStyles.bodySmall),
+                    trailing: selected
+                        ? const Icon(Icons.check, color: AppColors.primary)
+                        : null,
+                    onTap: () => Navigator.of(context).pop(value),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _normalize(String value) {
+    return value
+        .trim()
+        .toLowerCase()
+        .replaceAll('ç', 'c')
+        .replaceAll('ğ', 'g')
+        .replaceAll('ı', 'i')
+        .replaceAll('i̇', 'i')
+        .replaceAll('ö', 'o')
+        .replaceAll('ş', 's')
+        .replaceAll('ü', 'u');
   }
 }
 

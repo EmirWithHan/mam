@@ -12,6 +12,9 @@ class AppTextField extends StatelessWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.errorText,
+    this.readOnly = false,
+    this.onTap,
+    this.onChanged,
     this.textInputAction,
     this.onFieldSubmitted,
     this.validator,
@@ -26,6 +29,9 @@ class AppTextField extends StatelessWidget {
   final Widget? prefixIcon;
   final Widget? suffixIcon;
   final String? errorText;
+  final bool readOnly;
+  final VoidCallback? onTap;
+  final ValueChanged<String>? onChanged;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onFieldSubmitted;
   final String? Function(String?)? validator;
@@ -36,7 +42,10 @@ class AppTextField extends StatelessWidget {
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
+      readOnly: readOnly,
       maxLines: obscureText ? 1 : maxLines,
+      onTap: onTap,
+      onChanged: onChanged,
       textInputAction: textInputAction,
       onFieldSubmitted: onFieldSubmitted,
       validator: validator,

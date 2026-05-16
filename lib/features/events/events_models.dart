@@ -135,6 +135,8 @@ class CreateEventInput {
     required this.city,
     this.district,
     this.locationText,
+    this.locationLat,
+    this.locationLng,
     required this.eventDate,
     required this.capacityTotal,
     required this.capacityMale,
@@ -148,6 +150,8 @@ class CreateEventInput {
   final String city;
   final String? district;
   final String? locationText;
+  final double? locationLat;
+  final double? locationLng;
   final DateTime eventDate;
   final int capacityTotal;
   final int capacityMale;
@@ -163,6 +167,8 @@ class CreateEventInput {
       'city': city.trim(),
       'district': _nullableTrim(district),
       'location_text': _nullableTrim(locationText),
+      if (locationLat != null) 'location_lat': locationLat,
+      if (locationLng != null) 'location_lng': locationLng,
       'event_date': eventDate.toIso8601String(),
       'capacity_total': capacityTotal,
       'capacity_male': capacityMale,
