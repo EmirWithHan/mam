@@ -14,30 +14,59 @@ class SocialPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('MaM')),
+      appBar: AppBar(
+        centerTitle: true,
+        title: const Text('MaM', style: AppTextStyles.logo),
+      ),
       body: SafeArea(
-        child: Padding(
+        child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Center(
-            child: DecoratedBox(
+          children: [
+            DecoratedBox(
               decoration: BoxDecoration(
                 color: AppColors.surface,
                 border: Border.all(color: AppColors.border),
                 borderRadius: AppRadius.xlBorder,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.textPrimary.withValues(alpha: 0.05),
+                    blurRadius: 24,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
               ),
               child: Padding(
                 padding: const EdgeInsets.all(AppSpacing.xl),
                 child: Column(
-                  mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Icon(Icons.groups_outlined, color: AppColors.primary, size: 40),
+                    Center(
+                      child: Container(
+                        width: 64,
+                        height: 64,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primarySoft,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.groups_outlined,
+                          color: AppColors.primary,
+                          size: 34,
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: AppSpacing.md),
                     Text('Social', style: AppTextStyles.headline, textAlign: TextAlign.center),
                     const SizedBox(height: AppSpacing.md),
                     Text(
-                      'Event chats and social activity will live here.',
+                      'Event chats and community activity will live here.',
                       style: AppTextStyles.body,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      'No one-to-one messaging here yet. Social stays centered on events.',
+                      style: AppTextStyles.caption,
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: AppSpacing.xl),
@@ -51,11 +80,17 @@ class SocialPage extends StatelessWidget {
                       variant: AppButtonVariant.secondary,
                       onPressed: () => context.goNamed(RouteNames.feed),
                     ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppButton(
+                      label: 'Create something',
+                      variant: AppButtonVariant.outlined,
+                      onPressed: () => context.goNamed(RouteNames.create),
+                    ),
                   ],
                 ),
               ),
             ),
-          ),
+          ],
         ),
       ),
     );

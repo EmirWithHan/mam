@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
+import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/error_view.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../auth/auth_provider.dart';
@@ -54,7 +57,8 @@ class _EventChatPageState extends ConsumerState<EventChatPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('MaM'),
+        centerTitle: true,
+        title: const Text('Event Chat'),
         actions: [
           IconButton(
             onPressed: chatState.loading
@@ -73,15 +77,24 @@ class _EventChatPageState extends ConsumerState<EventChatPage> {
               child: _ChatBody(
                 state: chatState,
                 currentUserId: authState.userId,
+                onRetry: () => ref
+                    .read(eventChatControllerProvider(widget.eventId).notifier)
+                    .refreshMessages(),
               ),
             ),
             if (chatState.access.canRead && !chatState.access.canWrite)
               const Padding(
-                padding: EdgeInsets.all(AppSpacing.md),
-                child: Text(
-                  'This chat is archived.',
-                  style: AppTextStyles.caption,
-                  textAlign: TextAlign.center,
+                padding: EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  0,
+                  AppSpacing.md,
+                  AppSpacing.md,
+                ),
+                child: _ChatNotice(
+                  icon: Icons.lock_clock_outlined,
+                  message: 'This chat is archived.',
+                  color: AppColors.warning,
+                  background: AppColors.tertiarySoft,
                 ),
               ),
             if (chatState.access.canWrite)
@@ -101,10 +114,12 @@ class _ChatBody extends StatelessWidget {
   const _ChatBody({
     required this.state,
     required this.currentUserId,
+    required this.onRetry,
   });
 
   final EventChatState state;
   final String? currentUserId;
+  final VoidCallback onRetry;
 
   @override
   Widget build(BuildContext context) {
@@ -113,39 +128,28 @@ class _ChatBody extends StatelessWidget {
     }
 
     if (state.message != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Text(
-            state.message!,
-            style: const TextStyle(color: AppColors.error),
-            textAlign: TextAlign.center,
-          ),
-        ),
-      );
+      return ErrorView(message: state.message!, onRetry: onRetry);
     }
 
     if (!state.access.canRead) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          child: Text(
-            state.access.reason ??
+      return Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Center(
+          child: _ChatNotice(
+            icon: Icons.lock_outline,
+            message: state.access.reason ??
                 'Only the host and approved participants can access this chat.',
-            style: AppTextStyles.body,
-            textAlign: TextAlign.center,
+            color: AppColors.primary,
+            background: AppColors.primarySoft,
           ),
         ),
       );
     }
 
     if (state.messages.isEmpty) {
-      return Center(
-        child: Text(
-          'No messages yet.',
-          style: AppTextStyles.body,
-          textAlign: TextAlign.center,
-        ),
+      return const EmptyState(
+        title: 'No messages yet.',
+        message: 'Coordinate the event here once the group is ready.',
       );
     }
 
@@ -177,12 +181,24 @@ class _MessageComposer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Expanded(
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: const Border(top: BorderSide(color: AppColors.border)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.textPrimary.withValues(alpha: 0.05),
+            blurRadius: 20,
+            offset: const Offset(0, -8),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Expanded(
               child: AppTextField(
                 label: 'Message',
                 hintText: 'Write to the group',
@@ -193,17 +209,65 @@ class _MessageComposer extends StatelessWidget {
                   if (!isSending) onSend();
                 },
               ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          SizedBox(
-            width: 96,
-            child: AppButton(
-              label: 'Send',
-              isLoading: isSending,
-              onPressed: onSend,
             ),
-          ),
-        ],
+            const SizedBox(width: AppSpacing.sm),
+            SizedBox(
+              width: 92,
+              child: AppButton(
+                label: 'Send',
+                isLoading: isSending,
+                onPressed: onSend,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ChatNotice extends StatelessWidget {
+  const _ChatNotice({
+    required this.icon,
+    required this.message,
+    required this.color,
+    required this.background,
+  });
+
+  final IconData icon;
+  final String message;
+  final Color color;
+  final Color background;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
+        borderRadius: AppRadius.lgBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(color: background, shape: BoxShape.circle),
+              child: Icon(icon, color: color, size: 20),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Flexible(
+              child: Text(
+                message,
+                style: AppTextStyles.bodySmall,
+                textAlign: TextAlign.left,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

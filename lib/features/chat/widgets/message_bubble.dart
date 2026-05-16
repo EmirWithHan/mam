@@ -35,6 +35,13 @@ class MessageBubble extends StatelessWidget {
               bottomLeft: Radius.circular(isMine ? AppRadius.lg : AppRadius.sm),
               bottomRight: Radius.circular(isMine ? AppRadius.sm : AppRadius.lg),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.textPrimary.withValues(alpha: isMine ? 0.08 : 0.05),
+                blurRadius: isMine ? 16 : 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
@@ -51,16 +58,19 @@ class MessageBubble extends StatelessWidget {
                 ],
                 Text(
                   message.message,
-                  style: TextStyle(
+                  style: AppTextStyles.bodySmall.copyWith(
                     color: isMine ? Colors.white : AppColors.textPrimary,
+                    height: 1.35,
                   ),
                 ),
                 const SizedBox(height: AppSpacing.xs),
-                Text(
-                  _formatTime(message.createdAt),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: isMine ? Colors.white70 : AppColors.textSecondary,
+                Align(
+                  alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
+                  child: Text(
+                    _formatTime(message.createdAt),
+                    style: AppTextStyles.caption.copyWith(
+                      color: isMine ? Colors.white70 : AppColors.textMuted,
+                    ),
                   ),
                 ),
               ],
