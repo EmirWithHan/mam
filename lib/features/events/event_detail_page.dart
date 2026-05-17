@@ -127,7 +127,16 @@ class _EventDetailBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(profileControllerProvider);
     final requestState = ref.watch(joinRequestControllerProvider(event.id));
-    final isApprovedParticipant = requestState.myRequest?.isApproved == true;
+    final attendanceStatusAsync = ref.watch(
+      eventAttendanceStatusProvider(event.id),
+    );
+    final attendanceStatus = attendanceStatusAsync.valueOrNull;
+    final hasLeftEvent =
+        EventParticipationStatus.hasLeftEvent(attendanceStatus);
+    final isApprovedByAttendance =
+        EventParticipationStatus.isApprovedParticipant(attendanceStatus);
+    final isApprovedParticipant = !hasLeftEvent &&
+        (isApprovedByAttendance || requestState.myRequest?.isApproved == true);
     final requestController = ref.read(
       joinRequestControllerProvider(event.id).notifier,
     );
@@ -187,6 +196,14 @@ class _EventDetailBody extends ConsumerWidget {
             targetUserId: event.hostId,
             label: 'Call host',
           ),
+          const SizedBox(height: AppSpacing.sm),
+          _LeaveApprovedEventButton(
+            onPressed: () => _confirmLeaveApprovedEvent(
+              context,
+              ref,
+              requestController,
+            ),
+          ),
           const SizedBox(height: AppSpacing.lg),
         ],
         if (isHost)
@@ -208,6 +225,7 @@ class _EventDetailBody extends ConsumerWidget {
             profileState: profileState,
             request: requestState.myRequest,
             isLoading: requestState.loading || profileState.isLoading,
+            hasLeftEvent: hasLeftEvent,
             onRequest: () async {
               final requested = await ref
                   .read(eventsControllerProvider.notifier)
@@ -242,6 +260,83 @@ class _EventDetailBody extends ConsumerWidget {
           ),
         ],
       ],
+    );
+  }
+
+  Future<void> _confirmLeaveApprovedEvent(
+    BuildContext context,
+    WidgetRef ref,
+    JoinRequestController requestController,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Etkinlikten çıkılsın mı?'),
+          content: const Text(
+            'Bu etkinlikten çıkarsan katılımın iptal edilir ve trust score’un 5 puan düşer.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Vazgeç'),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: AppColors.error),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Etkinlikten çık'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final left = await ref
+        .read(eventsControllerProvider.notifier)
+        .leaveApprovedEvent(event.id);
+    ref.invalidate(eventAttendanceStatusProvider(event.id));
+    ref.invalidate(eventDetailProvider(event.id));
+    await requestController.loadMyRequest();
+    if (!context.mounted) return;
+
+    if (left) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Etkinlikten çıkıldı. Trust score 5 puan düştü.'),
+        ),
+      );
+      return;
+    }
+
+    final message = ref.read(eventsControllerProvider).message;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message ?? 'Etkinlikten çıkılamadı.')),
+    );
+  }
+}
+
+class _LeaveApprovedEventButton extends StatelessWidget {
+  const _LeaveApprovedEventButton({required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: AppColors.error,
+        side: const BorderSide(color: AppColors.error),
+        shape: RoundedRectangleBorder(borderRadius: AppRadius.pillBorder),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
+      ),
+      onPressed: onPressed,
+      icon: const Icon(Icons.logout_rounded),
+      label: const Text('Etkinlikten çık'),
     );
   }
 }

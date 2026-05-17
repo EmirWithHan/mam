@@ -20,6 +20,7 @@ class JoinRequestButton extends StatelessWidget {
     required this.isLoading,
     required this.onRequest,
     required this.onCancel,
+    this.hasLeftEvent = false,
   });
 
   final Event event;
@@ -28,6 +29,7 @@ class JoinRequestButton extends StatelessWidget {
   final bool isLoading;
   final VoidCallback onRequest;
   final VoidCallback onCancel;
+  final bool hasLeftEvent;
 
   @override
   Widget build(BuildContext context) {
@@ -36,6 +38,15 @@ class JoinRequestButton extends StatelessWidget {
         label: 'Checking profile',
         isLoading: isLoading,
         onPressed: null,
+      );
+    }
+
+    if (hasLeftEvent) {
+      return const _StatusPanel(
+        icon: Icons.logout_rounded,
+        title: 'Bu etkinlikten çıktın.',
+        message: 'Katılımın iptal edildi. Chat ve çağrı erişimi kapatıldı.',
+        color: AppColors.textMuted,
       );
     }
 

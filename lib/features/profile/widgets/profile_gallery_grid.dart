@@ -79,75 +79,209 @@ class _GalleryTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final caption = post.caption?.trim();
 
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.lgBorder,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.textPrimary.withValues(alpha: 0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: AppRadius.lgBorder,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Image.network(
-              post.imageUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return const ColoredBox(
-                  color: AppColors.border,
-                  child: Center(child: Icon(Icons.image_not_supported)),
-                );
-              },
-            ),
-            if (post.eventId != null)
-              const Positioned(
-                top: AppSpacing.sm,
-                right: AppSpacing.sm,
-                child: _EventMarker(),
+    return Material(
+      color: AppColors.surface,
+      borderRadius: AppRadius.lgBorder,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => _showGalleryPreview(context, post),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: AppRadius.lgBorder,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.textPrimary.withValues(alpha: 0.05),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
-            if (caption != null && caption.isNotEmpty)
-              Positioned(
-                left: 0,
-                right: 0,
-                bottom: 0,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.transparent,
-                        AppColors.textPrimary.withValues(alpha: 0.72),
-                      ],
+            ],
+          ),
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              _GalleryImage(imageUrl: post.imageUrl, fit: BoxFit.cover),
+              if (post.eventId != null)
+                const Positioned(
+                  top: AppSpacing.sm,
+                  right: AppSpacing.sm,
+                  child: _EventMarker(),
+                ),
+              if (caption != null && caption.isNotEmpty)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          Colors.transparent,
+                          AppColors.textPrimary.withValues(alpha: 0.72),
+                        ],
+                      ),
                     ),
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(
-                      AppSpacing.sm,
-                      AppSpacing.xl,
-                      AppSpacing.sm,
-                      AppSpacing.sm,
-                    ),
-                    child: Text(
-                      caption,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.surface,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(
+                        AppSpacing.sm,
+                        AppSpacing.xl,
+                        AppSpacing.sm,
+                        AppSpacing.sm,
+                      ),
+                      child: Text(
+                        caption,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.caption.copyWith(
+                          color: AppColors.surface,
+                        ),
                       ),
                     ),
                   ),
                 ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showGalleryPreview(BuildContext context, ProfileGalleryPost post) {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.86),
+      builder: (context) => _GalleryPreviewDialog(post: post),
+    );
+  }
+}
+
+class _GalleryPreviewDialog extends StatelessWidget {
+  const _GalleryPreviewDialog({required this.post});
+
+  final ProfileGalleryPost post;
+
+  @override
+  Widget build(BuildContext context) {
+    final caption = post.caption?.trim();
+
+    return Material(
+      color: Colors.transparent,
+      child: SafeArea(
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.md,
+                  AppSpacing.xl,
+                  AppSpacing.md,
+                  AppSpacing.lg,
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Flexible(
+                      child: ClipRRect(
+                        borderRadius: AppRadius.xlBorder,
+                        child: ColoredBox(
+                          color: AppColors.textPrimary,
+                          child: _GalleryImage(
+                            imageUrl: post.imageUrl,
+                            fit: BoxFit.contain,
+                          ),
+                        ),
+                      ),
+                    ),
+                    if (caption != null && caption.isNotEmpty) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: AppColors.surface.withValues(alpha: 0.94),
+                          borderRadius: AppRadius.lgBorder,
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.md),
+                          child: Text(
+                            caption,
+                            style: AppTextStyles.body,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: AppSpacing.sm),
+                    Text(
+                      _formatPreviewDate(post.createdAt),
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.surface.withValues(alpha: 0.82),
+                      ),
+                    ),
+                  ],
+                ),
               ),
+            ),
+            Positioned(
+              top: AppSpacing.sm,
+              right: AppSpacing.sm,
+              child: IconButton.filled(
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: AppColors.surface,
+                ),
+                tooltip: 'Close',
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  String _formatPreviewDate(DateTime value) {
+    final year = value.year.toString().padLeft(4, '0');
+    final month = value.month.toString().padLeft(2, '0');
+    final day = value.day.toString().padLeft(2, '0');
+    return '$day.$month.$year';
+  }
+}
+
+class _GalleryImage extends StatelessWidget {
+  const _GalleryImage({
+    required this.imageUrl,
+    required this.fit,
+  });
+
+  final String imageUrl;
+  final BoxFit fit;
+
+  @override
+  Widget build(BuildContext context) {
+    final source = imageUrl.trim();
+    if (source.isEmpty) return const _ImageErrorPlaceholder();
+
+    return Image.network(
+      source,
+      fit: fit,
+      errorBuilder: (context, error, stackTrace) {
+        return const _ImageErrorPlaceholder();
+      },
+    );
+  }
+}
+
+class _ImageErrorPlaceholder extends StatelessWidget {
+  const _ImageErrorPlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return const ColoredBox(
+      color: AppColors.border,
+      child: Center(
+        child: Icon(Icons.image_not_supported, color: AppColors.textMuted),
       ),
     );
   }

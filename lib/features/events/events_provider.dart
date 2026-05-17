@@ -55,6 +55,11 @@ final eventDetailProvider = FutureProvider.family<Event, String>((ref, eventId) 
   return ref.watch(eventsServiceProvider).fetchEventById(eventId);
 });
 
+final eventAttendanceStatusProvider =
+    FutureProvider.family<String?, String>((ref, eventId) {
+  return ref.watch(eventsServiceProvider).fetchMyAttendanceStatus(eventId);
+});
+
 class EventsController extends StateNotifier<EventsState> {
   EventsController(this._eventsService) : super(const EventsState.initial());
 
@@ -114,6 +119,19 @@ class EventsController extends StateNotifier<EventsState> {
         events: state.events,
         message: '$error',
       );
+      return false;
+    }
+  }
+
+  Future<bool> leaveApprovedEvent(String eventId) async {
+    state = state.copyWith(status: state.status, clearMessage: true);
+
+    try {
+      await _eventsService.leaveApprovedEvent(eventId);
+      await refreshEvents();
+      return true;
+    } catch (error) {
+      state = state.copyWith(status: state.status, message: '$error');
       return false;
     }
   }

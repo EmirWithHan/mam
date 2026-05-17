@@ -155,6 +155,27 @@ class Event {
   }
 }
 
+class EventParticipationStatus {
+  const EventParticipationStatus._();
+
+  static const planned = 'planned';
+  static const approved = 'approved';
+  static const pending = 'pending';
+  static const cancelled = 'cancelled';
+  static const rejected = 'rejected';
+  static const left = 'left';
+
+  static bool isApprovedParticipant(String? status) {
+    return status == planned || status == approved;
+  }
+
+  static bool hasLeftEvent(String? status) => status == left;
+
+  static bool canLeaveApprovedEvent(String? status) {
+    return isApprovedParticipant(status);
+  }
+}
+
 class CreateEventInput {
   const CreateEventInput({
     required this.title,

@@ -59,6 +59,32 @@ class EventsService {
     );
   }
 
+  Future<String?> fetchMyAttendanceStatus(String eventId) async {
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    if (userId == null) return null;
+
+    final data = await SupabaseService.client
+        .from('event_participants')
+        .select('attendance_status')
+        .eq('event_id', eventId)
+        .eq('user_id', userId)
+        .maybeSingle();
+
+    return data?['attendance_status'] as String?;
+  }
+
+  Future<void> leaveApprovedEvent(String eventId) async {
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    if (userId == null) {
+      throw StateError('You must be signed in to leave events.');
+    }
+
+    await SupabaseService.client.rpc(
+      'leave_approved_event',
+      params: {'p_event_id': eventId},
+    );
+  }
+
   Future<void> deleteMyEvent(String eventId) async {
     final userId = SupabaseService.client.auth.currentUser?.id;
     if (userId == null) {
