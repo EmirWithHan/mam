@@ -10,6 +10,7 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/date_formatter.dart';
+import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_loader.dart';
@@ -79,12 +80,12 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     final input = CreateEventInput(
-      title: _titleController.text,
-      description: _descriptionController.text,
+      title: _titleController.text.trim(),
+      description: _descriptionController.text.trim(),
       sportType: _resolvedSportType(),
-      city: _cityController.text,
-      district: _districtController.text,
-      locationText: _locationTextController.text,
+      city: _cityController.text.trim(),
+      district: _districtController.text.trim(),
+      locationText: _locationTextController.text.trim(),
       locationLat: _locationLat,
       locationLng: _locationLng,
       eventDate: _selectedEventDate!,
@@ -344,7 +345,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                       label: 'Title',
                       controller: _titleController,
                       prefixIcon: const Icon(Icons.event_available_outlined),
-                      validator: _requiredValidator('Title'),
+                      validator: Validators.eventTitle,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
@@ -352,6 +353,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                       controller: _descriptionController,
                       prefixIcon: const Icon(Icons.notes_outlined),
                       maxLines: 3,
+                      validator: Validators.eventDescription,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
@@ -361,12 +363,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                       onTap: _selectSport,
                       prefixIcon: const Icon(Icons.sports_soccer),
                       suffixIcon: const Icon(Icons.expand_more),
-                      validator: (_) {
-                        if (_resolvedSportType().isEmpty) {
-                          return 'Sport type is required.';
-                        }
-                        return null;
-                      },
+                      validator: (_) =>
+                          Validators.sportType(_resolvedSportType()),
                     ),
                     if (_usesCustomSport) ...[
                       const SizedBox(height: AppSpacing.md),
@@ -374,12 +372,9 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                         label: 'Custom sport or activity',
                         controller: _customSportController,
                         prefixIcon: const Icon(Icons.edit_outlined),
-                        validator: (_) {
-                          if (_resolvedSportType().isEmpty) {
-                            return 'Custom activity is required.';
-                          }
-                          return null;
-                        },
+                        validator: (_) => Validators.customSport(
+                          _customSportController.text,
+                        ),
                       ),
                     ],
                     const SizedBox(height: AppSpacing.md),
@@ -390,7 +385,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                       onTap: _selectCity,
                       prefixIcon: const Icon(Icons.location_city_outlined),
                       suffixIcon: const Icon(Icons.search),
-                      validator: _requiredValidator('City'),
+                      validator: Validators.city,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
@@ -411,12 +406,9 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                       onTap: _pickDateTime,
                       prefixIcon: const Icon(Icons.schedule),
                       suffixIcon: const Icon(Icons.calendar_today_outlined),
-                      validator: (_) {
-                        if (_selectedEventDate == null) {
-                          return 'Event date is required.';
-                        }
-                        return null;
-                      },
+                      validator: (_) => Validators.eventDate(
+                        _selectedEventDate,
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
@@ -566,40 +558,26 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     context.goNamed(RouteNames.events);
   }
 
-  String? Function(String?) _requiredValidator(String label) {
-    return (value) {
-      if (value == null || value.trim().isEmpty) {
-        return '$label is required.';
-      }
-      return null;
-    };
-  }
-
   String? _capacityTotalValidator(String? value) {
-    final capacityTotal = int.tryParse(value?.trim() ?? '');
-    if (capacityTotal == null || capacityTotal <= 0) {
-      return 'Capacity total must be greater than 0.';
-    }
+    final capacityError = Validators.capacityTotal(value);
+    if (capacityError != null) return capacityError;
 
+    final capacityTotal = int.tryParse(value?.trim() ?? '');
     final capacityParts = _capacityPartsTotal();
-    if (capacityParts > capacityTotal) {
-      return 'Capacity parts must not exceed total.';
+    if (capacityTotal != null && capacityParts > capacityTotal) {
+      return 'Kapasite dağılımı toplam kapasiteyi aşamaz.';
     }
 
     return null;
   }
 
   String? _capacityPartValidator(String? value) {
-    final capacity = int.tryParse(value?.trim().isEmpty == true
-        ? '0'
-        : value?.trim() ?? '0');
-    if (capacity == null || capacity < 0) {
-      return 'Use 0 or greater.';
-    }
+    final partError = Validators.nonNegativeNumber(value);
+    if (partError != null) return partError;
 
     final capacityTotal = int.tryParse(_capacityTotalController.text.trim());
     if (capacityTotal != null && _capacityPartsTotal() > capacityTotal) {
-      return 'Capacity parts must not exceed total.';
+      return 'Kapasite dağılımı toplam kapasiteyi aşamaz.';
     }
 
     return null;

@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/error_messages.dart';
 import 'profile_models.dart';
 import 'profile_service.dart';
 
@@ -67,7 +68,10 @@ class ProfileController extends StateNotifier<ProfileState> {
       final profile = await _profileService.getMyProfile();
       state = ProfileState(status: ProfileStatus.success, profile: profile);
     } catch (error) {
-      state = ProfileState(status: ProfileStatus.error, message: '$error');
+      state = ProfileState(
+        status: ProfileStatus.error,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 
@@ -81,7 +85,10 @@ class ProfileController extends StateNotifier<ProfileState> {
       state = ProfileState(status: ProfileStatus.success, profile: profile);
       return profile;
     } catch (error) {
-      state = ProfileState(status: ProfileStatus.error, message: '$error');
+      state = ProfileState(
+        status: ProfileStatus.error,
+        message: friendlyErrorMessage(error),
+      );
       return null;
     }
   }
@@ -94,7 +101,10 @@ class ProfileController extends StateNotifier<ProfileState> {
       state = ProfileState(status: ProfileStatus.success, profile: profile);
       return profile;
     } catch (error) {
-      state = ProfileState(status: ProfileStatus.error, message: '$error');
+      state = ProfileState(
+        status: ProfileStatus.error,
+        message: friendlyErrorMessage(error),
+      );
       return null;
     }
   }
@@ -116,7 +126,7 @@ class ProfileController extends StateNotifier<ProfileState> {
       state = ProfileState(
         status: ProfileStatus.error,
         profile: state.profile,
-        message: '$error',
+        message: friendlyErrorMessage(error),
       );
       return null;
     }

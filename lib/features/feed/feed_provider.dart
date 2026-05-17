@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/error_messages.dart';
 import 'feed_models.dart';
 import 'feed_service.dart';
 
@@ -91,7 +92,10 @@ class FeedController extends StateNotifier<FeedState> {
       final posts = await _feedService.fetchPostsWithStats();
       state = FeedState(status: FeedStatus.success, posts: posts);
     } catch (error) {
-      state = state.copyWith(status: FeedStatus.error, message: '$error');
+      state = state.copyWith(
+        status: FeedStatus.error,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 
@@ -106,7 +110,10 @@ class FeedController extends StateNotifier<FeedState> {
       state = FeedState(status: FeedStatus.success, posts: posts);
       return post;
     } catch (error) {
-      state = state.copyWith(isCreating: false, message: '$error');
+      state = state.copyWith(
+        isCreating: false,
+        message: friendlyErrorMessage(error),
+      );
       return null;
     }
   }
@@ -122,7 +129,7 @@ class FeedController extends StateNotifier<FeedState> {
       final posts = await _feedService.fetchPostsWithStats();
       state = state.copyWith(status: FeedStatus.success, posts: posts);
     } catch (error) {
-      state = state.copyWith(message: '$error');
+      state = state.copyWith(message: friendlyErrorMessage(error));
     }
   }
 
@@ -138,7 +145,7 @@ class FeedController extends StateNotifier<FeedState> {
       await refreshPosts();
       return true;
     } catch (error) {
-      state = state.copyWith(message: '$error');
+      state = state.copyWith(message: friendlyErrorMessage(error));
       return false;
     }
   }
@@ -162,7 +169,7 @@ class FeedController extends StateNotifier<FeedState> {
     } catch (error) {
       state = state.copyWith(
         commentsLoading: false,
-        commentsMessage: '$error',
+        commentsMessage: friendlyErrorMessage(error),
       );
     }
   }
@@ -197,7 +204,7 @@ class FeedController extends StateNotifier<FeedState> {
     } catch (error) {
       state = state.copyWith(
         commentsLoading: false,
-        commentsMessage: '$error',
+        commentsMessage: friendlyErrorMessage(error),
       );
       return null;
     }

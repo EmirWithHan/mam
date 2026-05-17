@@ -10,6 +10,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_text_field.dart';
@@ -25,6 +26,7 @@ class CreatePostPage extends ConsumerStatefulWidget {
 }
 
 class _CreatePostPageState extends ConsumerState<CreatePostPage> {
+  final _formKey = GlobalKey<FormState>();
   final _captionController = TextEditingController();
   final _imagePicker = ImagePicker();
 
@@ -57,11 +59,13 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
   }
 
   Future<void> _createPost() async {
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+
     final bytes = _imageBytes;
     final fileName = _fileName;
     if (bytes == null || fileName == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Choose a photo before posting.')),
+        const SnackBar(content: Text('Paylaşmadan önce bir fotoğraf seç.')),
       );
       return;
     }
@@ -71,7 +75,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
             imageBytes: bytes,
             fileName: fileName,
             contentType: _contentType,
-            caption: _captionController.text,
+            caption: _captionController.text.trim(),
             eventId: _selectedEventId,
           ),
         );
@@ -104,9 +108,11 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
         title: const AppLogo(size: 32, showText: true),
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          children: [
+        child: Form(
+          key: _formKey,
+          child: ListView(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            children: [
             Text('Share a moment', style: AppTextStyles.headline),
             const SizedBox(height: AppSpacing.sm),
             Text(
@@ -124,6 +130,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
               controller: _captionController,
               prefixIcon: const Icon(Icons.short_text),
               maxLines: 3,
+              validator: Validators.postCaption,
             ),
             const SizedBox(height: AppSpacing.md),
             LinkedEventPicker(
@@ -151,7 +158,8 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                 textAlign: TextAlign.center,
               ),
             ],
-          ],
+            ],
+          ),
         ),
       ),
     );

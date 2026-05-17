@@ -13,6 +13,7 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/date_formatter.dart';
+import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
 import 'profile_models.dart';
@@ -115,15 +116,15 @@ class _ProfileCompletionPageState
     }
 
     final formData = ProfileFormData(
-      username: _usernameController.text,
+      username: _usernameController.text.trim(),
       tag: _tag?.isNotEmpty == true ? _tag! : _generateTag(),
-      firstName: _firstNameController.text,
-      lastName: _lastNameController.text,
+      firstName: _firstNameController.text.trim(),
+      lastName: _lastNameController.text.trim(),
       birthDate: _selectedBirthDate!,
-      gender: _genderController.text,
-      city: _cityController.text,
-      district: _districtController.text,
-      phone: _phoneController.text,
+      gender: _genderController.text.trim(),
+      city: _cityController.text.trim(),
+      district: _districtController.text.trim(),
+      phone: _phoneController.text.trim(),
       avatarUrl: avatarUrl,
     );
 
@@ -203,21 +204,21 @@ class _ProfileCompletionPageState
                       label: 'Username',
                       controller: _usernameController,
                       prefixIcon: const Icon(Icons.alternate_email),
-                      validator: _requiredValidator('Username'),
+                      validator: Validators.username,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
                       label: 'First name',
                       controller: _firstNameController,
                       prefixIcon: const Icon(Icons.person_outline),
-                      validator: _requiredValidator('First name'),
+                      validator: Validators.firstName,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
                       label: 'Last name',
                       controller: _lastNameController,
                       prefixIcon: const Icon(Icons.person_outline),
-                      validator: _requiredValidator('Last name'),
+                      validator: Validators.lastName,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
@@ -248,7 +249,7 @@ class _ProfileCompletionPageState
                       onTap: _selectCity,
                       prefixIcon: const Icon(Icons.location_city_outlined),
                       suffixIcon: const Icon(Icons.expand_more),
-                      validator: _requiredValidator('City'),
+                      validator: Validators.city,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
@@ -414,7 +415,7 @@ class _ProfileCompletionPageState
   String? Function(String?) _requiredValidator(String label) {
     return (value) {
       if (value == null || value.trim().isEmpty) {
-        return '$label is required.';
+        return '$label gerekli.';
       }
       return null;
     };
@@ -422,7 +423,7 @@ class _ProfileCompletionPageState
 
   String? _birthDateValidator(String? value) {
     if (_selectedBirthDate == null || value == null || value.trim().isEmpty) {
-      return 'Birth date is required.';
+      return 'Doğum tarihi seçmelisin.';
     }
     return null;
   }

@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_text_field.dart';
@@ -98,12 +99,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         prefixIcon: const Icon(Icons.mail_outline),
-                        validator: (value) {
-                          if (value == null || value.trim().isEmpty) {
-                            return 'E-posta gerekli.';
-                          }
-                          return null;
-                        },
+                        validator: Validators.email,
                       ),
                       const SizedBox(height: AppSpacing.md),
                       AppTextField(
@@ -111,12 +107,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         controller: _passwordController,
                         obscureText: true,
                         prefixIcon: const Icon(Icons.lock_outline),
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Şifre gerekli.';
-                          }
-                          return null;
-                        },
+                        validator: Validators.loginPassword,
                       ),
                       const SizedBox(height: AppSpacing.xl),
                       AppButton(

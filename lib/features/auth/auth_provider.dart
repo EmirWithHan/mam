@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
+import '../../core/utils/error_messages.dart';
 import 'auth_models.dart';
 import 'auth_service.dart';
 
@@ -51,15 +52,15 @@ class AuthController extends StateNotifier<AuthState> {
       final user = response.user;
 
       if (user == null) {
-        state = const AuthState.error(message: 'Could not sign in.');
+        state = const AuthState.error(message: 'E-posta veya şifre hatalı.');
         return;
       }
 
       state = AuthState.authenticated(userId: user.id);
     } on supabase.AuthException catch (error) {
-      state = AuthState.error(message: error.message);
-    } catch (_) {
-      state = const AuthState.error(message: 'Something went wrong.');
+      state = AuthState.error(message: friendlyErrorMessage(error));
+    } catch (error) {
+      state = AuthState.error(message: friendlyErrorMessage(error));
     }
   }
 
@@ -77,15 +78,17 @@ class AuthController extends StateNotifier<AuthState> {
       final user = response.user;
 
       if (user == null) {
-        state = const AuthState.error(message: 'Could not create account.');
+        state = const AuthState.error(
+          message: 'Hesap oluşturulamadı. Tekrar dene.',
+        );
         return;
       }
 
       state = AuthState.authenticated(userId: user.id);
     } on supabase.AuthException catch (error) {
-      state = AuthState.error(message: error.message);
-    } catch (_) {
-      state = const AuthState.error(message: 'Something went wrong.');
+      state = AuthState.error(message: friendlyErrorMessage(error));
+    } catch (error) {
+      state = AuthState.error(message: friendlyErrorMessage(error));
     }
   }
 
@@ -96,9 +99,9 @@ class AuthController extends StateNotifier<AuthState> {
       await _authService.signOut();
       state = const AuthState.unauthenticated();
     } on supabase.AuthException catch (error) {
-      state = AuthState.error(message: error.message);
-    } catch (_) {
-      state = const AuthState.error(message: 'Something went wrong.');
+      state = AuthState.error(message: friendlyErrorMessage(error));
+    } catch (error) {
+      state = AuthState.error(message: friendlyErrorMessage(error));
     }
   }
 

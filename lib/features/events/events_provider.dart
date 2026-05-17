@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/error_messages.dart';
 import 'events_models.dart';
 import 'events_service.dart';
 
@@ -89,7 +90,10 @@ class EventsController extends StateNotifier<EventsState> {
       final events = await _eventsService.fetchEvents();
       state = EventsState(status: EventsStatus.success, events: events);
     } catch (error) {
-      state = EventsState(status: EventsStatus.error, message: '$error');
+      state = EventsState(
+        status: EventsStatus.error,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 
@@ -104,7 +108,10 @@ class EventsController extends StateNotifier<EventsState> {
       state = EventsState(status: EventsStatus.success, events: events);
       return event;
     } catch (error) {
-      state = EventsState(status: EventsStatus.error, message: '$error');
+      state = EventsState(
+        status: EventsStatus.error,
+        message: friendlyErrorMessage(error),
+      );
       return null;
     }
   }
@@ -116,7 +123,10 @@ class EventsController extends StateNotifier<EventsState> {
       await _eventsService.requestToJoinEvent(eventId);
       return true;
     } catch (error) {
-      state = state.copyWith(status: state.status, message: '$error');
+      state = state.copyWith(
+        status: state.status,
+        message: friendlyErrorMessage(error),
+      );
       return false;
     }
   }
@@ -134,7 +144,7 @@ class EventsController extends StateNotifier<EventsState> {
       state = EventsState(
         status: EventsStatus.error,
         events: state.events,
-        message: '$error',
+        message: friendlyErrorMessage(error),
       );
       return false;
     }
@@ -148,7 +158,10 @@ class EventsController extends StateNotifier<EventsState> {
       await refreshEvents();
       return true;
     } catch (error) {
-      state = state.copyWith(status: state.status, message: '$error');
+      state = state.copyWith(
+        status: state.status,
+        message: friendlyErrorMessage(error),
+      );
       return false;
     }
   }
