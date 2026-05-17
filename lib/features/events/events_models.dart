@@ -155,6 +155,51 @@ class Event {
   }
 }
 
+enum EventDateFilter {
+  all,
+  today,
+  thisWeek,
+  upcoming,
+}
+
+class EventFilters {
+  const EventFilters({
+    this.selectedSportType,
+    this.selectedCity,
+    this.dateFilter = EventDateFilter.all,
+    this.onlyAvailableSpots = false,
+  });
+
+  final String? selectedSportType;
+  final String? selectedCity;
+  final EventDateFilter dateFilter;
+  final bool onlyAvailableSpots;
+
+  bool get isActive {
+    return selectedSportType?.trim().isNotEmpty == true ||
+        selectedCity?.trim().isNotEmpty == true ||
+        dateFilter != EventDateFilter.all ||
+        onlyAvailableSpots;
+  }
+
+  EventFilters copyWith({
+    String? selectedSportType,
+    String? selectedCity,
+    EventDateFilter? dateFilter,
+    bool? onlyAvailableSpots,
+    bool clearSportType = false,
+    bool clearCity = false,
+  }) {
+    return EventFilters(
+      selectedSportType:
+          clearSportType ? null : selectedSportType ?? this.selectedSportType,
+      selectedCity: clearCity ? null : selectedCity ?? this.selectedCity,
+      dateFilter: dateFilter ?? this.dateFilter,
+      onlyAvailableSpots: onlyAvailableSpots ?? this.onlyAvailableSpots,
+    );
+  }
+}
+
 class EventParticipationStatus {
   const EventParticipationStatus._();
 

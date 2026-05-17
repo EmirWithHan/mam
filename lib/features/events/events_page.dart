@@ -11,8 +11,10 @@ import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
+import 'events_models.dart';
 import 'events_provider.dart';
 import 'widgets/event_card.dart';
+import 'widgets/event_filter_sheet.dart';
 
 class EventsPage extends ConsumerStatefulWidget {
   const EventsPage({super.key});
@@ -23,6 +25,7 @@ class EventsPage extends ConsumerStatefulWidget {
 
 class _EventsPageState extends ConsumerState<EventsPage> {
   final _searchController = TextEditingController();
+  var _filters = const EventFilters();
 
   @override
   void initState() {
@@ -80,9 +83,11 @@ class _EventsPageState extends ConsumerState<EventsPage> {
                 style: AppTextStyles.body,
               ),
               SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
-              _SearchBox(
+              _SearchFilterRow(
                 controller: _searchController,
-                onChanged: (_) => setState(() {}),
+                filtersActive: _filters.isActive,
+                onSearchChanged: (_) => setState(() {}),
+                onFilterPressed: _openFilterSheet,
               ),
               SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
               AppButton(
@@ -94,6 +99,8 @@ class _EventsPageState extends ConsumerState<EventsPage> {
                 child: _EventsBody(
                   eventsState: eventsState,
                   searchQuery: _searchController.text,
+                  filters: _filters,
+                  onClearFilters: _clearSearchAndFilters,
                 ),
               ),
             ],
@@ -102,22 +109,42 @@ class _EventsPageState extends ConsumerState<EventsPage> {
       ),
     );
   }
+
+  Future<void> _openFilterSheet() async {
+    final filters = await showModalBottomSheet<EventFilters>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => EventFilterSheet(initialFilters: _filters),
+    );
+    if (filters == null || !mounted) return;
+    setState(() => _filters = filters);
+  }
+
+  void _clearSearchAndFilters() {
+    setState(() {
+      _filters = const EventFilters();
+      _searchController.clear();
+    });
+  }
 }
 
 class _EventsBody extends StatelessWidget {
   const _EventsBody({
     required this.eventsState,
     required this.searchQuery,
+    required this.filters,
+    required this.onClearFilters,
   });
 
   final EventsState eventsState;
   final String searchQuery;
+  final EventFilters filters;
+  final VoidCallback onClearFilters;
 
   @override
   Widget build(BuildContext context) {
-    if (eventsState.isLoading) {
-      return const AppLoader();
-    }
+    if (eventsState.isLoading) return const AppLoader();
 
     if (eventsState.status == EventsStatus.error) {
       return ErrorView(
@@ -125,19 +152,10 @@ class _EventsBody extends StatelessWidget {
       );
     }
 
-    final filteredEvents = eventsState.events.where((event) {
-      final query = searchQuery.trim().toLowerCase();
-      if (query.isEmpty) return true;
-
-      final textMatches = [
-        event.title,
-        event.sportType,
-        event.locationLabel,
-        event.locationText ?? '',
-      ].any((value) => value.toLowerCase().contains(query));
-
-      return textMatches;
-    }).toList();
+    final filteredEvents = eventsState.events
+        .where((event) => _matchesSearch(event, searchQuery))
+        .where((event) => _matchesFilters(event, filters))
+        .toList();
 
     if (eventsState.events.isEmpty) {
       return EmptyState(
@@ -153,9 +171,11 @@ class _EventsBody extends StatelessWidget {
     }
 
     if (filteredEvents.isEmpty) {
-      return const EmptyState(
-        title: 'Eşleşen etkinlik yok',
-        message: 'Başka bir etkinlik adı, spor veya konum aramayı dene.',
+      return EmptyState(
+        title: 'Etkinlik bulunamadı',
+        message: 'Arama veya filtreleri değiştirerek tekrar dene.',
+        actionLabel: 'Filtreleri temizle',
+        onAction: onClearFilters,
       );
     }
 
@@ -168,26 +188,133 @@ class _EventsBody extends StatelessWidget {
       },
     );
   }
+
+  bool _matchesSearch(Event event, String searchQuery) {
+    final query = _normalize(searchQuery);
+    if (query.isEmpty) return true;
+    return [
+      event.title,
+      event.sportType,
+      event.city,
+      event.district ?? '',
+      event.locationText ?? '',
+    ].any((value) => _normalize(value).contains(query));
+  }
+
+  bool _matchesFilters(Event event, EventFilters filters) {
+    final sport = filters.selectedSportType;
+    if (sport != null && _normalize(event.sportType) != _normalize(sport)) {
+      return false;
+    }
+
+    final city = filters.selectedCity;
+    if (city != null && _normalize(event.city) != _normalize(city)) {
+      return false;
+    }
+
+    if (filters.onlyAvailableSpots &&
+        event.approvedCount >= event.capacityTotal) {
+      return false;
+    }
+
+    final now = DateTime.now();
+    switch (filters.dateFilter) {
+      case EventDateFilter.all:
+        return true;
+      case EventDateFilter.today:
+        return DateUtils.isSameDay(event.eventDate, now);
+      case EventDateFilter.thisWeek:
+        final today = DateTime(now.year, now.month, now.day);
+        final end = today.add(const Duration(days: 7));
+        return !event.eventDate.isBefore(today) && event.eventDate.isBefore(end);
+      case EventDateFilter.upcoming:
+        return event.eventDate.isAfter(now);
+    }
+  }
+
+  String _normalize(String value) {
+    return value
+        .trim()
+        .toLowerCase()
+        .replaceAll('ç', 'c')
+        .replaceAll('ğ', 'g')
+        .replaceAll('ı', 'i')
+        .replaceAll('i̇', 'i')
+        .replaceAll('ö', 'o')
+        .replaceAll('ş', 's')
+        .replaceAll('ü', 'u')
+        .replaceAll('Ã§', 'c')
+        .replaceAll('ÄŸ', 'g')
+        .replaceAll('Ä±', 'i')
+        .replaceAll('Ã¶', 'o')
+        .replaceAll('ÅŸ', 's')
+        .replaceAll('Ã¼', 'u');
+  }
 }
 
-class _SearchBox extends StatelessWidget {
-  const _SearchBox({
+class _SearchFilterRow extends StatelessWidget {
+  const _SearchFilterRow({
     required this.controller,
-    required this.onChanged,
+    required this.onSearchChanged,
+    required this.onFilterPressed,
+    required this.filtersActive,
   });
 
   final TextEditingController controller;
-  final ValueChanged<String> onChanged;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onFilterPressed;
+  final bool filtersActive;
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: controller,
-      onChanged: onChanged,
-      decoration: const InputDecoration(
-        hintText: 'Search sport, area, or event',
-        prefixIcon: Icon(Icons.search),
-      ),
+    return Row(
+      children: [
+        Expanded(
+          child: TextField(
+            controller: controller,
+            onChanged: onSearchChanged,
+            decoration: const InputDecoration(
+              hintText: 'Search sport, area, or event',
+              prefixIcon: Icon(Icons.search),
+            ),
+          ),
+        ),
+        const SizedBox(width: AppSpacing.sm),
+        Material(
+          color: filtersActive ? AppColors.primary : AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: onFilterPressed,
+            child: SizedBox(
+              width: 52,
+              height: 52,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Icon(
+                    Icons.tune,
+                    color: filtersActive ? Colors.white : AppColors.primary,
+                  ),
+                  if (filtersActive)
+                    Positioned(
+                      right: 12,
+                      top: 12,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
