@@ -149,8 +149,7 @@ class _EventDetailBody extends ConsumerWidget {
         (hasMyParticipation
             ? myParticipation?.isActiveApprovedParticipant == true
             : requestState.myRequest?.isApproved == true);
-    final canViewPublicParticipants =
-        isHost || myParticipation?.isActiveApprovedParticipant == true;
+    final canViewPublicParticipants = isHost || isApprovedParticipant;
     final requestController = ref.read(
       joinRequestControllerProvider(event.id).notifier,
     );
