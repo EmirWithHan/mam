@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/route_names.dart';
+import '../../core/constants/sport_types.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
@@ -502,7 +503,7 @@ class _EventHeroCard extends StatelessWidget {
                   label: event.sportType,
                   color: AppColors.primary,
                   textColor: Colors.white,
-                  icon: Icons.sports_soccer,
+                  icon: sportIconFor(event.sportType),
                 ),
                 _MiniChip(
                   label: event.capacityLabel,

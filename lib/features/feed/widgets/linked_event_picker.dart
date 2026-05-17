@@ -9,6 +9,7 @@ import '../../../core/widgets/app_loader.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../../core/widgets/sport_icon.dart';
 import '../feed_models.dart';
 import '../feed_provider.dart';
 
@@ -281,13 +282,11 @@ class _LinkableEventTile extends StatelessWidget {
     return ListTile(
       shape: RoundedRectangleBorder(borderRadius: AppRadius.lgBorder),
       tileColor: isSelected ? AppColors.primarySoft : AppColors.surface,
-      leading: CircleAvatar(
-        backgroundColor:
-            isSelected ? AppColors.primary : AppColors.primarySoft,
-        child: Icon(
-          Icons.sports_handball,
-          color: isSelected ? Colors.white : AppColors.primary,
-        ),
+      leading: SportIcon(
+        sportType: event.sportType,
+        size: 20,
+        color: isSelected ? Colors.white : AppColors.primary,
+        backgroundColor: isSelected ? AppColors.primary : AppColors.primarySoft,
       ),
       title: Text(
         event.title,

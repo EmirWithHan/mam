@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/sport_icon.dart';
 import '../../profile/widgets/public_profile_preview_tile.dart';
 import '../events_models.dart';
 
@@ -81,7 +82,7 @@ class EventCard extends StatelessWidget {
                           runSpacing: AppSpacing.sm,
                           children: [
                             _InfoChip(
-                              icon: Icons.sports_soccer,
+                              sportType: event.sportType,
                               label: event.sportType,
                               color: AppColors.primarySoft,
                             ),
@@ -150,14 +151,16 @@ class EventCard extends StatelessWidget {
 
 class _InfoChip extends StatelessWidget {
   const _InfoChip({
-    required this.icon,
     required this.label,
     required this.color,
+    this.icon,
+    this.sportType,
   });
 
-  final IconData icon;
   final String label;
   final Color color;
+  final IconData? icon;
+  final String? sportType;
 
   @override
   Widget build(BuildContext context) {
@@ -174,7 +177,10 @@ class _InfoChip extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 16, color: AppColors.primary),
+            if (sportType != null)
+              SportIcon(sportType: sportType, size: 16, filled: false)
+            else
+              Icon(icon, size: 16, color: AppColors.primary),
             const SizedBox(width: AppSpacing.xs),
             Text(label, style: AppTextStyles.caption),
           ],

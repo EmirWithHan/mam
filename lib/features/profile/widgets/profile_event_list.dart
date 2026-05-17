@@ -7,6 +7,7 @@ import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/sport_icon.dart';
 import '../profile_activity_models.dart';
 
 class ProfileEventList extends StatelessWidget {
@@ -98,18 +99,7 @@ class _ProfileEventTile extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primarySoft,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.sports_soccer,
-                    color: AppColors.primary,
-                  ),
-                ),
+                SportIcon(sportType: event.sportType, size: 20),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(

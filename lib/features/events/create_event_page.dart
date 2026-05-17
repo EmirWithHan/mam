@@ -15,6 +15,7 @@ import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_text_field.dart';
+import '../../core/widgets/sport_icon.dart';
 import '../../services/location_service.dart';
 import '../profile/profile_provider.dart';
 import 'events_models.dart';
@@ -119,6 +120,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
       values: SportTypes.values,
       selectedValue: _sportTypeController.text,
       searchable: false,
+      showSportIcons: true,
     );
     if (selected == null) return;
 
@@ -361,7 +363,14 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                       controller: _sportTypeController,
                       readOnly: true,
                       onTap: _selectSport,
-                      prefixIcon: const Icon(Icons.sports_soccer),
+                      prefixIcon: Padding(
+                        padding: const EdgeInsets.all(12),
+                        child: SportIcon(
+                          sportType: _resolvedSportType(),
+                          size: 20,
+                          filled: false,
+                        ),
+                      ),
                       suffixIcon: const Icon(Icons.expand_more),
                       validator: (_) =>
                           Validators.sportType(_resolvedSportType()),
@@ -612,6 +621,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     required List<String> values,
     required String selectedValue,
     bool searchable = true,
+    bool showSportIcons = false,
     String searchHint = 'Ara',
   }) {
     return showModalBottomSheet<String>(
@@ -627,6 +637,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
           values: values,
           selectedValue: selectedValue,
           searchable: searchable,
+          showSportIcons: showSportIcons,
           searchHint: searchHint,
         );
       },
@@ -661,6 +672,7 @@ class _OptionSheet extends StatefulWidget {
     required this.values,
     required this.selectedValue,
     required this.searchable,
+    required this.showSportIcons,
     required this.searchHint,
   });
 
@@ -668,6 +680,7 @@ class _OptionSheet extends StatefulWidget {
   final List<String> values;
   final String selectedValue;
   final bool searchable;
+  final bool showSportIcons;
   final String searchHint;
 
   @override
@@ -745,6 +758,9 @@ class _OptionSheetState extends State<_OptionSheet> {
                   final selected = value == widget.selectedValue;
                   return ListTile(
                     contentPadding: EdgeInsets.zero,
+                    leading: widget.showSportIcons
+                        ? SportIcon(sportType: value, size: 18)
+                        : null,
                     title: Text(value, style: AppTextStyles.bodySmall),
                     trailing: selected
                         ? const Icon(Icons.check, color: AppColors.primary)

@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/sport_icon.dart';
 import '../../chat/event_chat_list_models.dart';
 
 class SocialChatGroupCard extends StatelessWidget {
@@ -40,18 +41,7 @@ class SocialChatGroupCard extends StatelessWidget {
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Row(
               children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primarySoft,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.forum_outlined,
-                    color: AppColors.primary,
-                  ),
-                ),
+                SportIcon(sportType: group.sportType, size: 24),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
