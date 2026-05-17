@@ -91,7 +91,7 @@ class FeedController extends StateNotifier<FeedState> {
       final posts = await _feedService.fetchPostsWithStats();
       state = FeedState(status: FeedStatus.success, posts: posts);
     } catch (error) {
-      state = FeedState(status: FeedStatus.error, message: '$error');
+      state = state.copyWith(status: FeedStatus.error, message: '$error');
     }
   }
 
