@@ -127,4 +127,12 @@ class Validators {
     }
     return null;
   }
+
+  static String? bio(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.length > 160) {
+      return 'Bio en fazla 160 karakter olabilir.';
+    }
+    return null;
+  }
 }

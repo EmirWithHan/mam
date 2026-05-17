@@ -23,6 +23,13 @@ String friendlyErrorMessage(Object error) {
     return 'Bu kullanıcı adı zaten kullanılıyor.';
   }
 
+  if (normalized.contains('bio') &&
+      (normalized.contains('160') ||
+          normalized.contains('check') ||
+          normalized.contains('constraint'))) {
+    return 'Bio en fazla 160 karakter olabilir.';
+  }
+
   if (normalized.contains('network') ||
       normalized.contains('socket') ||
       normalized.contains('connection') ||

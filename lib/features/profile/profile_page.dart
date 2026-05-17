@@ -336,6 +336,17 @@ class _ProfileHeader extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ],
+            if (profile.bio?.trim().isNotEmpty == true) ...[
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                profile.bio!.trim(),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.35,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ],
         ),
       ),

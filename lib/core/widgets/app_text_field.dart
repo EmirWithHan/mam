@@ -12,6 +12,7 @@ class AppTextField extends StatelessWidget {
     this.prefixIcon,
     this.suffixIcon,
     this.errorText,
+    this.helperText,
     this.readOnly = false,
     this.onTap,
     this.onChanged,
@@ -29,6 +30,7 @@ class AppTextField extends StatelessWidget {
   final Widget? prefixIcon;
   final Widget? suffixIcon;
   final String? errorText;
+  final String? helperText;
   final bool readOnly;
   final VoidCallback? onTap;
   final ValueChanged<String>? onChanged;
@@ -55,6 +57,7 @@ class AppTextField extends StatelessWidget {
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         errorText: errorText,
+        helperText: helperText,
       ),
     );
   }

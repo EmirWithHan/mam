@@ -38,6 +38,7 @@ class _ProfileCompletionPageState
   final _cityController = TextEditingController();
   final _districtController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _bioController = TextEditingController();
   final _imagePicker = ImagePicker();
 
   String? _tag;
@@ -74,6 +75,7 @@ class _ProfileCompletionPageState
     _cityController.text = profile.city ?? '';
     _districtController.text = profile.district ?? '';
     _phoneController.text = profile.phone ?? '';
+    _bioController.text = profile.bio ?? '';
     _avatarUrl = profile.avatarUrl;
     _tag = profile.tag;
     setState(() {});
@@ -89,6 +91,7 @@ class _ProfileCompletionPageState
     _cityController.dispose();
     _districtController.dispose();
     _phoneController.dispose();
+    _bioController.dispose();
     super.dispose();
   }
 
@@ -125,6 +128,7 @@ class _ProfileCompletionPageState
       city: _cityController.text.trim(),
       district: _districtController.text.trim(),
       phone: _phoneController.text.trim(),
+      bio: _bioController.text.trim(),
       avatarUrl: avatarUrl,
     );
 
@@ -269,6 +273,17 @@ class _ProfileCompletionPageState
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
                       prefixIcon: const Icon(Icons.phone_outlined),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Bio',
+                      hintText:
+                          'Kısaca kendinden ve sevdiğin aktivitelerden bahset.',
+                      controller: _bioController,
+                      prefixIcon: const Icon(Icons.notes_outlined),
+                      maxLines: 3,
+                      helperText: 'En fazla 160 karakter',
+                      validator: Validators.bio,
                     ),
                   ],
                 ),

@@ -11,6 +11,7 @@ class Profile {
     this.city,
     this.district,
     this.phone,
+    this.bio,
     this.avatarUrl,
     this.trustScore,
     this.isProfileCompleted = false,
@@ -29,6 +30,7 @@ class Profile {
   final String? city;
   final String? district;
   final String? phone;
+  final String? bio;
   final String? avatarUrl;
   final int? trustScore;
   final bool isProfileCompleted;
@@ -66,6 +68,7 @@ class Profile {
       city: json['city'] as String?,
       district: json['district'] as String?,
       phone: json['phone'] as String?,
+      bio: json['bio'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       trustScore: (json['trust_score'] as num?)?.toInt(),
       isProfileCompleted: json['is_profile_completed'] as bool? ?? false,
@@ -86,6 +89,7 @@ class Profile {
     String? city,
     String? district,
     String? phone,
+    String? bio,
     String? avatarUrl,
     int? trustScore,
     bool? isProfileCompleted,
@@ -104,6 +108,7 @@ class Profile {
       city: city ?? this.city,
       district: district ?? this.district,
       phone: phone ?? this.phone,
+      bio: bio ?? this.bio,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       trustScore: trustScore ?? this.trustScore,
       isProfileCompleted: isProfileCompleted ?? this.isProfileCompleted,
@@ -124,6 +129,7 @@ class ProfileFormData {
     required this.city,
     this.district,
     this.phone,
+    this.bio,
     this.avatarUrl,
   });
 
@@ -136,6 +142,7 @@ class ProfileFormData {
   final String city;
   final String? district;
   final String? phone;
+  final String? bio;
   final String? avatarUrl;
 
   bool get isComplete {
@@ -158,6 +165,7 @@ class ProfileFormData {
       'city': city.trim(),
       'district': _nullableTrim(district),
       'phone': _nullableTrim(phone),
+      'bio': _nullableTrim(bio),
       'avatar_url': _nullableTrim(avatarUrl),
       'is_profile_completed': isComplete,
       'updated_at': DateTime.now().toIso8601String(),
