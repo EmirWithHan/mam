@@ -16,10 +16,12 @@ class EventsService {
         .order('event_date');
     final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
 
-    return data
+    final events = data
         .map(Event.fromJson)
         .where((event) => !blockedUserIds.contains(event.hostId))
         .toList();
+
+    return _withClientApprovedCounts(events);
   }
 
   Future<Event> fetchEventById(String eventId) async {
@@ -29,7 +31,8 @@ class EventsService {
         .eq('id', eventId)
         .single();
 
-    return Event.fromJson(data);
+    final events = await _withClientApprovedCounts([Event.fromJson(data)]);
+    return events.first;
   }
 
   Future<Event> createEvent(CreateEventInput input) async {
@@ -95,5 +98,43 @@ class EventsService {
       'delete_my_event',
       params: {'p_event_id': eventId},
     );
+  }
+
+  Future<List<Event>> _withClientApprovedCounts(List<Event> events) async {
+    if (events.isEmpty) return events;
+
+    final counts = await _fetchApprovedCounts(
+      events.map((event) => event.id).toList(growable: false),
+    );
+
+    return events
+        .map(
+          (event) => event.copyWith(
+            approvedCount: counts[event.id] ?? 0,
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  Future<Map<String, int>> _fetchApprovedCounts(List<String> eventIds) async {
+    if (eventIds.isEmpty) return const {};
+
+    final rows = await SupabaseService.client
+        .from('event_participants')
+        .select('event_id,attendance_status')
+        .inFilter('event_id', eventIds)
+        .inFilter('attendance_status', [
+      EventParticipationStatus.planned,
+      EventParticipationStatus.approved,
+    ]);
+
+    final counts = <String, int>{};
+    for (final row in rows) {
+      final eventId = row['event_id'] as String?;
+      if (eventId == null) continue;
+      counts[eventId] = (counts[eventId] ?? 0) + 1;
+    }
+
+    return counts;
   }
 }

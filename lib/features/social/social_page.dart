@@ -47,6 +47,12 @@ class _SocialPageState extends ConsumerState<SocialPage> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(eventChatListControllerProvider);
+    if (state.status == EventChatListStatus.initial) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(eventChatListControllerProvider.notifier).loadChatGroups();
+      });
+    }
     final groups = _filteredGroups(state.groups);
 
     return Scaffold(

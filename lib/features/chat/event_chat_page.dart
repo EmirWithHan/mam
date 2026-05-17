@@ -13,6 +13,8 @@ import '../../core/widgets/error_view.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../auth/auth_provider.dart';
+import '../events/events_models.dart';
+import '../events/events_provider.dart';
 import 'event_chat_provider.dart';
 import 'widgets/message_bubble.dart';
 
@@ -56,6 +58,12 @@ class _EventChatPageState extends ConsumerState<EventChatPage> {
   Widget build(BuildContext context) {
     final chatState = ref.watch(eventChatControllerProvider(widget.eventId));
     final authState = ref.watch(authControllerProvider);
+    final attendanceStatusAsync = ref.watch(
+      eventAttendanceStatusProvider(widget.eventId),
+    );
+    final hasLeftEvent = EventParticipationStatus.hasLeftEvent(
+      attendanceStatusAsync.valueOrNull,
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -84,12 +92,15 @@ class _EventChatPageState extends ConsumerState<EventChatPage> {
               child: _ChatBody(
                 state: chatState,
                 currentUserId: authState.userId,
+                hasLeftEvent: hasLeftEvent,
                 onRetry: () => ref
                     .read(eventChatControllerProvider(widget.eventId).notifier)
                     .refreshMessages(),
               ),
             ),
-            if (chatState.access.canRead && !chatState.access.canWrite)
+            if (!hasLeftEvent &&
+                chatState.access.canRead &&
+                !chatState.access.canWrite)
               const Padding(
                 padding: EdgeInsets.fromLTRB(
                   AppSpacing.md,
@@ -104,7 +115,7 @@ class _EventChatPageState extends ConsumerState<EventChatPage> {
                   background: AppColors.tertiarySoft,
                 ),
               ),
-            if (chatState.access.canWrite)
+            if (!hasLeftEvent && chatState.access.canWrite)
               _MessageComposer(
                 controller: _messageController,
                 isSending: chatState.sending,
@@ -129,11 +140,13 @@ class _ChatBody extends StatelessWidget {
   const _ChatBody({
     required this.state,
     required this.currentUserId,
+    required this.hasLeftEvent,
     required this.onRetry,
   });
 
   final EventChatState state;
   final String? currentUserId;
+  final bool hasLeftEvent;
   final VoidCallback onRetry;
 
   @override
@@ -144,6 +157,21 @@ class _ChatBody extends StatelessWidget {
 
     if (state.message != null) {
       return ErrorView(message: state.message!, onRetry: onRetry);
+    }
+
+    if (hasLeftEvent) {
+      return const Padding(
+        padding: EdgeInsets.all(AppSpacing.lg),
+        child: Center(
+          child: _ChatNotice(
+            icon: Icons.logout_rounded,
+            message:
+                'Bu etkinlikten çıktığın için sohbet erişimin kapatıldı.',
+            color: AppColors.textMuted,
+            background: AppColors.border,
+          ),
+        ),
+      );
     }
 
     if (!state.access.canRead) {

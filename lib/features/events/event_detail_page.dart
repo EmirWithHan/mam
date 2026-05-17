@@ -14,6 +14,8 @@ import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/error_view.dart';
 import '../../services/maps_service.dart';
 import '../auth/auth_provider.dart';
+import '../chat/event_chat_list_provider.dart';
+import '../chat/event_chat_provider.dart';
 import '../profile/public_profile_provider.dart';
 import '../profile/profile_provider.dart';
 import '../profile/widgets/public_profile_avatar.dart';
@@ -131,12 +133,15 @@ class _EventDetailBody extends ConsumerWidget {
       eventAttendanceStatusProvider(event.id),
     );
     final attendanceStatus = attendanceStatusAsync.valueOrNull;
+    final hasAttendanceStatus = attendanceStatusAsync.hasValue;
     final hasLeftEvent =
         EventParticipationStatus.hasLeftEvent(attendanceStatus);
     final isApprovedByAttendance =
         EventParticipationStatus.isApprovedParticipant(attendanceStatus);
     final isApprovedParticipant = !hasLeftEvent &&
-        (isApprovedByAttendance || requestState.myRequest?.isApproved == true);
+        (hasAttendanceStatus
+            ? isApprovedByAttendance
+            : requestState.myRequest?.isApproved == true);
     final requestController = ref.read(
       joinRequestControllerProvider(event.id).notifier,
     );
@@ -298,6 +303,8 @@ class _EventDetailBody extends ConsumerWidget {
         .leaveApprovedEvent(event.id);
     ref.invalidate(eventAttendanceStatusProvider(event.id));
     ref.invalidate(eventDetailProvider(event.id));
+    ref.invalidate(eventChatControllerProvider(event.id));
+    ref.invalidate(eventChatListControllerProvider);
     await requestController.loadMyRequest();
     if (!context.mounted) return;
 
