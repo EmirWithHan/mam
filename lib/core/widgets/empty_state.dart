@@ -32,68 +32,142 @@ class EmptyState extends StatelessWidget {
     final hasSecondaryAction =
         secondaryActionLabel != null && onSecondaryAction != null;
 
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            border: Border.all(color: AppColors.border),
-            borderRadius: AppRadius.lgBorder,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.textPrimary.withValues(alpha: 0.04),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final hasBoundedHeight = constraints.hasBoundedHeight;
+        final isCompact = hasBoundedHeight && constraints.maxHeight < 280;
+        final outerPadding = isCompact ? AppSpacing.sm : AppSpacing.lg;
+        final innerPadding = isCompact ? AppSpacing.md : AppSpacing.lg;
+        final iconSize = isCompact ? 40.0 : 52.0;
+        final sectionGap = isCompact ? AppSpacing.sm : AppSpacing.md;
+        final actionGap = isCompact ? AppSpacing.md : AppSpacing.lg;
+
+        final content = Center(
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primarySoft,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    icon ?? Icons.sports_handball,
-                    color: AppColors.primary,
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  title,
-                  style: AppTextStyles.title,
-                  textAlign: TextAlign.center,
-                ),
-                if (message != null) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  Text(
-                    message!,
-                    style: AppTextStyles.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-                if (hasPrimaryAction) ...[
-                  const SizedBox(height: AppSpacing.lg),
-                  AppButton(label: actionLabel!, onPressed: onAction),
-                ],
-                if (hasSecondaryAction) ...[
-                  const SizedBox(height: AppSpacing.sm),
-                  AppButton(
-                    label: secondaryActionLabel!,
-                    variant: AppButtonVariant.secondary,
-                    onPressed: onSecondaryAction,
-                  ),
-                ],
-              ],
+            padding: EdgeInsets.all(outerPadding),
+            child: _EmptyStateCard(
+              title: title,
+              message: message,
+              actionLabel: actionLabel,
+              onAction: onAction,
+              icon: icon,
+              secondaryActionLabel: secondaryActionLabel,
+              onSecondaryAction: onSecondaryAction,
+              hasPrimaryAction: hasPrimaryAction,
+              hasSecondaryAction: hasSecondaryAction,
+              innerPadding: innerPadding,
+              iconSize: iconSize,
+              sectionGap: sectionGap,
+              actionGap: actionGap,
             ),
           ),
+        );
+
+        if (!hasBoundedHeight) return content;
+
+        return SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: content,
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _EmptyStateCard extends StatelessWidget {
+  const _EmptyStateCard({
+    required this.title,
+    required this.message,
+    required this.actionLabel,
+    required this.onAction,
+    required this.icon,
+    required this.secondaryActionLabel,
+    required this.onSecondaryAction,
+    required this.hasPrimaryAction,
+    required this.hasSecondaryAction,
+    required this.innerPadding,
+    required this.iconSize,
+    required this.sectionGap,
+    required this.actionGap,
+  });
+
+  final String title;
+  final String? message;
+  final String? actionLabel;
+  final VoidCallback? onAction;
+  final IconData? icon;
+  final String? secondaryActionLabel;
+  final VoidCallback? onSecondaryAction;
+  final bool hasPrimaryAction;
+  final bool hasSecondaryAction;
+  final double innerPadding;
+  final double iconSize;
+  final double sectionGap;
+  final double actionGap;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
+        borderRadius: AppRadius.lgBorder,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.textPrimary.withValues(alpha: 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: EdgeInsets.all(innerPadding),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: iconSize,
+              height: iconSize,
+              decoration: const BoxDecoration(
+                color: AppColors.primarySoft,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon ?? Icons.sports_handball,
+                color: AppColors.primary,
+                size: iconSize * 0.48,
+              ),
+            ),
+            SizedBox(height: sectionGap),
+            Text(
+              title,
+              style: AppTextStyles.title,
+              textAlign: TextAlign.center,
+            ),
+            if (message != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                message!,
+                style: AppTextStyles.bodySmall,
+                textAlign: TextAlign.center,
+              ),
+            ],
+            if (hasPrimaryAction) ...[
+              SizedBox(height: actionGap),
+              AppButton(label: actionLabel!, onPressed: onAction),
+            ],
+            if (hasSecondaryAction) ...[
+              const SizedBox(height: AppSpacing.sm),
+              AppButton(
+                label: secondaryActionLabel!,
+                variant: AppButtonVariant.secondary,
+                onPressed: onSecondaryAction,
+              ),
+            ],
+          ],
         ),
       ),
     );
