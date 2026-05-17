@@ -59,6 +59,77 @@ class FeedService {
     return items;
   }
 
+  Future<List<LinkableEvent>> fetchMyLinkableEvents() async {
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    if (userId == null) {
+      throw StateError('You must be signed in to link an event.');
+    }
+
+    final participantRows = await SupabaseService.client
+        .from('event_participants')
+        .select('event_id,role,attendance_status')
+        .eq('user_id', userId)
+        .inFilter('attendance_status', ['planned', 'attended']);
+
+    final rolesByEventId = <String, String>{};
+    final statusesByEventId = <String, String>{};
+    for (final row in participantRows) {
+      final participant = Map<String, dynamic>.from(row);
+      final eventId = participant['event_id'] as String?;
+      if (eventId == null) continue;
+      rolesByEventId[eventId] = participant['role'] as String? ?? 'participant';
+      statusesByEventId[eventId] =
+          participant['attendance_status'] as String? ?? 'planned';
+    }
+
+    final eventRowsById = <String, Map<String, dynamic>>{};
+    final eventIds = rolesByEventId.keys.toList();
+    if (eventIds.isNotEmpty) {
+      final participantEventRows = await SupabaseService.client
+          .from('events')
+          .select('id,title,sport_type,city,district,event_date,status')
+          .inFilter('id', eventIds);
+
+      for (final row in participantEventRows) {
+        final event = Map<String, dynamic>.from(row);
+        final eventId = event['id'] as String?;
+        if (eventId != null) eventRowsById[eventId] = event;
+      }
+    }
+
+    final hostedEventRows = await SupabaseService.client
+        .from('events')
+        .select('id,title,sport_type,city,district,event_date,status')
+        .eq('host_id', userId);
+
+    for (final row in hostedEventRows) {
+      final event = Map<String, dynamic>.from(row);
+      final eventId = event['id'] as String?;
+      if (eventId == null) continue;
+      rolesByEventId[eventId] = 'host';
+      statusesByEventId[eventId] = statusesByEventId[eventId] ?? 'planned';
+      eventRowsById[eventId] = event;
+    }
+
+    final now = DateTime.now();
+    final events = eventRowsById.entries.map((entry) {
+      return LinkableEvent.fromJson(
+        entry.value,
+        role: rolesByEventId[entry.key],
+        status: statusesByEventId[entry.key],
+      );
+    }).toList();
+
+    events.sort((a, b) {
+      final aPast = !a.eventDate.isAfter(now);
+      final bPast = !b.eventDate.isAfter(now);
+      if (aPast != bPast) return aPast ? -1 : 1;
+      return b.eventDate.compareTo(a.eventDate);
+    });
+
+    return events;
+  }
+
   Future<void> likePost(String postId) async {
     final userId = SupabaseService.client.auth.currentUser?.id;
     if (userId == null) {

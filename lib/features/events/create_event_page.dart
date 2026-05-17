@@ -46,6 +46,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   double? _locationLat;
   double? _locationLng;
   bool _locating = false;
+  String? _locationHelperText;
 
   bool get _usesCustomSport => _sportTypeController.text == SportTypes.other;
 
@@ -181,13 +182,30 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
       context: context,
       initialTime: TimeOfDay.fromDateTime(initial),
       builder: (context, child) {
+        final mediaQuery = MediaQuery.of(context);
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
                   primary: AppColors.primary,
+                  secondary: AppColors.primary,
+                  surface: AppColors.surface,
                 ),
+            timePickerTheme: TimePickerThemeData(
+              backgroundColor: AppColors.surface,
+              dialHandColor: AppColors.primary,
+              dialBackgroundColor: AppColors.primarySoft,
+              hourMinuteColor: AppColors.primarySoft,
+              hourMinuteTextColor: AppColors.textPrimary,
+              entryModeIconColor: AppColors.primary,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+              ),
+            ),
           ),
-          child: child!,
+          child: MediaQuery(
+            data: mediaQuery.copyWith(alwaysUse24HourFormat: true),
+            child: child!,
+          ),
         );
       },
     );
@@ -202,7 +220,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     );
     setState(() {
       _selectedEventDate = selected;
-      _eventDateController.text = DateFormatter.dateTime(selected);
+      _eventDateController.text = DateFormatter.formatEventDateTime(selected);
     });
   }
 
@@ -211,14 +229,24 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
 
     try {
       final position = await _locationService.getCurrentPosition();
+      final address = await _locationService.getAddressFromCoordinates(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+      final locationLabel = address ??
+          _locationService.formatCoordinates(
+            position.latitude,
+            position.longitude,
+          );
       if (!mounted) return;
 
       setState(() {
         _locationLat = position.latitude;
         _locationLng = position.longitude;
-        if (_locationTextController.text.trim().isEmpty) {
-          _locationTextController.text = 'Mevcut konum seçildi';
-        }
+        _locationTextController.text = locationLabel;
+        _locationHelperText = address == null
+            ? 'Konum koordinatları kaydedildi'
+            : 'Otomatik konum kullanılıyor';
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
@@ -227,11 +255,20 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     } catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$error')),
+        SnackBar(content: Text(_locationErrorMessage(error))),
       );
     } finally {
       if (mounted) setState(() => _locating = false);
     }
+  }
+
+  void _clearLocation() {
+    setState(() {
+      _locationLat = null;
+      _locationLng = null;
+      _locationTextController.clear();
+      _locationHelperText = null;
+    });
   }
 
   @override
@@ -387,25 +424,71 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                       controller: _locationTextController,
                       prefixIcon: const Icon(Icons.map_outlined),
                       hintText: 'Adres, saha adı veya buluşma noktası',
+                      onChanged: (_) {
+                        setState(() {
+                          if (_locationLat != null || _locationLng != null) {
+                            _locationHelperText =
+                                'Otomatik konum kullanılıyor';
+                          }
+                        });
+                      },
                     ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: OutlinedButton.icon(
-                        onPressed: _locating ? null : _useCurrentLocation,
-                        icon: _locating
-                            ? const SizedBox.square(
-                                dimension: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.my_location_outlined),
-                        label: Text(_locating ? 'Konum alınıyor' : 'Konumumu bul'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: AppColors.primary,
-                          side: const BorderSide(color: AppColors.border),
-                          shape: const StadiumBorder(),
-                        ),
+                    if (_locationHelperText != null) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.check_circle_outline,
+                            color: AppColors.primary,
+                            size: 16,
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Expanded(
+                            child: Text(
+                              _locationHelperText!,
+                              style: AppTextStyles.caption.copyWith(
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                    ],
+                    const SizedBox(height: AppSpacing.sm),
+                    Wrap(
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.sm,
+                      children: [
+                        OutlinedButton.icon(
+                          onPressed: _locating ? null : _useCurrentLocation,
+                          icon: _locating
+                              ? const SizedBox.square(
+                                  dimension: 16,
+                                  child:
+                                      CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.my_location_outlined),
+                          label: Text(
+                            _locating ? 'Konum alınıyor' : 'Konumumu bul',
+                          ),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(color: AppColors.border),
+                            shape: const StadiumBorder(),
+                          ),
+                        ),
+                        if (_locationTextController.text.trim().isNotEmpty ||
+                            _locationLat != null ||
+                            _locationLng != null)
+                          TextButton.icon(
+                            onPressed: _clearLocation,
+                            icon: const Icon(Icons.close),
+                            label: const Text('Konumu temizle'),
+                            style: TextButton.styleFrom(
+                              foregroundColor: AppColors.textMuted,
+                            ),
+                          ),
+                      ],
                     ),
                   ],
                 ),
@@ -530,6 +613,20 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
 
   int _parseIntOrZero(String value) {
     return int.tryParse(value.trim()) ?? 0;
+  }
+
+  String _locationErrorMessage(Object error) {
+    final message = '$error';
+    if (message.contains('servisleri')) {
+      return 'Konum servisleri kapalı. Manuel konum yazabilirsin.';
+    }
+    if (message.contains('kal') || message.contains('forever')) {
+      return 'Konum izni kalıcı olarak kapalı. Ayarlardan açabilir veya manuel konum yazabilirsin.';
+    }
+    if (message.contains('izin') || message.contains('denied')) {
+      return 'Konum izni verilmedi. Manuel konum yazabilirsin.';
+    }
+    return 'Konum alınamadı. Manuel konum yazabilirsin.';
   }
 
   Future<String?> _showOptionSheet({

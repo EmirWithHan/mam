@@ -1,3 +1,4 @@
+import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 
 class LocationService {
@@ -25,5 +26,37 @@ class LocationService {
     }
 
     return Geolocator.getCurrentPosition();
+  }
+
+  Future<String?> getAddressFromCoordinates({
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      final placemarks = await placemarkFromCoordinates(latitude, longitude);
+      if (placemarks.isEmpty) return null;
+
+      final place = placemarks.first;
+      final parts = [
+        place.street,
+        place.subLocality,
+        place.locality,
+        place.administrativeArea,
+      ]
+          .whereType<String>()
+          .map((part) => part.trim())
+          .where((part) => part.isNotEmpty)
+          .toSet()
+          .toList();
+
+      if (parts.isEmpty) return null;
+      return parts.join(', ');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  String formatCoordinates(double latitude, double longitude) {
+    return 'Konum seçildi: ${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}';
   }
 }

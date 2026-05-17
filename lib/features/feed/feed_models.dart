@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import '../../core/utils/date_formatter.dart';
+
 class Post {
   const Post({
     required this.id,
@@ -81,6 +83,62 @@ class CreatePostInput {
   final String? contentType;
   final String? caption;
   final String? eventId;
+}
+
+class LinkableEvent {
+  const LinkableEvent({
+    required this.id,
+    required this.title,
+    required this.sportType,
+    required this.city,
+    this.district,
+    required this.eventDate,
+    this.role,
+    this.status,
+  });
+
+  final String id;
+  final String title;
+  final String sportType;
+  final String city;
+  final String? district;
+  final DateTime eventDate;
+  final String? role;
+  final String? status;
+
+  String get locationLabel {
+    final districtValue = district?.trim();
+    if (districtValue == null || districtValue.isEmpty) return city;
+    return '$city / $districtValue';
+  }
+
+  String get displayDate => DateFormatter.dateTime(eventDate);
+
+  String get searchText {
+    return [
+      title,
+      sportType,
+      city,
+      district,
+    ].whereType<String>().join(' ').toLowerCase();
+  }
+
+  factory LinkableEvent.fromJson(
+    Map<String, dynamic> json, {
+    String? role,
+    String? status,
+  }) {
+    return LinkableEvent(
+      id: json['id'] as String,
+      title: json['title'] as String,
+      sportType: json['sport_type'] as String,
+      city: json['city'] as String,
+      district: json['district'] as String?,
+      eventDate: DateTime.parse(json['event_date'].toString()),
+      role: role,
+      status: status,
+    );
+  }
 }
 
 class PostComment {

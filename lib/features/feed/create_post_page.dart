@@ -15,6 +15,7 @@ import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_text_field.dart';
 import 'feed_models.dart';
 import 'feed_provider.dart';
+import 'widgets/linked_event_picker.dart';
 
 class CreatePostPage extends ConsumerStatefulWidget {
   const CreatePostPage({super.key});
@@ -25,17 +26,16 @@ class CreatePostPage extends ConsumerStatefulWidget {
 
 class _CreatePostPageState extends ConsumerState<CreatePostPage> {
   final _captionController = TextEditingController();
-  final _eventIdController = TextEditingController();
   final _imagePicker = ImagePicker();
 
   Uint8List? _imageBytes;
   String? _fileName;
   String? _contentType;
+  String? _selectedEventId;
 
   @override
   void dispose() {
     _captionController.dispose();
-    _eventIdController.dispose();
     super.dispose();
   }
 
@@ -72,7 +72,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
             fileName: fileName,
             contentType: _contentType,
             caption: _captionController.text,
-            eventId: _eventIdController.text,
+            eventId: _selectedEventId,
           ),
         );
 
@@ -126,11 +126,16 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
               maxLines: 3,
             ),
             const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              label: 'Linked event (optional)',
-              hintText: 'Leave empty for a standalone photo',
-              controller: _eventIdController,
-              prefixIcon: const Icon(Icons.event_outlined),
+            LinkedEventPicker(
+              selectedEventId: _selectedEventId,
+              onChanged: (eventId) {
+                setState(() => _selectedEventId = eventId);
+              },
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'İstersen bu paylaşımı katıldığın bir etkinlikle ilişkilendirebilirsin.',
+              style: AppTextStyles.caption,
             ),
             const SizedBox(height: AppSpacing.xl),
             AppButton(

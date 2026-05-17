@@ -74,6 +74,11 @@ final feedControllerProvider =
   return FeedController(ref.watch(feedServiceProvider));
 });
 
+final linkedEventsProvider =
+    FutureProvider.autoDispose<List<LinkableEvent>>((ref) {
+  return ref.watch(feedServiceProvider).fetchMyLinkableEvents();
+});
+
 class FeedController extends StateNotifier<FeedState> {
   FeedController(this._feedService) : super(const FeedState.initial());
 

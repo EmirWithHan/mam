@@ -6,11 +6,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/constants/turkey_locations.dart';
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/utils/date_formatter.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
 import 'profile_models.dart';
@@ -42,6 +44,13 @@ class _ProfileCompletionPageState
   Uint8List? _avatarBytes;
   String? _avatarFileName;
   String? _avatarContentType;
+  DateTime? _selectedBirthDate;
+
+  static const _genderOptions = [
+    'Erkek',
+    'Kadın',
+    'Belirtmek istemiyorum',
+  ];
 
   @override
   void initState() {
@@ -58,7 +67,8 @@ class _ProfileCompletionPageState
     _usernameController.text = profile.username ?? '';
     _firstNameController.text = profile.firstName ?? '';
     _lastNameController.text = profile.lastName ?? '';
-    _birthDateController.text = _formatDate(profile.birthDate);
+    _selectedBirthDate = profile.birthDate;
+    _birthDateController.text = _formatBirthDate(profile.birthDate);
     _genderController.text = profile.gender ?? '';
     _cityController.text = profile.city ?? '';
     _districtController.text = profile.district ?? '';
@@ -109,7 +119,7 @@ class _ProfileCompletionPageState
       tag: _tag?.isNotEmpty == true ? _tag! : _generateTag(),
       firstName: _firstNameController.text,
       lastName: _lastNameController.text,
-      birthDate: DateTime.parse(_birthDateController.text.trim()),
+      birthDate: _selectedBirthDate!,
       gender: _genderController.text,
       city: _cityController.text,
       district: _districtController.text,
@@ -155,6 +165,8 @@ class _ProfileCompletionPageState
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileControllerProvider);
+    final selectedCity = _cityController.text.trim();
+    final hasDistrictData = TurkeyLocations.hasDistrictData(selectedCity);
 
     return Scaffold(
       appBar: AppBar(
@@ -210,31 +222,45 @@ class _ProfileCompletionPageState
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
                       label: 'Birth date',
-                      hintText: 'YYYY-MM-DD',
+                      hintText: 'Tarih seç',
                       controller: _birthDateController,
-                      keyboardType: TextInputType.datetime,
+                      readOnly: true,
+                      onTap: _selectBirthDate,
                       prefixIcon: const Icon(Icons.calendar_today_outlined),
+                      suffixIcon: const Icon(Icons.expand_more),
                       validator: _birthDateValidator,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
                       label: 'Gender',
                       controller: _genderController,
+                      readOnly: true,
+                      onTap: _selectGender,
                       prefixIcon: const Icon(Icons.badge_outlined),
+                      suffixIcon: const Icon(Icons.expand_more),
                       validator: _requiredValidator('Gender'),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
                       label: 'City',
                       controller: _cityController,
+                      readOnly: true,
+                      onTap: _selectCity,
                       prefixIcon: const Icon(Icons.location_city_outlined),
+                      suffixIcon: const Icon(Icons.expand_more),
                       validator: _requiredValidator('City'),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'District (optional)',
+                      label: hasDistrictData
+                          ? 'District (optional)'
+                          : 'District (optional, manual)',
                       controller: _districtController,
+                      readOnly: hasDistrictData,
+                      onTap: hasDistrictData ? _selectDistrict : null,
                       prefixIcon: const Icon(Icons.place_outlined),
+                      suffixIcon:
+                          hasDistrictData ? const Icon(Icons.expand_more) : null,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
@@ -268,6 +294,115 @@ class _ProfileCompletionPageState
     );
   }
 
+  Future<void> _selectBirthDate() async {
+    final now = DateTime.now();
+    final firstDate = DateTime(1900);
+    final picked = await showDatePicker(
+      context: context,
+      firstDate: firstDate,
+      lastDate: now,
+      initialDate: _initialBirthDate(now, firstDate),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: Theme.of(context).colorScheme.copyWith(
+                  primary: AppColors.primary,
+                  onPrimary: Colors.white,
+                  surface: AppColors.surface,
+                ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (picked == null || !mounted) return;
+    setState(() {
+      _selectedBirthDate = picked;
+      _birthDateController.text = _formatBirthDate(picked);
+    });
+  }
+
+  DateTime _initialBirthDate(DateTime now, DateTime firstDate) {
+    final fallback = DateTime(now.year - 18, now.month, now.day);
+    final selected = _selectedBirthDate;
+    if (selected == null ||
+        selected.isAfter(now) ||
+        selected.isBefore(firstDate)) {
+      return fallback;
+    }
+    return selected;
+  }
+
+  Future<void> _selectGender() async {
+    final value = await _showOptionSheet(
+      title: 'Cinsiyet seç',
+      initialOptions: _genderOptions,
+      search: (query) {
+        final normalizedQuery = query.trim().toLowerCase();
+        if (normalizedQuery.isEmpty) return _genderOptions;
+        return _genderOptions
+            .where((option) => option.toLowerCase().contains(normalizedQuery))
+            .toList();
+      },
+      searchable: false,
+    );
+    if (value == null || !mounted) return;
+    setState(() => _genderController.text = value);
+  }
+
+  Future<void> _selectCity() async {
+    final value = await _showOptionSheet(
+      title: 'Şehir seç',
+      initialOptions: TurkeyLocations.cities,
+      search: TurkeyLocations.searchCities,
+    );
+    if (value == null || !mounted) return;
+
+    final previousDistrict = _districtController.text.trim();
+    final districts = TurkeyLocations.getDistrictsForCity(value);
+    setState(() {
+      _cityController.text = value;
+      if (districts.isEmpty || !districts.contains(previousDistrict)) {
+        _districtController.clear();
+      }
+    });
+  }
+
+  Future<void> _selectDistrict() async {
+    final city = _cityController.text.trim();
+    if (city.isEmpty || !TurkeyLocations.hasDistrictData(city)) return;
+
+    final value = await _showOptionSheet(
+      title: 'İlçe seç',
+      initialOptions: TurkeyLocations.getDistrictsForCity(city),
+      search: (query) => TurkeyLocations.searchDistricts(city, query),
+    );
+    if (value == null || !mounted) return;
+    setState(() => _districtController.text = value);
+  }
+
+  Future<String?> _showOptionSheet({
+    required String title,
+    required List<String> initialOptions,
+    required List<String> Function(String query) search,
+    bool searchable = true,
+  }) {
+    return showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return _SelectionSheet(
+          title: title,
+          initialOptions: initialOptions,
+          search: search,
+          searchable: searchable,
+        );
+      },
+    );
+  }
+
   void _goBack(BuildContext context) {
     if (context.canPop()) {
       context.pop();
@@ -286,11 +421,8 @@ class _ProfileCompletionPageState
   }
 
   String? _birthDateValidator(String? value) {
-    if (value == null || value.trim().isEmpty) {
+    if (_selectedBirthDate == null || value == null || value.trim().isEmpty) {
       return 'Birth date is required.';
-    }
-    if (DateTime.tryParse(value.trim()) == null) {
-      return 'Use YYYY-MM-DD format.';
     }
     return null;
   }
@@ -300,12 +432,131 @@ class _ProfileCompletionPageState
     return value.toString().padLeft(4, '0');
   }
 
-  String _formatDate(DateTime? value) {
+  String _formatBirthDate(DateTime? value) {
     if (value == null) return '';
-    final year = value.year.toString().padLeft(4, '0');
-    final month = value.month.toString().padLeft(2, '0');
-    final day = value.day.toString().padLeft(2, '0');
-    return '$year-$month-$day';
+    return DateFormatter.shortDate(value);
+  }
+}
+
+class _SelectionSheet extends StatefulWidget {
+  const _SelectionSheet({
+    required this.title,
+    required this.initialOptions,
+    required this.search,
+    required this.searchable,
+  });
+
+  final String title;
+  final List<String> initialOptions;
+  final List<String> Function(String query) search;
+  final bool searchable;
+
+  @override
+  State<_SelectionSheet> createState() => _SelectionSheetState();
+}
+
+class _SelectionSheetState extends State<_SelectionSheet> {
+  final _searchController = TextEditingController();
+  late List<String> _options;
+
+  @override
+  void initState() {
+    super.initState();
+    _options = widget.initialOptions;
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    setState(() => _options = widget.search(value));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.72,
+      minChildSize: 0.42,
+      maxChildSize: 0.9,
+      builder: (context, scrollController) {
+        return DecoratedBox(
+          decoration: const BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.lg,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 42,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: AppColors.textMuted.withValues(alpha: 0.35),
+                      borderRadius: AppRadius.pillBorder,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Text(widget.title, style: AppTextStyles.title),
+                if (widget.searchable) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  AppTextField(
+                    label: 'Ara',
+                    controller: _searchController,
+                    prefixIcon: const Icon(Icons.search),
+                    onChanged: _onSearchChanged,
+                  ),
+                ],
+                const SizedBox(height: AppSpacing.md),
+                Expanded(
+                  child: _options.isEmpty
+                      ? Center(
+                          child: Text(
+                            'Sonuç bulunamadı.',
+                            style: AppTextStyles.body.copyWith(
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        )
+                      : ListView.separated(
+                          controller: scrollController,
+                          itemCount: _options.length,
+                          separatorBuilder: (_, __) =>
+                              const SizedBox(height: AppSpacing.xs),
+                          itemBuilder: (context, index) {
+                            final option = _options[index];
+                            return ListTile(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppRadius.mdBorder,
+                              ),
+                              tileColor: AppColors.surface,
+                              title: Text(option),
+                              trailing: const Icon(
+                                Icons.chevron_right,
+                                color: AppColors.primary,
+                              ),
+                              onTap: () => Navigator.of(context).pop(option),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 }
 
