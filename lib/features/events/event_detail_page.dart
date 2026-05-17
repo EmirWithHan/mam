@@ -174,7 +174,7 @@ class _EventDetailBody extends ConsumerWidget {
         if (isHost || isApprovedParticipant) ...[
           AppButton(
             label: 'Open chat',
-            onPressed: () => context.goNamed(
+            onPressed: () => context.pushNamed(
               RouteNames.eventChat,
               pathParameters: {'eventId': event.id},
             ),

@@ -11,9 +11,11 @@ import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/error_view.dart';
-import '../trust_score/widgets/trust_score_badge.dart';
+import 'profile_activity_provider.dart';
 import 'profile_models.dart';
 import 'profile_provider.dart';
+import 'widgets/profile_event_list.dart';
+import 'widgets/profile_gallery_grid.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -23,11 +25,14 @@ class ProfilePage extends ConsumerStatefulWidget {
 }
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
+  var _selectedTab = _ProfileActivityTab.gallery;
+
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
       ref.read(profileControllerProvider.notifier).loadMyProfile();
+      ref.read(profileActivityControllerProvider.notifier).loadActivity();
     });
   }
 
@@ -41,7 +46,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         actions: [
           IconButton(
             icon: const Icon(Icons.menu_rounded),
-            onPressed: () => context.goNamed(RouteNames.settings),
+            onPressed: () => context.pushNamed(RouteNames.settings),
           ),
           const SizedBox(width: AppSpacing.sm),
         ],
@@ -49,20 +54,35 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.lg),
-          child: _ProfileBody(profileState: profileState),
+          child: _ProfileBody(
+            profileState: profileState,
+            selectedTab: _selectedTab,
+            onTabSelected: (tab) => setState(() => _selectedTab = tab),
+          ),
         ),
       ),
     );
   }
 }
 
-class _ProfileBody extends StatelessWidget {
-  const _ProfileBody({required this.profileState});
+enum _ProfileActivityTab {
+  gallery,
+  events,
+}
+
+class _ProfileBody extends ConsumerWidget {
+  const _ProfileBody({
+    required this.profileState,
+    required this.selectedTab,
+    required this.onTabSelected,
+  });
 
   final ProfileState profileState;
+  final _ProfileActivityTab selectedTab;
+  final ValueChanged<_ProfileActivityTab> onTabSelected;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (profileState.isLoading) {
       return const AppLoader();
     }
@@ -77,56 +97,145 @@ class _ProfileBody extends StatelessWidget {
     if (profile == null) {
       return _ProfileEmptyState();
     }
+    final activityState = ref.watch(profileActivityControllerProvider);
 
-    return ListView(
-      children: [
-        _ProfileHeader(profile: profile),
-        const SizedBox(height: AppSpacing.lg),
-        if (!profile.isProfileCompleted) ...[
-          const _ProfileIncompleteGuidance(),
+    return RefreshIndicator(
+      onRefresh: () async {
+        await ref.read(profileControllerProvider.notifier).refreshMyProfile();
+        await ref.read(profileActivityControllerProvider.notifier).refresh();
+      },
+      child: ListView(
+        children: [
+          _ProfileHeader(profile: profile),
           const SizedBox(height: AppSpacing.lg),
+          _ProfileActivityTabs(
+            selectedTab: selectedTab,
+            onTabSelected: onTabSelected,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _ProfileActivityContent(
+            selectedTab: selectedTab,
+            activityState: activityState,
+            onRetry: () => ref
+                .read(profileActivityControllerProvider.notifier)
+                .refresh(),
+          ),
         ],
-        _TrustCard(profile: profile),
-        const SizedBox(height: AppSpacing.lg),
-        DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: AppRadius.lgBorder,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.textPrimary.withValues(alpha: 0.04),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              children: [
-                AppButton(
-                  label: profile.isProfileCompleted
-                      ? 'Edit profile'
-                      : 'Complete profile',
-                  onPressed: () => context.goNamed(RouteNames.profileComplete),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                AppButton(
-                  label: 'Trust score history',
-                  variant: AppButtonVariant.secondary,
-                  onPressed: () => context.goNamed(RouteNames.trustScoreHistory),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
 
-class _ProfileIncompleteGuidance extends StatelessWidget {
-  const _ProfileIncompleteGuidance();
+class _ProfileActivityTabs extends StatelessWidget {
+  const _ProfileActivityTabs({
+    required this.selectedTab,
+    required this.onTabSelected,
+  });
+
+  final _ProfileActivityTab selectedTab;
+  final ValueChanged<_ProfileActivityTab> onTabSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
+        borderRadius: AppRadius.pillBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xs),
+        child: Row(
+          children: [
+            _ProfileActivityTabButton(
+              label: 'Galeri',
+              selected: selectedTab == _ProfileActivityTab.gallery,
+              onPressed: () => onTabSelected(_ProfileActivityTab.gallery),
+            ),
+            _ProfileActivityTabButton(
+              label: 'Eventlerim',
+              selected: selectedTab == _ProfileActivityTab.events,
+              onPressed: () => onTabSelected(_ProfileActivityTab.events),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileActivityTabButton extends StatelessWidget {
+  const _ProfileActivityTabButton({
+    required this.label,
+    required this.selected,
+    required this.onPressed,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: TextButton(
+        style: TextButton.styleFrom(
+          backgroundColor: selected ? AppColors.primary : Colors.transparent,
+          foregroundColor: selected ? AppColors.surface : AppColors.textMuted,
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.pillBorder),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        ),
+        onPressed: onPressed,
+        child: Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTextStyles.label.copyWith(
+            color: selected ? AppColors.surface : AppColors.textMuted,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileActivityContent extends StatelessWidget {
+  const _ProfileActivityContent({
+    required this.selectedTab,
+    required this.activityState,
+    required this.onRetry,
+  });
+
+  final _ProfileActivityTab selectedTab;
+  final ProfileActivityState activityState;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    if (activityState.isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+        child: AppLoader(),
+      );
+    }
+
+    if (activityState.status == ProfileActivityStatus.error) {
+      return ErrorView(
+        message: activityState.message ?? 'Profil aktivitesi yüklenemedi.',
+        onRetry: onRetry,
+      );
+    }
+
+    if (selectedTab == _ProfileActivityTab.events) {
+      return ProfileEventList(events: activityState.events);
+    }
+
+    return ProfileGalleryGrid(posts: activityState.galleryPosts);
+  }
+}
+
+class ProfileIncompleteGuidanceUnused extends StatelessWidget {
+  const ProfileIncompleteGuidanceUnused();
 
   @override
   Widget build(BuildContext context) {
@@ -173,7 +282,7 @@ class _ProfileIncompleteGuidance extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             AppButton(
               label: 'Profili tamamla',
-              onPressed: () => context.goNamed(RouteNames.profileComplete),
+              onPressed: () => context.pushNamed(RouteNames.profileComplete),
             ),
           ],
         ),
@@ -227,10 +336,6 @@ class _ProfileHeader extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ],
-            const SizedBox(height: AppSpacing.md),
-            _ProfileStatusPill(isCompleted: profile.isProfileCompleted),
-            const SizedBox(height: AppSpacing.md),
-            TrustScoreBadge(score: profile.trustScoreValue, compact: true),
           ],
         ),
       ),
@@ -254,79 +359,9 @@ class _ProfileEmptyState extends StatelessWidget {
           const SizedBox(height: AppSpacing.md),
           AppButton(
             label: 'Complete profile',
-            onPressed: () => context.goNamed(RouteNames.profileComplete),
+            onPressed: () => context.pushNamed(RouteNames.profileComplete),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _TrustCard extends StatelessWidget {
-  const _TrustCard({required this.profile});
-
-  final Profile profile;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.border),
-        borderRadius: AppRadius.lgBorder,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.textPrimary.withValues(alpha: 0.04),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Trust score', style: AppTextStyles.title),
-            const SizedBox(height: AppSpacing.md),
-            TrustScoreBadge(score: profile.trustScoreValue),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              profile.trustDescription,
-              style: AppTextStyles.caption,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _ProfileStatusPill extends StatelessWidget {
-  const _ProfileStatusPill({required this.isCompleted});
-
-  final bool isCompleted;
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: isCompleted
-            ? AppColors.success.withValues(alpha: 0.12)
-            : AppColors.warning.withValues(alpha: 0.16),
-        borderRadius: AppRadius.pillBorder,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.sm,
-        ),
-        child: Text(
-          isCompleted ? 'Profile completed' : 'Profile incomplete',
-          style: AppTextStyles.label.copyWith(
-            color: isCompleted ? AppColors.success : AppColors.warning,
-          ),
-        ),
       ),
     );
   }

@@ -56,7 +56,7 @@ class _SocialPageState extends ConsumerState<SocialPage> {
         actions: [
           IconButton(
             tooltip: 'Bildirimler',
-            onPressed: () => context.goNamed(RouteNames.notifications),
+            onPressed: () => context.pushNamed(RouteNames.notifications),
             icon: const Icon(
               Icons.notifications_none_rounded,
               color: AppColors.primary,
@@ -112,7 +112,7 @@ class _SocialPageState extends ConsumerState<SocialPage> {
                   actionLabel: 'Etkinlikleri keşfet',
                   onAction: () => context.goNamed(RouteNames.events),
                   secondaryActionLabel: 'Etkinlik oluştur',
-                  onSecondaryAction: () => context.goNamed(RouteNames.createEvent),
+                  onSecondaryAction: () => context.pushNamed(RouteNames.createEvent),
                 )
               else
                 ...groups.map(
@@ -120,7 +120,7 @@ class _SocialPageState extends ConsumerState<SocialPage> {
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),
                     child: SocialChatGroupCard(
                       group: group,
-                      onTap: () => context.goNamed(
+                      onTap: () => context.pushNamed(
                         RouteNames.eventChat,
                         pathParameters: {'eventId': group.eventId},
                       ),

@@ -50,7 +50,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
           if (widget.showNotificationBell)
             IconButton(
               tooltip: 'Bildirimler',
-              onPressed: () => context.goNamed(RouteNames.notifications),
+              onPressed: () => context.pushNamed(RouteNames.notifications),
               icon: const Icon(
                 Icons.notifications_none_rounded,
                 color: AppColors.primary,
@@ -123,7 +123,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
                           child: AppButton(
                             label: 'Post photo',
                             onPressed: () =>
-                                context.goNamed(RouteNames.createPost),
+                                context.pushNamed(RouteNames.createPost),
                           ),
                         ),
                       ],
@@ -174,7 +174,7 @@ class _FeedBody extends ConsumerWidget {
         icon: Icons.add_photo_alternate_outlined,
         actionLabel: showCreateAction ? 'Fotoğraf paylaş' : null,
         onAction:
-            showCreateAction ? () => context.goNamed(RouteNames.createPost) : null,
+            showCreateAction ? () => context.pushNamed(RouteNames.createPost) : null,
         secondaryActionLabel: 'Etkinlikleri keşfet',
         onSecondaryAction: () => context.goNamed(RouteNames.events),
       );
@@ -185,6 +185,9 @@ class _FeedBody extends ConsumerWidget {
         await ref.read(feedControllerProvider.notifier).refreshPosts();
       },
       child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        padding: const EdgeInsets.only(bottom: AppSpacing.xl),
         itemCount: feedState.posts.length,
         separatorBuilder: (context, index) =>
             const SizedBox(height: AppSpacing.md),
@@ -195,7 +198,7 @@ class _FeedBody extends ConsumerWidget {
             onToggleLike: () {
               ref.read(feedControllerProvider.notifier).toggleLike(item);
             },
-            onOpenComments: () => context.goNamed(
+            onOpenComments: () => context.pushNamed(
               RouteNames.postComments,
               pathParameters: {'postId': item.post.id},
             ),

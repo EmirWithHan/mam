@@ -307,7 +307,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                 const SizedBox(height: AppSpacing.lg),
                 AppButton(
                   label: 'Profili tamamla',
-                  onPressed: () => context.goNamed(RouteNames.profileComplete),
+                  onPressed: () => context.pushNamed(RouteNames.profileComplete),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppButton(

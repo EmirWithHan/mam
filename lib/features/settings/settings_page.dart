@@ -66,14 +66,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               icon: Icons.person_outline,
               title: 'Profili Düzenle',
               subtitle: 'Oyuncu kartı bilgilerini güncelle',
-              onTap: () => context.goNamed(RouteNames.profileComplete),
+              onTap: () => context.pushNamed(RouteNames.profileComplete),
             ),
             const SizedBox(height: AppSpacing.md),
             SettingsMenuTile(
               icon: Icons.verified_user_outlined,
               title: 'Trust Score',
               subtitle: 'Güven puanı geçmişini görüntüle',
-              onTap: () => context.goNamed(RouteNames.trustScoreHistory),
+              onTap: () => context.pushNamed(RouteNames.trustScoreHistory),
             ),
             const SizedBox(height: AppSpacing.md),
             const SettingsMenuTile(
@@ -87,7 +87,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               icon: Icons.block_outlined,
               title: 'Engellenenler',
               subtitle: 'Engellediğin kullanıcıları yönet',
-              onTap: () => context.goNamed(RouteNames.blockedUsers),
+              onTap: () => context.pushNamed(RouteNames.blockedUsers),
             ),
             const SizedBox(height: AppSpacing.xl),
             AppButton(

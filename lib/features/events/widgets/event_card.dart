@@ -36,7 +36,7 @@ class EventCard extends StatelessWidget {
         borderRadius: AppRadius.lgBorder,
         child: InkWell(
           borderRadius: AppRadius.lgBorder,
-          onTap: () => context.goNamed(
+          onTap: () => context.pushNamed(
             RouteNames.eventDetail,
             pathParameters: {'eventId': event.id},
           ),

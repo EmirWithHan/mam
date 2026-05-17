@@ -61,7 +61,7 @@ class JoinRequestButton extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           AppButton(
             label: 'Complete profile',
-            onPressed: () => context.goNamed(RouteNames.profileComplete),
+            onPressed: () => context.pushNamed(RouteNames.profileComplete),
           ),
         ],
       );

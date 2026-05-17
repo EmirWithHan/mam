@@ -4,7 +4,6 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
@@ -24,7 +23,6 @@ class EventsPage extends ConsumerStatefulWidget {
 
 class _EventsPageState extends ConsumerState<EventsPage> {
   final _searchController = TextEditingController();
-  String _selectedSport = 'All Events';
 
   @override
   void initState() {
@@ -43,6 +41,8 @@ class _EventsPageState extends ConsumerState<EventsPage> {
   @override
   Widget build(BuildContext context) {
     final eventsState = ref.watch(eventsControllerProvider);
+    final compact = MediaQuery.sizeOf(context).height < 720;
+    final pagePadding = compact ? AppSpacing.md : AppSpacing.lg;
 
     return Scaffold(
       appBar: AppBar(
@@ -51,7 +51,7 @@ class _EventsPageState extends ConsumerState<EventsPage> {
         actions: [
           IconButton(
             tooltip: 'Bildirimler',
-            onPressed: () => context.goNamed(RouteNames.notifications),
+            onPressed: () => context.pushNamed(RouteNames.notifications),
             icon: const Icon(
               Icons.notifications_none_rounded,
               color: AppColors.primary,
@@ -62,7 +62,7 @@ class _EventsPageState extends ConsumerState<EventsPage> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: EdgeInsets.all(pagePadding),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -71,35 +71,29 @@ class _EventsPageState extends ConsumerState<EventsPage> {
                   Expanded(
                     child: Text('Find a Game!', style: AppTextStyles.headline),
                   ),
-                  const AppLogo(size: 44),
+                  if (!compact) const AppLogo(size: 44),
                 ],
               ),
-              const SizedBox(height: AppSpacing.sm),
+              SizedBox(height: compact ? AppSpacing.xs : AppSpacing.sm),
               Text(
                 'Discover friendly matches nearby.',
                 style: AppTextStyles.body,
               ),
-              const SizedBox(height: AppSpacing.md),
+              SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
               _SearchBox(
                 controller: _searchController,
                 onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(height: AppSpacing.md),
-              _CategoryChips(
-                selectedSport: _selectedSport,
-                onSelected: (sport) => setState(() => _selectedSport = sport),
-              ),
-              const SizedBox(height: AppSpacing.md),
+              SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
               AppButton(
                 label: 'Host an Event',
-                onPressed: () => context.goNamed(RouteNames.createEvent),
+                onPressed: () => context.pushNamed(RouteNames.createEvent),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
               Expanded(
                 child: _EventsBody(
                   eventsState: eventsState,
                   searchQuery: _searchController.text,
-                  selectedSport: _selectedSport,
                 ),
               ),
             ],
@@ -114,12 +108,10 @@ class _EventsBody extends StatelessWidget {
   const _EventsBody({
     required this.eventsState,
     required this.searchQuery,
-    required this.selectedSport,
   });
 
   final EventsState eventsState;
   final String searchQuery;
-  final String selectedSport;
 
   @override
   Widget build(BuildContext context) {
@@ -134,10 +126,8 @@ class _EventsBody extends StatelessWidget {
     }
 
     final filteredEvents = eventsState.events.where((event) {
-      final sportMatches = selectedSport == 'All Events' ||
-          event.sportType.toLowerCase() == selectedSport.toLowerCase();
       final query = searchQuery.trim().toLowerCase();
-      if (query.isEmpty) return sportMatches;
+      if (query.isEmpty) return true;
 
       final textMatches = [
         event.title,
@@ -146,7 +136,7 @@ class _EventsBody extends StatelessWidget {
         event.locationText ?? '',
       ].any((value) => value.toLowerCase().contains(query));
 
-      return sportMatches && textMatches;
+      return textMatches;
     }).toList();
 
     if (eventsState.events.isEmpty) {
@@ -156,16 +146,16 @@ class _EventsBody extends StatelessWidget {
             'İlk etkinliği sen oluşturabilir ya da daha sonra tekrar keşfe çıkabilirsin.',
         icon: Icons.event_available_outlined,
         actionLabel: 'Etkinlik oluştur',
-        onAction: () => context.goNamed(RouteNames.createEvent),
+        onAction: () => context.pushNamed(RouteNames.createEvent),
         secondaryActionLabel: 'Profilini tamamla',
-        onSecondaryAction: () => context.goNamed(RouteNames.profileComplete),
+        onSecondaryAction: () => context.pushNamed(RouteNames.profileComplete),
       );
     }
 
     if (filteredEvents.isEmpty) {
       return const EmptyState(
-        title: 'No matching events.',
-        message: 'Try another sport or search term.',
+        title: 'Eşleşen etkinlik yok',
+        message: 'Başka bir etkinlik adı, spor veya konum aramayı dene.',
       );
     }
 
@@ -176,92 +166,6 @@ class _EventsBody extends StatelessWidget {
       itemBuilder: (context, index) {
         return EventCard(event: filteredEvents[index]);
       },
-    );
-  }
-}
-
-class _CategoryChips extends StatelessWidget {
-  const _CategoryChips({
-    required this.selectedSport,
-    required this.onSelected,
-  });
-
-  final String selectedSport;
-  final ValueChanged<String> onSelected;
-
-  @override
-  Widget build(BuildContext context) {
-    const sports = [
-      'All Events',
-      'Football',
-      'Tennis',
-      'Running',
-      'Basketball',
-      'Volleyball',
-    ];
-
-    return Wrap(
-      spacing: AppSpacing.sm,
-      runSpacing: AppSpacing.sm,
-      children: sports
-          .map(
-            (sport) => _CategoryChip(
-              label: sport,
-              selected: selectedSport == sport,
-              onTap: () => onSelected(sport),
-            ),
-          )
-          .toList(),
-    );
-  }
-}
-
-class _CategoryChip extends StatelessWidget {
-  const _CategoryChip({
-    required this.label,
-    required this.onTap,
-    this.selected = false,
-  });
-
-  final String label;
-  final VoidCallback onTap;
-  final bool selected;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: AppRadius.pillBorder,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: selected ? AppColors.primary : AppColors.surface,
-          border: Border.all(
-            color: selected ? AppColors.primary : AppColors.border,
-          ),
-          borderRadius: AppRadius.pillBorder,
-          boxShadow: selected
-              ? [
-                  BoxShadow(
-                    color: AppColors.primary.withValues(alpha: 0.22),
-                    blurRadius: 16,
-                    offset: const Offset(0, 8),
-                  ),
-                ]
-              : null,
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.md,
-            vertical: AppSpacing.sm,
-          ),
-          child: Text(
-            label,
-            style: AppTextStyles.label.copyWith(
-              color: selected ? Colors.white : AppColors.primary,
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
