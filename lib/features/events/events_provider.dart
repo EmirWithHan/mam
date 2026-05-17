@@ -32,11 +32,12 @@ class EventsState {
     required EventsStatus status,
     List<Event>? events,
     String? message,
+    bool clearMessage = false,
   }) {
     return EventsState(
       status: status,
       events: events ?? this.events,
-      message: message,
+      message: clearMessage ? null : message ?? this.message,
     );
   }
 }
@@ -60,7 +61,7 @@ class EventsController extends StateNotifier<EventsState> {
   final EventsService _eventsService;
 
   Future<void> loadEvents() async {
-    state = state.copyWith(status: EventsStatus.loading);
+    state = state.copyWith(status: EventsStatus.loading, clearMessage: true);
 
     try {
       final events = await _eventsService.fetchEvents();
@@ -87,15 +88,13 @@ class EventsController extends StateNotifier<EventsState> {
   }
 
   Future<bool> requestToJoinEvent(String eventId) async {
+    state = state.copyWith(status: state.status, clearMessage: true);
+
     try {
       await _eventsService.requestToJoinEvent(eventId);
       return true;
     } catch (error) {
-      state = EventsState(
-        status: EventsStatus.error,
-        events: state.events,
-        message: '$error',
-      );
+      state = state.copyWith(status: state.status, message: '$error');
       return false;
     }
   }

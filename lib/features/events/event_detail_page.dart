@@ -212,7 +212,16 @@ class _EventDetailBody extends ConsumerWidget {
               final requested = await ref
                   .read(eventsControllerProvider.notifier)
                   .requestToJoinEvent(event.id);
-              if (!requested) return;
+              if (!requested) {
+                if (!context.mounted) return;
+                final message = ref.read(eventsControllerProvider).message;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(message ?? 'Could not request to join.'),
+                  ),
+                );
+                return;
+              }
               await requestController.loadMyRequest();
               await onRefreshEvent();
             },
