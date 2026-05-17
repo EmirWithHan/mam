@@ -101,7 +101,7 @@ class _PostCommentsPageState extends ConsumerState<PostCommentsPage> {
       context.pop();
       return;
     }
-    context.goNamed(RouteNames.feed);
+    context.goNamed(RouteNames.home);
   }
 }
 

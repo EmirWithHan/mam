@@ -13,7 +13,7 @@ import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
 import 'feed_provider.dart';
-import 'widgets/feed_post_list.dart';
+import 'widgets/post_card.dart';
 
 class FeedPage extends ConsumerStatefulWidget {
   const FeedPage({
@@ -30,12 +30,38 @@ class FeedPage extends ConsumerStatefulWidget {
 }
 
 class _FeedPageState extends ConsumerState<FeedPage> {
+  late final ScrollController _scrollController;
+  var _requestedInitialLoad = false;
+
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      ref.read(feedControllerProvider.notifier).loadPosts();
+    _scrollController = ScrollController(keepScrollOffset: false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureFeedLoaded();
+      _resetScrollOffset();
     });
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _ensureFeedLoaded() {
+    if (!mounted || _requestedInitialLoad) return;
+
+    final state = ref.read(feedControllerProvider);
+    if (state.status != FeedStatus.initial || state.isLoading) return;
+
+    _requestedInitialLoad = true;
+    ref.read(feedControllerProvider.notifier).loadPosts();
+  }
+
+  void _resetScrollOffset() {
+    if (!mounted || !_scrollController.hasClients) return;
+    _scrollController.jumpTo(0);
   }
 
   @override
@@ -43,31 +69,42 @@ class _FeedPageState extends ConsumerState<FeedPage> {
     final feedState = ref.watch(feedControllerProvider);
 
     return SafeArea(
-      child: CustomScrollView(
+      child: ListView.builder(
+        controller: _scrollController,
         physics: const ClampingScrollPhysics(),
+        primary: false,
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        slivers: [
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.md,
-              AppSpacing.lg,
-              AppSpacing.md,
-            ),
-            sliver: SliverToBoxAdapter(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg,
+          AppSpacing.md,
+          AppSpacing.lg,
+          96,
+        ),
+        itemCount: _itemCount(feedState),
+        itemBuilder: (context, index) {
+          if (index == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: AppSpacing.md),
               child: _FeedHeader(
                 showCreatePrompt: widget.showCreatePrompt,
                 showNotificationBell: widget.showNotificationBell,
               ),
-            ),
-          ),
-          _FeedBody(
+            );
+          }
+
+          return _FeedItem(
             feedState: feedState,
             showCreateAction: widget.showCreatePrompt,
-          ),
-        ],
+            index: index - 1,
+          );
+        },
       ),
     );
+  }
+
+  int _itemCount(FeedState state) {
+    if (state.posts.isEmpty) return 2;
+    return 1 + (state.posts.length * 2 - 1);
   }
 }
 
@@ -179,8 +216,47 @@ class _CreatePostPrompt extends StatelessWidget {
   }
 }
 
-class _FeedBody extends ConsumerWidget {
-  const _FeedBody({
+class _FeedItem extends ConsumerWidget {
+  const _FeedItem({
+    required this.feedState,
+    required this.showCreateAction,
+    required this.index,
+  });
+
+  final FeedState feedState;
+  final bool showCreateAction;
+  final int index;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (feedState.posts.isEmpty) {
+      return _FeedStatePanel(
+        feedState: feedState,
+        showCreateAction: showCreateAction,
+      );
+    }
+
+    if (index.isOdd) {
+      return const SizedBox(height: AppSpacing.md);
+    }
+
+    final item = feedState.posts[index ~/ 2];
+    return PostCard(
+      key: ValueKey(item.post.id),
+      item: item,
+      onToggleLike: () {
+        ref.read(feedControllerProvider.notifier).toggleLike(item);
+      },
+      onOpenComments: () => context.pushNamed(
+        RouteNames.postComments,
+        pathParameters: {'postId': item.post.id},
+      ),
+    );
+  }
+}
+
+class _FeedStatePanel extends ConsumerWidget {
+  const _FeedStatePanel({
     required this.feedState,
     required this.showCreateAction,
   });
@@ -190,56 +266,31 @@ class _FeedBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    if (feedState.isLoading && feedState.posts.isEmpty) {
-      return const SliverToBoxAdapter(
-        child: Padding(
-          padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
-          child: Center(child: AppLoader()),
-        ),
+    if (feedState.status == FeedStatus.initial || feedState.isLoading) {
+      return const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+        child: Center(child: AppLoader()),
       );
     }
 
-    if (feedState.status == FeedStatus.error && feedState.posts.isEmpty) {
-      return SliverToBoxAdapter(
-        child: ErrorView(
-          message: feedState.message ?? 'Could not load feed.',
-          onRetry: () {
-            ref.read(feedControllerProvider.notifier).refreshPosts();
-          },
-        ),
-      );
-    }
-
-    if (feedState.posts.isEmpty) {
-      return SliverToBoxAdapter(
-        child: EmptyState(
-          title: 'Henüz paylaşım yok',
-          message:
-              'Bir fotoğraf paylaşarak topluluğa ilk anı sen bırakabilirsin.',
-          icon: Icons.add_photo_alternate_outlined,
-          actionLabel: showCreateAction ? 'Fotoğraf paylaş' : null,
-          onAction: showCreateAction
-              ? () => context.pushNamed(RouteNames.createPost)
-              : null,
-          secondaryActionLabel: 'Etkinlikleri keşfet',
-          onSecondaryAction: () => context.goNamed(RouteNames.events),
-        ),
-      );
-    }
-
-    return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-      sliver: FeedPostList(
-        posts: feedState.posts,
-        bottomPadding: 96,
-        onToggleLike: (item) {
-          ref.read(feedControllerProvider.notifier).toggleLike(item);
+    if (feedState.status == FeedStatus.error) {
+      return ErrorView(
+        message: feedState.message ?? 'Could not load feed.',
+        onRetry: () {
+          ref.read(feedControllerProvider.notifier).refreshPosts();
         },
-        onOpenComments: (item) => context.pushNamed(
-          RouteNames.postComments,
-          pathParameters: {'postId': item.post.id},
-        ),
-      ),
+      );
+    }
+
+    return EmptyState(
+      title: 'Henüz paylaşım yok',
+      message: 'Bir fotoğraf paylaşarak topluluğa ilk anı sen bırakabilirsin.',
+      icon: Icons.add_photo_alternate_outlined,
+      actionLabel: showCreateAction ? 'Fotoğraf paylaş' : null,
+      onAction:
+          showCreateAction ? () => context.pushNamed(RouteNames.createPost) : null,
+      secondaryActionLabel: 'Etkinlikleri keşfet',
+      onSecondaryAction: () => context.goNamed(RouteNames.events),
     );
   }
 }

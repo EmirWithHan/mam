@@ -10,7 +10,6 @@ import '../../features/events/create_event_page.dart';
 import '../../features/events/event_detail_page.dart';
 import '../../features/events/events_page.dart';
 import '../../features/feed/create_post_page.dart';
-import '../../features/feed/feed_page.dart';
 import '../../features/feed/post_comments_page.dart';
 import '../../features/home/create_hub_page.dart';
 import '../../features/home/home_page.dart';
@@ -118,10 +117,7 @@ GoRouter createAppRouter(AuthState authState) {
       GoRoute(
         path: RoutePaths.feed,
         name: RouteNames.feed,
-        builder: (context, state) => const MainNavigationShell(
-          currentIndex: 0,
-          child: FeedPage(),
-        ),
+        redirect: (context, state) => RoutePaths.home,
       ),
       GoRoute(
         path: RoutePaths.create,

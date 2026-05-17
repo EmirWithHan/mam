@@ -12,10 +12,12 @@ class FollowButton extends ConsumerStatefulWidget {
     super.key,
     required this.targetUserId,
     this.compact = false,
+    this.fullWidth = false,
   });
 
   final String targetUserId;
   final bool compact;
+  final bool fullWidth;
 
   @override
   ConsumerState<FollowButton> createState() => _FollowButtonState();
@@ -60,59 +62,72 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
               dimension: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
             )
-          : const AppButton(
+          : AppButton(
               label: 'Loading',
               isLoading: true,
               onPressed: null,
+              fullWidth: widget.fullWidth,
             );
     }
 
     if (stats.isMe) {
       return widget.compact
           ? const Text('You', style: AppTextStyles.caption)
-          : const AppButton(label: 'You', onPressed: null);
+          : AppButton(
+              label: 'You',
+              onPressed: null,
+              fullWidth: widget.fullWidth,
+            );
     }
 
     final label = stats.isFollowedByMe ? 'Following' : 'Follow';
     final followerCount = stats.followerCount;
 
     if (widget.compact) {
-      return Wrap(
-        crossAxisAlignment: WrapCrossAlignment.center,
-        spacing: AppSpacing.xs,
-        runSpacing: AppSpacing.xs,
-        children: [
-          FilledButton.tonal(
-            onPressed: followState.loading ? null : _toggleFollow,
-            style: FilledButton.styleFrom(
-              backgroundColor: stats.isFollowedByMe
-                  ? AppColors.primarySoft
-                  : AppColors.primary,
-              foregroundColor:
-                  stats.isFollowedByMe ? AppColors.primary : Colors.white,
-              shape: const StadiumBorder(),
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md,
-                vertical: AppSpacing.sm,
+      return ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 132),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            FilledButton.tonal(
+              onPressed: followState.loading ? null : _toggleFollow,
+              style: FilledButton.styleFrom(
+                backgroundColor: stats.isFollowedByMe
+                    ? AppColors.primarySoft
+                    : AppColors.primary,
+                foregroundColor:
+                    stats.isFollowedByMe ? AppColors.primary : Colors.white,
+                shape: const StadiumBorder(),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.sm,
+                ),
               ),
+              child: followState.loading
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : Text(label),
             ),
-            child: followState.loading
-                ? const SizedBox.square(
-                    dimension: 16,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(label),
-          ),
-          Text(
-            '$followerCount followers',
-            style: AppTextStyles.caption,
-          ),
-        ],
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              '$followerCount followers',
+              style: AppTextStyles.caption,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
       );
     }
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: widget.fullWidth
+          ? CrossAxisAlignment.stretch
+          : CrossAxisAlignment.center,
       children: [
         AppButton(
           label: label,
@@ -121,6 +136,7 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
               : AppButtonVariant.primary,
           isLoading: followState.loading,
           onPressed: _toggleFollow,
+          fullWidth: widget.fullWidth,
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(

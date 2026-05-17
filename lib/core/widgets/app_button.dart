@@ -14,48 +14,51 @@ class AppButton extends StatelessWidget {
     required this.onPressed,
     this.isLoading = false,
     this.variant = AppButtonVariant.primary,
+    this.fullWidth = true,
   });
 
   final String label;
   final VoidCallback? onPressed;
   final bool isLoading;
   final AppButtonVariant variant;
+  final bool fullWidth;
 
   @override
   Widget build(BuildContext context) {
     final isDisabled = onPressed == null || isLoading;
 
-    return SizedBox(
-      width: double.infinity,
-      child: FilledButton(
-        onPressed: isDisabled ? null : onPressed,
-        style: FilledButton.styleFrom(
-          backgroundColor: _backgroundColor(isDisabled),
-          foregroundColor: _foregroundColor(isDisabled),
-          disabledBackgroundColor: _backgroundColor(true),
-          disabledForegroundColor: _foregroundColor(true),
-          minimumSize: const Size.fromHeight(52),
-          textStyle: AppTextStyles.button,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            side: BorderSide(color: _borderColor(isDisabled)),
-          ),
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.lg,
-            vertical: AppSpacing.md,
-          ),
+    final button = FilledButton(
+      onPressed: isDisabled ? null : onPressed,
+      style: FilledButton.styleFrom(
+        backgroundColor: _backgroundColor(isDisabled),
+        foregroundColor: _foregroundColor(isDisabled),
+        disabledBackgroundColor: _backgroundColor(true),
+        disabledForegroundColor: _foregroundColor(true),
+        minimumSize: const Size(0, 52),
+        textStyle: AppTextStyles.button,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          side: BorderSide(color: _borderColor(isDisabled)),
         ),
-        child: isLoading
-            ? SizedBox.square(
-                dimension: 18,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: _foregroundColor(false),
-                ),
-              )
-            : Text(label),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg,
+          vertical: AppSpacing.md,
+        ),
       ),
+      child: isLoading
+          ? SizedBox.square(
+              dimension: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: _foregroundColor(false),
+              ),
+            )
+          : Text(label),
     );
+
+    if (!fullWidth) return button;
+
+    return SizedBox(width: double.infinity, child: button);
   }
 
   Color _backgroundColor(bool isDisabled) {

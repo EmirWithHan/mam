@@ -78,7 +78,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
 
     if (!mounted) return;
     if (post != null) {
-      context.goNamed(RouteNames.feed);
+      context.goNamed(RouteNames.home);
       return;
     }
 
