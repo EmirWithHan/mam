@@ -149,6 +149,8 @@ class _EventDetailBody extends ConsumerWidget {
         (hasMyParticipation
             ? myParticipation?.isActiveApprovedParticipant == true
             : requestState.myRequest?.isApproved == true);
+    final canViewPublicParticipants =
+        isHost || myParticipation?.isActiveApprovedParticipant == true;
     final requestController = ref.read(
       joinRequestControllerProvider(event.id).notifier,
     );
@@ -189,7 +191,7 @@ class _EventDetailBody extends ConsumerWidget {
             ),
           ],
         ),
-        if (isHost || isApprovedParticipant) ...[
+        if (canViewPublicParticipants) ...[
           const SizedBox(height: AppSpacing.lg),
           EventParticipantsPreview(
             participants: publicParticipantsAsync.valueOrNull ?? const [],

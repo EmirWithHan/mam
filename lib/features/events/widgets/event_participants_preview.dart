@@ -24,6 +24,8 @@ class EventParticipantsPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final visibleParticipants = _visibleParticipants(participants);
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -56,10 +58,10 @@ class EventParticipantsPreview extends StatelessWidget {
               )
             else if (errorMessage != null)
               ErrorView(message: errorMessage!, onRetry: onRetry)
-            else if (participants.isEmpty)
+            else if (visibleParticipants.isEmpty)
               Text('Katılımcı bilgisi yok.', style: AppTextStyles.bodySmall)
             else
-              ...participants.map(
+              ...visibleParticipants.map(
                 (participant) => Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   child: _ParticipantTile(participant: participant),
@@ -69,6 +71,21 @@ class EventParticipantsPreview extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  List<EventPublicParticipant> _visibleParticipants(
+    List<EventPublicParticipant> participants,
+  ) {
+    final seenUserIds = <String>{};
+    final visibleParticipants = <EventPublicParticipant>[];
+
+    for (final participant in participants) {
+      final isVisible = participant.isHost || participant.isActiveParticipant;
+      if (!isVisible || !seenUserIds.add(participant.userId)) continue;
+      visibleParticipants.add(participant);
+    }
+
+    return visibleParticipants;
   }
 }
 
