@@ -6,6 +6,7 @@ class RouteNames {
   static const login = 'login';
   static const register = 'register';
   static const profile = 'profile';
+  static const publicProfile = 'publicProfile';
   static const profileComplete = 'profileComplete';
   static const settings = 'settings';
   static const blockedUsers = 'blockedUsers';
@@ -31,6 +32,7 @@ class RoutePaths {
   static const login = '/auth/login';
   static const register = '/auth/register';
   static const profile = '/profile';
+  static const publicProfile = '/profile/public/:userId';
   static const profileComplete = '/profile/complete';
   static const settings = '/settings';
   static const blockedUsers = '/settings/blocked-users';

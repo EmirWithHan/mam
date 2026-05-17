@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/route_names.dart';
 import '../../../core/theme/app_colors.dart';
 import '../public_profile_models.dart';
 import '../public_profile_provider.dart';
@@ -11,16 +13,24 @@ class PublicProfileAvatar extends ConsumerWidget {
     this.userId,
     this.profile,
     this.radius = 20,
+    this.enableNavigation = true,
   });
 
   final String? userId;
   final PublicProfilePreview? profile;
   final double radius;
+  final bool enableNavigation;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final preview = profile;
-    if (preview != null) return _Avatar(profile: preview, radius: radius);
+    if (preview != null) {
+      if (!enableNavigation) return _Avatar(profile: preview, radius: radius);
+      return _TappableProfile(
+        userId: preview.userId,
+        child: _Avatar(profile: preview, radius: radius),
+      );
+    }
 
     final id = userId;
     if (id == null || id.trim().isEmpty) {
@@ -29,8 +39,34 @@ class PublicProfileAvatar extends ConsumerWidget {
 
     final asyncProfile = ref.watch(publicProfilePreviewProvider(id));
     return asyncProfile.maybeWhen(
-      data: (profile) => _Avatar(profile: profile, radius: radius),
+      data: (profile) {
+        final avatar = _Avatar(profile: profile, radius: radius);
+        if (!enableNavigation) return avatar;
+        return _TappableProfile(userId: id, child: avatar);
+      },
       orElse: () => _Avatar(profile: null, radius: radius),
+    );
+  }
+}
+
+class _TappableProfile extends StatelessWidget {
+  const _TappableProfile({
+    required this.userId,
+    required this.child,
+  });
+
+  final String userId;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => context.pushNamed(
+        RouteNames.publicProfile,
+        pathParameters: {'userId': userId},
+      ),
+      child: child,
     );
   }
 }

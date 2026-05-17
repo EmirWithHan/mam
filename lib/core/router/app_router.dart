@@ -16,6 +16,7 @@ import '../../features/home/home_page.dart';
 import '../../features/notifications/notifications_page.dart';
 import '../../features/profile/profile_completion_page.dart';
 import '../../features/profile/profile_page.dart';
+import '../../features/profile/public_profile_page.dart';
 import '../../features/reports/blocked_users_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/social/social_page.dart';
@@ -68,6 +69,17 @@ GoRouter createAppRouter(AuthState authState) {
         path: RoutePaths.register,
         name: RouteNames.register,
         builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.publicProfile,
+        name: RouteNames.publicProfile,
+        builder: (context, state) {
+          final userId = state.pathParameters['userId'] ?? '';
+          return MainNavigationShell(
+            currentIndex: 4,
+            child: PublicProfilePage(userId: userId),
+          );
+        },
       ),
       GoRoute(
         path: RoutePaths.profileComplete,

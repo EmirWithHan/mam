@@ -702,51 +702,58 @@ class _HostPreviewCard extends ConsumerWidget {
         final secondaryText = profile?.usernameTag ?? profile?.city ?? 'Host';
         final trustScore = profile?.trustScore;
 
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            border: Border.all(color: AppColors.border),
-            borderRadius: AppRadius.lgBorder,
+        return InkWell(
+          borderRadius: AppRadius.lgBorder,
+          onTap: () => context.pushNamed(
+            RouteNames.publicProfile,
+            pathParameters: {'userId': hostId},
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Row(
-              children: [
-                PublicProfileAvatar(profile: profile, radius: 24),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        profile?.displayName ?? 'MaM User',
-                        style: AppTextStyles.bodyStrong,
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(secondaryText, style: AppTextStyles.caption),
-                    ],
-                  ),
-                ),
-                if (trustScore != null)
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: AppColors.primarySoft,
-                      borderRadius: AppRadius.pillBorder,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              border: Border.all(color: AppColors.border),
+              borderRadius: AppRadius.lgBorder,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                children: [
+                  PublicProfileAvatar(profile: profile, radius: 24),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          profile?.displayName ?? 'MaM User',
+                          style: AppTextStyles.bodyStrong,
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(secondaryText, style: AppTextStyles.caption),
+                      ],
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xs,
+                  ),
+                  if (trustScore != null)
+                    DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: AppColors.primarySoft,
+                        borderRadius: AppRadius.pillBorder,
                       ),
-                      child: Text(
-                        '$trustScore trust',
-                        style: AppTextStyles.label.copyWith(
-                          color: AppColors.primary,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: AppSpacing.xs,
+                        ),
+                        child: Text(
+                          '$trustScore trust',
+                          style: AppTextStyles.label.copyWith(
+                            color: AppColors.primary,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
           ),
         );

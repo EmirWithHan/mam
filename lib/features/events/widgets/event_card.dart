@@ -98,6 +98,7 @@ class EventCard extends StatelessWidget {
                           userId: event.hostId,
                           subtitle: 'Host',
                           compact: true,
+                          enableNavigation: false,
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         _MetaLine(

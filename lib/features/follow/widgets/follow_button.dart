@@ -13,11 +13,13 @@ class FollowButton extends ConsumerStatefulWidget {
     required this.targetUserId,
     this.compact = false,
     this.fullWidth = false,
+    this.onChanged,
   });
 
   final String targetUserId;
   final bool compact;
   final bool fullWidth;
+  final VoidCallback? onChanged;
 
   @override
   ConsumerState<FollowButton> createState() => _FollowButtonState();
@@ -40,6 +42,7 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
     );
 
     await controller.toggleFollow();
+    widget.onChanged?.call();
 
     if (!mounted) return;
     final message =

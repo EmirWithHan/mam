@@ -173,6 +173,157 @@ class ProfileFormData {
   }
 }
 
+class PublicProfileDetail {
+  const PublicProfileDetail({
+    required this.userId,
+    this.username,
+    this.tag,
+    this.firstName,
+    this.lastName,
+    this.city,
+    this.avatarUrl,
+    this.bio,
+    this.followersCount = 0,
+    this.followingCount = 0,
+    this.isFollowing = false,
+    this.isFollowedBy = false,
+    this.canViewExtendedProfile = false,
+  });
+
+  final String userId;
+  final String? username;
+  final String? tag;
+  final String? firstName;
+  final String? lastName;
+  final String? city;
+  final String? avatarUrl;
+  final String? bio;
+  final int followersCount;
+  final int followingCount;
+  final bool isFollowing;
+  final bool isFollowedBy;
+  final bool canViewExtendedProfile;
+
+  String get displayName {
+    final first = firstName?.trim();
+    final last = lastName?.trim();
+    final user = username?.trim();
+    if (first != null && first.isNotEmpty) {
+      if (last != null && last.isNotEmpty) return '$first $last';
+      return first;
+    }
+    if (user != null && user.isNotEmpty) return user;
+    return 'Kullanıcı';
+  }
+
+  String? get handleLabel {
+    final user = username?.trim();
+    final userTag = tag?.trim();
+    if (user == null || user.isEmpty) return null;
+    if (userTag != null && userTag.isNotEmpty) return '$user#$userTag';
+    return '@$user';
+  }
+
+  bool get hasBio => bio?.trim().isNotEmpty == true;
+
+  factory PublicProfileDetail.fromJson(Map<String, dynamic> json) {
+    return PublicProfileDetail(
+      userId: json['user_id'].toString(),
+      username: json['username'] as String?,
+      tag: json['tag'] as String?,
+      firstName: json['first_name'] as String?,
+      lastName: json['last_name'] as String?,
+      city: json['city'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
+      bio: json['bio'] as String?,
+      followersCount: (json['followers_count'] as num?)?.toInt() ?? 0,
+      followingCount: (json['following_count'] as num?)?.toInt() ?? 0,
+      isFollowing: json['is_following'] as bool? ?? false,
+      isFollowedBy: json['is_followed_by'] as bool? ?? false,
+      canViewExtendedProfile:
+          json['can_view_extended_profile'] as bool? ?? false,
+    );
+  }
+}
+
+class PublicProfileGalleryItem {
+  const PublicProfileGalleryItem({
+    required this.postId,
+    required this.imageUrl,
+    this.caption,
+    this.eventId,
+    required this.createdAt,
+  });
+
+  final String postId;
+  final String imageUrl;
+  final String? caption;
+  final String? eventId;
+  final DateTime createdAt;
+
+  factory PublicProfileGalleryItem.fromJson(Map<String, dynamic> json) {
+    return PublicProfileGalleryItem(
+      postId: (json['post_id'] ?? json['id']).toString(),
+      imageUrl: json['image_url'] as String? ?? '',
+      caption: json['caption'] as String?,
+      eventId: json['event_id'] as String?,
+      createdAt: _dateTimeFromJson(json['created_at']) ?? DateTime.now(),
+    );
+  }
+}
+
+class PublicProfileEventHistoryItem {
+  const PublicProfileEventHistoryItem({
+    required this.eventId,
+    required this.title,
+    required this.sportType,
+    required this.city,
+    this.district,
+    this.locationText,
+    required this.status,
+    required this.approvedCount,
+    required this.capacityTotal,
+    required this.createdAt,
+    required this.role,
+  });
+
+  final String eventId;
+  final String title;
+  final String sportType;
+  final String city;
+  final String? district;
+  final String? locationText;
+  final String status;
+  final int approvedCount;
+  final int capacityTotal;
+  final DateTime createdAt;
+  final String role;
+
+  String get locationLabel {
+    final districtValue = district?.trim();
+    if (districtValue == null || districtValue.isEmpty) return city;
+    return '$city / $districtValue';
+  }
+
+  String get roleLabel => role == 'host' ? 'Host' : 'Katılımcı';
+
+  factory PublicProfileEventHistoryItem.fromJson(Map<String, dynamic> json) {
+    return PublicProfileEventHistoryItem(
+      eventId: (json['event_id'] ?? json['id']).toString(),
+      title: json['title'] as String? ?? '',
+      sportType: json['sport_type'] as String? ?? '',
+      city: json['city'] as String? ?? '',
+      district: json['district'] as String?,
+      locationText: json['location_text'] as String?,
+      status: json['status'] as String? ?? '',
+      approvedCount: (json['approved_count'] as num?)?.toInt() ?? 0,
+      capacityTotal: (json['capacity_total'] as num?)?.toInt() ?? 0,
+      createdAt: _dateTimeFromJson(json['created_at']) ?? DateTime.now(),
+      role: json['role'] as String? ?? 'participant',
+    );
+  }
+}
+
 DateTime? _dateTimeFromJson(Object? value) {
   if (value == null) return null;
   return DateTime.tryParse(value.toString());

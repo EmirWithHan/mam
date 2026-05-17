@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/route_names.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -15,12 +17,14 @@ class PublicProfilePreviewTile extends ConsumerWidget {
     this.subtitle,
     this.trailing,
     this.compact = false,
+    this.enableNavigation = true,
   });
 
   final String userId;
   final String? subtitle;
   final Widget? trailing;
   final bool compact;
+  final bool enableNavigation;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,7 +35,7 @@ class PublicProfilePreviewTile extends ConsumerWidget {
         final secondaryText =
             subtitle ?? profile?.usernameTag ?? profile?.city ?? '';
 
-        return Container(
+        final tile = Container(
           padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.md),
           decoration: BoxDecoration(
             color: compact ? Colors.transparent : AppColors.surface,
@@ -43,6 +47,7 @@ class PublicProfilePreviewTile extends ConsumerWidget {
               PublicProfileAvatar(
                 profile: profile,
                 radius: compact ? 16 : 22,
+                enableNavigation: enableNavigation,
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
@@ -52,8 +57,9 @@ class PublicProfilePreviewTile extends ConsumerWidget {
                   children: [
                     Text(
                       profile?.displayName ?? 'MaM User',
-                      style:
-                          compact ? AppTextStyles.caption : AppTextStyles.bodyStrong,
+                      style: compact
+                          ? AppTextStyles.caption
+                          : AppTextStyles.bodyStrong,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -75,6 +81,17 @@ class PublicProfilePreviewTile extends ConsumerWidget {
               ],
             ],
           ),
+        );
+
+        if (!enableNavigation) return tile;
+
+        return InkWell(
+          borderRadius: AppRadius.lgBorder,
+          onTap: () => context.pushNamed(
+            RouteNames.publicProfile,
+            pathParameters: {'userId': userId},
+          ),
+          child: tile,
         );
       },
       orElse: () => Container(

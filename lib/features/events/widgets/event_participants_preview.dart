@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/route_names.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -98,25 +100,35 @@ class _ParticipantTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final secondary = participant.handleLabel ?? participant.city;
 
-    return Row(
-      children: [
-        _ParticipantAvatar(participant: participant),
-        const SizedBox(width: AppSpacing.md),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(participant.displayName, style: AppTextStyles.bodyStrong),
-              if (secondary != null && secondary.trim().isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.xs),
-                Text(secondary, style: AppTextStyles.caption),
-              ],
-            ],
-          ),
+    return InkWell(
+      borderRadius: AppRadius.lgBorder,
+      onTap: () => context.pushNamed(
+        RouteNames.publicProfile,
+        pathParameters: {'userId': participant.userId},
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+        child: Row(
+          children: [
+            _ParticipantAvatar(participant: participant),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(participant.displayName, style: AppTextStyles.bodyStrong),
+                  if (secondary != null && secondary.trim().isNotEmpty) ...[
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(secondary, style: AppTextStyles.caption),
+                  ],
+                ],
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            _RoleChip(label: participant.isHost ? 'Host' : 'Katılımcı'),
+          ],
         ),
-        const SizedBox(width: AppSpacing.sm),
-        _RoleChip(label: participant.isHost ? 'Host' : 'Katılımcı'),
-      ],
+      ),
     );
   }
 }

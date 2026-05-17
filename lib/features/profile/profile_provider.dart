@@ -56,6 +56,24 @@ final profileControllerProvider =
   return ProfileController(ref.watch(profileServiceProvider));
 });
 
+final publicProfileDetailProvider =
+    FutureProvider.family<PublicProfileDetail?, String>((ref, userId) {
+  return ref.watch(profileServiceProvider).fetchPublicProfileDetail(userId);
+});
+
+final publicProfileGalleryProvider =
+    FutureProvider.family<List<PublicProfileGalleryItem>, String>((ref, userId) {
+  return ref.watch(profileServiceProvider).fetchPublicProfileGallery(userId);
+});
+
+final publicProfileEventHistoryProvider =
+    FutureProvider.family<List<PublicProfileEventHistoryItem>, String>((
+  ref,
+  userId,
+) {
+  return ref.watch(profileServiceProvider).fetchPublicProfileEventHistory(userId);
+});
+
 class ProfileController extends StateNotifier<ProfileState> {
   ProfileController(this._profileService) : super(const ProfileState.initial());
 
