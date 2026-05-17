@@ -532,7 +532,7 @@ class _SelectionSheetState extends State<_SelectionSheet> {
                       : ListView.separated(
                           controller: scrollController,
                           itemCount: _options.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (context, index) =>
                               const SizedBox(height: AppSpacing.xs),
                           itemBuilder: (context, index) {
                             final option = _options[index];

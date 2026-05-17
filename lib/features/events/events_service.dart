@@ -16,12 +16,10 @@ class EventsService {
         .order('event_date');
     final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
 
-    final events = data
+    return data
         .map(Event.fromJson)
         .where((event) => !blockedUserIds.contains(event.hostId))
         .toList();
-
-    return _withClientApprovedCounts(events);
   }
 
   Future<Event> fetchEventById(String eventId) async {
@@ -31,8 +29,7 @@ class EventsService {
         .eq('id', eventId)
         .single();
 
-    final events = await _withClientApprovedCounts([Event.fromJson(data)]);
-    return events.first;
+    return Event.fromJson(data);
   }
 
   Future<Event> createEvent(CreateEventInput input) async {
@@ -102,6 +99,21 @@ class EventsService {
     return statuses;
   }
 
+  Future<List<EventPublicParticipant>> fetchEventPublicParticipants(
+    String eventId,
+  ) async {
+    final rows = await SupabaseService.client.rpc(
+      'get_event_public_participants',
+      params: {'p_event_id': eventId},
+    );
+
+    return (rows as List<dynamic>)
+        .map((row) => EventPublicParticipant.fromJson(
+              Map<String, dynamic>.from(row as Map),
+            ))
+        .toList(growable: false);
+  }
+
   Future<void> leaveApprovedEvent(String eventId) async {
     final userId = SupabaseService.client.auth.currentUser?.id;
     if (userId == null) {
@@ -124,44 +136,5 @@ class EventsService {
       'delete_my_event',
       params: {'p_event_id': eventId},
     );
-  }
-
-  Future<List<Event>> _withClientApprovedCounts(List<Event> events) async {
-    if (events.isEmpty) return events;
-
-    final counts = await _fetchApprovedCounts(
-      events.map((event) => event.id).toList(growable: false),
-    );
-
-    return events
-        .map(
-          (event) => event.copyWith(
-            approvedCount: counts[event.id] ?? 0,
-          ),
-        )
-        .toList(growable: false);
-  }
-
-  Future<Map<String, int>> _fetchApprovedCounts(List<String> eventIds) async {
-    if (eventIds.isEmpty) return const {};
-
-    final rows = await SupabaseService.client
-        .from('event_participants')
-        .select('event_id,role,attendance_status')
-        .inFilter('event_id', eventIds)
-        .eq('role', 'participant')
-        .inFilter('attendance_status', [
-      EventParticipationStatus.planned,
-      EventParticipationStatus.attended,
-    ]);
-
-    final counts = <String, int>{};
-    for (final row in rows) {
-      final eventId = row['event_id'] as String?;
-      if (eventId == null) continue;
-      counts[eventId] = (counts[eventId] ?? 0) + 1;
-    }
-
-    return counts;
   }
 }

@@ -235,7 +235,7 @@ class _ProfileActivityContent extends StatelessWidget {
 }
 
 class ProfileIncompleteGuidanceUnused extends StatelessWidget {
-  const ProfileIncompleteGuidanceUnused();
+  const ProfileIncompleteGuidanceUnused({super.key});
 
   @override
   Widget build(BuildContext context) {

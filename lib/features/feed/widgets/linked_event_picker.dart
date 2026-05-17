@@ -206,7 +206,7 @@ class _LinkedEventPickerSheetState
                       return ListView.separated(
                         controller: scrollController,
                         itemCount: filteredEvents.length + 1,
-                        separatorBuilder: (_, __) =>
+                        separatorBuilder: (context, index) =>
                             const SizedBox(height: AppSpacing.sm),
                         itemBuilder: (context, index) {
                           if (index == 0) {

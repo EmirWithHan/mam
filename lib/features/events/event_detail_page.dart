@@ -25,6 +25,7 @@ import '../reports/widgets/report_button.dart';
 import 'events_models.dart';
 import 'events_provider.dart';
 import 'widgets/event_call_button.dart';
+import 'widgets/event_participants_preview.dart';
 import 'join_requests_provider.dart';
 import 'widgets/host_join_request_tile.dart';
 import 'widgets/join_request_button.dart';
@@ -132,6 +133,9 @@ class _EventDetailBody extends ConsumerWidget {
     final participantStatusesAsync = ref.watch(
       eventParticipantAttendanceStatusesProvider(event.id),
     );
+    final publicParticipantsAsync = ref.watch(
+      eventPublicParticipantsProvider(event.id),
+    );
     final myParticipationAsync = ref.watch(
       eventMyParticipationProvider(event.id),
     );
@@ -185,6 +189,19 @@ class _EventDetailBody extends ConsumerWidget {
             ),
           ],
         ),
+        if (isHost || isApprovedParticipant) ...[
+          const SizedBox(height: AppSpacing.lg),
+          EventParticipantsPreview(
+            participants: publicParticipantsAsync.valueOrNull ?? const [],
+            isLoading: publicParticipantsAsync.isLoading,
+            errorMessage: publicParticipantsAsync.hasError
+                ? '${publicParticipantsAsync.error}'
+                : null,
+            onRetry: () => ref.invalidate(
+              eventPublicParticipantsProvider(event.id),
+            ),
+          ),
+        ],
         const SizedBox(height: AppSpacing.lg),
         const _SectionTitle(title: 'Actions'),
         const SizedBox(height: AppSpacing.sm),
@@ -226,6 +243,7 @@ class _EventDetailBody extends ConsumerWidget {
               ref.invalidate(
                 eventParticipantAttendanceStatusesProvider(event.id),
               );
+              ref.invalidate(eventPublicParticipantsProvider(event.id));
               await onRefreshEvent();
             },
             onReject: (requestId) async {
@@ -233,6 +251,7 @@ class _EventDetailBody extends ConsumerWidget {
               ref.invalidate(
                 eventParticipantAttendanceStatusesProvider(event.id),
               );
+              ref.invalidate(eventPublicParticipantsProvider(event.id));
               await onRefreshEvent();
             },
           )
@@ -316,6 +335,7 @@ class _EventDetailBody extends ConsumerWidget {
     ref.invalidate(eventMyParticipationProvider(event.id));
     ref.invalidate(eventAttendanceStatusProvider(event.id));
     ref.invalidate(eventParticipantAttendanceStatusesProvider(event.id));
+    ref.invalidate(eventPublicParticipantsProvider(event.id));
     ref.invalidate(eventDetailProvider(event.id));
     ref.invalidate(eventChatControllerProvider(event.id));
     ref.invalidate(eventChatListControllerProvider);

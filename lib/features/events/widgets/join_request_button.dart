@@ -50,15 +50,6 @@ class JoinRequestButton extends StatelessWidget {
       );
     }
 
-    if (event.isFull) {
-      return const _StatusPanel(
-        icon: Icons.lock_outline,
-        title: 'Event is full',
-        message: 'This event has reached its approved capacity.',
-        color: AppColors.textMuted,
-      );
-    }
-
     if (!profileState.canRequestToJoinEvent) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -79,23 +70,7 @@ class JoinRequestButton extends StatelessWidget {
     }
 
     final currentRequest = request;
-    if (currentRequest == null) {
-      return AppButton(
-        label: 'Request to join',
-        isLoading: isLoading,
-        onPressed: onRequest,
-      );
-    }
-
-    if (currentRequest.isCancelled) {
-      return AppButton(
-        label: 'Request to join',
-        isLoading: isLoading,
-        onPressed: onRequest,
-      );
-    }
-
-    if (currentRequest.isPending) {
+    if (currentRequest?.isPending == true) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -114,7 +89,7 @@ class JoinRequestButton extends StatelessWidget {
       );
     }
 
-    if (currentRequest.isApproved) {
+    if (currentRequest?.isApproved == true) {
       return const _StatusPanel(
         icon: Icons.check_circle_outline,
         title: 'Approved',
@@ -123,12 +98,29 @@ class JoinRequestButton extends StatelessWidget {
       );
     }
 
-    if (currentRequest.isRejected) {
+    if (currentRequest?.isRejected == true) {
       return const _StatusPanel(
         icon: Icons.cancel_outlined,
         title: 'Request rejected',
         message: 'This request was not approved by the host.',
         color: AppColors.error,
+      );
+    }
+
+    if (event.isFull) {
+      return const _StatusPanel(
+        icon: Icons.lock_outline,
+        title: 'Etkinlik dolu',
+        message: 'Bu etkinlik onaylı katılımcı kapasitesine ulaştı.',
+        color: AppColors.textMuted,
+      );
+    }
+
+    if (currentRequest == null || currentRequest.isCancelled) {
+      return AppButton(
+        label: 'Request to join',
+        isLoading: isLoading,
+        onPressed: onRequest,
       );
     }
 

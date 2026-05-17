@@ -77,7 +77,7 @@ class Event {
     return '$city / $districtValue';
   }
 
-  String get capacityLabel => '$approvedCount / $capacityTotal approved';
+  String get capacityLabel => formattedCapacityLabel;
 
   String get formattedCapacityLabel {
     return '$approvedCount / $capacityTotal kişi onaylandı';
@@ -206,6 +206,73 @@ class EventParticipation {
   factory EventParticipation.fromJson(Map<String, dynamic> json) {
     return EventParticipation(
       role: json['role'] as String? ?? '',
+      attendanceStatus: json['attendance_status'] as String? ?? '',
+    );
+  }
+}
+
+class EventPublicParticipant {
+  const EventPublicParticipant({
+    required this.userId,
+    this.username,
+    this.tag,
+    this.firstName,
+    this.lastName,
+    this.city,
+    this.avatarUrl,
+    required this.role,
+    required this.attendanceStatus,
+  });
+
+  final String userId;
+  final String? username;
+  final String? tag;
+  final String? firstName;
+  final String? lastName;
+  final String? city;
+  final String? avatarUrl;
+  final String role;
+  final String attendanceStatus;
+
+  bool get isHost => role == 'host';
+
+  bool get isActiveParticipant {
+    return role == 'participant' &&
+        EventParticipationStatus.isActiveApprovedParticipant(attendanceStatus);
+  }
+
+  String get displayName {
+    final first = firstName?.trim();
+    final last = lastName?.trim();
+    final user = username?.trim();
+    if (first != null && first.isNotEmpty) {
+      if (last != null && last.isNotEmpty) {
+        return '$first ${last.substring(0, 1).toUpperCase()}.';
+      }
+      return first;
+    }
+    if (user != null && user.isNotEmpty) return user;
+    return 'Katılımcı';
+  }
+
+  String? get handleLabel {
+    final user = username?.trim();
+    final userTag = tag?.trim();
+    if (user == null || user.isEmpty) return null;
+    if (userTag != null && userTag.isNotEmpty) return '$user#$userTag';
+    return user;
+  }
+
+  factory EventPublicParticipant.fromJson(Map<String, dynamic> json) {
+    return EventPublicParticipant(
+      userId: json['user_id'] as String,
+      username: json['username'] as String?,
+      tag: json['tag'] as String?,
+      firstName: json['first_name'] as String?,
+      lastName: json['last_name'] as String?,
+      city: json['city'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
+      role: json['role'] as String? ?? 'participant',
       attendanceStatus: json['attendance_status'] as String? ?? '',
     );
   }
