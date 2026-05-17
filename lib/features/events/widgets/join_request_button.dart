@@ -76,6 +76,14 @@ class JoinRequestButton extends StatelessWidget {
       );
     }
 
+    if (currentRequest.isCancelled) {
+      return AppButton(
+        label: 'Request to join',
+        isLoading: isLoading,
+        onPressed: onRequest,
+      );
+    }
+
     if (currentRequest.isPending) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -110,15 +118,6 @@ class JoinRequestButton extends StatelessWidget {
         title: 'Request rejected',
         message: 'This request was not approved by the host.',
         color: AppColors.error,
-      );
-    }
-
-    if (currentRequest.isCancelled) {
-      return const _StatusPanel(
-        icon: Icons.remove_circle_outline,
-        title: 'Request cancelled',
-        message: 'You cancelled this request.',
-        color: AppColors.textMuted,
       );
     }
 

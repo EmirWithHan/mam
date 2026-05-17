@@ -12,6 +12,7 @@ import '../../reports/reports_models.dart';
 import '../../reports/widgets/block_button.dart';
 import '../../reports/widgets/report_button.dart';
 import '../feed_models.dart';
+import '../feed_provider.dart';
 
 class PostCard extends ConsumerWidget {
   const PostCard({
@@ -71,14 +72,16 @@ class PostCard extends ConsumerWidget {
                         ),
                       ),
                       const SizedBox(width: AppSpacing.xs),
+                    ],
+                    if (currentUserId != null)
                       Padding(
                         padding: const EdgeInsets.only(top: AppSpacing.xs),
                         child: _PostOverflowButton(
                           postId: post.id,
                           userId: post.userId,
+                          isMine: isMine,
                         ),
                       ),
-                    ],
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -192,26 +195,30 @@ class PostCard extends ConsumerWidget {
   }
 }
 
-class _PostOverflowButton extends StatelessWidget {
+class _PostOverflowButton extends ConsumerWidget {
   const _PostOverflowButton({
     required this.postId,
     required this.userId,
+    required this.isMine,
   });
 
   final String postId;
   final String userId;
+  final bool isMine;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return IconButton(
       visualDensity: VisualDensity.compact,
       tooltip: 'Post actions',
       icon: const Icon(Icons.more_horiz, color: AppColors.textMuted),
-      onPressed: () => _showPostActions(context),
+      onPressed: () => _showPostActions(context, ref),
     );
   }
 
-  Future<void> _showPostActions(BuildContext context) {
+  Future<void> _showPostActions(BuildContext context, WidgetRef ref) {
+    final rootContext = context;
+
     return showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.background,
@@ -220,7 +227,7 @@ class _PostOverflowButton extends StatelessWidget {
           top: Radius.circular(AppRadius.xl),
         ),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -254,24 +261,33 @@ class _PostOverflowButton extends StatelessWidget {
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ReportButton(
-                        targetType: ReportTargetType.post,
-                        targetId: postId,
-                        menuItem: true,
-                      ),
-                      const Divider(height: 1, color: AppColors.border),
-                      ReportButton(
-                        targetType: ReportTargetType.user,
-                        targetId: userId,
-                        menuItem: true,
-                      ),
-                      const Divider(height: 1, color: AppColors.border),
-                      BlockButton(
-                        targetUserId: userId,
-                        menuItem: true,
-                      ),
-                    ],
+                    children: isMine
+                        ? [
+                            _PostDeleteMenuItem(
+                              onTap: () {
+                                Navigator.of(sheetContext).pop();
+                                _confirmDeletePost(rootContext, ref);
+                              },
+                            ),
+                          ]
+                        : [
+                            ReportButton(
+                              targetType: ReportTargetType.post,
+                              targetId: postId,
+                              menuItem: true,
+                            ),
+                            const Divider(height: 1, color: AppColors.border),
+                            ReportButton(
+                              targetType: ReportTargetType.user,
+                              targetId: userId,
+                              menuItem: true,
+                            ),
+                            const Divider(height: 1, color: AppColors.border),
+                            BlockButton(
+                              targetUserId: userId,
+                              menuItem: true,
+                            ),
+                          ],
                   ),
                 ),
               ],
@@ -279,6 +295,60 @@ class _PostOverflowButton extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Future<void> _confirmDeletePost(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete post?'),
+          content: const Text('This post will be removed permanently.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: AppColors.error),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final deleted = await ref.read(feedControllerProvider.notifier).deletePost(
+          postId,
+        );
+    if (!context.mounted) return;
+
+    final message =
+        deleted ? 'Post deleted.' : ref.read(feedControllerProvider).message;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message ?? 'Could not delete post.')),
+    );
+  }
+}
+
+class _PostDeleteMenuItem extends StatelessWidget {
+  const _PostDeleteMenuItem({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.delete_outline, color: AppColors.error),
+      title: Text(
+        'Delete post',
+        style: AppTextStyles.bodyStrong.copyWith(color: AppColors.error),
+      ),
+      onTap: onTap,
     );
   }
 }

@@ -46,4 +46,28 @@ class EventsService {
 
     return Event.fromJson(data);
   }
+
+  Future<void> requestToJoinEvent(String eventId) async {
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    if (userId == null) {
+      throw StateError('You must be signed in to request to join an event.');
+    }
+
+    await SupabaseService.client.rpc(
+      'request_event_join',
+      params: {'p_event_id': eventId},
+    );
+  }
+
+  Future<void> deleteMyEvent(String eventId) async {
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    if (userId == null) {
+      throw StateError('You must be signed in to delete events.');
+    }
+
+    await SupabaseService.client.rpc(
+      'delete_my_event',
+      params: {'p_event_id': eventId},
+    );
+  }
 }

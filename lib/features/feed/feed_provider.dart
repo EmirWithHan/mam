@@ -126,6 +126,23 @@ class FeedController extends StateNotifier<FeedState> {
     }
   }
 
+  Future<bool> deletePost(String postId) async {
+    state = state.copyWith(clearMessage: true);
+
+    try {
+      await _feedService.deleteMyPost(postId);
+      final posts = state.posts
+          .where((item) => item.post.id != postId)
+          .toList(growable: false);
+      state = state.copyWith(status: FeedStatus.success, posts: posts);
+      await refreshPosts();
+      return true;
+    } catch (error) {
+      state = state.copyWith(message: '$error');
+      return false;
+    }
+  }
+
   Future<void> fetchComments(String postId) async {
     state = state.copyWith(
       commentsLoading: true,

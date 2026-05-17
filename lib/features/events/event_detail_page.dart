@@ -209,13 +209,18 @@ class _EventDetailBody extends ConsumerWidget {
             request: requestState.myRequest,
             isLoading: requestState.loading || profileState.isLoading,
             onRequest: () async {
-              await requestController.requestToJoin();
+              final requested = await ref
+                  .read(eventsControllerProvider.notifier)
+                  .requestToJoinEvent(event.id);
+              if (!requested) return;
+              await requestController.loadMyRequest();
               await onRefreshEvent();
             },
             onCancel: () async {
               final request = requestState.myRequest;
               if (request == null) return;
               await requestController.cancelPendingRequest(request.id);
+              await requestController.loadMyRequest();
               await onRefreshEvent();
             },
           ),
@@ -334,10 +339,8 @@ class _EventHeroCard extends StatelessWidget {
                     color: AppColors.tertiarySoft,
                     textColor: AppColors.warning,
                   ),
-                if (!isHost) ...[
-                  const SizedBox(width: AppSpacing.xs),
-                  _EventOverflowButton(event: event),
-                ],
+                const SizedBox(width: AppSpacing.xs),
+                _EventOverflowButton(event: event, isHost: isHost),
               ],
             ),
             const SizedBox(height: AppSpacing.md),
@@ -369,22 +372,28 @@ class _EventHeroCard extends StatelessWidget {
   }
 }
 
-class _EventOverflowButton extends StatelessWidget {
-  const _EventOverflowButton({required this.event});
+class _EventOverflowButton extends ConsumerWidget {
+  const _EventOverflowButton({
+    required this.event,
+    required this.isHost,
+  });
 
   final Event event;
+  final bool isHost;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return IconButton(
       visualDensity: VisualDensity.compact,
       tooltip: 'Event actions',
       icon: const Icon(Icons.more_horiz, color: AppColors.textMuted),
-      onPressed: () => _showEventActions(context),
+      onPressed: () => _showEventActions(context, ref),
     );
   }
 
-  Future<void> _showEventActions(BuildContext context) {
+  Future<void> _showEventActions(BuildContext context, WidgetRef ref) {
+    final rootContext = context;
+
     return showModalBottomSheet<void>(
       context: context,
       backgroundColor: AppColors.background,
@@ -393,7 +402,7 @@ class _EventOverflowButton extends StatelessWidget {
           top: Radius.circular(AppRadius.xl),
         ),
       ),
-      builder: (context) {
+      builder: (sheetContext) {
         return SafeArea(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(
@@ -427,24 +436,33 @@ class _EventOverflowButton extends StatelessWidget {
                   ),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ReportButton(
-                        targetType: ReportTargetType.event,
-                        targetId: event.id,
-                        menuItem: true,
-                      ),
-                      const Divider(height: 1, color: AppColors.border),
-                      ReportButton(
-                        targetType: ReportTargetType.user,
-                        targetId: event.hostId,
-                        menuItem: true,
-                      ),
-                      const Divider(height: 1, color: AppColors.border),
-                      BlockButton(
-                        targetUserId: event.hostId,
-                        menuItem: true,
-                      ),
-                    ],
+                    children: isHost
+                        ? [
+                            _EventDeleteMenuItem(
+                              onTap: () {
+                                Navigator.of(sheetContext).pop();
+                                _confirmDeleteEvent(rootContext, ref);
+                              },
+                            ),
+                          ]
+                        : [
+                            ReportButton(
+                              targetType: ReportTargetType.event,
+                              targetId: event.id,
+                              menuItem: true,
+                            ),
+                            const Divider(height: 1, color: AppColors.border),
+                            ReportButton(
+                              targetType: ReportTargetType.user,
+                              targetId: event.hostId,
+                              menuItem: true,
+                            ),
+                            const Divider(height: 1, color: AppColors.border),
+                            BlockButton(
+                              targetUserId: event.hostId,
+                              menuItem: true,
+                            ),
+                          ],
                   ),
                 ),
               ],
@@ -452,6 +470,69 @@ class _EventOverflowButton extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Future<void> _confirmDeleteEvent(BuildContext context, WidgetRef ref) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete event?'),
+          content: const Text(
+            'This event will be removed. Event chat and join requests will also be removed.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: AppColors.error),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final deleted = await ref.read(eventsControllerProvider.notifier).deleteEvent(
+          event.id,
+        );
+    ref.invalidate(eventDetailProvider(event.id));
+    if (!context.mounted) return;
+
+    if (deleted) {
+      final messenger = ScaffoldMessenger.of(context);
+      context.goNamed(RouteNames.events);
+      messenger.showSnackBar(const SnackBar(content: Text('Event deleted.')));
+      return;
+    }
+
+    final message = ref.read(eventsControllerProvider).message;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message ?? 'Could not delete event.')),
+    );
+  }
+}
+
+class _EventDeleteMenuItem extends StatelessWidget {
+  const _EventDeleteMenuItem({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.delete_outline, color: AppColors.error),
+      title: Text(
+        'Delete event',
+        style: AppTextStyles.bodyStrong.copyWith(color: AppColors.error),
+      ),
+      onTap: onTap,
     );
   }
 }

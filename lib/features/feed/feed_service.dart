@@ -170,6 +170,18 @@ class FeedService {
     await likePost(postId);
   }
 
+  Future<void> deleteMyPost(String postId) async {
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    if (userId == null) {
+      throw StateError('You must be signed in to delete posts.');
+    }
+
+    await SupabaseService.client.rpc(
+      'delete_my_post',
+      params: {'p_post_id': postId},
+    );
+  }
+
   Future<List<PostComment>> fetchComments(String postId) async {
     final data = await SupabaseService.client
         .from('post_comments')

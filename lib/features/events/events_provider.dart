@@ -85,4 +85,37 @@ class EventsController extends StateNotifier<EventsState> {
       return null;
     }
   }
+
+  Future<bool> requestToJoinEvent(String eventId) async {
+    try {
+      await _eventsService.requestToJoinEvent(eventId);
+      return true;
+    } catch (error) {
+      state = EventsState(
+        status: EventsStatus.error,
+        events: state.events,
+        message: '$error',
+      );
+      return false;
+    }
+  }
+
+  Future<bool> deleteEvent(String eventId) async {
+    try {
+      await _eventsService.deleteMyEvent(eventId);
+      final events = state.events
+          .where((event) => event.id != eventId)
+          .toList(growable: false);
+      state = EventsState(status: EventsStatus.success, events: events);
+      await refreshEvents();
+      return true;
+    } catch (error) {
+      state = EventsState(
+        status: EventsStatus.error,
+        events: state.events,
+        message: '$error',
+      );
+      return false;
+    }
+  }
 }
