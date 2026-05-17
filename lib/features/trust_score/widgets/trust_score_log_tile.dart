@@ -62,11 +62,14 @@ class TrustScoreLogTile extends StatelessWidget {
                     style: AppTextStyles.bodyStrong,
                   ),
                   const SizedBox(height: AppSpacing.xs),
-                  Text(_reasonLabel(log.reason), style: AppTextStyles.caption),
+                  Text(
+                    _reasonLabel(log.reason, log.sourceType),
+                    style: AppTextStyles.caption,
+                  ),
                   if (log.sourceType != null) ...[
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      'Source: ${log.sourceType}',
+                      'Source: ${_sourceLabel(log.sourceType!)}',
                       style: AppTextStyles.caption,
                     ),
                   ],
@@ -90,11 +93,22 @@ class TrustScoreLogTile extends StatelessWidget {
     return '$year-$month-$day $hour:$minute';
   }
 
-  String _reasonLabel(String reason) {
+  String _reasonLabel(String reason, String? sourceType) {
+    if (sourceType == 'event_leave' && reason == 'event_leave') {
+      return 'Approved event left: trust score penalty applied.';
+    }
+
     return switch (reason) {
       'event_leave' || 'leave_approved_event' =>
         'Approved event left: trust score penalty applied.',
       _ => reason,
+    };
+  }
+
+  String _sourceLabel(String sourceType) {
+    return switch (sourceType) {
+      'event_leave' => 'Event leave',
+      _ => sourceType,
     };
   }
 }
