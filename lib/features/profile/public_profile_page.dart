@@ -17,6 +17,7 @@ import '../auth/auth_provider.dart';
 import '../follow/widgets/follow_button.dart';
 import 'profile_models.dart';
 import 'profile_provider.dart';
+import 'widgets/profile_gallery_viewer_page.dart';
 
 enum _PublicProfileTab { events, gallery }
 
@@ -371,7 +372,7 @@ class _GallerySection extends ConsumerWidget {
             final item = items[index];
             return InkWell(
               borderRadius: AppRadius.mdBorder,
-              onTap: () => _showImagePreview(context, item),
+              onTap: () => _openGalleryViewer(context, items, item),
               child: ClipRRect(
                 borderRadius: AppRadius.mdBorder,
                 child: Image.network(
@@ -392,50 +393,26 @@ class _GallerySection extends ConsumerWidget {
     );
   }
 
-  void _showImagePreview(
+  void _openGalleryViewer(
     BuildContext context,
+    List<PublicProfileGalleryItem> items,
     PublicProfileGalleryItem item,
   ) {
-    showDialog<void>(
-      context: context,
-      builder: (context) {
-        return Dialog.fullscreen(
-          backgroundColor: Colors.black.withValues(alpha: 0.88),
-          child: SafeArea(
-            child: Stack(
-              children: [
-                Center(
-                  child: InteractiveViewer(
-                    child: Image.network(item.imageUrl, fit: BoxFit.contain),
-                  ),
-                ),
-                Positioned(
-                  top: AppSpacing.md,
-                  right: AppSpacing.md,
-                  child: IconButton.filled(
-                    style: IconButton.styleFrom(
-                      backgroundColor: AppColors.primary,
-                    ),
-                    onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.close),
-                  ),
-                ),
-                if (item.caption?.trim().isNotEmpty == true)
-                  Positioned(
-                    left: AppSpacing.lg,
-                    right: AppSpacing.lg,
-                    bottom: AppSpacing.lg,
-                    child: Text(
-                      item.caption!.trim(),
-                      style: AppTextStyles.body.copyWith(color: Colors.white),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        );
-      },
+    context.pushNamed(
+      RouteNames.profileGalleryViewer,
+      extra: ProfileGalleryViewerArgs(
+        initialItemId: item.postId,
+        items: items
+            .map(
+              (entry) => ProfileGalleryViewerItem(
+                id: entry.postId,
+                imageUrl: entry.imageUrl,
+                caption: entry.caption,
+                createdAt: entry.createdAt,
+              ),
+            )
+            .toList(growable: false),
+      ),
     );
   }
 }

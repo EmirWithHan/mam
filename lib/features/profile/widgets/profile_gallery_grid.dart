@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../core/router/route_names.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../profile_activity_models.dart';
+import 'profile_gallery_viewer_page.dart';
 
 class ProfileGalleryGrid extends StatelessWidget {
   const ProfileGalleryGrid({
@@ -51,7 +54,10 @@ class ProfileGalleryGrid extends StatelessWidget {
                 childAspectRatio: 0.82,
               ),
               itemBuilder: (context, index) {
-                return _GalleryTile(post: posts[index]);
+                return _GalleryTile(
+                  post: posts[index],
+                  posts: posts,
+                );
               },
             );
           },
@@ -71,9 +77,13 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _GalleryTile extends StatelessWidget {
-  const _GalleryTile({required this.post});
+  const _GalleryTile({
+    required this.post,
+    required this.posts,
+  });
 
   final ProfileGalleryPost post;
+  final List<ProfileGalleryPost> posts;
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +94,7 @@ class _GalleryTile extends StatelessWidget {
       borderRadius: AppRadius.lgBorder,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => _showGalleryPreview(context, post),
+        onTap: () => _openGalleryViewer(context),
         child: Ink(
           decoration: BoxDecoration(
             color: AppColors.surface,
@@ -148,104 +158,23 @@ class _GalleryTile extends StatelessWidget {
     );
   }
 
-  void _showGalleryPreview(BuildContext context, ProfileGalleryPost post) {
-    showDialog<void>(
-      context: context,
-      barrierColor: Colors.black.withValues(alpha: 0.86),
-      builder: (context) => _GalleryPreviewDialog(post: post),
-    );
-  }
-}
-
-class _GalleryPreviewDialog extends StatelessWidget {
-  const _GalleryPreviewDialog({required this.post});
-
-  final ProfileGalleryPost post;
-
-  @override
-  Widget build(BuildContext context) {
-    final caption = post.caption?.trim();
-
-    return Material(
-      color: Colors.transparent,
-      child: SafeArea(
-        child: Stack(
-          children: [
-            Positioned.fill(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.xl,
-                  AppSpacing.md,
-                  AppSpacing.lg,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Flexible(
-                      child: ClipRRect(
-                        borderRadius: AppRadius.xlBorder,
-                        child: ColoredBox(
-                          color: AppColors.textPrimary,
-                          child: _GalleryImage(
-                            imageUrl: post.imageUrl,
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                    ),
-                    if (caption != null && caption.isNotEmpty) ...[
-                      const SizedBox(height: AppSpacing.md),
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          color: AppColors.surface.withValues(alpha: 0.94),
-                          borderRadius: AppRadius.lgBorder,
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(AppSpacing.md),
-                          child: Text(
-                            caption,
-                            style: AppTextStyles.body,
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      _formatPreviewDate(post.createdAt),
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.surface.withValues(alpha: 0.82),
-                      ),
-                    ),
-                  ],
-                ),
+  void _openGalleryViewer(BuildContext context) {
+    context.pushNamed(
+      RouteNames.profileGalleryViewer,
+      extra: ProfileGalleryViewerArgs(
+        initialItemId: post.id,
+        items: posts
+            .map(
+              (item) => ProfileGalleryViewerItem(
+                id: item.id,
+                imageUrl: item.imageUrl,
+                caption: item.caption,
+                createdAt: item.createdAt,
               ),
-            ),
-            Positioned(
-              top: AppSpacing.sm,
-              right: AppSpacing.sm,
-              child: IconButton.filled(
-                style: IconButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: AppColors.surface,
-                ),
-                tooltip: 'Close',
-                onPressed: () => Navigator.of(context).pop(),
-                icon: const Icon(Icons.close_rounded),
-              ),
-            ),
-          ],
-        ),
+            )
+            .toList(growable: false),
       ),
     );
-  }
-
-  String _formatPreviewDate(DateTime value) {
-    final year = value.year.toString().padLeft(4, '0');
-    final month = value.month.toString().padLeft(2, '0');
-    final day = value.day.toString().padLeft(2, '0');
-    return '$day.$month.$year';
   }
 }
 

@@ -17,6 +17,7 @@ import '../../features/notifications/notifications_page.dart';
 import '../../features/profile/profile_completion_page.dart';
 import '../../features/profile/profile_page.dart';
 import '../../features/profile/public_profile_page.dart';
+import '../../features/profile/widgets/profile_gallery_viewer_page.dart';
 import '../../features/reports/blocked_users_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/social/social_page.dart';
@@ -69,6 +70,19 @@ GoRouter createAppRouter(AuthState authState) {
         path: RoutePaths.register,
         name: RouteNames.register,
         builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.profileGalleryViewer,
+        name: RouteNames.profileGalleryViewer,
+        builder: (context, state) {
+          final args = state.extra is ProfileGalleryViewerArgs
+              ? state.extra as ProfileGalleryViewerArgs
+              : null;
+          return MainNavigationShell(
+            currentIndex: 4,
+            child: ProfileGalleryViewerPage(args: args),
+          );
+        },
       ),
       GoRoute(
         path: RoutePaths.publicProfile,
