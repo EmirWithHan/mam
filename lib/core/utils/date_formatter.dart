@@ -22,4 +22,28 @@ class DateFormatter {
     final minute = value.minute.toString().padLeft(2, '0');
     return '$day.$month.${value.year} $hour:$minute';
   }
+
+  static String turkishEventDateTime(DateTime value) {
+    final hour = value.hour.toString().padLeft(2, '0');
+    final minute = value.minute.toString().padLeft(2, '0');
+    return '${value.day} ${_turkishMonth(value.month)} ${value.year}, $hour:$minute';
+  }
+
+  static String _turkishMonth(int month) {
+    const months = [
+      'Ocak',
+      'Şubat',
+      'Mart',
+      'Nisan',
+      'Mayıs',
+      'Haziran',
+      'Temmuz',
+      'Ağustos',
+      'Eylül',
+      'Ekim',
+      'Kasım',
+      'Aralık',
+    ];
+    return months[month - 1];
+  }
 }

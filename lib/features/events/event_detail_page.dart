@@ -7,10 +7,12 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/utils/date_formatter.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/error_view.dart';
+import '../../services/maps_service.dart';
 import '../auth/auth_provider.dart';
 import '../profile/public_profile_provider.dart';
 import '../profile/profile_provider.dart';
@@ -143,11 +145,27 @@ class _EventDetailBody extends ConsumerWidget {
         const SizedBox(height: AppSpacing.sm),
         _DetailCard(
           children: [
-            _DetailLine(label: 'Description', value: event.description ?? '-'),
-            _DetailLine(label: 'Area', value: event.locationLabel),
-            _DetailLine(label: 'Location', value: event.locationText ?? '-'),
-            _DetailLine(label: 'Date', value: _formatDateTime(event.eventDate)),
-            _DetailLine(label: 'Capacity', value: event.capacityLabel),
+            _InfoBlock(
+              label: 'Description',
+              value: event.descriptionLabel,
+              muted: !event.hasDescription,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _AreaTile(event: event),
+            const SizedBox(height: AppSpacing.md),
+            _LocationCard(event: event),
+            const SizedBox(height: AppSpacing.md),
+            _InfoTile(
+              label: 'Date',
+              value: DateFormatter.turkishEventDateTime(event.eventDate),
+              icon: Icons.calendar_today_outlined,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            _InfoTile(
+              label: 'Capacity',
+              value: event.formattedCapacityLabel,
+              icon: Icons.groups_outlined,
+            ),
           ],
         ),
         const SizedBox(height: AppSpacing.lg),
@@ -545,8 +563,15 @@ class _DetailCard extends StatelessWidget {
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surface,
-        border: Border.all(color: AppColors.border),
-        borderRadius: AppRadius.lgBorder,
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
+        borderRadius: AppRadius.xlBorder,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.textPrimary.withValues(alpha: 0.05),
+            blurRadius: 22,
+            offset: const Offset(0, 10),
+          ),
+        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.lg),
@@ -556,6 +581,220 @@ class _DetailCard extends StatelessWidget {
         ),
       ),
     );
+  }
+}
+
+class _InfoBlock extends StatelessWidget {
+  const _InfoBlock({
+    required this.label,
+    required this.value,
+    this.muted = false,
+  });
+
+  final String label;
+  final String value;
+  final bool muted;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _InfoLabel(label),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          value,
+          style: AppTextStyles.body.copyWith(
+            color: muted ? AppColors.textMuted : AppColors.textPrimary,
+            fontWeight: muted ? FontWeight.w500 : FontWeight.w700,
+            height: 1.35,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _AreaTile extends StatelessWidget {
+  const _AreaTile({required this.event});
+
+  final Event event;
+
+  @override
+  Widget build(BuildContext context) {
+    return _InfoTile(
+      label: 'Area',
+      value: event.locationLabel,
+      icon: Icons.place_outlined,
+      highlighted: true,
+    );
+  }
+}
+
+class _InfoTile extends StatelessWidget {
+  const _InfoTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+    this.highlighted = false,
+  });
+
+  final String label;
+  final String value;
+  final IconData icon;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: highlighted
+            ? AppColors.primarySoft.withValues(alpha: 0.58)
+            : AppColors.background,
+        borderRadius: AppRadius.lgBorder,
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration: const BoxDecoration(
+                color: AppColors.primarySoft,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: AppColors.primary, size: 20),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _InfoLabel(label),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    value,
+                    style: AppTextStyles.bodyStrong.copyWith(height: 1.25),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoLabel extends StatelessWidget {
+  const _InfoLabel(this.label);
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      label,
+      style: AppTextStyles.label.copyWith(
+        color: AppColors.textMuted,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+}
+
+class _LocationCard extends StatelessWidget {
+  const _LocationCard({required this.event});
+
+  final Event event;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!event.hasLocation) {
+      return const Padding(
+        padding: EdgeInsets.only(bottom: AppSpacing.sm),
+        child: _DetailLine(
+          label: 'Location',
+          value: 'Konum bilgisi eklenmemiş.',
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Material(
+        color: AppColors.background,
+        borderRadius: AppRadius.lgBorder,
+        child: InkWell(
+          borderRadius: AppRadius.lgBorder,
+          onTap: () => _openMaps(context),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primarySoft,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.map_outlined,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const _InfoLabel('Location'),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        event.locationDisplayLabel,
+                        style: AppTextStyles.bodyStrong,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        'Haritada aç',
+                        style: AppTextStyles.label.copyWith(
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                const Icon(Icons.open_in_new, color: AppColors.primary),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openMaps(BuildContext context) async {
+    try {
+      await const MapsService().openEventLocation(
+        latitude: event.locationLat,
+        longitude: event.locationLng,
+        locationText: event.locationText,
+        label: event.title,
+      );
+    } catch (error) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$error')),
+      );
+    }
   }
 }
 
@@ -625,10 +864,5 @@ class _DetailLine extends StatelessWidget {
 }
 
 String _formatDateTime(DateTime value) {
-  final year = value.year.toString().padLeft(4, '0');
-  final month = value.month.toString().padLeft(2, '0');
-  final day = value.day.toString().padLeft(2, '0');
-  final hour = value.hour.toString().padLeft(2, '0');
-  final minute = value.minute.toString().padLeft(2, '0');
-  return '$year-$month-$day $hour:$minute';
+  return DateFormatter.turkishEventDateTime(value);
 }

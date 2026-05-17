@@ -47,6 +47,30 @@ class Event {
 
   bool get isFull => approvedCount >= capacityTotal;
 
+  bool get hasDescription => description?.trim().isNotEmpty == true;
+
+  String get descriptionLabel {
+    final text = description?.trim();
+    if (text == null || text.isEmpty) return 'Açıklama eklenmemiş.';
+    return text;
+  }
+
+  bool get hasCoordinates => locationLat != null && locationLng != null;
+
+  bool get hasLocation {
+    final text = locationText?.trim();
+    return hasCoordinates || (text != null && text.isNotEmpty);
+  }
+
+  String get locationDisplayLabel {
+    final text = locationText?.trim();
+    if (text != null && text.isNotEmpty && !_looksLikeRawCoordinates(text)) {
+      return text;
+    }
+    if (hasCoordinates) return 'Haritada görüntüle';
+    return 'Konum bilgisi eklenmemiş.';
+  }
+
   String get locationLabel {
     final districtValue = district;
     if (districtValue == null || districtValue.trim().isEmpty) return city;
@@ -54,6 +78,10 @@ class Event {
   }
 
   String get capacityLabel => '$approvedCount / $capacityTotal approved';
+
+  String get formattedCapacityLabel {
+    return '$approvedCount / $capacityTotal kişi onaylandı';
+  }
 
   factory Event.fromJson(Map<String, dynamic> json) {
     return Event(
@@ -188,4 +216,11 @@ String? _nullableTrim(String? value) {
   final trimmed = value?.trim();
   if (trimmed == null || trimmed.isEmpty) return null;
   return trimmed;
+}
+
+bool _looksLikeRawCoordinates(String value) {
+  final trimmed = value.trim();
+  if (trimmed == 'Mevcut konum seçildi') return true;
+  if (trimmed.startsWith('Konum seçildi:')) return true;
+  return RegExp(r'^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$').hasMatch(trimmed);
 }
