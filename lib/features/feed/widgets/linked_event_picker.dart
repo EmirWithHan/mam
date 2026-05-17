@@ -236,8 +236,9 @@ class _LinkedEventPickerSheetState
   List<LinkableEvent> _filterEvents(List<LinkableEvent> events) {
     final normalizedQuery = _query.trim().toLowerCase();
     if (normalizedQuery.isEmpty) return events;
+    final searchQuery = _normalizeSearchText(normalizedQuery);
     return events
-        .where((event) => event.searchText.contains(normalizedQuery))
+        .where((event) => event.searchText.contains(searchQuery))
         .toList();
   }
 }
@@ -305,4 +306,17 @@ class _LinkableEventTile extends StatelessWidget {
       onTap: () => Navigator.of(context).pop(event.id),
     );
   }
+}
+
+String _normalizeSearchText(String value) {
+  return value
+      .trim()
+      .toLowerCase()
+      .replaceAll('ç', 'c')
+      .replaceAll('ğ', 'g')
+      .replaceAll('ı', 'i')
+      .replaceAll('i̇', 'i')
+      .replaceAll('ö', 'o')
+      .replaceAll('ş', 's')
+      .replaceAll('ü', 'u');
 }

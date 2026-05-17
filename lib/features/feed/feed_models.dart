@@ -112,15 +112,15 @@ class LinkableEvent {
     return '$city / $districtValue';
   }
 
-  String get displayDate => DateFormatter.dateTime(eventDate);
+  String get displayDate => DateFormatter.turkishEventDateTime(eventDate);
 
   String get searchText {
-    return [
+    return _normalizeSearchText([
       title,
       sportType,
       city,
       district,
-    ].whereType<String>().join(' ').toLowerCase();
+    ].whereType<String>().join(' '));
   }
 
   factory LinkableEvent.fromJson(
@@ -219,4 +219,17 @@ String? _nullableTrim(String? value) {
   final trimmed = value?.trim();
   if (trimmed == null || trimmed.isEmpty) return null;
   return trimmed;
+}
+
+String _normalizeSearchText(String value) {
+  return value
+      .trim()
+      .toLowerCase()
+      .replaceAll('ç', 'c')
+      .replaceAll('ğ', 'g')
+      .replaceAll('ı', 'i')
+      .replaceAll('i̇', 'i')
+      .replaceAll('ö', 'o')
+      .replaceAll('ş', 's')
+      .replaceAll('ü', 'u');
 }
