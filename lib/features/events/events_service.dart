@@ -63,17 +63,43 @@ class EventsService {
   }
 
   Future<String?> fetchMyAttendanceStatus(String eventId) async {
+    final participation = await fetchMyParticipation(eventId);
+    return participation?.attendanceStatus;
+  }
+
+  Future<EventParticipation?> fetchMyParticipation(String eventId) async {
     final userId = SupabaseService.client.auth.currentUser?.id;
     if (userId == null) return null;
 
     final data = await SupabaseService.client
         .from('event_participants')
-        .select('attendance_status')
+        .select('role,attendance_status')
         .eq('event_id', eventId)
         .eq('user_id', userId)
         .maybeSingle();
 
-    return data?['attendance_status'] as String?;
+    if (data == null) return null;
+    return EventParticipation.fromJson(data);
+  }
+
+  Future<Map<String, String>> fetchParticipantAttendanceStatuses(
+    String eventId,
+  ) async {
+    final rows = await SupabaseService.client
+        .from('event_participants')
+        .select('user_id,role,attendance_status')
+        .eq('event_id', eventId)
+        .eq('role', 'participant');
+
+    final statuses = <String, String>{};
+    for (final row in rows) {
+      final userId = row['user_id'] as String?;
+      final status = row['attendance_status'] as String?;
+      if (userId == null || status == null) continue;
+      statuses[userId] = status;
+    }
+
+    return statuses;
   }
 
   Future<void> leaveApprovedEvent(String eventId) async {
@@ -121,11 +147,12 @@ class EventsService {
 
     final rows = await SupabaseService.client
         .from('event_participants')
-        .select('event_id,attendance_status')
+        .select('event_id,role,attendance_status')
         .inFilter('event_id', eventIds)
+        .eq('role', 'participant')
         .inFilter('attendance_status', [
       EventParticipationStatus.planned,
-      EventParticipationStatus.approved,
+      EventParticipationStatus.attended,
     ]);
 
     final counts = <String, int>{};

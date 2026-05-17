@@ -129,18 +129,21 @@ class _EventDetailBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(profileControllerProvider);
     final requestState = ref.watch(joinRequestControllerProvider(event.id));
-    final attendanceStatusAsync = ref.watch(
-      eventAttendanceStatusProvider(event.id),
+    final participantStatusesAsync = ref.watch(
+      eventParticipantAttendanceStatusesProvider(event.id),
     );
-    final attendanceStatus = attendanceStatusAsync.valueOrNull;
-    final hasAttendanceStatus = attendanceStatusAsync.hasValue;
-    final hasLeftEvent =
-        EventParticipationStatus.hasLeftEvent(attendanceStatus);
-    final isApprovedByAttendance =
-        EventParticipationStatus.isApprovedParticipant(attendanceStatus);
-    final isApprovedParticipant = !hasLeftEvent &&
-        (hasAttendanceStatus
-            ? isApprovedByAttendance
+    final myParticipationAsync = ref.watch(
+      eventMyParticipationProvider(event.id),
+    );
+    final myParticipation = myParticipationAsync.valueOrNull;
+    final hasMyParticipation = myParticipationAsync.hasValue;
+    final hasLeftEvent = myParticipation?.hasLeftEvent ?? false;
+    final canLeaveApprovedEvent =
+        !isHost && (myParticipation?.canLeaveApprovedEvent ?? false);
+    final isApprovedParticipant = !isHost &&
+        !hasLeftEvent &&
+        (hasMyParticipation
+            ? myParticipation?.isActiveApprovedParticipant == true
             : requestState.myRequest?.isApproved == true);
     final requestController = ref.read(
       joinRequestControllerProvider(event.id).notifier,
@@ -201,26 +204,35 @@ class _EventDetailBody extends ConsumerWidget {
             targetUserId: event.hostId,
             label: 'Call host',
           ),
-          const SizedBox(height: AppSpacing.sm),
-          _LeaveApprovedEventButton(
-            onPressed: () => _confirmLeaveApprovedEvent(
-              context,
-              ref,
-              requestController,
+          if (canLeaveApprovedEvent) ...[
+            const SizedBox(height: AppSpacing.sm),
+            _LeaveApprovedEventButton(
+              onPressed: () => _confirmLeaveApprovedEvent(
+                context,
+                ref,
+                requestController,
+              ),
             ),
-          ),
+          ],
           const SizedBox(height: AppSpacing.lg),
         ],
         if (isHost)
           _HostRequestsSection(
             eventId: event.id,
             state: requestState,
+            participantStatuses: participantStatusesAsync.valueOrNull ?? const {},
             onApprove: (requestId) async {
               await requestController.approveRequest(requestId);
+              ref.invalidate(
+                eventParticipantAttendanceStatusesProvider(event.id),
+              );
               await onRefreshEvent();
             },
             onReject: (requestId) async {
               await requestController.rejectRequest(requestId);
+              ref.invalidate(
+                eventParticipantAttendanceStatusesProvider(event.id),
+              );
               await onRefreshEvent();
             },
           )
@@ -301,7 +313,9 @@ class _EventDetailBody extends ConsumerWidget {
     final left = await ref
         .read(eventsControllerProvider.notifier)
         .leaveApprovedEvent(event.id);
+    ref.invalidate(eventMyParticipationProvider(event.id));
     ref.invalidate(eventAttendanceStatusProvider(event.id));
+    ref.invalidate(eventParticipantAttendanceStatusesProvider(event.id));
     ref.invalidate(eventDetailProvider(event.id));
     ref.invalidate(eventChatControllerProvider(event.id));
     ref.invalidate(eventChatListControllerProvider);
@@ -352,12 +366,14 @@ class _HostRequestsSection extends StatelessWidget {
   const _HostRequestsSection({
     required this.eventId,
     required this.state,
+    required this.participantStatuses,
     required this.onApprove,
     required this.onReject,
   });
 
   final String eventId;
   final JoinRequestsState state;
+  final Map<String, String> participantStatuses;
   final Future<void> Function(String requestId) onApprove;
   final Future<void> Function(String requestId) onReject;
 
@@ -396,7 +412,9 @@ class _HostRequestsSection extends StatelessWidget {
                       onApprove: () => onApprove(request.id),
                       onReject: () => onReject(request.id),
                     ),
-                    if (request.isApproved) ...[
+                    if (EventParticipationStatus.isActiveApprovedParticipant(
+                      participantStatuses[request.userId],
+                    )) ...[
                       const SizedBox(height: AppSpacing.xs),
                       EventCallButton(
                         eventId: eventId,

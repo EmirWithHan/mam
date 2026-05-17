@@ -160,19 +160,54 @@ class EventParticipationStatus {
 
   static const planned = 'planned';
   static const approved = 'approved';
+  static const attended = 'attended';
   static const pending = 'pending';
   static const cancelled = 'cancelled';
   static const rejected = 'rejected';
   static const left = 'left';
 
+  static bool isActiveApprovedParticipant(String? status) {
+    return status == planned || status == attended;
+  }
+
   static bool isApprovedParticipant(String? status) {
-    return status == planned || status == approved;
+    return isActiveApprovedParticipant(status);
   }
 
   static bool hasLeftEvent(String? status) => status == left;
 
   static bool canLeaveApprovedEvent(String? status) {
-    return isApprovedParticipant(status);
+    return isActiveApprovedParticipant(status);
+  }
+}
+
+class EventParticipation {
+  const EventParticipation({
+    required this.role,
+    required this.attendanceStatus,
+  });
+
+  final String role;
+  final String attendanceStatus;
+
+  bool get isParticipant => role == 'participant';
+
+  bool get hasLeftEvent {
+    return EventParticipationStatus.hasLeftEvent(attendanceStatus);
+  }
+
+  bool get isActiveApprovedParticipant {
+    return isParticipant &&
+        EventParticipationStatus.isActiveApprovedParticipant(attendanceStatus);
+  }
+
+  bool get canLeaveApprovedEvent => isActiveApprovedParticipant;
+
+  factory EventParticipation.fromJson(Map<String, dynamic> json) {
+    return EventParticipation(
+      role: json['role'] as String? ?? '',
+      attendanceStatus: json['attendance_status'] as String? ?? '',
+    );
   }
 }
 

@@ -60,6 +60,18 @@ final eventAttendanceStatusProvider =
   return ref.watch(eventsServiceProvider).fetchMyAttendanceStatus(eventId);
 });
 
+final eventMyParticipationProvider =
+    FutureProvider.family<EventParticipation?, String>((ref, eventId) {
+  return ref.watch(eventsServiceProvider).fetchMyParticipation(eventId);
+});
+
+final eventParticipantAttendanceStatusesProvider =
+    FutureProvider.family<Map<String, String>, String>((ref, eventId) {
+  return ref
+      .watch(eventsServiceProvider)
+      .fetchParticipantAttendanceStatuses(eventId);
+});
+
 class EventsController extends StateNotifier<EventsState> {
   EventsController(this._eventsService) : super(const EventsState.initial());
 
