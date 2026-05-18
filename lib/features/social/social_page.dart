@@ -13,6 +13,7 @@ import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
 import '../chat/event_chat_list_models.dart';
 import '../chat/event_chat_list_provider.dart';
+import '../notifications/notifications_provider.dart';
 import 'widgets/social_chat_group_card.dart';
 import 'widgets/social_future_messages_card.dart';
 
@@ -60,13 +61,9 @@ class _SocialPageState extends ConsumerState<SocialPage> {
         centerTitle: true,
         title: const AppLogo(size: 32, showText: true),
         actions: [
-          IconButton(
-            tooltip: 'Bildirimler',
-            onPressed: () => context.pushNamed(RouteNames.notifications),
-            icon: const Icon(
-              Icons.notifications_none_rounded,
-              color: AppColors.primary,
-            ),
+          _NotificationBell(
+            unreadCount:
+                ref.watch(notificationsUnreadCountProvider).valueOrNull ?? 0,
           ),
           const SizedBox(width: AppSpacing.sm),
         ],
@@ -148,5 +145,41 @@ class _SocialPageState extends ConsumerState<SocialPage> {
           group.locationLabel.toLowerCase().contains(_query) ||
           group.displaySubtitle.toLowerCase().contains(_query);
     }).toList();
+  }
+}
+
+class _NotificationBell extends StatelessWidget {
+  const _NotificationBell({required this.unreadCount});
+
+  final int unreadCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: 'Bildirimler',
+      onPressed: () => context.pushNamed(RouteNames.notifications),
+      icon: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Icon(
+            Icons.notifications_none_rounded,
+            color: AppColors.primary,
+          ),
+          if (unreadCount > 0)
+            Positioned(
+              right: -1,
+              top: -1,
+              child: Container(
+                width: 9,
+                height: 9,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }

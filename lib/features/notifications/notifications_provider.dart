@@ -1,0 +1,158 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/utils/error_messages.dart';
+import 'notifications_models.dart';
+import 'notifications_service.dart';
+
+enum NotificationsStatus {
+  initial,
+  loading,
+  success,
+  error,
+}
+
+class NotificationsState {
+  const NotificationsState({
+    required this.status,
+    this.notifications = const [],
+    this.message,
+    this.isUpdating = false,
+  });
+
+  const NotificationsState.initial()
+      : status = NotificationsStatus.initial,
+        notifications = const [],
+        message = null,
+        isUpdating = false;
+
+  final NotificationsStatus status;
+  final List<AppNotification> notifications;
+  final String? message;
+  final bool isUpdating;
+
+  bool get isLoading => status == NotificationsStatus.loading;
+  int get unreadCount =>
+      notifications.where((notification) => notification.isUnread).length;
+  bool get hasUnread => unreadCount > 0;
+
+  NotificationsState copyWith({
+    NotificationsStatus? status,
+    List<AppNotification>? notifications,
+    String? message,
+    bool? isUpdating,
+    bool clearMessage = false,
+  }) {
+    return NotificationsState(
+      status: status ?? this.status,
+      notifications: notifications ?? this.notifications,
+      message: clearMessage ? null : message ?? this.message,
+      isUpdating: isUpdating ?? this.isUpdating,
+    );
+  }
+}
+
+final notificationsServiceProvider = Provider<NotificationsService>((ref) {
+  return const NotificationsService();
+});
+
+final notificationsUnreadCountProvider = FutureProvider<int>((ref) {
+  return ref.watch(notificationsServiceProvider).fetchUnreadCount();
+});
+
+final notificationsControllerProvider =
+    StateNotifierProvider<NotificationsController, NotificationsState>((ref) {
+  return NotificationsController(
+    service: ref.watch(notificationsServiceProvider),
+    ref: ref,
+  );
+});
+
+class NotificationsController extends StateNotifier<NotificationsState> {
+  NotificationsController({
+    required NotificationsService service,
+    required Ref ref,
+  })  : _service = service,
+        _ref = ref,
+        super(const NotificationsState.initial());
+
+  final NotificationsService _service;
+  final Ref _ref;
+
+  Future<void> loadNotifications() async {
+    state = state.copyWith(
+      status: NotificationsStatus.loading,
+      clearMessage: true,
+    );
+
+    try {
+      final notifications = await _service.fetchNotifications();
+      state = NotificationsState(
+        status: NotificationsStatus.success,
+        notifications: notifications,
+      );
+      _ref.invalidate(notificationsUnreadCountProvider);
+    } catch (error) {
+      state = state.copyWith(
+        status: NotificationsStatus.error,
+        message: _readableMessage(error),
+      );
+    }
+  }
+
+  Future<void> refreshNotifications() => loadNotifications();
+
+  Future<bool> markNotificationRead(String notificationId) async {
+    state = state.copyWith(isUpdating: true, clearMessage: true);
+
+    try {
+      await _service.markNotificationRead(notificationId);
+      final notifications = state.notifications.map((notification) {
+        if (notification.id != notificationId) return notification;
+        return notification.copyWith(isRead: true);
+      }).toList(growable: false);
+      state = state.copyWith(
+        status: NotificationsStatus.success,
+        notifications: notifications,
+        isUpdating: false,
+      );
+      _ref.invalidate(notificationsUnreadCountProvider);
+      return true;
+    } catch (error) {
+      state = state.copyWith(
+        isUpdating: false,
+        message: _readableMessage(error),
+      );
+      return false;
+    }
+  }
+
+  Future<bool> markAllNotificationsRead() async {
+    state = state.copyWith(isUpdating: true, clearMessage: true);
+
+    try {
+      await _service.markAllNotificationsRead();
+      final notifications = state.notifications
+          .map((notification) => notification.copyWith(isRead: true))
+          .toList(growable: false);
+      state = state.copyWith(
+        status: NotificationsStatus.success,
+        notifications: notifications,
+        isUpdating: false,
+      );
+      _ref.invalidate(notificationsUnreadCountProvider);
+      return true;
+    } catch (error) {
+      state = state.copyWith(
+        isUpdating: false,
+        message: _readableMessage(error),
+      );
+      return false;
+    }
+  }
+
+  String _readableMessage(Object error) {
+    final message = error.toString().replaceFirst('Exception: ', '').trim();
+    if (message.isNotEmpty && message.length <= 90) return message;
+    return friendlyErrorMessage(error);
+  }
+}

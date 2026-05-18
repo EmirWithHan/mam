@@ -11,6 +11,7 @@ import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
+import '../notifications/notifications_provider.dart';
 import 'events_models.dart';
 import 'events_provider.dart';
 import 'widgets/event_card.dart';
@@ -52,13 +53,9 @@ class _EventsPageState extends ConsumerState<EventsPage> {
         centerTitle: true,
         title: const AppLogo(size: 32, showText: true),
         actions: [
-          IconButton(
-            tooltip: 'Bildirimler',
-            onPressed: () => context.pushNamed(RouteNames.notifications),
-            icon: const Icon(
-              Icons.notifications_none_rounded,
-              color: AppColors.primary,
-            ),
+          _NotificationBell(
+            unreadCount:
+                ref.watch(notificationsUnreadCountProvider).valueOrNull ?? 0,
           ),
           const SizedBox(width: AppSpacing.sm),
         ],
@@ -126,6 +123,42 @@ class _EventsPageState extends ConsumerState<EventsPage> {
       _filters = const EventFilters();
       _searchController.clear();
     });
+  }
+}
+
+class _NotificationBell extends StatelessWidget {
+  const _NotificationBell({required this.unreadCount});
+
+  final int unreadCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: 'Bildirimler',
+      onPressed: () => context.pushNamed(RouteNames.notifications),
+      icon: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Icon(
+            Icons.notifications_none_rounded,
+            color: AppColors.primary,
+          ),
+          if (unreadCount > 0)
+            Positioned(
+              right: -1,
+              top: -1,
+              child: Container(
+                width: 9,
+                height: 9,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
   }
 }
 

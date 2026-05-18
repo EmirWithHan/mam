@@ -12,6 +12,7 @@ import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
+import '../notifications/notifications_provider.dart';
 import 'feed_provider.dart';
 import 'widgets/post_card.dart';
 
@@ -108,7 +109,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
   }
 }
 
-class _FeedHeader extends StatelessWidget {
+class _FeedHeader extends ConsumerWidget {
   const _FeedHeader({
     required this.showCreatePrompt,
     required this.showNotificationBell,
@@ -118,7 +119,7 @@ class _FeedHeader extends StatelessWidget {
   final bool showNotificationBell;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -127,13 +128,10 @@ class _FeedHeader extends StatelessWidget {
           children: [
             const AppLogo(size: 32, showText: true),
             if (showNotificationBell)
-              IconButton(
-                tooltip: 'Bildirimler',
-                onPressed: () => context.pushNamed(RouteNames.notifications),
-                icon: const Icon(
-                  Icons.notifications_none_rounded,
-                  color: AppColors.primary,
-                ),
+              _NotificationBell(
+                unreadCount:
+                    ref.watch(notificationsUnreadCountProvider).valueOrNull ??
+                        0,
               ),
           ],
         ),
@@ -165,6 +163,42 @@ class _FeedHeader extends StatelessWidget {
           const _CreatePostPrompt(),
         ],
       ],
+    );
+  }
+}
+
+class _NotificationBell extends StatelessWidget {
+  const _NotificationBell({required this.unreadCount});
+
+  final int unreadCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      tooltip: 'Bildirimler',
+      onPressed: () => context.pushNamed(RouteNames.notifications),
+      icon: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          const Icon(
+            Icons.notifications_none_rounded,
+            color: AppColors.primary,
+          ),
+          if (unreadCount > 0)
+            Positioned(
+              right: -1,
+              top: -1,
+              child: Container(
+                width: 9,
+                height: 9,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+        ],
+      ),
     );
   }
 }
