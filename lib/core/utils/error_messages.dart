@@ -2,6 +2,31 @@ String friendlyErrorMessage(Object error) {
   final message = error.toString();
   final normalized = message.toLowerCase();
 
+  if (normalized.contains('notifications') ||
+      normalized.contains('bildirim')) {
+    if (normalized.contains('permission') ||
+        normalized.contains('policy') ||
+        normalized.contains('rls') ||
+        normalized.contains('not authorized') ||
+        normalized.contains('forbidden') ||
+        normalized.contains('42501') ||
+        normalized.contains('yetkin yok')) {
+      return 'Bu işlem için yetkin yok.';
+    }
+    if (normalized.contains('update') ||
+        normalized.contains('mark_notification_read') ||
+        normalized.contains('mark_all_notifications_read') ||
+        normalized.contains('güncellenemedi')) {
+      return 'Bildirim güncellenemedi.';
+    }
+    if (normalized.contains('select') ||
+        normalized.contains('load') ||
+        normalized.contains('fetch') ||
+        normalized.contains('yüklenemedi')) {
+      return 'Bildirimler yüklenemedi.';
+    }
+  }
+
   if (normalized.contains('invalid login credentials') ||
       normalized.contains('invalid credentials') ||
       normalized.contains('email not confirmed')) {
