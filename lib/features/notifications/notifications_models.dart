@@ -32,6 +32,28 @@ class AppNotification {
     return entityId?.trim().isNotEmpty == true && entity == 'event';
   }
 
+  String get displayTitle {
+    final cleanTitle = title.trim();
+    if (cleanTitle.isNotEmpty) return cleanTitle;
+
+    switch (type.trim().toLowerCase()) {
+      case 'event_join_request':
+        return 'Yeni katılım isteği';
+      case 'event_join_approved':
+        return 'Katılım isteğin onaylandı';
+      case 'event_join_rejected':
+        return 'Katılım isteğin reddedildi';
+      case 'event_join_cancelled':
+        return 'Katılım isteği iptal edildi';
+      case 'event_left':
+        return 'Katılımcı etkinlikten çıktı';
+      case 'system':
+        return 'Sistem bildirimi';
+      default:
+        return 'Bildirim';
+    }
+  }
+
   String get displayBody => body?.trim() ?? '';
 
   String get typeLabel {
@@ -74,7 +96,7 @@ class AppNotification {
       recipientId: json['recipient_id'] as String? ?? '',
       actorId: json['actor_id'] as String?,
       type: json['type'] as String? ?? 'system',
-      title: json['title'] as String? ?? 'Bildirim',
+      title: json['title'] as String? ?? '',
       body: json['body'] as String?,
       entityType: json['entity_type'] as String?,
       entityId: json['entity_id'] as String?,

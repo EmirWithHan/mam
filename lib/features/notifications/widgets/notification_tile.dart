@@ -22,6 +22,11 @@ class NotificationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final highlighted = notification.isUnread;
     final body = notification.displayBody;
+    final isEventNotification =
+        notification.type.trim().toLowerCase().startsWith('event_');
+    final accentColor = highlighted || isEventNotification
+        ? AppColors.primary
+        : AppColors.textMuted;
 
     return Material(
       color: AppColors.surface,
@@ -34,7 +39,7 @@ class NotificationTile extends StatelessWidget {
             color: highlighted ? AppColors.primarySoft : AppColors.surface,
             borderRadius: AppRadius.lgBorder,
             border: Border.all(
-              color: highlighted ? AppColors.primarySoft : AppColors.border,
+              color: highlighted ? AppColors.primary : AppColors.border,
             ),
             boxShadow: [
               BoxShadow(
@@ -61,9 +66,7 @@ class NotificationTile extends StatelessWidget {
                               : AppColors.background,
                           child: Icon(
                             _iconForType(notification.type),
-                            color: highlighted
-                                ? AppColors.primary
-                                : AppColors.textSecondary,
+                            color: accentColor,
                             size: 22,
                           ),
                         ),
@@ -79,15 +82,24 @@ class NotificationTile extends StatelessWidget {
                                       ? AppColors.primary
                                       : AppColors.textMuted,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                               const SizedBox(height: AppSpacing.xs),
                               Text(
-                                notification.title,
+                                notification.displayTitle,
                                 style: AppTextStyles.bodyStrong,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
                               if (body.isNotEmpty) ...[
                                 const SizedBox(height: AppSpacing.xs),
-                                Text(body, style: AppTextStyles.bodySmall),
+                                Text(
+                                  body,
+                                  style: AppTextStyles.bodySmall,
+                                  maxLines: 3,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ],
                               const SizedBox(height: AppSpacing.sm),
                               Text(
@@ -97,6 +109,8 @@ class NotificationTile extends StatelessWidget {
                                       ? AppColors.primary
                                       : AppColors.textMuted,
                                 ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
@@ -129,7 +143,7 @@ class NotificationTile extends StatelessWidget {
       case 'event_join_rejected':
         return Icons.cancel_outlined;
       case 'event_join_cancelled':
-        return Icons.undo;
+        return Icons.remove_circle_outline;
       case 'event_left':
         return Icons.logout;
       case 'follow':

@@ -145,10 +145,16 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     }
 
     if (!mounted || !notification.canOpenEntity) return;
-    context.pushNamed(
-      RouteNames.eventDetail,
-      pathParameters: {'eventId': notification.entityId!},
-    );
+
+    try {
+      context.pushNamed(
+        RouteNames.eventDetail,
+        pathParameters: {'eventId': notification.entityId!.trim()},
+      );
+    } catch (_) {
+      if (!mounted) return;
+      _showMessage('Etkinlik açılamadı.');
+    }
   }
 
   void _showMessage(String message) {

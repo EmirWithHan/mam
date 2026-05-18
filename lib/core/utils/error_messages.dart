@@ -3,6 +3,7 @@ String friendlyErrorMessage(Object error) {
   final normalized = message.toLowerCase();
 
   if (normalized.contains('notifications') ||
+      normalized.contains('notification') ||
       normalized.contains('bildirim')) {
     if (normalized.contains('permission') ||
         normalized.contains('policy') ||

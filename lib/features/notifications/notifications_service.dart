@@ -21,7 +21,7 @@ class NotificationsService {
           .map((row) => AppNotification.fromJson(Map<String, dynamic>.from(row)))
           .toList(growable: false);
     } catch (error) {
-      throw Exception('Bildirimler yüklenemedi.');
+      throw Exception(_notificationError(error, 'Bildirimler yüklenemedi.'));
     }
   }
 
@@ -35,7 +35,7 @@ class NotificationsService {
           .eq('is_read', false);
       return rows.length;
     } catch (error) {
-      throw Exception('Bildirimler yüklenemedi.');
+      throw Exception(_notificationError(error, 'Bildirimler yüklenemedi.'));
     }
   }
 
