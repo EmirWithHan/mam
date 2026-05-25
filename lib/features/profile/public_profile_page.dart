@@ -204,15 +204,10 @@ class _PublicProfileHeader extends StatelessWidget {
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.sm,
               children: [
-                if (detail.locationLabel != null)
+                if (isMe && detail.locationLabel != null)
                   _InfoPill(
                     icon: Icons.place_outlined,
                     label: detail.locationLabel!,
-                  ),
-                if (detail.trustScore != null)
-                  _InfoPill(
-                    icon: Icons.verified_user_outlined,
-                    label: 'Güven ${detail.trustScore}',
                   ),
                 if (detail.isPrivate)
                   const _InfoPill(
