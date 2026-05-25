@@ -246,6 +246,64 @@ class PublicProfileDetail {
   }
 }
 
+class PublicProfileFollowListItem {
+  const PublicProfileFollowListItem({
+    required this.userId,
+    this.username,
+    this.fullName,
+    this.avatarUrl,
+    this.city,
+    this.district,
+    this.bio,
+    this.trustScore,
+    this.followerCount = 0,
+    this.followingCount = 0,
+    this.isFollowingByMe = false,
+    this.followsMe = false,
+    this.createdAt,
+  });
+
+  final String userId;
+  final String? username;
+  final String? fullName;
+  final String? avatarUrl;
+  final String? city;
+  final String? district;
+  final String? bio;
+  final int? trustScore;
+  final int followerCount;
+  final int followingCount;
+  final bool isFollowingByMe;
+  final bool followsMe;
+  final DateTime? createdAt;
+
+  String get displayName {
+    final name = fullName?.trim();
+    final user = username?.trim();
+    if (name != null && name.isNotEmpty) return name;
+    if (user != null && user.isNotEmpty) return user;
+    return 'MaM User';
+  }
+
+  factory PublicProfileFollowListItem.fromJson(Map<String, dynamic> json) {
+    return PublicProfileFollowListItem(
+      userId: json['user_id'].toString(),
+      username: json['username'] as String?,
+      fullName: json['full_name'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
+      city: json['city'] as String?,
+      district: json['district'] as String?,
+      bio: json['bio'] as String?,
+      trustScore: (json['trust_score'] as num?)?.toInt(),
+      followerCount: (json['follower_count'] as num?)?.toInt() ?? 0,
+      followingCount: (json['following_count'] as num?)?.toInt() ?? 0,
+      isFollowingByMe: json['is_following_by_me'] as bool? ?? false,
+      followsMe: json['follows_me'] as bool? ?? false,
+      createdAt: _dateTimeFromJson(json['created_at']),
+    );
+  }
+}
+
 class PublicProfileGalleryItem {
   const PublicProfileGalleryItem({
     required this.postId,

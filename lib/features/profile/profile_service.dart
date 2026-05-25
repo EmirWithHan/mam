@@ -5,9 +5,8 @@ import '../../services/supabase_service.dart';
 import 'profile_models.dart';
 
 class ProfileService {
-  const ProfileService({
-    StorageService storageService = const StorageService(),
-  }) : _storageService = storageService;
+  const ProfileService({StorageService storageService = const StorageService()})
+    : _storageService = storageService;
 
   final StorageService _storageService;
 
@@ -78,9 +77,9 @@ class ProfileService {
       'get_public_profile_gallery',
       params: {'p_user_id': userId},
     );
-    return _rows(data)
-        .map(PublicProfileGalleryItem.fromJson)
-        .toList(growable: false);
+    return _rows(
+      data,
+    ).map(PublicProfileGalleryItem.fromJson).toList(growable: false);
   }
 
   Future<List<PublicProfileEventHistoryItem>> fetchPublicProfileEventHistory(
@@ -90,9 +89,37 @@ class ProfileService {
       'get_public_profile_event_history',
       params: {'p_user_id': userId},
     );
-    return _rows(data)
-        .map(PublicProfileEventHistoryItem.fromJson)
-        .toList(growable: false);
+    return _rows(
+      data,
+    ).map(PublicProfileEventHistoryItem.fromJson).toList(growable: false);
+  }
+
+  Future<List<PublicProfileFollowListItem>> fetchFollowers(
+    String userId, {
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final data = await SupabaseService.client.rpc(
+      'get_public_profile_followers',
+      params: {'p_user_id': userId, 'p_limit': limit, 'p_offset': offset},
+    );
+    return _rows(
+      data,
+    ).map(PublicProfileFollowListItem.fromJson).toList(growable: false);
+  }
+
+  Future<List<PublicProfileFollowListItem>> fetchFollowing(
+    String userId, {
+    int limit = 50,
+    int offset = 0,
+  }) async {
+    final data = await SupabaseService.client.rpc(
+      'get_public_profile_following',
+      params: {'p_user_id': userId, 'p_limit': limit, 'p_offset': offset},
+    );
+    return _rows(
+      data,
+    ).map(PublicProfileFollowListItem.fromJson).toList(growable: false);
   }
 
   String _currentUserId() {
