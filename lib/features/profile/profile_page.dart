@@ -93,15 +93,22 @@ class _ProfileBody extends ConsumerWidget {
       return _ProfileEmptyState();
     }
     final activityState = ref.watch(profileActivityControllerProvider);
+    final publicDetailAsync = ref.watch(
+      publicProfileDetailProvider(profile.userId),
+    );
 
     return RefreshIndicator(
       onRefresh: () async {
         await ref.read(profileControllerProvider.notifier).refreshMyProfile();
         await ref.read(profileActivityControllerProvider.notifier).refresh();
+        ref.invalidate(publicProfileDetailProvider(profile.userId));
       },
       child: ListView(
         children: [
-          _ProfileHeader(profile: profile),
+          _ProfileHeader(
+            profile: profile,
+            publicDetail: publicDetailAsync.valueOrNull,
+          ),
           const SizedBox(height: AppSpacing.lg),
           _ProfileActivityTabs(
             selectedTab: selectedTab,
@@ -147,7 +154,7 @@ class _ProfileActivityTabs extends StatelessWidget {
               onPressed: () => onTabSelected(_ProfileActivityTab.gallery),
             ),
             _ProfileActivityTabButton(
-              label: 'Eventlerim',
+              label: 'Geçmiş Events',
               selected: selectedTab == _ProfileActivityTab.events,
               onPressed: () => onTabSelected(_ProfileActivityTab.events),
             ),
@@ -283,9 +290,10 @@ class ProfileIncompleteGuidanceUnused extends StatelessWidget {
 }
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.profile});
+  const _ProfileHeader({required this.profile, required this.publicDetail});
 
   final Profile profile;
+  final PublicProfileDetail? publicDetail;
 
   @override
   Widget build(BuildContext context) {
@@ -338,7 +346,124 @@ class _ProfileHeader extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ],
+            const SizedBox(height: AppSpacing.lg),
+            _OwnProfileStats(
+              userId: profile.userId,
+              followersCount: publicDetail?.followersCount ?? 0,
+              followingCount: publicDetail?.followingCount ?? 0,
+            ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _OwnProfileStats extends StatelessWidget {
+  const _OwnProfileStats({
+    required this.userId,
+    required this.followersCount,
+    required this.followingCount,
+  });
+
+  final String userId;
+  final int followersCount;
+  final int followingCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth = constraints.maxWidth < 420
+            ? (constraints.maxWidth - AppSpacing.sm) / 2
+            : 160.0;
+
+        return Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          alignment: WrapAlignment.center,
+          children: [
+            SizedBox(
+              width: cardWidth.clamp(132.0, 220.0),
+              child: _OwnProfileStatCard(
+                value: followingCount,
+                label: 'Takip Edilen',
+                icon: Icons.person_add_alt_1_outlined,
+                onTap: () => context.pushNamed(
+                  RouteNames.profileFollowList,
+                  pathParameters: {'userId': userId, 'type': 'following'},
+                ),
+              ),
+            ),
+            SizedBox(
+              width: cardWidth.clamp(132.0, 220.0),
+              child: _OwnProfileStatCard(
+                value: followersCount,
+                label: 'Takipçi',
+                icon: Icons.groups_2_outlined,
+                onTap: () => context.pushNamed(
+                  RouteNames.profileFollowList,
+                  pathParameters: {'userId': userId, 'type': 'followers'},
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _OwnProfileStatCard extends StatelessWidget {
+  const _OwnProfileStatCard({
+    required this.value,
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  final int value;
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: AppRadius.lgBorder,
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            border: Border.all(color: AppColors.border),
+            borderRadius: AppRadius.lgBorder,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: AppColors.primary, size: 20),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  _compactCount(value),
+                  style: AppTextStyles.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  label,
+                  style: AppTextStyles.caption,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -444,4 +569,18 @@ String _displayName(Profile profile) {
 
   if (name.isNotEmpty) return name;
   return 'MaM player';
+}
+
+String _compactCount(int value) {
+  if (value >= 1000000) {
+    final formatted = (value / 1000000).toStringAsFixed(
+      value >= 10000000 ? 0 : 1,
+    );
+    return '${formatted.replaceAll('.0', '')}M';
+  }
+  if (value >= 1000) {
+    final formatted = (value / 1000).toStringAsFixed(value >= 10000 ? 0 : 1);
+    return '${formatted.replaceAll('.0', '')}K';
+  }
+  return value.toString();
 }

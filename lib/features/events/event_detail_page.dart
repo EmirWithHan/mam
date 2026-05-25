@@ -147,7 +147,9 @@ class _EventDetailBody extends ConsumerWidget {
     final hasMyParticipation = myParticipationAsync.hasValue;
     final hasLeftEvent = myParticipation?.hasLeftEvent ?? false;
     final canLeaveApprovedEvent =
-        !isHost && (myParticipation?.canLeaveApprovedEvent ?? false);
+        !event.isPast &&
+        !isHost &&
+        (myParticipation?.canLeaveApprovedEvent ?? false);
     final isApprovedParticipant =
         !isHost &&
         !hasLeftEvent &&
@@ -239,6 +241,7 @@ class _EventDetailBody extends ConsumerWidget {
           _HostRequestsSection(
             eventId: event.id,
             state: requestState,
+            isPastEvent: event.isPast,
             participantStatuses:
                 participantStatusesAsync.valueOrNull ?? const {},
             onApprove: (requestId) async {
@@ -389,6 +392,7 @@ class _HostRequestsSection extends StatelessWidget {
   const _HostRequestsSection({
     required this.eventId,
     required this.state,
+    required this.isPastEvent,
     required this.participantStatuses,
     required this.onApprove,
     required this.onReject,
@@ -396,6 +400,7 @@ class _HostRequestsSection extends StatelessWidget {
 
   final String eventId;
   final JoinRequestsState state;
+  final bool isPastEvent;
   final Map<String, String> participantStatuses;
   final Future<void> Function(String requestId) onApprove;
   final Future<void> Function(String requestId) onReject;
@@ -416,7 +421,9 @@ class _HostRequestsSection extends StatelessWidget {
             Text('You are the host', style: AppTextStyles.title),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              'Review requests and keep your squad moving.',
+              isPastEvent
+                  ? 'Bu etkinlik geçmişte kaldı. Yeni katılım işlemi yapılamaz.'
+                  : 'Review requests and keep your squad moving.',
               style: AppTextStyles.caption,
             ),
             const SizedBox(height: AppSpacing.md),
@@ -432,6 +439,7 @@ class _HostRequestsSection extends StatelessWidget {
                     HostJoinRequestTile(
                       request: request,
                       isLoading: state.loading,
+                      actionsEnabled: !isPastEvent,
                       onApprove: () => onApprove(request.id),
                       onReject: () => onReject(request.id),
                     ),
@@ -492,6 +500,12 @@ class _EventHeroCard extends StatelessWidget {
                     label: 'Sponsorlu',
                     color: AppColors.tertiarySoft,
                     textColor: AppColors.warning,
+                  ),
+                if (event.isPast)
+                  _MiniChip(
+                    label: 'Geçmiş',
+                    color: AppColors.border,
+                    textColor: AppColors.textMuted,
                   ),
                 const SizedBox(width: AppSpacing.xs),
                 _EventOverflowButton(event: event, isHost: isHost),

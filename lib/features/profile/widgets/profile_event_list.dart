@@ -11,10 +11,7 @@ import '../../../core/widgets/sport_icon.dart';
 import '../profile_activity_models.dart';
 
 class ProfileEventList extends StatelessWidget {
-  const ProfileEventList({
-    super.key,
-    required this.events,
-  });
+  const ProfileEventList({super.key, required this.events});
 
   final List<ProfileActivityEvent> events;
 
@@ -61,7 +58,7 @@ class _SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text('Eventlerim', style: AppTextStyles.title);
+    return Text('Geçmiş Events', style: AppTextStyles.title);
   }
 }
 
@@ -126,10 +123,7 @@ class _ProfileEventTile extends StatelessWidget {
                         label: event.locationLabel,
                       ),
                       const SizedBox(height: AppSpacing.xs),
-                      _MetaLine(
-                        icon: Icons.schedule,
-                        label: event.displayDate,
-                      ),
+                      _MetaLine(icon: Icons.schedule, label: event.displayDate),
                     ],
                   ),
                 ),
@@ -155,10 +149,7 @@ class _ProfileEventTile extends StatelessWidget {
 }
 
 class _InfoChip extends StatelessWidget {
-  const _InfoChip({
-    required this.label,
-    this.highlighted = false,
-  });
+  const _InfoChip({required this.label, this.highlighted = false});
 
   final String label;
   final bool highlighted;
@@ -187,10 +178,7 @@ class _InfoChip extends StatelessWidget {
 }
 
 class _MetaLine extends StatelessWidget {
-  const _MetaLine({
-    required this.icon,
-    required this.label,
-  });
+  const _MetaLine({required this.icon, required this.label});
 
   final IconData icon;
   final String label;

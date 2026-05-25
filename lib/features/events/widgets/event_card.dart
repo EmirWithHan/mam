@@ -71,6 +71,14 @@ class EventCard extends StatelessWidget {
                                 color: AppColors.primarySoft,
                                 textColor: AppColors.primary,
                               ),
+                            if (event.isPast) ...[
+                              const SizedBox(width: AppSpacing.xs),
+                              _Pill(
+                                label: 'Geçmiş',
+                                color: AppColors.border,
+                                textColor: AppColors.textMuted,
+                              ),
+                            ],
                           ],
                         ),
                         const SizedBox(height: AppSpacing.md),

@@ -549,7 +549,7 @@ class _ProfileTabs extends StatelessWidget {
               onPressed: () => onChanged(_PublicProfileTab.gallery),
             ),
             _TabButton(
-              label: 'Geçmiş Etkinlikler',
+              label: 'Geçmiş Events',
               icon: Icons.event_available_outlined,
               selected: selectedTab == _PublicProfileTab.events,
               onPressed: () => onChanged(_PublicProfileTab.events),

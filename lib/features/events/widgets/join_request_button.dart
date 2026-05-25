@@ -50,6 +50,15 @@ class JoinRequestButton extends StatelessWidget {
       );
     }
 
+    if (event.isPast) {
+      return const _StatusPanel(
+        icon: Icons.event_busy_outlined,
+        title: 'Bu etkinlik geçmişte kaldı.',
+        message: 'Geçmiş etkinlikler için katılım işlemi yapılamaz.',
+        color: AppColors.textMuted,
+      );
+    }
+
     if (!profileState.canRequestToJoinEvent) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

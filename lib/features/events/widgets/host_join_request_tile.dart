@@ -14,12 +14,14 @@ class HostJoinRequestTile extends StatelessWidget {
     required this.isLoading,
     required this.onApprove,
     required this.onReject,
+    this.actionsEnabled = true,
   });
 
   final EventJoinRequest request;
   final bool isLoading;
   final VoidCallback onApprove;
   final VoidCallback onReject;
+  final bool actionsEnabled;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +50,7 @@ class HostJoinRequestTile extends StatelessWidget {
             runSpacing: AppSpacing.xs,
             children: [
               _StatusChip(status: request.status),
-              if (request.isPending) ...[
+              if (request.isPending && actionsEnabled) ...[
                 TextButton(
                   onPressed: isLoading ? null : onApprove,
                   child: const Text('Approve'),
@@ -57,9 +59,35 @@ class HostJoinRequestTile extends StatelessWidget {
                   onPressed: isLoading ? null : onReject,
                   child: const Text('Reject'),
                 ),
+              ] else if (request.isPending && !actionsEnabled) ...[
+                const _PastEventChip(),
               ],
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PastEventChip extends StatelessWidget {
+  const _PastEventChip();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.textMuted.withValues(alpha: 0.12),
+        borderRadius: AppRadius.pillBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        child: Text(
+          'Geçmişte kaldı',
+          style: AppTextStyles.label.copyWith(color: AppColors.textMuted),
         ),
       ),
     );
@@ -90,10 +118,7 @@ class _StatusChip extends StatelessWidget {
           horizontal: AppSpacing.sm,
           vertical: AppSpacing.xs,
         ),
-        child: Text(
-          status,
-          style: AppTextStyles.label.copyWith(color: color),
-        ),
+        child: Text(status, style: AppTextStyles.label.copyWith(color: color)),
       ),
     );
   }

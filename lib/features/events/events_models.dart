@@ -45,6 +45,8 @@ class Event {
 
   bool isHost(String? userId) => userId != null && hostId == userId;
 
+  bool get isPast => eventDate.isBefore(DateTime.now());
+
   bool get isFull => approvedCount >= capacityTotal;
 
   bool get hasDescription => description?.trim().isNotEmpty == true;
@@ -155,12 +157,7 @@ class Event {
   }
 }
 
-enum EventDateFilter {
-  all,
-  today,
-  thisWeek,
-  upcoming,
-}
+enum EventDateFilter { all, today, thisWeek, upcoming }
 
 class EventFilters {
   const EventFilters({
@@ -191,8 +188,9 @@ class EventFilters {
     bool clearCity = false,
   }) {
     return EventFilters(
-      selectedSportType:
-          clearSportType ? null : selectedSportType ?? this.selectedSportType,
+      selectedSportType: clearSportType
+          ? null
+          : selectedSportType ?? this.selectedSportType,
       selectedCity: clearCity ? null : selectedCity ?? this.selectedCity,
       dateFilter: dateFilter ?? this.dateFilter,
       onlyAvailableSpots: onlyAvailableSpots ?? this.onlyAvailableSpots,

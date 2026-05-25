@@ -4,7 +4,7 @@ import 'events_models.dart';
 
 class EventsService {
   const EventsService({BlocksService blocksService = const BlocksService()})
-      : _blocksService = blocksService;
+    : _blocksService = blocksService;
 
   final BlocksService _blocksService;
 
@@ -51,6 +51,11 @@ class EventsService {
     final userId = SupabaseService.client.auth.currentUser?.id;
     if (userId == null) {
       throw StateError('You must be signed in to request to join an event.');
+    }
+
+    final event = await fetchEventById(eventId);
+    if (event.isPast) {
+      throw StateError('Bu etkinlik geçmişte kaldı.');
     }
 
     await SupabaseService.client.rpc(
@@ -108,9 +113,11 @@ class EventsService {
     );
 
     return (rows as List<dynamic>)
-        .map((row) => EventPublicParticipant.fromJson(
-              Map<String, dynamic>.from(row as Map),
-            ))
+        .map(
+          (row) => EventPublicParticipant.fromJson(
+            Map<String, dynamic>.from(row as Map),
+          ),
+        )
         .toList(growable: false);
   }
 

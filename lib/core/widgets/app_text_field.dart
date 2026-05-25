@@ -57,7 +57,9 @@ class AppTextField extends StatelessWidget {
         prefixIcon: prefixIcon,
         suffixIcon: suffixIcon,
         errorText: errorText,
+        errorMaxLines: 3,
         helperText: helperText,
+        helperMaxLines: 3,
       ),
     );
   }

@@ -39,11 +39,14 @@ class Validators {
 
   static String? username(String? value) {
     final trimmed = value?.trim() ?? '';
-    if (trimmed.length < 3 || trimmed.length > 15) {
-      return 'Kullanıcı adı 3-15 karakter olmalı.';
+    if (trimmed.length < 2) {
+      return 'Kullanıcı adı en az 2 karakter olmalı.';
+    }
+    if (trimmed.length > 15) {
+      return 'Kullanıcı adı en fazla 15 karakter olmalı.';
     }
     if (!RegExp(r'^[a-z0-9_]+$').hasMatch(trimmed)) {
-      return 'Kullanıcı adında sadece küçük harf, rakam ve alt çizgi kullan.';
+      return 'Sadece harf, rakam ve _ kullanabilirsin.';
     }
     return null;
   }
