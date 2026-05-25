@@ -732,24 +732,64 @@ class _PastEventsSection extends ConsumerWidget {
             ref.invalidate(publicProfileEventHistoryProvider(userId)),
       ),
       data: (events) {
-        if (events.isEmpty) {
-          return const EmptyState(
-            title: 'Henüz geçmiş etkinlik yok.',
-            message: 'Katıldığı veya düzenlediği etkinlikler burada görünür.',
-            icon: Icons.event_available_outlined,
-          );
-        }
+        final activeEvents = events.where((event) => !event.isPast).toList();
+        final pastEvents = events.where((event) => event.isPast).toList();
 
-        return ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: events.length,
-          separatorBuilder: (context, index) =>
-              const SizedBox(height: AppSpacing.md),
-          itemBuilder: (context, index) {
-            return _PastEventTile(item: events[index]);
-          },
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text('Aktif Events', style: AppTextStyles.title),
+            const SizedBox(height: AppSpacing.md),
+            _PublicEventSectionList(
+              events: activeEvents,
+              emptyTitle: 'Aktif etkinlik yok.',
+              emptyMessage:
+                  'Yaklaşan veya devam eden etkinlikler burada görünür.',
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            Text('Geçmiş Events', style: AppTextStyles.title),
+            const SizedBox(height: AppSpacing.md),
+            _PublicEventSectionList(
+              events: pastEvents,
+              emptyTitle: 'Geçmiş event yok.',
+              emptyMessage: 'Tamamlanan etkinlikler burada görünür.',
+            ),
+          ],
         );
+      },
+    );
+  }
+}
+
+class _PublicEventSectionList extends StatelessWidget {
+  const _PublicEventSectionList({
+    required this.events,
+    required this.emptyTitle,
+    required this.emptyMessage,
+  });
+
+  final List<PublicProfileEventHistoryItem> events;
+  final String emptyTitle;
+  final String emptyMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    if (events.isEmpty) {
+      return EmptyState(
+        title: emptyTitle,
+        message: emptyMessage,
+        icon: Icons.event_available_outlined,
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: events.length,
+      separatorBuilder: (context, index) =>
+          const SizedBox(height: AppSpacing.md),
+      itemBuilder: (context, index) {
+        return _PastEventTile(item: events[index]);
       },
     );
   }
@@ -811,7 +851,7 @@ class _PastEventTile extends StatelessWidget {
                       ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        DateFormatter.shortDate(item.createdAt),
+                        DateFormatter.shortDate(item.eventDate),
                         style: AppTextStyles.caption,
                       ),
                     ],

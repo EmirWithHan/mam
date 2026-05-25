@@ -17,36 +17,26 @@ class ProfileEventList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (events.isEmpty) {
-      return const Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _SectionTitle(),
-          SizedBox(height: AppSpacing.md),
-          EmptyState(
-            title: 'Henüz etkinliğin yok',
-            message:
-                'Oluşturduğun veya katıldığın etkinlikler burada görünecek.',
-            icon: Icons.event_available_outlined,
-          ),
-        ],
-      );
-    }
+    final activeEvents = events.where((event) => !event.isPast).toList();
+    final pastEvents = events.where((event) => event.isPast).toList();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _SectionTitle(),
+        const _SectionTitle('Aktif Events'),
         const SizedBox(height: AppSpacing.md),
-        ListView.separated(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: events.length,
-          separatorBuilder: (context, index) =>
-              const SizedBox(height: AppSpacing.md),
-          itemBuilder: (context, index) {
-            return _ProfileEventTile(event: events[index]);
-          },
+        _EventSectionList(
+          events: activeEvents,
+          emptyTitle: 'Aktif etkinlik yok.',
+          emptyMessage: 'Yaklaşan veya devam eden etkinlikler burada görünür.',
+        ),
+        const SizedBox(height: AppSpacing.xl),
+        const _SectionTitle('Geçmiş Events'),
+        const SizedBox(height: AppSpacing.md),
+        _EventSectionList(
+          events: pastEvents,
+          emptyTitle: 'Geçmiş event yok.',
+          emptyMessage: 'Tamamlanan etkinlikler burada görünür.',
         ),
       ],
     );
@@ -54,11 +44,47 @@ class ProfileEventList extends StatelessWidget {
 }
 
 class _SectionTitle extends StatelessWidget {
-  const _SectionTitle();
+  const _SectionTitle(this.title);
+
+  final String title;
 
   @override
   Widget build(BuildContext context) {
-    return Text('Geçmiş Events', style: AppTextStyles.title);
+    return Text(title, style: AppTextStyles.title);
+  }
+}
+
+class _EventSectionList extends StatelessWidget {
+  const _EventSectionList({
+    required this.events,
+    required this.emptyTitle,
+    required this.emptyMessage,
+  });
+
+  final List<ProfileActivityEvent> events;
+  final String emptyTitle;
+  final String emptyMessage;
+
+  @override
+  Widget build(BuildContext context) {
+    if (events.isEmpty) {
+      return EmptyState(
+        title: emptyTitle,
+        message: emptyMessage,
+        icon: Icons.event_available_outlined,
+      );
+    }
+
+    return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: events.length,
+      separatorBuilder: (context, index) =>
+          const SizedBox(height: AppSpacing.md),
+      itemBuilder: (context, index) {
+        return _ProfileEventTile(event: events[index]);
+      },
+    );
   }
 }
 

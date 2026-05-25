@@ -390,6 +390,7 @@ class PublicProfileEventHistoryItem {
     required this.status,
     required this.approvedCount,
     required this.capacityTotal,
+    required this.eventDate,
     required this.createdAt,
     required this.role,
   });
@@ -403,6 +404,7 @@ class PublicProfileEventHistoryItem {
   final String status;
   final int approvedCount;
   final int capacityTotal;
+  final DateTime eventDate;
   final DateTime createdAt;
   final String role;
 
@@ -413,6 +415,8 @@ class PublicProfileEventHistoryItem {
   }
 
   String get roleLabel => role == 'host' ? 'Host' : 'Katılımcı';
+
+  bool get isPast => eventDate.isBefore(DateTime.now());
 
   factory PublicProfileEventHistoryItem.fromJson(Map<String, dynamic> json) {
     return PublicProfileEventHistoryItem(
@@ -425,6 +429,10 @@ class PublicProfileEventHistoryItem {
       status: json['status'] as String? ?? '',
       approvedCount: (json['approved_count'] as num?)?.toInt() ?? 0,
       capacityTotal: (json['capacity_total'] as num?)?.toInt() ?? 0,
+      eventDate:
+          _dateTimeFromJson(json['event_date']) ??
+          _dateTimeFromJson(json['created_at']) ??
+          DateTime.now(),
       createdAt: _dateTimeFromJson(json['created_at']) ?? DateTime.now(),
       role: json['role'] as String? ?? 'participant',
     );

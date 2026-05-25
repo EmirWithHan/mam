@@ -212,7 +212,7 @@ class _EventDetailBody extends ConsumerWidget {
         const SizedBox(height: AppSpacing.lg),
         const _SectionTitle(title: 'Actions'),
         const SizedBox(height: AppSpacing.sm),
-        if (isHost || isApprovedParticipant) ...[
+        if (!event.isPast && (isHost || isApprovedParticipant)) ...[
           AppButton(
             label: 'Open chat',
             onPressed: () => context.pushNamed(
@@ -222,7 +222,7 @@ class _EventDetailBody extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
         ],
-        if (!isHost && isApprovedParticipant) ...[
+        if (!event.isPast && !isHost && isApprovedParticipant) ...[
           EventCallButton(
             eventId: event.id,
             targetUserId: event.hostId,

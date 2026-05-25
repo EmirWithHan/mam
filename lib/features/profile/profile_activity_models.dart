@@ -59,6 +59,8 @@ class ProfileActivityEvent {
 
   bool get isHost => role == 'host';
 
+  bool get isPast => eventDate.isBefore(DateTime.now());
+
   String get locationLabel {
     final districtValue = district?.trim();
     if (districtValue == null || districtValue.isEmpty) return city;
