@@ -53,32 +53,15 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
               .read(notificationsControllerProvider.notifier)
               .refreshNotifications(),
           child: ListView(
+            physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Bildirimler', style: AppTextStyles.headline),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text(
-                          'Son gelişmeler ve güncellemeler',
-                          style: AppTextStyles.body,
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (state.hasUnread)
-                    AppButton(
-                      label: 'Tümünü okundu yap',
-                      fullWidth: false,
-                      isLoading: state.isUpdating,
-                      onPressed: state.isUpdating ? null : _markAllRead,
-                    ),
-                ],
+              _NotificationsHeader(
+                unreadCount: state.unreadCount,
+                isUpdating: state.isUpdating,
+                onMarkAllRead: state.hasUnread && !state.isUpdating
+                    ? _markAllRead
+                    : null,
               ),
               const SizedBox(height: AppSpacing.lg),
               if (state.isLoading && state.notifications.isEmpty)
@@ -88,14 +71,14 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                 )
               else if (state.status == NotificationsStatus.error)
                 ErrorView(
-                  message: state.message ?? 'Bildirimler yüklenemedi.',
+                  message: 'Bildirimler yüklenemedi.',
                   onRetry: () => ref
                       .read(notificationsControllerProvider.notifier)
                       .refreshNotifications(),
                 )
               else if (state.notifications.isEmpty)
                 const EmptyState(
-                  title: 'Henüz bildirim yok',
+                  title: 'Henüz bildirimin yok.',
                   message:
                       'Etkinlik istekleri ve güncellemeler burada görünecek.',
                   icon: Icons.notifications_none_rounded,
@@ -107,6 +90,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                     child: NotificationTile(
                       notification: notification,
                       timeLabel: _timeLabel(notification.createdAt),
+                      isBusy: state.isUpdating,
                       onTap: () => _handleNotificationTap(notification),
                     ),
                   ),
@@ -123,6 +107,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
         .read(notificationsControllerProvider.notifier)
         .markAllNotificationsRead();
     if (!mounted || success) return;
+
     _showMessage(
       ref.read(notificationsControllerProvider).message ??
           'Bildirim güncellenemedi.',
@@ -146,21 +131,40 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
 
     if (!mounted || !notification.canOpenEntity) return;
 
+    final entityId = notification.entityId?.trim();
+    if (entityId == null || entityId.isEmpty) {
+      _showMessage('İlgili içerik bulunamadı.');
+      return;
+    }
+
     try {
-      context.pushNamed(
-        RouteNames.eventDetail,
-        pathParameters: {'eventId': notification.entityId!.trim()},
-      );
+      if (notification.opensEvent) {
+        context.pushNamed(
+          RouteNames.eventDetail,
+          pathParameters: {'eventId': entityId},
+        );
+        return;
+      }
+
+      if (notification.opensProfile) {
+        context.pushNamed(
+          RouteNames.publicProfile,
+          pathParameters: {'userId': entityId},
+        );
+        return;
+      }
+
+      _showMessage('İlgili içerik bulunamadı.');
     } catch (_) {
       if (!mounted) return;
-      _showMessage('Etkinlik açılamadı.');
+      _showMessage('Bildirim açılırken bir sorun oluştu.');
     }
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   String _timeLabel(DateTime createdAt) {
@@ -180,5 +184,48 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       return;
     }
     context.goNamed(RouteNames.home);
+  }
+}
+
+class _NotificationsHeader extends StatelessWidget {
+  const _NotificationsHeader({
+    required this.unreadCount,
+    required this.isUpdating,
+    required this.onMarkAllRead,
+  });
+
+  final int unreadCount;
+  final bool isUpdating;
+  final VoidCallback? onMarkAllRead;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Bildirimler', style: AppTextStyles.headline),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                unreadCount > 0
+                    ? '$unreadCount okunmamış bildirimin var.'
+                    : 'Tüm bildirimler güncel.',
+                style: AppTextStyles.body,
+              ),
+            ],
+          ),
+        ),
+        if (unreadCount > 0)
+          AppButton(
+            label: 'Tümünü okundu yap',
+            fullWidth: false,
+            isLoading: isUpdating,
+            onPressed: onMarkAllRead,
+          ),
+      ],
+    );
   }
 }

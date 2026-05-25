@@ -4,12 +4,7 @@ import '../../core/utils/error_messages.dart';
 import 'notifications_models.dart';
 import 'notifications_service.dart';
 
-enum NotificationsStatus {
-  initial,
-  loading,
-  success,
-  error,
-}
+enum NotificationsStatus { initial, loading, success, error }
 
 class NotificationsState {
   const NotificationsState({
@@ -20,10 +15,10 @@ class NotificationsState {
   });
 
   const NotificationsState.initial()
-      : status = NotificationsStatus.initial,
-        notifications = const [],
-        message = null,
-        isUpdating = false;
+    : status = NotificationsStatus.initial,
+      notifications = const [],
+      message = null,
+      isUpdating = false;
 
   final NotificationsStatus status;
   final List<AppNotification> notifications;
@@ -61,19 +56,19 @@ final notificationsUnreadCountProvider = FutureProvider<int>((ref) {
 
 final notificationsControllerProvider =
     StateNotifierProvider<NotificationsController, NotificationsState>((ref) {
-  return NotificationsController(
-    service: ref.watch(notificationsServiceProvider),
-    ref: ref,
-  );
-});
+      return NotificationsController(
+        service: ref.watch(notificationsServiceProvider),
+        ref: ref,
+      );
+    });
 
 class NotificationsController extends StateNotifier<NotificationsState> {
   NotificationsController({
     required NotificationsService service,
     required Ref ref,
-  })  : _service = service,
-        _ref = ref,
-        super(const NotificationsState.initial());
+  }) : _service = service,
+       _ref = ref,
+       super(const NotificationsState.initial());
 
   final NotificationsService _service;
   final Ref _ref;
@@ -102,14 +97,17 @@ class NotificationsController extends StateNotifier<NotificationsState> {
   Future<void> refreshNotifications() => loadNotifications();
 
   Future<bool> markNotificationRead(String notificationId) async {
+    if (state.isUpdating) return false;
     state = state.copyWith(isUpdating: true, clearMessage: true);
 
     try {
       await _service.markNotificationRead(notificationId);
-      final notifications = state.notifications.map((notification) {
-        if (notification.id != notificationId) return notification;
-        return notification.copyWith(isRead: true);
-      }).toList(growable: false);
+      final notifications = state.notifications
+          .map((notification) {
+            if (notification.id != notificationId) return notification;
+            return notification.copyWith(isRead: true);
+          })
+          .toList(growable: false);
       state = state.copyWith(
         status: NotificationsStatus.success,
         notifications: notifications,
@@ -127,6 +125,7 @@ class NotificationsController extends StateNotifier<NotificationsState> {
   }
 
   Future<bool> markAllNotificationsRead() async {
+    if (state.isUpdating || !state.hasUnread) return false;
     state = state.copyWith(isUpdating: true, clearMessage: true);
 
     try {

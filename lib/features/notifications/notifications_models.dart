@@ -27,50 +27,61 @@ class AppNotification {
 
   bool get isUnread => !isRead;
 
-  bool get canOpenEntity {
+  bool get canOpenEntity => opensEvent || opensProfile;
+
+  bool get opensEvent {
+    return entityId?.trim().isNotEmpty == true &&
+        entityType?.trim().toLowerCase() == 'event';
+  }
+
+  bool get opensProfile {
     final entity = entityType?.trim().toLowerCase();
-    return entityId?.trim().isNotEmpty == true && entity == 'event';
+    return entityId?.trim().isNotEmpty == true &&
+        (entity == 'profile' || entity == 'user' || entity == 'profile/user');
   }
 
   String get displayTitle {
-    final cleanTitle = title.trim();
-    if (cleanTitle.isNotEmpty) return cleanTitle;
-
-    switch (type.trim().toLowerCase()) {
-      case 'event_join_request':
-        return 'Yeni katılım isteği';
-      case 'event_join_approved':
-        return 'Katılım isteğin onaylandı';
-      case 'event_join_rejected':
-        return 'Katılım isteğin reddedildi';
-      case 'event_join_cancelled':
-        return 'Katılım isteği iptal edildi';
-      case 'event_left':
-        return 'Katılımcı etkinlikten çıktı';
-      case 'system':
-        return 'Sistem bildirimi';
-      default:
-        return 'Bildirim';
-    }
+    return switch (type.trim().toLowerCase()) {
+      'event_join_request' => 'Yeni katılım isteği',
+      'event_join_approved' => 'Katılım isteğin onaylandı',
+      'event_join_rejected' => 'Katılım isteğin reddedildi',
+      'event_join_cancelled' => 'Katılım isteği iptal edildi',
+      'event_left' => 'Bir katılımcı etkinlikten ayrıldı',
+      'follow' => 'Yeni takipçi',
+      'system' => 'Sistem bildirimi',
+      _ => title.trim().isEmpty ? 'Bildirim' : title.trim(),
+    };
   }
 
-  String get displayBody => body?.trim() ?? '';
+  String get displayBody {
+    final cleanBody = body?.trim() ?? '';
+    if (cleanBody.isNotEmpty) return cleanBody;
+
+    return switch (type.trim().toLowerCase()) {
+      'event_join_request' => 'Etkinliğin için yeni bir katılım isteği var.',
+      'event_join_approved' =>
+        'Katılım isteğin ev sahibi tarafından onaylandı.',
+      'event_join_rejected' =>
+        'Katılım isteğin ev sahibi tarafından reddedildi.',
+      'event_join_cancelled' => 'Bir katılım isteği iptal edildi.',
+      'event_left' => 'Onaylı bir katılımcı etkinlikten ayrıldı.',
+      'follow' => 'Seni takip etmeye başlayan yeni biri var.',
+      'system' => 'Match A Man güncellemesi.',
+      _ => '',
+    };
+  }
 
   String get typeLabel {
-    switch (type.trim().toLowerCase()) {
-      case 'event_join_request':
-      case 'event_join_approved':
-      case 'event_join_rejected':
-      case 'event_join_cancelled':
-      case 'event_left':
-        return 'Etkinlik';
-      case 'follow':
-        return 'Topluluk';
-      case 'system':
-        return 'MaM';
-      default:
-        return 'Bildirim';
-    }
+    return switch (type.trim().toLowerCase()) {
+      'event_join_request' => 'Katılım',
+      'event_join_approved' ||
+      'event_join_rejected' ||
+      'event_join_cancelled' ||
+      'event_left' => 'Etkinlik',
+      'follow' => 'Sosyal',
+      'system' => 'MaM',
+      _ => 'Bildirim',
+    };
   }
 
   AppNotification copyWith({bool? isRead}) {
@@ -104,7 +115,8 @@ class AppNotification {
           ? Map<String, dynamic>.from(metadataValue)
           : const {},
       isRead: json['is_read'] as bool? ?? false,
-      createdAt: DateTime.tryParse(json['created_at'] as String? ?? '') ??
+      createdAt:
+          DateTime.tryParse(json['created_at'] as String? ?? '') ??
           DateTime.now(),
     );
   }
