@@ -27,8 +27,7 @@ class ProfileCompletionPage extends ConsumerStatefulWidget {
       _ProfileCompletionPageState();
 }
 
-class _ProfileCompletionPageState
-    extends ConsumerState<ProfileCompletionPage> {
+class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _firstNameController = TextEditingController();
@@ -48,11 +47,7 @@ class _ProfileCompletionPageState
   String? _avatarContentType;
   DateTime? _selectedBirthDate;
 
-  static const _genderOptions = [
-    'Erkek',
-    'Kadın',
-    'Belirtmek istemiyorum',
-  ];
+  static const _genderOptions = ['Erkek', 'Kadın', 'Belirtmek istemiyorum'];
 
   @override
   void initState() {
@@ -72,8 +67,12 @@ class _ProfileCompletionPageState
     _selectedBirthDate = profile.birthDate;
     _birthDateController.text = _formatBirthDate(profile.birthDate);
     _genderController.text = profile.gender ?? '';
-    _cityController.text = profile.city ?? '';
-    _districtController.text = profile.district ?? '';
+    final city = TurkeyLocations.normalizeCityName(profile.city ?? '');
+    final district = city == null
+        ? null
+        : TurkeyLocations.normalizeDistrictName(city, profile.district ?? '');
+    _cityController.text = city ?? profile.city ?? '';
+    _districtController.text = district ?? '';
     _phoneController.text = profile.phone ?? '';
     _bioController.text = profile.bio ?? '';
     _avatarUrl = profile.avatarUrl;
@@ -102,7 +101,9 @@ class _ProfileCompletionPageState
     final avatarBytes = _avatarBytes;
     final avatarFileName = _avatarFileName;
     if (avatarBytes != null && avatarFileName != null) {
-      avatarUrl = await ref.read(profileControllerProvider.notifier).uploadAvatar(
+      avatarUrl = await ref
+          .read(profileControllerProvider.notifier)
+          .uploadAvatar(
             bytes: avatarBytes,
             fileName: avatarFileName,
             contentType: _avatarContentType,
@@ -118,6 +119,13 @@ class _ProfileCompletionPageState
       }
     }
 
+    final city =
+        TurkeyLocations.normalizeCityName(_cityController.text) ??
+        _cityController.text.trim();
+    final district =
+        TurkeyLocations.normalizeDistrictName(city, _districtController.text) ??
+        _districtController.text.trim();
+
     final formData = ProfileFormData(
       username: _usernameController.text.trim(),
       tag: _tag?.isNotEmpty == true ? _tag! : _generateTag(),
@@ -125,8 +133,8 @@ class _ProfileCompletionPageState
       lastName: _lastNameController.text.trim(),
       birthDate: _selectedBirthDate!,
       gender: _genderController.text.trim(),
-      city: _cityController.text.trim(),
-      district: _districtController.text.trim(),
+      city: city,
+      district: district,
       phone: _phoneController.text.trim(),
       bio: _bioController.text.trim(),
       avatarUrl: avatarUrl,
@@ -144,9 +152,9 @@ class _ProfileCompletionPageState
 
     final message = ref.read(profileControllerProvider).message;
     if (message != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -171,7 +179,7 @@ class _ProfileCompletionPageState
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileControllerProvider);
     final selectedCity = _cityController.text.trim();
-    final hasDistrictData = TurkeyLocations.hasDistrictData(selectedCity);
+    final districts = TurkeyLocations.getDistricts(selectedCity);
 
     return Scaffold(
       appBar: AppBar(
@@ -257,15 +265,18 @@ class _ProfileCompletionPageState
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: hasDistrictData
-                          ? 'District (optional)'
-                          : 'District (optional, manual)',
+                      label: 'District',
                       controller: _districtController,
-                      readOnly: hasDistrictData,
-                      onTap: hasDistrictData ? _selectDistrict : null,
+                      readOnly: true,
+                      onTap: districts.isEmpty ? null : _selectDistrict,
                       prefixIcon: const Icon(Icons.place_outlined),
-                      suffixIcon:
-                          hasDistrictData ? const Icon(Icons.expand_more) : null,
+                      suffixIcon: districts.isEmpty
+                          ? null
+                          : const Icon(Icons.expand_more),
+                      validator: (value) => Validators.district(
+                        value,
+                        city: _cityController.text,
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
@@ -322,10 +333,10 @@ class _ProfileCompletionPageState
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: AppColors.primary,
-                  onPrimary: Colors.white,
-                  surface: AppColors.surface,
-                ),
+              primary: AppColors.primary,
+              onPrimary: Colors.white,
+              surface: AppColors.surface,
+            ),
           ),
           child: child!,
         );
@@ -370,16 +381,16 @@ class _ProfileCompletionPageState
   Future<void> _selectCity() async {
     final value = await _showOptionSheet(
       title: 'Şehir seç',
-      initialOptions: TurkeyLocations.cities,
+      initialOptions: TurkeyLocations.getCities(),
       search: TurkeyLocations.searchCities,
     );
     if (value == null || !mounted) return;
 
     final previousDistrict = _districtController.text.trim();
-    final districts = TurkeyLocations.getDistrictsForCity(value);
+    final districts = TurkeyLocations.getDistricts(value);
     setState(() {
       _cityController.text = value;
-      if (districts.isEmpty || !districts.contains(previousDistrict)) {
+      if (!TurkeyLocations.isValidDistrict(value, previousDistrict)) {
         _districtController.clear();
       }
     });
@@ -387,11 +398,11 @@ class _ProfileCompletionPageState
 
   Future<void> _selectDistrict() async {
     final city = _cityController.text.trim();
-    if (city.isEmpty || !TurkeyLocations.hasDistrictData(city)) return;
+    if (!TurkeyLocations.isValidCity(city)) return;
 
     final value = await _showOptionSheet(
       title: 'İlçe seç',
-      initialOptions: TurkeyLocations.getDistrictsForCity(city),
+      initialOptions: TurkeyLocations.getDistricts(city),
       search: (query) => TurkeyLocations.searchDistricts(city, query),
     );
     if (value == null || !mounted) return;
@@ -629,7 +640,8 @@ class _AvatarPicker extends StatelessWidget {
               CircleAvatar(
                 radius: 48,
                 backgroundColor: AppColors.primarySoft,
-                backgroundImage: imageBytes == null &&
+                backgroundImage:
+                    imageBytes == null &&
                         currentAvatarUrl != null &&
                         currentAvatarUrl.isNotEmpty
                     ? NetworkImage(currentAvatarUrl)
@@ -644,12 +656,12 @@ class _AvatarPicker extends StatelessWidget {
                         ),
                       )
                     : currentAvatarUrl == null || currentAvatarUrl.isEmpty
-                        ? const Icon(
-                            Icons.person,
-                            color: AppColors.primary,
-                            size: 46,
-                          )
-                        : null,
+                    ? const Icon(
+                        Icons.person,
+                        color: AppColors.primary,
+                        size: 46,
+                      )
+                    : null,
               ),
               Container(
                 width: 34,

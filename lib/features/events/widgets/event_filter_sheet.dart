@@ -12,10 +12,7 @@ import '../../../core/widgets/sport_icon.dart';
 import '../events_models.dart';
 
 class EventFilterSheet extends StatefulWidget {
-  const EventFilterSheet({
-    super.key,
-    required this.initialFilters,
-  });
+  const EventFilterSheet({super.key, required this.initialFilters});
 
   final EventFilters initialFilters;
 
@@ -123,7 +120,7 @@ class _EventFilterSheetState extends State<EventFilterSheet> {
                     title: 'Uygun kontenjan',
                     child: SwitchListTile.adaptive(
                       contentPadding: EdgeInsets.zero,
-                      activeColor: AppColors.primary,
+                      activeThumbColor: AppColors.primary,
                       title: Text(
                         'Sadece kontenjanı olanlar',
                         style: AppTextStyles.bodySmall,
@@ -170,10 +167,7 @@ class _EventFilterSheetState extends State<EventFilterSheet> {
 }
 
 class _SectionCard extends StatelessWidget {
-  const _SectionCard({
-    required this.title,
-    required this.child,
-  });
+  const _SectionCard({required this.title, required this.child});
 
   final String title;
   final Widget child;
@@ -225,7 +219,9 @@ class _SportOptions extends StatelessWidget {
         return FilterChip(
           selected: selected,
           showCheckmark: false,
-          avatar: isAll ? null : SportIcon(sportType: value, size: 15, filled: false),
+          avatar: isAll
+              ? null
+              : SportIcon(sportType: value, size: 15, filled: false),
           label: Text(value),
           selectedColor: AppColors.primarySoft,
           onSelected: (_) => onChanged(isAll ? null : value),
@@ -255,7 +251,7 @@ class _CityOptionsState extends State<_CityOptions> {
   Widget build(BuildContext context) {
     final query = widget.controller.text.trim();
     final cities = query.isEmpty
-        ? TurkeyLocations.cities.take(12).toList()
+        ? TurkeyLocations.getCities().take(12).toList()
         : TurkeyLocations.searchCities(query).take(12).toList();
     final values = ['Tümü', ...cities];
 
@@ -274,8 +270,9 @@ class _CityOptionsState extends State<_CityOptions> {
           runSpacing: AppSpacing.sm,
           children: values.map((value) {
             final isAll = value == 'Tümü';
-            final selected =
-                isAll ? widget.selectedCity == null : widget.selectedCity == value;
+            final selected = isAll
+                ? widget.selectedCity == null
+                : widget.selectedCity == value;
             return FilterChip(
               selected: selected,
               showCheckmark: false,
@@ -291,10 +288,7 @@ class _CityOptionsState extends State<_CityOptions> {
 }
 
 class _DateOptions extends StatelessWidget {
-  const _DateOptions({
-    required this.selectedFilter,
-    required this.onChanged,
-  });
+  const _DateOptions({required this.selectedFilter, required this.onChanged});
 
   final EventDateFilter selectedFilter;
   final ValueChanged<EventDateFilter> onChanged;

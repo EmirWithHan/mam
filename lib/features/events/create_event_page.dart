@@ -80,12 +80,19 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
+    final city =
+        TurkeyLocations.normalizeCityName(_cityController.text) ??
+        _cityController.text.trim();
+    final district =
+        TurkeyLocations.normalizeDistrictName(city, _districtController.text) ??
+        _districtController.text.trim();
+
     final input = CreateEventInput(
       title: _titleController.text.trim(),
       description: _descriptionController.text.trim(),
       sportType: _resolvedSportType(),
-      city: _cityController.text.trim(),
-      district: _districtController.text.trim(),
+      city: city,
+      district: district,
       locationText: _locationTextController.text.trim(),
       locationLat: _locationLat,
       locationLng: _locationLng,
@@ -108,9 +115,9 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
 
     final message = ref.read(eventsControllerProvider).message;
     if (message != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -133,7 +140,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   Future<void> _selectCity() async {
     final selected = await _showOptionSheet(
       title: 'Şehir seç',
-      values: TurkeyLocations.cities,
+      values: TurkeyLocations.getCities(),
       selectedValue: _cityController.text,
       searchHint: 'Şehir ara',
     );
@@ -147,11 +154,11 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
 
   Future<void> _selectDistrict() async {
     final city = _cityController.text.trim();
-    if (city.isEmpty || !TurkeyLocations.hasDistrictData(city)) return;
+    if (!TurkeyLocations.isValidCity(city)) return;
 
     final selected = await _showOptionSheet(
       title: 'İlçe seç',
-      values: TurkeyLocations.getDistrictsForCity(city),
+      values: TurkeyLocations.getDistricts(city),
       selectedValue: _districtController.text,
       searchHint: 'İlçe ara',
     );
@@ -171,9 +178,9 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
-            colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: AppColors.primary,
-                ),
+            colorScheme: Theme.of(
+              context,
+            ).colorScheme.copyWith(primary: AppColors.primary),
           ),
           child: child!,
         );
@@ -189,10 +196,10 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
         return Theme(
           data: Theme.of(context).copyWith(
             colorScheme: Theme.of(context).colorScheme.copyWith(
-                  primary: AppColors.primary,
-                  secondary: AppColors.primary,
-                  surface: AppColors.surface,
-                ),
+              primary: AppColors.primary,
+              secondary: AppColors.primary,
+              surface: AppColors.surface,
+            ),
             timePickerTheme: TimePickerThemeData(
               backgroundColor: AppColors.surface,
               dialHandColor: AppColors.primary,
@@ -236,7 +243,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
         latitude: position.latitude,
         longitude: position.longitude,
       );
-      final locationLabel = address ??
+      final locationLabel =
+          address ??
           _locationService.formatCoordinates(
             position.latitude,
             position.longitude,
@@ -252,14 +260,14 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             : 'Otomatik konum kullanılıyor';
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Konum seçildi.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Konum seçildi.')));
     } catch (error) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_locationErrorMessage(error))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(_locationErrorMessage(error))));
     } finally {
       if (mounted) setState(() => _locating = false);
     }
@@ -281,9 +289,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
 
     if (profileState.status == ProfileStatus.initial ||
         profileState.isLoading) {
-      return const Scaffold(
-        body: SafeArea(child: AppLoader()),
-      );
+      return const Scaffold(body: SafeArea(child: AppLoader()));
     }
 
     if (!profileState.canCreateEvent) {
@@ -310,7 +316,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                 const SizedBox(height: AppSpacing.lg),
                 AppButton(
                   label: 'Profili tamamla',
-                  onPressed: () => context.pushNamed(RouteNames.profileComplete),
+                  onPressed: () =>
+                      context.pushNamed(RouteNames.profileComplete),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppButton(
@@ -326,7 +333,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     }
 
     final city = _cityController.text.trim();
-    final hasDistrictData = TurkeyLocations.hasDistrictData(city);
+    final districts = TurkeyLocations.getDistricts(city);
 
     return Scaffold(
       appBar: _CreateEventAppBar(onBack: () => _goBack(context)),
@@ -381,9 +388,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                         label: 'Custom sport or activity',
                         controller: _customSportController,
                         prefixIcon: const Icon(Icons.edit_outlined),
-                        validator: (_) => Validators.customSport(
-                          _customSportController.text,
-                        ),
+                        validator: (_) =>
+                            Validators.customSport(_customSportController.text),
                       ),
                     ],
                     const SizedBox(height: AppSpacing.md),
@@ -398,13 +404,18 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: hasDistrictData ? 'District' : 'District optional',
+                      label: 'District',
                       controller: _districtController,
-                      readOnly: hasDistrictData,
-                      onTap: hasDistrictData ? _selectDistrict : null,
+                      readOnly: true,
+                      onTap: districts.isEmpty ? null : _selectDistrict,
                       prefixIcon: const Icon(Icons.place_outlined),
-                      suffixIcon:
-                          hasDistrictData ? const Icon(Icons.search) : null,
+                      suffixIcon: districts.isEmpty
+                          ? null
+                          : const Icon(Icons.search),
+                      validator: (value) => Validators.district(
+                        value,
+                        city: _cityController.text,
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
@@ -415,9 +426,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                       onTap: _pickDateTime,
                       prefixIcon: const Icon(Icons.schedule),
                       suffixIcon: const Icon(Icons.calendar_today_outlined),
-                      validator: (_) => Validators.eventDate(
-                        _selectedEventDate,
-                      ),
+                      validator: (_) =>
+                          Validators.eventDate(_selectedEventDate),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
@@ -428,8 +438,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                       onChanged: (_) {
                         setState(() {
                           if (_locationLat != null || _locationLng != null) {
-                            _locationHelperText =
-                                'Otomatik konum kullanılıyor';
+                            _locationHelperText = 'Otomatik konum kullanılıyor';
                           }
                         });
                       },
@@ -465,8 +474,9 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                           icon: _locating
                               ? const SizedBox.square(
                                   dimension: 16,
-                                  child:
-                                      CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
                                 )
                               : const Icon(Icons.my_location_outlined),
                           label: Text(
@@ -645,7 +655,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   }
 }
 
-class _CreateEventAppBar extends StatelessWidget implements PreferredSizeWidget {
+class _CreateEventAppBar extends StatelessWidget
+    implements PreferredSizeWidget {
   const _CreateEventAppBar({required this.onBack});
 
   final VoidCallback onBack;

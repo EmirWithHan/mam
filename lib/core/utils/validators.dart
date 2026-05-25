@@ -1,3 +1,5 @@
+import '../constants/turkey_locations.dart';
+
 class Validators {
   const Validators._();
 
@@ -62,7 +64,23 @@ class Validators {
   }
 
   static String? city(String? value) {
-    if (value == null || value.trim().isEmpty) return 'Şehir seçmelisin.';
+    final city = value?.trim() ?? '';
+    if (city.isEmpty) return 'Şehir seçmelisin.';
+    if (!TurkeyLocations.isValidCity(city)) {
+      return 'Geçerli bir şehir seçmelisin.';
+    }
+    return null;
+  }
+
+  static String? district(String? value, {required String city}) {
+    final cityError = Validators.city(city);
+    if (cityError != null) return 'Önce geçerli bir şehir seçmelisin.';
+
+    final district = value?.trim() ?? '';
+    if (district.isEmpty) return 'İlçe seçmelisin.';
+    if (!TurkeyLocations.isValidDistrict(city, district)) {
+      return 'Seçtiğin ilçe bu şehirle eşleşmiyor.';
+    }
     return null;
   }
 
@@ -114,7 +132,9 @@ class Validators {
 
   static String? nonNegativeNumber(String? value) {
     final trimmed = value?.trim();
-    final number = int.tryParse(trimmed == null || trimmed.isEmpty ? '0' : trimmed);
+    final number = int.tryParse(
+      trimmed == null || trimmed.isEmpty ? '0' : trimmed,
+    );
     if (number == null || number < 0) return '0 veya daha büyük bir sayı gir.';
     if (number > 100) return 'Katılımcı sayısı en fazla 100 olabilir.';
     return null;
