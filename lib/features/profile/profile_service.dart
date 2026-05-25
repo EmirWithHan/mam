@@ -3,6 +3,8 @@ import 'dart:typed_data';
 import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
 import 'profile_models.dart';
+import 'public_profile_models.dart';
+import 'public_profile_service.dart';
 
 class ProfileService {
   const ProfileService({StorageService storageService = const StorageService()})
@@ -138,13 +140,23 @@ class ProfileService {
     int limit = 50,
     int offset = 0,
   }) async {
-    final data = await SupabaseService.client.rpc(
-      'get_public_profile_followers',
-      params: {'p_user_id': userId, 'p_limit': limit, 'p_offset': offset},
-    );
-    return _rows(
-      data,
-    ).map(PublicProfileFollowListItem.fromJson).toList(growable: false);
+    try {
+      final data = await SupabaseService.client.rpc(
+        'get_public_profile_followers',
+        params: {'p_user_id': userId, 'p_limit': limit, 'p_offset': offset},
+      );
+      return _rows(
+        data,
+      ).map(PublicProfileFollowListItem.fromJson).toList(growable: false);
+    } catch (_) {
+      return _fetchFollowListFallback(
+        userId: userId,
+        idColumn: 'follower_id',
+        filterColumn: 'following_id',
+        limit: limit,
+        offset: offset,
+      );
+    }
   }
 
   Future<List<PublicProfileFollowListItem>> fetchFollowing(
@@ -152,13 +164,89 @@ class ProfileService {
     int limit = 50,
     int offset = 0,
   }) async {
-    final data = await SupabaseService.client.rpc(
-      'get_public_profile_following',
-      params: {'p_user_id': userId, 'p_limit': limit, 'p_offset': offset},
-    );
-    return _rows(
-      data,
-    ).map(PublicProfileFollowListItem.fromJson).toList(growable: false);
+    try {
+      final data = await SupabaseService.client.rpc(
+        'get_public_profile_following',
+        params: {'p_user_id': userId, 'p_limit': limit, 'p_offset': offset},
+      );
+      return _rows(
+        data,
+      ).map(PublicProfileFollowListItem.fromJson).toList(growable: false);
+    } catch (_) {
+      return _fetchFollowListFallback(
+        userId: userId,
+        idColumn: 'following_id',
+        filterColumn: 'follower_id',
+        limit: limit,
+        offset: offset,
+      );
+    }
+  }
+
+  Future<List<PublicProfileFollowListItem>> _fetchFollowListFallback({
+    required String userId,
+    required String idColumn,
+    required String filterColumn,
+    required int limit,
+    required int offset,
+  }) async {
+    final currentUserId = _currentUserId();
+    final rows = await SupabaseService.client
+        .from('follows')
+        .select(idColumn)
+        .eq(filterColumn, userId)
+        .range(offset, offset + limit - 1);
+
+    final targetUserIds = rows
+        .whereType<Map>()
+        .map((row) => row[idColumn]?.toString())
+        .where((value) => value != null && value.isNotEmpty)
+        .cast<String>()
+        .toList();
+
+    if (targetUserIds.isEmpty) return const [];
+
+    final previews = await const PublicProfileService()
+        .fetchPublicProfilePreviews(targetUserIds);
+
+    final items = <PublicProfileFollowListItem>[];
+    for (final targetUserId in targetUserIds) {
+      final preview = previews[targetUserId];
+      if (preview == null) continue;
+
+      items.add(
+        PublicProfileFollowListItem(
+          userId: preview.userId,
+          username: preview.usernameTag ?? preview.username,
+          fullName: _previewFullName(preview),
+          avatarUrl: preview.avatarUrl,
+          city: preview.city,
+          trustScore: preview.trustScore,
+          followerCount: await _countFollowRows(
+            column: 'following_id',
+            value: preview.userId,
+          ),
+          followingCount: await _countFollowRows(
+            column: 'follower_id',
+            value: preview.userId,
+          ),
+          isFollowingByMe: currentUserId == preview.userId
+              ? false
+              : await _hasFollow(
+                  followerId: currentUserId,
+                  followingId: preview.userId,
+                ),
+          followsMe: currentUserId == preview.userId
+              ? false
+              : await _hasFollow(
+                  followerId: preview.userId,
+                  followingId: currentUserId,
+                ),
+        ),
+      );
+    }
+
+    return items;
   }
 
   String _currentUserId() {
@@ -184,4 +272,41 @@ class ProfileService {
         .map((item) => Map<String, dynamic>.from(item))
         .toList(growable: false);
   }
+}
+
+String? _previewFullName(PublicProfilePreview preview) {
+  final first = preview.firstName?.trim();
+  final last = preview.lastName?.trim();
+  final parts = [
+    first,
+    last,
+  ].where((part) => part != null && part.isNotEmpty).cast<String>().toList();
+  if (parts.isEmpty) return null;
+  return parts.join(' ');
+}
+
+Future<int> _countFollowRows({
+  required String column,
+  required String value,
+}) async {
+  final data = await SupabaseService.client
+      .from('follows')
+      .select('id')
+      .eq(column, value);
+
+  return data.length;
+}
+
+Future<bool> _hasFollow({
+  required String followerId,
+  required String followingId,
+}) async {
+  final data = await SupabaseService.client
+      .from('follows')
+      .select('id')
+      .eq('follower_id', followerId)
+      .eq('following_id', followingId)
+      .maybeSingle();
+
+  return data != null;
 }
