@@ -69,7 +69,8 @@ class FollowActionResult {
   final String? pendingRequestId;
 
   bool get isFollowing => status == 'following';
-  bool get isRequested => status == 'requested';
+  bool get isRequested =>
+      status == 'requested' || status == 'already_requested';
 
   factory FollowActionResult.fromJson(Map<String, dynamic> json) {
     return FollowActionResult(

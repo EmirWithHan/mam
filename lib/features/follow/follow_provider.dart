@@ -70,10 +70,7 @@ class FollowController extends StateNotifier<FollowState> {
       final stats = await _service.fetchFollowStats(targetUserId);
       state = state.copyWith(loading: false, stats: stats);
     } catch (error) {
-      state = state.copyWith(
-        loading: false,
-        message: friendlyErrorMessage(error),
-      );
+      state = state.copyWith(loading: false, message: 'İstek gönderilemedi.');
     }
   }
 
@@ -108,7 +105,9 @@ class FollowController extends StateNotifier<FollowState> {
     } catch (error) {
       state = state.copyWith(
         loading: false,
-        message: friendlyErrorMessage(error),
+        message: currentlyFollowing
+            ? friendlyErrorMessage(error)
+            : 'İstek gönderilemedi.',
       );
     }
   }
