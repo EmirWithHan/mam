@@ -181,8 +181,10 @@ class PublicProfileDetail {
     this.firstName,
     this.lastName,
     this.city,
+    this.district,
     this.avatarUrl,
     this.bio,
+    this.trustScore,
     this.followersCount = 0,
     this.followingCount = 0,
     this.isFollowing = false,
@@ -196,8 +198,10 @@ class PublicProfileDetail {
   final String? firstName;
   final String? lastName;
   final String? city;
+  final String? district;
   final String? avatarUrl;
   final String? bio;
+  final int? trustScore;
   final int followersCount;
   final int followingCount;
   final bool isFollowing;
@@ -226,6 +230,14 @@ class PublicProfileDetail {
 
   bool get hasBio => bio?.trim().isNotEmpty == true;
 
+  String? get locationLabel {
+    final cityValue = city?.trim();
+    final districtValue = district?.trim();
+    if (cityValue == null || cityValue.isEmpty) return null;
+    if (districtValue == null || districtValue.isEmpty) return cityValue;
+    return '$cityValue / $districtValue';
+  }
+
   factory PublicProfileDetail.fromJson(Map<String, dynamic> json) {
     return PublicProfileDetail(
       userId: json['user_id'].toString(),
@@ -234,8 +246,10 @@ class PublicProfileDetail {
       firstName: json['first_name'] as String?,
       lastName: json['last_name'] as String?,
       city: json['city'] as String?,
+      district: json['district'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       bio: json['bio'] as String?,
+      trustScore: (json['trust_score'] as num?)?.toInt(),
       followersCount: (json['followers_count'] as num?)?.toInt() ?? 0,
       followingCount: (json['following_count'] as num?)?.toInt() ?? 0,
       isFollowing: json['is_following'] as bool? ?? false,

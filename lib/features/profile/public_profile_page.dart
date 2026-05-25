@@ -8,18 +8,20 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/date_formatter.dart';
-import '../../core/widgets/app_logo.dart';
+import '../../core/utils/error_messages.dart';
+import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_loader.dart';
+import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
 import '../../core/widgets/sport_icon.dart';
 import '../auth/auth_provider.dart';
-import '../follow/widgets/follow_button.dart';
+import '../follow/follow_provider.dart';
 import 'profile_models.dart';
 import 'profile_provider.dart';
 import 'widgets/profile_gallery_viewer_page.dart';
 
-enum _PublicProfileTab { events, gallery }
+enum _PublicProfileTab { gallery, events }
 
 class PublicProfilePage extends ConsumerStatefulWidget {
   const PublicProfilePage({super.key, required this.userId});
@@ -31,7 +33,7 @@ class PublicProfilePage extends ConsumerStatefulWidget {
 }
 
 class _PublicProfilePageState extends ConsumerState<PublicProfilePage> {
-  var _selectedTab = _PublicProfileTab.events;
+  var _selectedTab = _PublicProfileTab.gallery;
 
   @override
   Widget build(BuildContext context) {
@@ -41,7 +43,7 @@ class _PublicProfilePageState extends ConsumerState<PublicProfilePage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: 'Geri',
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -56,11 +58,15 @@ class _PublicProfilePageState extends ConsumerState<PublicProfilePage> {
       body: SafeArea(
         child: detailAsync.when(
           loading: () => const AppLoader(),
-          error: (error, _) => ErrorView(message: '$error'),
+          error: (error, _) => ErrorView(
+            message: 'Profil yüklenemedi.',
+            onRetry: () =>
+                ref.invalidate(publicProfileDetailProvider(widget.userId)),
+          ),
           data: (detail) {
             if (detail == null) {
               return const EmptyState(
-                title: 'Profil bulunamadı.',
+                title: 'Kullanıcı bulunamadı.',
                 message: 'Bu kullanıcı profili şu anda görüntülenemiyor.',
                 icon: Icons.person_off_outlined,
               );
@@ -69,39 +75,48 @@ class _PublicProfilePageState extends ConsumerState<PublicProfilePage> {
             final isMe =
                 currentUserId != null && currentUserId == detail.userId;
 
-            return ListView(
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              children: [
-                _PublicProfileHeader(
-                  detail: detail,
-                  isMe: isMe,
-                  onFollowChanged: () {
-                    ref.invalidate(publicProfileDetailProvider(widget.userId));
-                    ref.invalidate(publicProfileGalleryProvider(widget.userId));
-                    ref.invalidate(
-                      publicProfileEventHistoryProvider(widget.userId),
-                    );
-                  },
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                if (detail.canViewExtendedProfile) ...[
-                  _ProfileTabs(
-                    selectedTab: _selectedTab,
-                    onChanged: (tab) => setState(() => _selectedTab = tab),
+            return RefreshIndicator(
+              onRefresh: () async {
+                ref.invalidate(publicProfileDetailProvider(widget.userId));
+                ref.invalidate(publicProfileGalleryProvider(widget.userId));
+                ref.invalidate(
+                  publicProfileEventHistoryProvider(widget.userId),
+                );
+              },
+              child: ListView(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                children: [
+                  _PublicProfileHeader(
+                    detail: detail,
+                    isMe: isMe,
+                    onFollowChanged: _refreshPublicProfile,
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  if (_selectedTab == _PublicProfileTab.events)
-                    _PastEventsSection(userId: widget.userId)
-                  else
-                    _GallerySection(userId: widget.userId),
-                ] else
-                  const _LockedExtendedProfileCard(),
-              ],
+                  const SizedBox(height: AppSpacing.lg),
+                  if (detail.canViewExtendedProfile) ...[
+                    _ProfileTabs(
+                      selectedTab: _selectedTab,
+                      onChanged: (tab) => setState(() => _selectedTab = tab),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    if (_selectedTab == _PublicProfileTab.gallery)
+                      _GallerySection(userId: widget.userId)
+                    else
+                      _PastEventsSection(userId: widget.userId),
+                  ] else
+                    const _LockedExtendedProfileCard(),
+                ],
+              ),
             );
           },
         ),
       ),
     );
+  }
+
+  void _refreshPublicProfile() {
+    ref.invalidate(publicProfileDetailProvider(widget.userId));
+    ref.invalidate(publicProfileGalleryProvider(widget.userId));
+    ref.invalidate(publicProfileEventHistoryProvider(widget.userId));
   }
 }
 
@@ -126,7 +141,7 @@ class _PublicProfileHeader extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: AppColors.textPrimary.withValues(alpha: 0.05),
-            blurRadius: 22,
+            blurRadius: 24,
             offset: const Offset(0, 10),
           ),
         ],
@@ -141,71 +156,58 @@ class _PublicProfileHeader extends StatelessWidget {
               detail.displayName,
               style: AppTextStyles.headline,
               textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             if (detail.handleLabel != null) ...[
               const SizedBox(height: AppSpacing.xs),
               Text(
                 detail.handleLabel!,
-                style: AppTextStyles.bodySmall,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.primary,
+                ),
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
-            if (detail.city?.trim().isNotEmpty == true) ...[
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                detail.city!,
-                style: AppTextStyles.caption,
-                textAlign: TextAlign.center,
-              ),
-            ],
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                if (detail.locationLabel != null)
+                  _InfoPill(
+                    icon: Icons.place_outlined,
+                    label: detail.locationLabel!,
+                  ),
+                if (detail.trustScore != null)
+                  _InfoPill(
+                    icon: Icons.verified_user_outlined,
+                    label: 'Güven ${detail.trustScore}',
+                  ),
+              ],
+            ),
             if (detail.hasBio) ...[
               const SizedBox(height: AppSpacing.md),
               Text(
                 detail.bio!.trim(),
-                style: AppTextStyles.bodySmall.copyWith(height: 1.35),
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textSecondary,
+                  height: 1.35,
+                ),
                 textAlign: TextAlign.center,
               ),
             ],
             const SizedBox(height: AppSpacing.lg),
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    value: detail.followingCount,
-                    label: 'Following',
-                    onTap: () => context.pushNamed(
-                      RouteNames.profileFollowList,
-                      pathParameters: {
-                        'userId': detail.userId,
-                        'type': 'following',
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: _StatCard(
-                    value: detail.followersCount,
-                    label: 'Followers',
-                    onTap: () => context.pushNamed(
-                      RouteNames.profileFollowList,
-                      pathParameters: {
-                        'userId': detail.userId,
-                        'type': 'followers',
-                      },
-                    ),
-                  ),
-                ),
-              ],
+            _ProfileStats(detail: detail),
+            const SizedBox(height: AppSpacing.lg),
+            _PublicProfileFollowAction(
+              targetUserId: detail.userId,
+              isMe: isMe,
+              onChanged: onFollowChanged,
             ),
-            if (!isMe) ...[
-              const SizedBox(height: AppSpacing.lg),
-              FollowButton(
-                targetUserId: detail.userId,
-                fullWidth: true,
-                onChanged: onFollowChanged,
-              ),
-            ],
           ],
         ),
       ),
@@ -221,47 +223,147 @@ class _ProfileAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final avatarUrl = detail.avatarUrl?.trim();
-    return CircleAvatar(
-      radius: 46,
-      backgroundColor: AppColors.primarySoft,
-      backgroundImage: avatarUrl == null || avatarUrl.isEmpty
-          ? null
-          : NetworkImage(avatarUrl),
-      child: avatarUrl == null || avatarUrl.isEmpty
-          ? Text(
-              _initials(detail),
-              style: const TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w800,
-                fontSize: 34,
-              ),
-            )
-          : null,
-    );
-  }
 
-  String _initials(PublicProfileDetail detail) {
-    final parts = [
-      detail.firstName?.trim(),
-      detail.lastName?.trim(),
-    ].where((part) => part != null && part.isNotEmpty).cast<String>().toList();
-    if (parts.isNotEmpty) {
-      return parts.take(2).map((part) => part[0].toUpperCase()).join();
-    }
-    final username = detail.username?.trim();
-    if (username != null && username.isNotEmpty) {
-      return username[0].toUpperCase();
-    }
-    return 'M';
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: const BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.primarySoft,
+      ),
+      child: CircleAvatar(
+        radius: 48,
+        backgroundColor: AppColors.surface,
+        backgroundImage: avatarUrl == null || avatarUrl.isEmpty
+            ? null
+            : NetworkImage(avatarUrl),
+        child: avatarUrl == null || avatarUrl.isEmpty
+            ? Text(
+                _initials(detail),
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 34,
+                ),
+              )
+            : null,
+      ),
+    );
   }
 }
 
-class _StatCard extends StatelessWidget {
-  const _StatCard({required this.value, required this.label, this.onTap});
+class _InfoPill extends StatelessWidget {
+  const _InfoPill({required this.icon, required this.label});
+
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.primarySoft,
+        borderRadius: AppRadius.pillBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.sm,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: AppColors.primary),
+            const SizedBox(width: AppSpacing.xs),
+            Flexible(
+              child: Text(
+                label,
+                style: AppTextStyles.label.copyWith(color: AppColors.primary),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileStats extends StatelessWidget {
+  const _ProfileStats({required this.detail});
+
+  final PublicProfileDetail detail;
+
+  @override
+  Widget build(BuildContext context) {
+    final stats = [
+      _StatCardData(
+        value: detail.followingCount,
+        label: 'Takip Edilen',
+        icon: Icons.person_add_alt_1_outlined,
+        onTap: () => context.pushNamed(
+          RouteNames.profileFollowList,
+          pathParameters: {'userId': detail.userId, 'type': 'following'},
+        ),
+      ),
+      _StatCardData(
+        value: detail.followersCount,
+        label: 'Takipçi',
+        icon: Icons.groups_2_outlined,
+        onTap: () => context.pushNamed(
+          RouteNames.profileFollowList,
+          pathParameters: {'userId': detail.userId, 'type': 'followers'},
+        ),
+      ),
+      if (detail.trustScore != null)
+        _StatCardData(
+          value: detail.trustScore!,
+          label: 'Güven',
+          icon: Icons.verified_outlined,
+        ),
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth = constraints.maxWidth < 420
+            ? (constraints.maxWidth - AppSpacing.sm) / 2
+            : (constraints.maxWidth - (AppSpacing.sm * 2)) / 3;
+
+        return Wrap(
+          spacing: AppSpacing.sm,
+          runSpacing: AppSpacing.sm,
+          alignment: WrapAlignment.center,
+          children: [
+            for (final stat in stats)
+              SizedBox(
+                width: cardWidth.clamp(132.0, 220.0),
+                child: _StatCard(data: stat),
+              ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _StatCardData {
+  const _StatCardData({
+    required this.value,
+    required this.label,
+    required this.icon,
+    this.onTap,
+  });
 
   final int value;
   final String label;
+  final IconData icon;
   final VoidCallback? onTap;
+}
+
+class _StatCard extends StatelessWidget {
+  const _StatCard({required this.data});
+
+  final _StatCardData data;
 
   @override
   Widget build(BuildContext context) {
@@ -269,7 +371,7 @@ class _StatCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: AppRadius.lgBorder,
-        onTap: onTap,
+        onTap: data.onTap,
         child: DecoratedBox(
           decoration: BoxDecoration(
             color: AppColors.background,
@@ -279,16 +381,120 @@ class _StatCard extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                Text('$value', style: AppTextStyles.title),
+                Icon(data.icon, color: AppColors.primary, size: 20),
                 const SizedBox(height: AppSpacing.xs),
-                Text(label, style: AppTextStyles.caption),
+                Text(
+                  _compactCount(data.value),
+                  style: AppTextStyles.title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  data.label,
+                  style: AppTextStyles.caption,
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+}
+
+class _PublicProfileFollowAction extends ConsumerStatefulWidget {
+  const _PublicProfileFollowAction({
+    required this.targetUserId,
+    required this.isMe,
+    required this.onChanged,
+  });
+
+  final String targetUserId;
+  final bool isMe;
+  final VoidCallback onChanged;
+
+  @override
+  ConsumerState<_PublicProfileFollowAction> createState() =>
+      _PublicProfileFollowActionState();
+}
+
+class _PublicProfileFollowActionState
+    extends ConsumerState<_PublicProfileFollowAction> {
+  @override
+  void initState() {
+    super.initState();
+    if (!widget.isMe) {
+      Future.microtask(() {
+        ref
+            .read(followControllerProvider(widget.targetUserId).notifier)
+            .loadStats();
+      });
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant _PublicProfileFollowAction oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isMe) return;
+    if (oldWidget.targetUserId == widget.targetUserId &&
+        oldWidget.isMe == widget.isMe) {
+      return;
+    }
+
+    Future.microtask(() {
+      ref
+          .read(followControllerProvider(widget.targetUserId).notifier)
+          .loadStats();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.isMe) {
+      return AppButton(label: 'Senin profilin', onPressed: null);
+    }
+
+    final followState = ref.watch(
+      followControllerProvider(widget.targetUserId),
+    );
+    final stats = followState.stats;
+    final isFollowing = stats?.isFollowedByMe ?? false;
+
+    return AppButton(
+      label: isFollowing ? 'Takip Ediliyor' : 'Takip Et',
+      variant: isFollowing
+          ? AppButtonVariant.secondary
+          : AppButtonVariant.primary,
+      isLoading: followState.loading || stats == null,
+      onPressed: followState.loading || stats == null ? null : _toggleFollow,
+    );
+  }
+
+  Future<void> _toggleFollow() async {
+    final controller = ref.read(
+      followControllerProvider(widget.targetUserId).notifier,
+    );
+
+    await controller.toggleFollow();
+    if (!mounted) return;
+
+    final message = ref
+        .read(followControllerProvider(widget.targetUserId))
+        .message;
+    if (message != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(friendlyErrorMessage(message))));
+      return;
+    }
+
+    widget.onChanged();
   }
 }
 
@@ -311,14 +517,16 @@ class _ProfileTabs extends StatelessWidget {
         child: Row(
           children: [
             _TabButton(
-              label: 'Geçmiş Etkinlikler',
-              selected: selectedTab == _PublicProfileTab.events,
-              onPressed: () => onChanged(_PublicProfileTab.events),
-            ),
-            _TabButton(
               label: 'Galeri',
+              icon: Icons.grid_view_rounded,
               selected: selectedTab == _PublicProfileTab.gallery,
               onPressed: () => onChanged(_PublicProfileTab.gallery),
+            ),
+            _TabButton(
+              label: 'Geçmiş Etkinlikler',
+              icon: Icons.event_available_outlined,
+              selected: selectedTab == _PublicProfileTab.events,
+              onPressed: () => onChanged(_PublicProfileTab.events),
             ),
           ],
         ),
@@ -330,25 +538,34 @@ class _ProfileTabs extends StatelessWidget {
 class _TabButton extends StatelessWidget {
   const _TabButton({
     required this.label,
+    required this.icon,
     required this.selected,
     required this.onPressed,
   });
 
   final String label;
+  final IconData icon;
   final bool selected;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
-      child: TextButton(
+      child: TextButton.icon(
         style: TextButton.styleFrom(
           backgroundColor: selected ? AppColors.primary : Colors.transparent,
           foregroundColor: selected ? Colors.white : AppColors.textSecondary,
           shape: RoundedRectangleBorder(borderRadius: AppRadius.pillBorder),
+          padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
         ),
         onPressed: onPressed,
-        child: Text(label, textAlign: TextAlign.center),
+        icon: Icon(icon, size: 18),
+        label: Text(
+          label,
+          textAlign: TextAlign.center,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
     );
   }
@@ -363,8 +580,11 @@ class _GallerySection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final galleryAsync = ref.watch(publicProfileGalleryProvider(userId));
     return galleryAsync.when(
-      loading: () => const AppLoader(),
-      error: (error, _) => const _LockedExtendedProfileCard(),
+      loading: () => const _SectionLoader(),
+      error: (error, _) => _SectionError(
+        message: 'Galeri yüklenemedi.',
+        onRetry: () => ref.invalidate(publicProfileGalleryProvider(userId)),
+      ),
       data: (items) {
         if (items.isEmpty) {
           return const EmptyState(
@@ -441,8 +661,12 @@ class _PastEventsSection extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final eventsAsync = ref.watch(publicProfileEventHistoryProvider(userId));
     return eventsAsync.when(
-      loading: () => const AppLoader(),
-      error: (error, _) => const _LockedExtendedProfileCard(),
+      loading: () => const _SectionLoader(),
+      error: (error, _) => _SectionError(
+        message: 'Geçmiş etkinlikler yüklenemedi.',
+        onRetry: () =>
+            ref.invalidate(publicProfileEventHistoryProvider(userId)),
+      ),
       data: (events) {
         if (events.isEmpty) {
           return const EmptyState(
@@ -474,65 +698,143 @@ class _PastEventTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        border: Border.all(color: AppColors.border),
-        borderRadius: AppRadius.lgBorder,
-      ),
+    return Material(
+      color: Colors.transparent,
       child: InkWell(
         borderRadius: AppRadius.lgBorder,
         onTap: () => context.pushNamed(
           RouteNames.eventDetail,
           pathParameters: {'eventId': item.eventId},
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              SportIcon(sportType: item.sportType, size: 20),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(item.title, style: AppTextStyles.bodyStrong),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      '${item.sportType} • ${item.locationLabel}',
-                      style: AppTextStyles.caption,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      DateFormatter.shortDate(item.createdAt),
-                      style: AppTextStyles.caption,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  color: AppColors.primarySoft,
-                  borderRadius: AppRadius.pillBorder,
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.sm,
-                    vertical: AppSpacing.xs,
-                  ),
-                  child: Text(
-                    item.roleLabel,
-                    style: AppTextStyles.label.copyWith(
-                      color: AppColors.primary,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+        child: Ink(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            border: Border.all(color: AppColors.border),
+            borderRadius: AppRadius.lgBorder,
           ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primarySoft,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: SportIcon(sportType: item.sportType, size: 22),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.title,
+                        style: AppTextStyles.bodyStrong,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        '${item.sportType} • ${item.locationLabel}',
+                        style: AppTextStyles.caption,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        DateFormatter.shortDate(item.createdAt),
+                        style: AppTextStyles.caption,
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                _RoleBadge(role: item.role),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _RoleBadge extends StatelessWidget {
+  const _RoleBadge({required this.role});
+
+  final String role;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = role == 'host' ? 'Host' : 'Katılımcı';
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.primarySoft,
+        borderRadius: AppRadius.pillBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.label.copyWith(color: AppColors.primary),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+}
+
+class _SectionLoader extends StatelessWidget {
+  const _SectionLoader();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
+      child: Center(child: AppLoader()),
+    );
+  }
+}
+
+class _SectionError extends StatelessWidget {
+  const _SectionError({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
+        borderRadius: AppRadius.lgBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.refresh_rounded, color: AppColors.primary),
+            const SizedBox(height: AppSpacing.sm),
+            Text(message, style: AppTextStyles.bodyStrong),
+            const SizedBox(height: AppSpacing.md),
+            AppButton(
+              label: 'Tekrar dene',
+              onPressed: onRetry,
+              fullWidth: false,
+            ),
+          ],
         ),
       ),
     );
@@ -558,7 +860,7 @@ class _LockedExtendedProfileCard extends StatelessWidget {
             SizedBox(width: AppSpacing.md),
             Expanded(
               child: Text(
-                'Galeri ve geçmiş etkinlikleri görmek için kullanıcıyı takip etmelisin.',
+                'Bu alanı görmek için kullanıcıyı takip etmelisin.',
                 style: AppTextStyles.bodySmall,
               ),
             ),
@@ -567,4 +869,32 @@ class _LockedExtendedProfileCard extends StatelessWidget {
       ),
     );
   }
+}
+
+String _initials(PublicProfileDetail detail) {
+  final parts = [
+    detail.firstName?.trim(),
+    detail.lastName?.trim(),
+  ].where((part) => part != null && part.isNotEmpty).cast<String>().toList();
+
+  if (parts.isNotEmpty) {
+    return parts.take(2).map((part) => part[0].toUpperCase()).join();
+  }
+
+  final username = detail.username?.trim();
+  if (username != null && username.isNotEmpty) {
+    return username[0].toUpperCase();
+  }
+
+  return 'M';
+}
+
+String _compactCount(int value) {
+  if (value < 1000) return '$value';
+  if (value < 1000000) {
+    final count = value / 1000;
+    return '${count.toStringAsFixed(count >= 10 ? 0 : 1)}K';
+  }
+  final count = value / 1000000;
+  return '${count.toStringAsFixed(count >= 10 ? 0 : 1)}M';
 }

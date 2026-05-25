@@ -387,7 +387,6 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
     if (value == null || !mounted) return;
 
     final previousDistrict = _districtController.text.trim();
-    final districts = TurkeyLocations.getDistricts(value);
     setState(() {
       _cityController.text = value;
       if (!TurkeyLocations.isValidDistrict(value, previousDistrict)) {
