@@ -285,6 +285,27 @@ class PublicProfileFollowListItem {
     return 'MaM User';
   }
 
+  PublicProfileFollowListItem copyWith({
+    bool? isFollowingByMe,
+    int? followerCount,
+  }) {
+    return PublicProfileFollowListItem(
+      userId: userId,
+      username: username,
+      fullName: fullName,
+      avatarUrl: avatarUrl,
+      city: city,
+      district: district,
+      bio: bio,
+      trustScore: trustScore,
+      followerCount: followerCount ?? this.followerCount,
+      followingCount: followingCount,
+      isFollowingByMe: isFollowingByMe ?? this.isFollowingByMe,
+      followsMe: followsMe,
+      createdAt: createdAt,
+    );
+  }
+
   factory PublicProfileFollowListItem.fromJson(Map<String, dynamic> json) {
     return PublicProfileFollowListItem(
       userId: json['user_id'].toString(),

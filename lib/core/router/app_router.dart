@@ -15,6 +15,8 @@ import '../../features/home/create_hub_page.dart';
 import '../../features/home/home_page.dart';
 import '../../features/notifications/notifications_page.dart';
 import '../../features/profile/profile_completion_page.dart';
+import '../../features/profile/profile_follow_list_page.dart';
+import '../../features/profile/profile_follow_list_provider.dart';
 import '../../features/profile/profile_page.dart';
 import '../../features/profile/public_profile_page.dart';
 import '../../features/profile/widgets/profile_gallery_viewer_page.dart';
@@ -35,7 +37,8 @@ GoRouter createAppRouter(AuthState authState) {
     redirect: (context, state) {
       final location = state.matchedLocation;
       final isAuthenticated = authState.status == AuthStatus.authenticated;
-      final isAuthRoute = location == RoutePaths.auth ||
+      final isAuthRoute =
+          location == RoutePaths.auth ||
           location == RoutePaths.login ||
           location == RoutePaths.register;
       final isSplashRoute = location == RoutePaths.splash;
@@ -96,6 +99,18 @@ GoRouter createAppRouter(AuthState authState) {
         },
       ),
       GoRoute(
+        path: RoutePaths.profileFollowList,
+        name: RouteNames.profileFollowList,
+        builder: (context, state) {
+          final userId = state.pathParameters['userId'] ?? '';
+          final type = _profileFollowListType(state.pathParameters['type']);
+          return MainNavigationShell(
+            currentIndex: 4,
+            child: ProfileFollowListPage(userId: userId, type: type),
+          );
+        },
+      ),
+      GoRoute(
         path: RoutePaths.profileComplete,
         name: RouteNames.profileComplete,
         builder: (context, state) => const MainNavigationShell(
@@ -106,18 +121,14 @@ GoRouter createAppRouter(AuthState authState) {
       GoRoute(
         path: RoutePaths.profile,
         name: RouteNames.profile,
-        builder: (context, state) => const MainNavigationShell(
-          currentIndex: 4,
-          child: ProfilePage(),
-        ),
+        builder: (context, state) =>
+            const MainNavigationShell(currentIndex: 4, child: ProfilePage()),
       ),
       GoRoute(
         path: RoutePaths.settings,
         name: RouteNames.settings,
-        builder: (context, state) => const MainNavigationShell(
-          currentIndex: 4,
-          child: SettingsPage(),
-        ),
+        builder: (context, state) =>
+            const MainNavigationShell(currentIndex: 4, child: SettingsPage()),
       ),
       GoRoute(
         path: RoutePaths.blockedUsers,
@@ -148,18 +159,14 @@ GoRouter createAppRouter(AuthState authState) {
       GoRoute(
         path: RoutePaths.create,
         name: RouteNames.create,
-        builder: (context, state) => const MainNavigationShell(
-          currentIndex: 2,
-          child: CreateHubPage(),
-        ),
+        builder: (context, state) =>
+            const MainNavigationShell(currentIndex: 2, child: CreateHubPage()),
       ),
       GoRoute(
         path: RoutePaths.createPost,
         name: RouteNames.createPost,
-        builder: (context, state) => const MainNavigationShell(
-          currentIndex: 2,
-          child: CreatePostPage(),
-        ),
+        builder: (context, state) =>
+            const MainNavigationShell(currentIndex: 2, child: CreatePostPage()),
       ),
       GoRoute(
         path: RoutePaths.postComments,
@@ -175,18 +182,14 @@ GoRouter createAppRouter(AuthState authState) {
       GoRoute(
         path: RoutePaths.events,
         name: RouteNames.events,
-        builder: (context, state) => const MainNavigationShell(
-          currentIndex: 1,
-          child: EventsPage(),
-        ),
+        builder: (context, state) =>
+            const MainNavigationShell(currentIndex: 1, child: EventsPage()),
       ),
       GoRoute(
         path: RoutePaths.social,
         name: RouteNames.social,
-        builder: (context, state) => const MainNavigationShell(
-          currentIndex: 3,
-          child: SocialPage(),
-        ),
+        builder: (context, state) =>
+            const MainNavigationShell(currentIndex: 3, child: SocialPage()),
       ),
       GoRoute(
         path: RoutePaths.createEvent,
@@ -221,13 +224,16 @@ GoRouter createAppRouter(AuthState authState) {
       GoRoute(
         path: RoutePaths.home,
         name: RouteNames.home,
-        builder: (context, state) => const MainNavigationShell(
-          currentIndex: 0,
-          child: HomePage(),
-        ),
+        builder: (context, state) =>
+            const MainNavigationShell(currentIndex: 0, child: HomePage()),
       ),
     ],
   );
+}
+
+ProfileFollowListType _profileFollowListType(String? value) {
+  if (value == 'following') return ProfileFollowListType.following;
+  return ProfileFollowListType.followers;
 }
 
 class _SplashPage extends StatelessWidget {

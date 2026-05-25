@@ -7,6 +7,7 @@ class RouteNames {
   static const register = 'register';
   static const profile = 'profile';
   static const publicProfile = 'publicProfile';
+  static const profileFollowList = 'profileFollowList';
   static const profileGalleryViewer = 'profileGalleryViewer';
   static const profileComplete = 'profileComplete';
   static const settings = 'settings';
@@ -34,6 +35,7 @@ class RoutePaths {
   static const register = '/auth/register';
   static const profile = '/profile';
   static const publicProfile = '/profile/public/:userId';
+  static const profileFollowList = '/profile/public/:userId/follows/:type';
   static const profileGalleryViewer = '/profile-gallery-viewer';
   static const profileComplete = '/profile/complete';
   static const settings = '/settings';

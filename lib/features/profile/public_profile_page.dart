@@ -22,10 +22,7 @@ import 'widgets/profile_gallery_viewer_page.dart';
 enum _PublicProfileTab { events, gallery }
 
 class PublicProfilePage extends ConsumerStatefulWidget {
-  const PublicProfilePage({
-    super.key,
-    required this.userId,
-  });
+  const PublicProfilePage({super.key, required this.userId});
 
   final String userId;
 
@@ -69,7 +66,8 @@ class _PublicProfilePageState extends ConsumerState<PublicProfilePage> {
               );
             }
 
-            final isMe = currentUserId != null && currentUserId == detail.userId;
+            final isMe =
+                currentUserId != null && currentUserId == detail.userId;
 
             return ListView(
               padding: const EdgeInsets.all(AppSpacing.lg),
@@ -175,6 +173,13 @@ class _PublicProfileHeader extends StatelessWidget {
                   child: _StatCard(
                     value: detail.followingCount,
                     label: 'Following',
+                    onTap: () => context.pushNamed(
+                      RouteNames.profileFollowList,
+                      pathParameters: {
+                        'userId': detail.userId,
+                        'type': 'following',
+                      },
+                    ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
@@ -182,6 +187,13 @@ class _PublicProfileHeader extends StatelessWidget {
                   child: _StatCard(
                     value: detail.followersCount,
                     label: 'Followers',
+                    onTap: () => context.pushNamed(
+                      RouteNames.profileFollowList,
+                      pathParameters: {
+                        'userId': detail.userId,
+                        'type': 'followers',
+                      },
+                    ),
                   ),
                 ),
               ],
@@ -212,8 +224,9 @@ class _ProfileAvatar extends StatelessWidget {
     return CircleAvatar(
       radius: 46,
       backgroundColor: AppColors.primarySoft,
-      backgroundImage:
-          avatarUrl == null || avatarUrl.isEmpty ? null : NetworkImage(avatarUrl),
+      backgroundImage: avatarUrl == null || avatarUrl.isEmpty
+          ? null
+          : NetworkImage(avatarUrl),
       child: avatarUrl == null || avatarUrl.isEmpty
           ? Text(
               _initials(detail),
@@ -244,30 +257,35 @@ class _ProfileAvatar extends StatelessWidget {
 }
 
 class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.value,
-    required this.label,
-  });
+  const _StatCard({required this.value, required this.label, this.onTap});
 
   final int value;
   final String label;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        border: Border.all(color: AppColors.border),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: AppRadius.lgBorder,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Column(
-          children: [
-            Text('$value', style: AppTextStyles.title),
-            const SizedBox(height: AppSpacing.xs),
-            Text(label, style: AppTextStyles.caption),
-          ],
+        onTap: onTap,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            border: Border.all(color: AppColors.border),
+            borderRadius: AppRadius.lgBorder,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              children: [
+                Text('$value', style: AppTextStyles.title),
+                const SizedBox(height: AppSpacing.xs),
+                Text(label, style: AppTextStyles.caption),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -275,10 +293,7 @@ class _StatCard extends StatelessWidget {
 }
 
 class _ProfileTabs extends StatelessWidget {
-  const _ProfileTabs({
-    required this.selectedTab,
-    required this.onChanged,
-  });
+  const _ProfileTabs({required this.selectedTab, required this.onChanged});
 
   final _PublicProfileTab selectedTab;
   final ValueChanged<_PublicProfileTab> onChanged;
