@@ -1,61 +1,67 @@
-# Demo Data Plan
+# Match A Man Demo Data Plan
 
-This plan describes safe, fictional demo data for the current Supabase-only MVP. Do not use real personal data, real phone numbers, or production user accounts.
+This plan is for staging/demo preparation only. Do not use real personal data, real phone numbers, production emails, or real user photos without permission.
 
 ## Demo Users
 
-| Role | Display name | Username | City/District | Bio | Avatar suggestion | Trust score target | Demo role |
+| Role | Display name | Username | City / District | Bio | Avatar suggestion | Trust score target | Privacy |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Host user | Kerem Yıldız | `kerem.host` | İstanbul / Kadıköy | Haftalık futbol ve koşu etkinlikleri düzenlerim. | Bright outdoor football portrait | 88-94 | Event host, approve/reject requests, chat/call gate demo |
-| Approved participant | Mert Kaya | `mert.run` | İstanbul / Beşiktaş | Koşu, basketbol ve hafta sonu maçlarına varım. | Running track portrait | 78-86 | Approved participant, chat/call access, leave event |
-| Pending requester | Ege Demir | `ege.pending` | İstanbul / Üsküdar | Yeni takımlar ve düzenli maç grupları arıyorum. | Casual gym portrait | 62-72 | Pending join request and cancel pending request |
-| Rejected requester | Arda Çelik | `arda.tryagain` | İstanbul / Ataşehir | Futbol ve tenis denemeleri için buradayım. | Tennis court portrait | 50-60 | Rejected request state and friendly empty access |
-| Social/feed-heavy user | Deniz Acar | `deniz.social` | İzmir / Karşıyaka | Spor sonrası kahve, maç yorumu ve fotoğraf paylaşmayı severim. | Volleyball or cycling portrait | 80-90 | Feed, gallery, follow, comments, likes |
-| New empty user | Selin Koç | `selin.new` | Ankara / Çankaya | Profilini yeni tamamladı. | Simple neutral profile image | 40-55 | Empty profile, empty feed/profile states, first join request |
+| Host user | Emir Kaya | emir_kaptan | Istanbul / Kadikoy | Hali saha ve kosu gruplari organize eder. | Friendly football host portrait | 92 | Public |
+| Approved participant | Deniz Arslan | denizfit | Istanbul / Besiktas | Basketbol, tenis ve hafta sonu maclari. | Sporty outdoor portrait | 84 | Public |
+| Pending requester | Mert Yilmaz | mert_join | Istanbul / Uskudar | Yeni takim arkadaslari ariyor. | Casual gym portrait | 68 | Public |
+| Rejected requester | Can Demir | candemir | Istanbul / Sisli | Voleybol ve sosyal etkinlikleri sever. | Neutral profile portrait | 55 | Public |
+| Social/feed-heavy user | Zeynep Acar | zeynepaktif | Izmir / Karsiyaka | Mac sonrasi yorum, fotograf ve rota paylasir. | Energetic running portrait | 88 | Public |
+| Private profile user | Elif Sari | elif_private | Ankara / Cankaya | Sadece takipçileriyle galeri ve Geçmiş Events paylaşır. | Minimal private-account portrait | 79 | Private |
+| New empty user | Ali Yeni | aliyeni | Bursa / Nilufer | Profili yeni tamamlandi. | Simple placeholder avatar | 50 | Public |
 
 ## Demo Events
 
-Use dates relative to the demo day so the script stays fresh.
+Use relative dates so the script can be reused on any demo day.
 
-| Title | Sport | City/District | Date/time | Capacity | Current participant state | Expected join-request scenario |
-| --- | --- | --- | --- | --- | --- | --- |
-| Kadıköy Akşam Halı Saha | Futbol | İstanbul / Kadıköy | Demo day + 1, 20:30 | 10 total | Host + 6 approved, 1 pending | Pending requester sends/cancels request; host approves one request |
-| Beşiktaş 3x3 Basket | Basketbol | İstanbul / Beşiktaş | Demo day + 2, 19:00 | 6 total | Host + 4 approved | Show almost-full capacity and approved participant list |
-| Karşıyaka Sahil Voleybol | Voleybol | İzmir / Karşıyaka | Demo day + 3, 18:30 | 8 total | Host + 5 approved | Social user joins and receives approved notification |
-| Sabah Tempo Koşusu | Koşu | Ankara / Çankaya | Demo day + 1, 07:30 | 12 total | Host + 3 approved | New user requests to join after profile completion |
-| Pazar Bisiklet Turu | Bisiklet | İzmir / Bornova | Demo day + 4, 09:00 | 15 total | Host + 8 approved | Demonstrate filters and city/district selection |
-| Kort Arkadaşı Aranıyor | Tenis | İstanbul / Ataşehir | Demo day + 5, 17:00 | 2 total | Host only | Demonstrate small-capacity event and full state after approval |
-| Belgrad Ormanı Yürüyüşü | Doğa Yürüyüşü | İstanbul / Sarıyer | Demo day + 6, 10:00 | 20 total | Host + 10 approved | Demonstrate outdoor/social sport event detail |
-| Maç Sonrası Sosyal Buluşma | Sosyal Spor | İstanbul / Kadıköy | Demo day + 2, 21:45 | 12 total | Host + 7 approved | Casual social/sport event and feed-linked post |
+| Title | Sport | City / District | Date / time | Capacity | Participant state | Join-request scenario | Status |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Kadikoy Aksam Hali Saha | Football | Istanbul / Kadikoy | Demo day + 1, 20:00 | 10 | Host + 6 approved | Pending user requests, host approves | Active/upcoming |
+| Besiktas 3x3 Basket | Basketball | Istanbul / Besiktas | Demo day + 2, 19:30 | 6 | Host + 4 approved | One open slot, request accepted | Active/upcoming |
+| Sahil Voleybol Bulusmasi | Volleyball | Izmir / Karsiyaka | Demo day + 3, 18:00 | 8 | Host + 5 approved | Rejected user is declined | Active/upcoming |
+| Sabah Kosu Ekibi | Running | Ankara / Cankaya | Demo day + 1, 07:30 | 12 | Host + 3 approved | New user sends first request | Active/upcoming |
+| Bogaz Bisiklet Turu | Cycling | Istanbul / Sariyer | Demo day + 5, 09:00 | 15 | Host + 8 approved | Participant later leaves | Active/upcoming |
+| Kortta Tanisma Maci | Tennis | Istanbul / Bakirkoy | Demo day + 4, 17:00 | 4 | Host + 2 approved | Pending user cancels request | Active/upcoming |
+| Belgrad Ormani YuruYus | Hiking/outdoor | Istanbul / Sariyer | Demo day + 6, 10:00 | 14 | Host + 9 approved | Profile privacy shown through host profile | Active/upcoming |
+| Kahve Sonrasi Mini Turnuva | Casual social/sport | Bursa / Nilufer | Demo day + 2, 16:00 | 10 | Host + 5 approved | Social feed post links to event | Active/upcoming |
+| Dolu Kontenjan Maci | Football | Istanbul / Atasehir | Demo day + 1, 21:00 | 8 | Full: host + 7 approved | Join button shows full-capacity state | Active/upcoming |
+| Gecen Haftanin Basket Maci | Basketball | Istanbul / Besiktas | Demo day - 7, 20:00 | 8 | Historical approved users | Can be viewed, cannot be joined | Past |
 
 ## Demo Feed Posts
 
-| Post idea | Author | Linked entity | Purpose |
-| --- | --- | --- | --- |
-| "Kadıköy akşam maçı için iki kişi daha arıyoruz." | Kerem | Kadıköy Akşam Halı Saha | Event-linked post |
-| "Sahil voleybolundan kareler." | Deniz | Gallery media | Gallery-style social post |
-| "3x3 basket maç sonucu: son periyot efsaneydi." | Mert | Beşiktaş 3x3 Basket | Sport result post |
-| "Tenis için düzenli partner arıyorum." | Arda | Kort Arkadaşı Aranıyor | Looking-for-player post |
-| "Sabah koşusu temposu 6:00/km civarı olacak." | Selin | Sabah Tempo Koşusu | New user engagement |
-| "Bisiklet turu için kask ve ışık unutmayın." | Deniz | Pazar Bisiklet Turu | Safety/info post |
-| "Yürüyüş rotası ve buluşma noktası güncellendi." | Kerem | Belgrad Ormanı Yürüyüşü | Host update post |
-| "Moderasyon demosu için raporlanabilir örnek içerik." | Demo-only account | None | Report/block flow, keep harmless and clearly fake |
+| Post idea | Owner | Purpose |
+| --- | --- | --- |
+| Event-linked post for Kadikoy Aksam Hali Saha | Emir Kaya | Opens event detail from feed. |
+| Gallery-style post with match photos | Zeynep Acar | Shows gallery and image viewer. |
+| Sport result post: "8-6 bitti, guzel mac!" | Deniz Arslan | Shows likes/comments on a normal post. |
+| Looking-for-player post: "Bu aksam 1 kisi eksik" | Emir Kaya | Demonstrates fast social coordination. |
+| Comment-heavy post | Zeynep Acar | Demonstrates comments and long text wrapping. |
+| Like demo post | Deniz Arslan | Shows local like state. |
+| Follow demo post from social user | Zeynep Acar | Follow/unfollow from feed and profile. |
+| Private profile visibility demo | Elif Sari | Non-followers can see basic profile but locked gallery/events. |
+| Archived gallery item demo | Elif Sari | Owner sees lock overlay, others do not see the item. |
+| Safe report/block demo post | Can Demir | Use harmless copy to demonstrate report/block controls. |
 
 ## Demo Notifications
 
-Prepare notification records through normal app flows where possible:
+| Type | Scenario | Expected behavior |
+| --- | --- | --- |
+| event_join_request | Mert requests Kadikoy Aksam Hali Saha | Host sees a new join request notification. |
+| event_join_approved | Host approves Deniz or Mert | Requester sees approval and can open event detail. |
+| event_join_rejected | Host rejects Can | Requester sees rejection without private participant data. |
+| event_join_cancelled | Mert cancels a pending tennis request | Host sees cancellation notification. |
+| event_left | Deniz leaves Bogaz Bisiklet Turu | Host sees participant-left notification. |
+| follow | Zeynep follows Emir | Emir sees new follower notification and can open profile. |
+| system | Demo system notice | Shows general in-app notification copy. |
 
-- `event_join_request`: Pending requester sends a request to Kerem's event.
-- `event_join_approved`: Kerem approves Mert or Selin for an event.
-- `event_join_rejected`: Kerem rejects Arda's request.
-- `event_join_cancelled`: Ege cancels a pending request.
-- `event_left`: Mert leaves an approved event.
-- `follow`: Deniz follows Kerem or Selin.
-- `system`: A harmless demo message such as "Kapalı beta demosuna hoş geldin."
+## Setup Notes
 
-## Safety Notes
-
-- Use fictional names, bios, usernames, avatars, captions, and comments.
-- Avoid real phone numbers, private addresses, or sensitive personal details.
-- Prefer app UI flows over direct production writes.
-- If seed data is needed later, create it for a staging Supabase project first.
+- Use staging/test accounts only.
+- Keep all demo passwords outside this document.
+- Prepare at least one private account and one follower of that private account.
+- Prepare at least one archived gallery item owned by the private account.
+- Prepare one true empty user to demonstrate empty profile, feed, and list states.

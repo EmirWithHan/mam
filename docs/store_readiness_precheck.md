@@ -1,76 +1,63 @@
 # Store Readiness Precheck
 
-The app should not be considered store-ready until this checklist is complete. Use it as preparation for a later App Store and Play Store submission pass.
+Match A Man is not being claimed as store-ready yet. This checklist is for later preparation before App Store or Play Store submission.
 
 ## App Identity
 
-- [ ] Final app icon prepared for iOS and Android.
-- [ ] Splash screen assets finalized.
+- [ ] Final app icon prepared.
+- [ ] Final splash screen prepared.
 - [ ] Bundle ID and Android package name confirmed.
 - [ ] App display name confirmed.
-- [ ] Version and build number strategy documented.
+- [ ] App category selected.
 
 ## Legal And Support
 
-- [ ] Privacy policy URL available.
-- [ ] Terms of service URL available.
-- [ ] Support email available and monitored.
+- [ ] Privacy policy published.
+- [ ] Terms of service published.
+- [ ] Support email created and monitored.
 - [ ] Data deletion request path documented.
-- [ ] Account deletion path documented.
-- [ ] Test account credentials prepared for reviewers and stored outside the repo.
+- [ ] Test account prepared for reviewers.
+- [ ] Contact information reviewed for store listings.
 
-## Safety And Moderation
+## Safety And Privacy
 
 - [ ] Content moderation explanation written.
 - [ ] Report behavior documented.
 - [ ] Block behavior documented.
-- [ ] User-generated content policy prepared.
-- [ ] Process for handling abuse reports assigned to a human owner.
-- [ ] Age rating considerations reviewed for sports/social UGC.
+- [ ] Account privacy behavior documented.
+- [ ] Gallery archive/delete/comment visibility behavior documented.
+- [ ] Participant visibility and chat/call access gating explained.
+- [ ] Age rating considerations reviewed.
 
-## Permissions
+## Permissions And Data
 
-- [ ] Location permission description reviewed.
-- [ ] Photo/media permission description reviewed.
-- [ ] Camera permission description reviewed if used.
-- [ ] Microphone/call-related permission description reviewed if used.
-- [ ] Permission prompts match actual app behavior.
+- [ ] Permission descriptions reviewed.
+- [ ] Media/gallery permission copy reviewed if applicable.
+- [ ] Location-related copy reviewed if city/district selection expands later.
+- [ ] Supabase data collection and retention notes reviewed.
+- [ ] No service role keys or secrets are bundled in the app.
 
-## Store Listing
+## Store Assets
 
+- [ ] Screenshots prepared for required device sizes.
 - [ ] App description drafted.
 - [ ] Short description/subtitle drafted.
 - [ ] Keywords reviewed.
-- [ ] Screenshots prepared for required device sizes.
-- [ ] Preview video considered but not required.
-- [ ] Demo account instructions prepared.
+- [ ] Demo video prepared if needed.
 
-## iOS
-
-- [ ] Apple Developer account ready.
-- [ ] iOS signing and provisioning configured.
-- [ ] App privacy nutrition labels drafted.
-- [ ] If third-party login is added later, Apple login requirement reviewed.
-- [ ] TestFlight plan prepared.
-
-## Android
+## Platform Requirements
 
 - [ ] Android package signing configured.
-- [ ] Play Console account ready.
-- [ ] Data safety form drafted.
-- [ ] Internal testing track plan prepared.
-- [ ] Target SDK and permission declarations reviewed.
+- [ ] Android release build tested.
+- [ ] iOS signing and provisioning configured.
+- [ ] iOS release build tested.
+- [ ] Apple Sign In requirement reviewed if third-party login is added later.
+- [ ] Review notes include test account and demo flow.
 
-## Technical Precheck
+## Final Pre-Submission
 
-- [ ] Release build generated successfully.
-- [ ] Supabase production/staging environment separation verified.
-- [ ] No Supabase service role key or secret is embedded in the app.
-- [ ] Crash-free smoke test completed on physical Android.
-- [ ] Crash-free smoke test completed on physical iOS.
-- [ ] Flutter analyze passes.
-- [ ] Manual QA checklist completed.
-
-## Current Status
-
-Not store-ready yet. The current focus is demo readiness and controlled closed beta preparation.
+- [ ] Closed beta issues triaged.
+- [ ] Known limitations reviewed with stakeholders.
+- [ ] Privacy/RLS behavior verified in production-like Supabase project.
+- [ ] Crash/error monitoring plan approved.
+- [ ] Rollback plan documented.

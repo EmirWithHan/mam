@@ -1,97 +1,72 @@
-# Manual Demo Flow
+# Match A Man Demo Flow
 
-This is a presenter script for the current Supabase-only MVP. Keep the pace calm and show that Match A Man is event-centered, social, sporty, and trustworthy.
+This script is for a Supabase-only MVP demo or closed beta walkthrough.
 
 ## A. First Impression
 
-1. Open the app from a clean state.
-2. Show login and register entry points.
-3. Register or log in as the new empty user.
-4. Complete profile:
-   - full name
-   - username
-   - city and district
-   - short bio
-   - avatar if available
-5. Confirm the user lands safely in the main app.
+1. Open the app and show the clean auth entry point.
+2. Log in with the host user, then briefly show register/profile completion with the new empty user if needed.
+3. Complete or review required profile fields: name, username, city, district, bio, and avatar.
+4. Point out that Supabase Auth is the source of truth.
 
 ## B. Event Discovery
 
-1. Open the events list.
-2. Scroll through upcoming events and point out sport, capacity, city/district, date, and host preview.
-3. Use filters/search if available:
-   - sport
-   - city/district
-   - date or keyword
+1. Open the events/home area.
+2. Browse active events and show clean loading/empty states if applicable.
+3. Apply a city/sport filter.
 4. Open an event detail page.
-5. Tap host avatar/name in event detail and open the public profile.
-6. Return with back navigation to the event detail page.
+5. Tap the host avatar/name from event detail and open the public profile.
+6. Navigate back to event detail.
 
 ## C. Participation
 
-1. As a regular user, request to join an event.
-2. Show the pending state and disabled/deduplicated action behavior.
-3. Cancel a pending request.
-4. Switch to the host user.
-5. Open the host event and review join requests.
-6. Approve one request and reject another.
-7. Switch to an approved participant.
-8. Show approved state, participant visibility, and chat/call access gating.
-9. Leave the approved event and confirm access changes.
+1. As a normal user, request to join an upcoming event.
+2. Show the pending state and cancel the pending request.
+3. Request again, then switch to the host account.
+4. Approve one request and reject another request.
+5. As an approved participant, leave an event.
+6. Open a past event and show that it can be viewed but cannot be joined.
+7. Confirm the disabled message: "Bu etkinlik geçmişte kaldı."
 
 ## D. Social Layer
 
 1. Open the feed.
-2. Create a post, ideally linked to an event.
+2. Create or show an event-linked post.
 3. Like and comment on a post.
-4. Open another user's public profile from a safe tappable surface.
-5. Follow/unfollow the user and show follower/following counts.
-6. Open followers/following lists if present.
-7. Open gallery content and show polished empty or image states.
+4. Follow another user from a profile or row action.
+5. Open followers and following lists from a profile stat card.
+6. Tap a list row and navigate to that user's public profile.
+7. Open the gallery and gallery viewer.
 
-## E. Safety And Trust
+## E. Privacy
 
-1. Open a user or post action menu.
-2. Submit a report using harmless demo content.
-3. Block a demo user and confirm feed/event filtering behavior if visible.
-4. Show trust score placement if available.
-5. Explain participant visibility:
-   - hosts see relevant request information
-   - approved participants see intended participant surfaces
-   - unrelated users do not see private participant details
+1. Open a public profile and show that basic profile, gallery, and Geçmiş Events are visible.
+2. Open a private profile as a non-follower.
+3. Show that the profile header and counts are visible, but gallery and Geçmiş Events are locked.
+4. Confirm the locked copy: "Bu alanı görmek için kullanıcıyı takip etmelisin."
+5. Follow the private profile and show that gallery and Geçmiş Events become visible.
+6. As the owner, show an archived gallery item with the lock overlay.
+7. As another user, confirm the archived gallery item is not visible.
 
-## F. Notifications
+## F. Safety And Trust
 
-1. Trigger or open prepared notifications.
-2. Show event notification types:
-   - join request
-   - approved
-   - rejected
-   - cancelled
-   - left
-3. Tap an event notification and navigate to event detail.
-4. Tap a follow/profile notification if prepared.
-5. Mark one notification as read.
-6. Use "Tümünü okundu yap" and confirm the unread indicator clears.
+1. Show trust score where it appears in profile or user rows.
+2. Demonstrate participant visibility: approved/allowed viewers can see intended participant data, unrelated users cannot.
+3. Show chat/call access gating from an event where access is allowed only for the correct state.
+4. Open report controls on a safe demo post.
+5. Demonstrate block behavior using a harmless demo account.
 
-## G. Ending
+## G. Notifications
 
-Close with what is already working:
+1. Trigger or show an event join request notification.
+2. Open the notifications page.
+3. Tap the notification and navigate to the related event detail.
+4. Return and mark one notification as read.
+5. Use "Tümünü okundu yap" and confirm unread indicators clear.
+6. Show a follow notification and profile navigation if available.
 
-- Supabase Auth
-- profile completion and profile pages
-- event discovery and detail
-- join request lifecycle
-- chat/call access gating
-- feed posts, likes, comments, follow, report, block
-- public profiles, gallery, followers/following
-- Supabase in-app notifications
+## H. Ending
 
-Then state what is intentionally postponed:
-
-- push notifications
-- Firebase/FCM
-- social login
-- advanced moderation/admin tooling
-- production analytics
-- store submission assets and signing
+1. Summarize what is already working: auth, profiles, privacy, gallery controls, events, participation, feed, follow lists, and in-app notifications.
+2. Clarify what is intentionally postponed: Firebase/FCM push, realtime notifications, social login, advanced moderation, analytics, admin tooling, and store release assets.
+3. End with the closed beta checklist and known limitations documents.

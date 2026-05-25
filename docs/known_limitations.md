@@ -1,38 +1,29 @@
 # Known Limitations
 
-This document lists intentional limitations for the current Supabase-only MVP. These are not blockers for a controlled demo, but they should be visible before closed beta.
+This document lists intentional MVP limitations for demo and closed beta planning.
 
-## Postponed Platform Features
+## Postponed Platform Work
 
 - Push notifications are postponed.
 - Firebase/FCM is not active.
-- Realtime notification delivery is not active.
+- Realtime notifications are not implemented.
 - Social login is postponed.
-- Production analytics are postponed.
+- App Store and Play Store assets are pending.
+- Store signing, provisioning, and release metadata are not complete.
 
 ## Product And Operations
 
-- Advanced moderation tools are postponed.
+- Advanced moderation is postponed.
+- Production-grade abuse detection is not implemented.
 - Admin panel is not implemented.
+- Production analytics are postponed.
 - Real payment or monetization flows are not implemented.
-- Store submission assets are pending.
-- App Store and Play Store review materials are not complete.
-- Support and escalation workflows need an owner before wider beta.
+- Advanced rate limiting may need backend review before a wider launch.
 
-## Backend And Security Follow-Up
+## Beta Expectations
 
-- Advanced rate limiting may need backend review before larger rollout.
-- RLS and RPC access should be reviewed again before public launch.
-- Demo data should be created in staging first, not directly in production.
-- Data deletion and account deletion operations need a clearly documented support path.
-
-## UX And Scope
-
-- Some flows are optimized for MVP validation, not final launch polish.
-- Notification delivery is in-app only.
-- Discovery and filtering are basic compared with a mature marketplace.
-- Moderation review is likely manual during closed beta.
-
-## Positioning Note
-
-Match A Man is a social sports and events app. It should be presented as an event-centered community product, not as a dating app.
+- In-app notifications are Supabase-backed and require users to open the app.
+- Closed beta should use staged accounts and staged demo data.
+- Demo data should not include real personal data.
+- Privacy behavior should be validated after every Supabase migration push.
+- Any public launch should wait for privacy policy, terms, support process, and data deletion process approval.
