@@ -2,6 +2,14 @@
 
 A new Flutter project.
 
+## Demo / Release Docs
+
+- [Demo data plan](docs/demo_data_plan.md)
+- [Manual demo flow](docs/demo_flow.md)
+- [Closed beta checklist](docs/closed_beta_checklist.md)
+- [Known limitations](docs/known_limitations.md)
+- [Store readiness precheck](docs/store_readiness_precheck.md)
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
