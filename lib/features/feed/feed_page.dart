@@ -131,7 +131,7 @@ class _FeedHeader extends ConsumerWidget {
               _NotificationBell(
                 unreadCount:
                     ref.watch(notificationsUnreadCountProvider).valueOrNull ??
-                        0,
+                    0,
               ),
           ],
         ),
@@ -309,7 +309,7 @@ class _FeedStatePanel extends ConsumerWidget {
 
     if (feedState.status == FeedStatus.error) {
       return ErrorView(
-        message: feedState.message ?? 'Could not load feed.',
+        message: feedState.message ?? 'Akış yüklenemedi.',
         onRetry: () {
           ref.read(feedControllerProvider.notifier).refreshPosts();
         },
@@ -321,8 +321,9 @@ class _FeedStatePanel extends ConsumerWidget {
       message: 'Bir fotoğraf paylaşarak topluluğa ilk anı sen bırakabilirsin.',
       icon: Icons.add_photo_alternate_outlined,
       actionLabel: showCreateAction ? 'Fotoğraf paylaş' : null,
-      onAction:
-          showCreateAction ? () => context.pushNamed(RouteNames.createPost) : null,
+      onAction: showCreateAction
+          ? () => context.pushNamed(RouteNames.createPost)
+          : null,
       secondaryActionLabel: 'Etkinlikleri keşfet',
       onSecondaryAction: () => context.goNamed(RouteNames.events),
     );

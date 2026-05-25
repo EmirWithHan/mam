@@ -1,14 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/error_messages.dart';
 import 'blocks_models.dart';
 import 'blocks_service.dart';
 
 class BlockState {
-  const BlockState({
-    this.loading = false,
-    this.message,
-    this.userBlockState,
-  });
+  const BlockState({this.loading = false, this.message, this.userBlockState});
 
   final bool loading;
   final String? message;
@@ -62,32 +59,33 @@ final myBlockedUserIdsProvider = FutureProvider<List<String>>((ref) {
 });
 
 final blockControllerProvider =
-    StateNotifierProvider.family<BlockController, BlockState, String>(
-  (ref, targetUserId) {
-    return BlockController(
-      targetUserId: targetUserId,
-      service: ref.watch(blocksServiceProvider),
-      ref: ref,
-    );
-  },
-);
+    StateNotifierProvider.family<BlockController, BlockState, String>((
+      ref,
+      targetUserId,
+    ) {
+      return BlockController(
+        targetUserId: targetUserId,
+        service: ref.watch(blocksServiceProvider),
+        ref: ref,
+      );
+    });
 
 final myBlocksControllerProvider =
     StateNotifierProvider<MyBlocksController, MyBlocksState>((ref) {
-  return MyBlocksController(
-    service: ref.watch(blocksServiceProvider),
-    ref: ref,
-  );
-});
+      return MyBlocksController(
+        service: ref.watch(blocksServiceProvider),
+        ref: ref,
+      );
+    });
 
 class BlockController extends StateNotifier<BlockState> {
   BlockController({
     required this.targetUserId,
     required BlocksService service,
     required Ref ref,
-  })  : _service = service,
-        _ref = ref,
-        super(const BlockState());
+  }) : _service = service,
+       _ref = ref,
+       super(const BlockState());
 
   final String targetUserId;
   final BlocksService _service;
@@ -99,7 +97,9 @@ class BlockController extends StateNotifier<BlockState> {
     try {
       final userId = _service.currentUserId;
       final isMe = userId == targetUserId;
-      final isBlocked = isMe ? false : await _service.isUserBlocked(targetUserId);
+      final isBlocked = isMe
+          ? false
+          : await _service.isUserBlocked(targetUserId);
       state = state.copyWith(
         loading: false,
         userBlockState: UserBlockState(
@@ -109,7 +109,10 @@ class BlockController extends StateNotifier<BlockState> {
         ),
       );
     } catch (error) {
-      state = state.copyWith(loading: false, message: '$error');
+      state = state.copyWith(
+        loading: false,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 
@@ -134,19 +137,20 @@ class BlockController extends StateNotifier<BlockState> {
       _ref.invalidate(myBlockedUserIdsProvider);
       return true;
     } catch (error) {
-      state = state.copyWith(loading: false, message: '$error');
+      state = state.copyWith(
+        loading: false,
+        message: friendlyErrorMessage(error),
+      );
       return false;
     }
   }
 }
 
 class MyBlocksController extends StateNotifier<MyBlocksState> {
-  MyBlocksController({
-    required BlocksService service,
-    required Ref ref,
-  })  : _service = service,
-        _ref = ref,
-        super(const MyBlocksState());
+  MyBlocksController({required BlocksService service, required Ref ref})
+    : _service = service,
+      _ref = ref,
+      super(const MyBlocksState());
 
   final BlocksService _service;
   final Ref _ref;
@@ -158,7 +162,10 @@ class MyBlocksController extends StateNotifier<MyBlocksState> {
       final blocks = await _service.fetchMyBlocks();
       state = state.copyWith(loading: false, blocks: blocks);
     } catch (error) {
-      state = state.copyWith(loading: false, message: '$error');
+      state = state.copyWith(
+        loading: false,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 
@@ -174,7 +181,10 @@ class MyBlocksController extends StateNotifier<MyBlocksState> {
       state = state.copyWith(loading: false, blocks: blocks);
       return true;
     } catch (error) {
-      state = state.copyWith(loading: false, message: '$error');
+      state = state.copyWith(
+        loading: false,
+        message: friendlyErrorMessage(error),
+      );
       return false;
     }
   }

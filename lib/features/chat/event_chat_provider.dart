@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/error_messages.dart';
 import 'event_chat_models.dart';
 import 'event_chat_service.dart';
 
@@ -41,21 +42,22 @@ final eventChatServiceProvider = Provider<EventChatService>((ref) {
 });
 
 final eventChatControllerProvider =
-    StateNotifierProvider.family<EventChatController, EventChatState, String>(
-  (ref, eventId) {
-    return EventChatController(
-      eventId: eventId,
-      service: ref.watch(eventChatServiceProvider),
-    );
-  },
-);
+    StateNotifierProvider.family<EventChatController, EventChatState, String>((
+      ref,
+      eventId,
+    ) {
+      return EventChatController(
+        eventId: eventId,
+        service: ref.watch(eventChatServiceProvider),
+      );
+    });
 
 class EventChatController extends StateNotifier<EventChatState> {
   EventChatController({
     required this.eventId,
     required EventChatService service,
-  })  : _service = service,
-        super(const EventChatState(loading: true));
+  }) : _service = service,
+       super(const EventChatState(loading: true));
 
   final String eventId;
   final EventChatService _service;
@@ -70,7 +72,8 @@ class EventChatController extends StateNotifier<EventChatState> {
           loading: false,
           messages: const [],
           access: const EventChatAccess.denied(
-            reason: 'Only the host and approved participants can access this chat.',
+            reason:
+                'Sadece ev sahibi ve onaylı katılımcılar sohbete erişebilir.',
           ),
         );
         return;
@@ -84,7 +87,10 @@ class EventChatController extends StateNotifier<EventChatState> {
         access: EventChatAccess(canRead: true, canWrite: canWrite),
       );
     } catch (error) {
-      state = state.copyWith(loading: false, message: '$error');
+      state = state.copyWith(
+        loading: false,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 
@@ -102,7 +108,10 @@ class EventChatController extends StateNotifier<EventChatState> {
       state = state.copyWith(sending: false, messages: messages);
       return true;
     } catch (error) {
-      state = state.copyWith(sending: false, message: '$error');
+      state = state.copyWith(
+        sending: false,
+        message: friendlyErrorMessage(error),
+      );
       return false;
     }
   }

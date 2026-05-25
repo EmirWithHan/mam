@@ -190,7 +190,7 @@ class _LinkedEventPickerSheetState
                   child: eventsValue.when(
                     loading: () => const AppLoader(),
                     error: (error, _) => ErrorView(
-                      message: '$error',
+                      message: 'Etkinlikler yüklenemedi.',
                       onRetry: () => ref.invalidate(linkedEventsProvider),
                     ),
                     data: (events) {
@@ -269,10 +269,7 @@ class _ClearEventTile extends StatelessWidget {
 }
 
 class _LinkableEventTile extends StatelessWidget {
-  const _LinkableEventTile({
-    required this.event,
-    required this.isSelected,
-  });
+  const _LinkableEventTile({required this.event, required this.isSelected});
 
   final LinkableEvent event;
   final bool isSelected;
@@ -288,11 +285,7 @@ class _LinkableEventTile extends StatelessWidget {
         color: isSelected ? Colors.white : AppColors.primary,
         backgroundColor: isSelected ? AppColors.primary : AppColors.primarySoft,
       ),
-      title: Text(
-        event.title,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
+      title: Text(event.title, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(
         '${event.sportType} • ${event.locationLabel}\n${event.displayDate}',
         maxLines: 2,

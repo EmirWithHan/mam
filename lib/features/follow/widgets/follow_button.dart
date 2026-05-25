@@ -45,18 +45,21 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
     widget.onChanged?.call();
 
     if (!mounted) return;
-    final message =
-        ref.read(followControllerProvider(widget.targetUserId)).message;
+    final message = ref
+        .read(followControllerProvider(widget.targetUserId))
+        .message;
     if (message != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final followState = ref.watch(followControllerProvider(widget.targetUserId));
+    final followState = ref.watch(
+      followControllerProvider(widget.targetUserId),
+    );
     final stats = followState.stats;
 
     if (stats == null) {
@@ -66,7 +69,7 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
               child: CircularProgressIndicator(strokeWidth: 2),
             )
           : AppButton(
-              label: 'Loading',
+              label: 'Yükleniyor',
               isLoading: true,
               onPressed: null,
               fullWidth: widget.fullWidth,
@@ -75,15 +78,15 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
 
     if (stats.isMe) {
       return widget.compact
-          ? const Text('You', style: AppTextStyles.caption)
+          ? const Text('Sen', style: AppTextStyles.caption)
           : AppButton(
-              label: 'You',
+              label: 'Sen',
               onPressed: null,
               fullWidth: widget.fullWidth,
             );
     }
 
-    final label = stats.isFollowedByMe ? 'Following' : 'Follow';
+    final label = stats.isFollowedByMe ? 'Takip Ediliyor' : 'Takip Et';
     final followerCount = stats.followerCount;
 
     if (widget.compact) {
@@ -99,8 +102,9 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
                 backgroundColor: stats.isFollowedByMe
                     ? AppColors.primarySoft
                     : AppColors.primary,
-                foregroundColor:
-                    stats.isFollowedByMe ? AppColors.primary : Colors.white,
+                foregroundColor: stats.isFollowedByMe
+                    ? AppColors.primary
+                    : Colors.white,
                 shape: const StadiumBorder(),
                 padding: const EdgeInsets.symmetric(
                   horizontal: AppSpacing.md,
@@ -116,7 +120,7 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              '$followerCount followers',
+              '$followerCount takipçi',
               style: AppTextStyles.caption,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -143,7 +147,7 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
         ),
         const SizedBox(height: AppSpacing.xs),
         Text(
-          '$followerCount followers',
+          '$followerCount takipçi',
           style: AppTextStyles.caption,
           textAlign: TextAlign.center,
         ),

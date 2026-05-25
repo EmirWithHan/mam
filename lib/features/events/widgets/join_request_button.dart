@@ -35,7 +35,7 @@ class JoinRequestButton extends StatelessWidget {
   Widget build(BuildContext context) {
     if (profileState.isLoading) {
       return AppButton(
-        label: 'Checking profile',
+        label: 'Profil kontrol ediliyor',
         isLoading: isLoading,
         onPressed: null,
       );
@@ -56,13 +56,14 @@ class JoinRequestButton extends StatelessWidget {
         children: [
           const _StatusPanel(
             icon: Icons.assignment_ind_outlined,
-            title: 'Complete your player card',
-            message: 'Finish your profile before requesting to join events.',
+            title: 'Profilini tamamla',
+            message:
+                'Etkinliğe katılım isteği göndermeden önce profilini tamamlamalısın.',
             color: AppColors.primary,
           ),
           const SizedBox(height: AppSpacing.sm),
           AppButton(
-            label: 'Complete profile',
+            label: 'Profili tamamla',
             onPressed: () => context.pushNamed(RouteNames.profileComplete),
           ),
         ],
@@ -76,14 +77,14 @@ class JoinRequestButton extends StatelessWidget {
         children: [
           const _StatusPanel(
             icon: Icons.hourglass_top,
-            title: 'Request pending',
-            message: 'The host will review your request.',
+            title: 'İstek beklemede',
+            message: 'Ev sahibi katılım isteğini inceleyecek.',
             color: AppColors.warning,
           ),
           const SizedBox(height: AppSpacing.sm),
           TextButton(
             onPressed: isLoading ? null : onCancel,
-            child: const Text('Cancel request'),
+            child: const Text('İsteği iptal et'),
           ),
         ],
       );
@@ -92,8 +93,9 @@ class JoinRequestButton extends StatelessWidget {
     if (currentRequest?.isApproved == true) {
       return const _StatusPanel(
         icon: Icons.check_circle_outline,
-        title: 'Approved',
-        message: 'You are in. Chat and call actions are available when allowed.',
+        title: 'Onaylandı',
+        message:
+            'Etkinliğe katıldın. İzin verilen durumlarda chat ve çağrı erişimin açık.',
         color: AppColors.success,
       );
     }
@@ -101,8 +103,8 @@ class JoinRequestButton extends StatelessWidget {
     if (currentRequest?.isRejected == true) {
       return const _StatusPanel(
         icon: Icons.cancel_outlined,
-        title: 'Request rejected',
-        message: 'This request was not approved by the host.',
+        title: 'İstek reddedildi',
+        message: 'Bu katılım isteği ev sahibi tarafından onaylanmadı.',
         color: AppColors.error,
       );
     }
@@ -118,9 +120,9 @@ class JoinRequestButton extends StatelessWidget {
 
     if (currentRequest == null || currentRequest.isCancelled) {
       return AppButton(
-        label: 'Request to join',
+        label: 'Katılım isteği gönder',
         isLoading: isLoading,
-        onPressed: onRequest,
+        onPressed: isLoading ? null : onRequest,
       );
     }
 

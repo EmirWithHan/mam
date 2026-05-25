@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/error_messages.dart';
 import 'follow_models.dart';
 import 'follow_service.dart';
 
@@ -59,7 +60,10 @@ class FollowController extends StateNotifier<FollowState> {
       final stats = await _service.fetchFollowStats(targetUserId);
       state = state.copyWith(loading: false, stats: stats);
     } catch (error) {
-      state = state.copyWith(loading: false, message: '$error');
+      state = state.copyWith(
+        loading: false,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 
@@ -71,7 +75,10 @@ class FollowController extends StateNotifier<FollowState> {
       final stats = await _service.fetchFollowStats(targetUserId);
       state = state.copyWith(loading: false, stats: stats);
     } catch (error) {
-      state = state.copyWith(loading: false, message: '$error');
+      state = state.copyWith(
+        loading: false,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 
@@ -83,7 +90,10 @@ class FollowController extends StateNotifier<FollowState> {
       final stats = await _service.fetchFollowStats(targetUserId);
       state = state.copyWith(loading: false, stats: stats);
     } catch (error) {
-      state = state.copyWith(loading: false, message: '$error');
+      state = state.copyWith(
+        loading: false,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 
@@ -99,7 +109,10 @@ class FollowController extends StateNotifier<FollowState> {
       final stats = await _service.fetchFollowStats(targetUserId);
       state = state.copyWith(loading: false, stats: stats);
     } catch (error) {
-      state = state.copyWith(loading: false, message: '$error');
+      state = state.copyWith(
+        loading: false,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 }

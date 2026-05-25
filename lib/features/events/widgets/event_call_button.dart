@@ -39,7 +39,9 @@ class EventCallButton extends ConsumerWidget {
               if (!success) {
                 final message = ref.read(eventCallControllerProvider).message;
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(message ?? 'Could not start call.')),
+                  SnackBar(
+                    content: Text(message ?? 'Çağrı şu anda başlatılamadı.'),
+                  ),
                 );
               }
             },

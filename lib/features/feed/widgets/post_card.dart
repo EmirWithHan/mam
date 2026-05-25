@@ -123,7 +123,7 @@ class PostCard extends ConsumerWidget {
                           ),
                           const SizedBox(width: AppSpacing.xs),
                           Text(
-                            'Linked event',
+                            'Bağlı etkinlik',
                             style: AppTextStyles.label.copyWith(
                               color: AppColors.primary,
                             ),
@@ -223,9 +223,7 @@ class _PostOverflowButton extends ConsumerWidget {
       context: context,
       backgroundColor: AppColors.background,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadius.xl),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
       builder: (sheetContext) {
         return SafeArea(
@@ -251,7 +249,7 @@ class _PostOverflowButton extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                Text('Post actions', style: AppTextStyles.title),
+                Text('Paylaşım işlemleri', style: AppTextStyles.title),
                 const SizedBox(height: AppSpacing.sm),
                 DecoratedBox(
                   decoration: BoxDecoration(
@@ -283,10 +281,7 @@ class _PostOverflowButton extends ConsumerWidget {
                               menuItem: true,
                             ),
                             const Divider(height: 1, color: AppColors.border),
-                            BlockButton(
-                              targetUserId: userId,
-                              menuItem: true,
-                            ),
+                            BlockButton(targetUserId: userId, menuItem: true),
                           ],
                   ),
                 ),
@@ -303,17 +298,17 @@ class _PostOverflowButton extends ConsumerWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Delete post?'),
-          content: const Text('This post will be removed permanently.'),
+          title: const Text('Paylaşım silinsin mi?'),
+          content: const Text('Bu paylaşım kalıcı olarak kaldırılacak.'),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: const Text('Vazgeç'),
             ),
             TextButton(
               style: TextButton.styleFrom(foregroundColor: AppColors.error),
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Delete'),
+              child: const Text('Sil'),
             ),
           ],
         );
@@ -322,16 +317,17 @@ class _PostOverflowButton extends ConsumerWidget {
 
     if (confirmed != true || !context.mounted) return;
 
-    final deleted = await ref.read(feedControllerProvider.notifier).deletePost(
-          postId,
-        );
+    final deleted = await ref
+        .read(feedControllerProvider.notifier)
+        .deletePost(postId);
     if (!context.mounted) return;
 
-    final message =
-        deleted ? 'Post deleted.' : ref.read(feedControllerProvider).message;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message ?? 'Could not delete post.')),
-    );
+    final message = deleted
+        ? 'Paylaşım silindi.'
+        : ref.read(feedControllerProvider).message;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message ?? 'Paylaşım silinemedi.')));
   }
 }
 
@@ -345,7 +341,7 @@ class _PostDeleteMenuItem extends StatelessWidget {
     return ListTile(
       leading: const Icon(Icons.delete_outline, color: AppColors.error),
       title: Text(
-        'Delete post',
+        'Paylaşımı sil',
         style: AppTextStyles.bodyStrong.copyWith(color: AppColors.error),
       ),
       onTap: onTap,

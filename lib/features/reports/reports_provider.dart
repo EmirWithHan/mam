@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/error_messages.dart';
 import 'reports_models.dart';
 import 'reports_service.dart';
 
@@ -57,7 +58,7 @@ class ReportsController extends StateNotifier<ReportsState> {
       state = state.copyWith(
         loading: false,
         success: false,
-        message: '$error',
+        message: friendlyErrorMessage(error),
       );
       return false;
     }

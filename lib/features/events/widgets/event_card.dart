@@ -11,10 +11,7 @@ import '../../profile/widgets/public_profile_preview_tile.dart';
 import '../events_models.dart';
 
 class EventCard extends StatelessWidget {
-  const EventCard({
-    super.key,
-    required this.event,
-  });
+  const EventCard({super.key, required this.event});
 
   final Event event;
 
@@ -70,7 +67,7 @@ class EventCard extends StatelessWidget {
                             ),
                             if (event.isSponsored)
                               _Pill(
-                                label: 'Sponsored',
+                                label: 'Sponsorlu',
                                 color: AppColors.primarySoft,
                                 textColor: AppColors.primary,
                               ),
@@ -96,7 +93,7 @@ class EventCard extends StatelessWidget {
                         const SizedBox(height: AppSpacing.md),
                         PublicProfilePreviewTile(
                           userId: event.hostId,
-                          subtitle: 'Host',
+                          subtitle: 'Ev sahibi',
                           compact: true,
                           enableNavigation: false,
                         ),
@@ -115,7 +112,7 @@ class EventCard extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             Text(
-                              'View details',
+                              'Detayları gör',
                               style: AppTextStyles.label.copyWith(
                                 color: AppColors.primary,
                               ),

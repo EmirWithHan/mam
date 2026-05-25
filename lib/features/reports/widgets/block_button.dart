@@ -43,15 +43,21 @@ class _BlockButtonState extends ConsumerState<BlockButton> {
     if (!mounted) return;
     final state = ref.read(blockControllerProvider(widget.targetUserId));
     if (!success && state.message != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(state.message!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(state.message!)));
       return;
     }
 
     final isBlocked = state.userBlockState?.isBlockedByMe ?? false;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(isBlocked ? 'User blocked.' : 'User unblocked.')),
+      SnackBar(
+        content: Text(
+          isBlocked
+              ? 'Kullanıcı engellendi.'
+              : 'Kullanıcının engeli kaldırıldı.',
+        ),
+      ),
     );
   }
 
@@ -69,7 +75,9 @@ class _BlockButtonState extends ConsumerState<BlockButton> {
       return const SizedBox.shrink();
     }
 
-    final label = blockState?.isBlockedByMe == true ? 'Unblock' : 'Block';
+    final label = blockState?.isBlockedByMe == true
+        ? 'Engeli kaldır'
+        : 'Engelle';
 
     if (widget.menuItem) {
       return ListTile(

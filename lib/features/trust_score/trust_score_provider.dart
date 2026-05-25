@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/error_messages.dart';
 import 'trust_score_models.dart';
 import 'trust_score_service.dart';
 
@@ -34,8 +35,8 @@ final trustScoreServiceProvider = Provider<TrustScoreService>((ref) {
 
 final trustScoreControllerProvider =
     StateNotifierProvider<TrustScoreController, TrustScoreState>((ref) {
-  return TrustScoreController(ref.watch(trustScoreServiceProvider));
-});
+      return TrustScoreController(ref.watch(trustScoreServiceProvider));
+    });
 
 class TrustScoreController extends StateNotifier<TrustScoreState> {
   TrustScoreController(this._service) : super(const TrustScoreState());
@@ -49,7 +50,10 @@ class TrustScoreController extends StateNotifier<TrustScoreState> {
       final logs = await _service.fetchMyTrustScoreLogs();
       state = TrustScoreState(logs: logs);
     } catch (error) {
-      state = state.copyWith(loading: false, message: '$error');
+      state = state.copyWith(
+        loading: false,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 

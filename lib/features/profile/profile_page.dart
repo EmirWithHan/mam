@@ -65,10 +65,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 }
 
-enum _ProfileActivityTab {
-  gallery,
-  events,
-}
+enum _ProfileActivityTab { gallery, events }
 
 class _ProfileBody extends ConsumerWidget {
   const _ProfileBody({
@@ -88,9 +85,7 @@ class _ProfileBody extends ConsumerWidget {
     }
 
     if (profileState.status == ProfileStatus.error) {
-      return ErrorView(
-        message: profileState.message ?? 'Could not load profile.',
-      );
+      return ErrorView(message: profileState.message ?? 'Profil yüklenemedi.');
     }
 
     final profile = profileState.profile;
@@ -116,9 +111,8 @@ class _ProfileBody extends ConsumerWidget {
           _ProfileActivityContent(
             selectedTab: selectedTab,
             activityState: activityState,
-            onRetry: () => ref
-                .read(profileActivityControllerProvider.notifier)
-                .refresh(),
+            onRetry: () =>
+                ref.read(profileActivityControllerProvider.notifier).refresh(),
           ),
         ],
       ),
@@ -267,10 +261,7 @@ class ProfileIncompleteGuidanceUnused extends StatelessWidget {
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
-                  child: Text(
-                    'Profilini tamamla',
-                    style: AppTextStyles.title,
-                  ),
+                  child: Text('Profilini tamamla', style: AppTextStyles.title),
                 ),
               ],
             ),
@@ -411,10 +402,10 @@ String _initials(Profile profile) {
   final firstName = profile.firstName?.trim();
   final lastName = profile.lastName?.trim();
   final username = profile.username?.trim();
-  final parts = [firstName, lastName]
-      .where((part) => part != null && part.isNotEmpty)
-      .cast<String>()
-      .toList();
+  final parts = [
+    firstName,
+    lastName,
+  ].where((part) => part != null && part.isNotEmpty).cast<String>().toList();
 
   if (parts.isNotEmpty) {
     return parts
@@ -433,7 +424,10 @@ String _initials(Profile profile) {
 String _displayHandle(Profile profile) {
   final username = profile.username?.trim();
   final tag = profile.tag?.trim();
-  if (username != null && username.isNotEmpty && tag != null && tag.isNotEmpty) {
+  if (username != null &&
+      username.isNotEmpty &&
+      tag != null &&
+      tag.isNotEmpty) {
     return '$username#$tag';
   }
   if (username != null && username.isNotEmpty) return username;

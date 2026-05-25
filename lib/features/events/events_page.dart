@@ -181,7 +181,7 @@ class _EventsBody extends StatelessWidget {
 
     if (eventsState.status == EventsStatus.error) {
       return ErrorView(
-        message: eventsState.message ?? 'Could not load events.',
+        message: eventsState.message ?? 'Etkinlikler yüklenemedi.',
       );
     }
 
@@ -259,7 +259,8 @@ class _EventsBody extends StatelessWidget {
       case EventDateFilter.thisWeek:
         final today = DateTime(now.year, now.month, now.day);
         final end = today.add(const Duration(days: 7));
-        return !event.eventDate.isBefore(today) && event.eventDate.isBefore(end);
+        return !event.eventDate.isBefore(today) &&
+            event.eventDate.isBefore(end);
       case EventDateFilter.upcoming:
         return event.eventDate.isAfter(now);
     }

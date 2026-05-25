@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/error_messages.dart';
 import 'event_call_service.dart';
 
 class EventCallState {
@@ -27,8 +28,9 @@ class EventCallState {
       loading: loading ?? this.loading,
       message: clearMessage ? null : message ?? this.message,
       lastCalledUserId: lastCalledUserId ?? this.lastCalledUserId,
-      activeTargetUserId:
-          clearActiveTarget ? null : activeTargetUserId ?? this.activeTargetUserId,
+      activeTargetUserId: clearActiveTarget
+          ? null
+          : activeTargetUserId ?? this.activeTargetUserId,
     );
   }
 }
@@ -39,8 +41,8 @@ final eventCallServiceProvider = Provider<EventCallService>((ref) {
 
 final eventCallControllerProvider =
     StateNotifierProvider<EventCallController, EventCallState>((ref) {
-  return EventCallController(ref.watch(eventCallServiceProvider));
-});
+      return EventCallController(ref.watch(eventCallServiceProvider));
+    });
 
 class EventCallController extends StateNotifier<EventCallState> {
   EventCallController(this._service) : super(const EventCallState());
@@ -63,7 +65,7 @@ class EventCallController extends StateNotifier<EventCallState> {
         targetUserId: targetUserId,
       );
       if (!contact.hasPhone) {
-        throw StateError('This member does not have a phone number.');
+        throw StateError('Bu kullanıcının telefon numarası yok.');
       }
 
       await _service.callPhoneNumber(contact.phone!);
@@ -76,7 +78,7 @@ class EventCallController extends StateNotifier<EventCallState> {
     } catch (error) {
       state = state.copyWith(
         loading: false,
-        message: '$error',
+        message: friendlyErrorMessage(error),
         clearActiveTarget: true,
       );
       return false;

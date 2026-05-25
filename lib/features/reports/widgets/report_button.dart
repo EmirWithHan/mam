@@ -78,13 +78,13 @@ class ReportButton extends ConsumerWidget {
   String _labelForTarget() {
     switch (targetType) {
       case ReportTargetType.user:
-        return 'Report user';
+        return 'Kullanıcıyı şikayet et';
       case ReportTargetType.event:
-        return 'Report event';
+        return 'Etkinliği şikayet et';
       case ReportTargetType.post:
-        return 'Report post';
+        return 'Paylaşımı şikayet et';
       case ReportTargetType.comment:
-        return 'Report comment';
+        return 'Yorumu şikayet et';
     }
   }
 
@@ -97,8 +97,8 @@ class ReportButton extends ConsumerWidget {
     );
 
     if (!context.mounted || reported != true) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Report submitted.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Şikayet gönderildi.')));
   }
 }

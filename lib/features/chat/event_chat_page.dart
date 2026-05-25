@@ -34,7 +34,9 @@ class _EventChatPageState extends ConsumerState<EventChatPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
-      ref.read(eventChatControllerProvider(widget.eventId).notifier).loadMessages();
+      ref
+          .read(eventChatControllerProvider(widget.eventId).notifier)
+          .loadMessages();
     });
   }
 
@@ -79,8 +81,10 @@ class _EventChatPageState extends ConsumerState<EventChatPage> {
             onPressed: chatState.loading
                 ? null
                 : () => ref
-                    .read(eventChatControllerProvider(widget.eventId).notifier)
-                    .refreshMessages(),
+                      .read(
+                        eventChatControllerProvider(widget.eventId).notifier,
+                      )
+                      .refreshMessages(),
             icon: const Icon(Icons.refresh),
           ),
         ],
@@ -110,7 +114,7 @@ class _EventChatPageState extends ConsumerState<EventChatPage> {
                 ),
                 child: _ChatNotice(
                   icon: Icons.lock_clock_outlined,
-                  message: 'This chat is archived.',
+                  message: 'Bu sohbet arşivlendi.',
                   color: AppColors.warning,
                   background: AppColors.tertiarySoft,
                 ),
@@ -165,8 +169,7 @@ class _ChatBody extends StatelessWidget {
         child: Center(
           child: _ChatNotice(
             icon: Icons.logout_rounded,
-            message:
-                'Bu etkinlikten çıktığın için sohbet erişimin kapatıldı.',
+            message: 'Bu etkinlikten çıktığın için sohbet erişimin kapatıldı.',
             color: AppColors.textMuted,
             background: AppColors.border,
           ),
@@ -180,8 +183,9 @@ class _ChatBody extends StatelessWidget {
         child: Center(
           child: _ChatNotice(
             icon: Icons.lock_outline,
-            message: state.access.reason ??
-                'Only the host and approved participants can access this chat.',
+            message:
+                state.access.reason ??
+                'Sadece ev sahibi ve onaylı katılımcılar bu sohbete erişebilir.',
             color: AppColors.primary,
             background: AppColors.primarySoft,
           ),
@@ -201,7 +205,8 @@ class _ChatBody extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: state.messages.length,
-      separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
+      separatorBuilder: (context, index) =>
+          const SizedBox(height: AppSpacing.sm),
       itemBuilder: (context, index) {
         final message = state.messages[index];
         return MessageBubble(
@@ -300,7 +305,10 @@ class _ChatNotice extends StatelessWidget {
             Container(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(color: background, shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: background,
+                shape: BoxShape.circle,
+              ),
               child: Icon(icon, color: color, size: 20),
             ),
             const SizedBox(width: AppSpacing.md),

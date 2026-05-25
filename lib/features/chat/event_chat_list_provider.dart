@@ -1,14 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/error_messages.dart';
 import 'event_chat_list_models.dart';
 import 'event_chat_list_service.dart';
 
-enum EventChatListStatus {
-  initial,
-  loading,
-  success,
-  error,
-}
+enum EventChatListStatus { initial, loading, success, error }
 
 class EventChatListState {
   const EventChatListState({
@@ -18,9 +14,9 @@ class EventChatListState {
   });
 
   const EventChatListState.initial()
-      : status = EventChatListStatus.initial,
-        groups = const [],
-        message = null;
+    : status = EventChatListStatus.initial,
+      groups = const [],
+      message = null;
 
   final EventChatListStatus status;
   final List<EventChatGroup> groups;
@@ -47,12 +43,12 @@ final eventChatListServiceProvider = Provider<EventChatListService>((ref) {
 
 final eventChatListControllerProvider =
     StateNotifierProvider<EventChatListController, EventChatListState>((ref) {
-  return EventChatListController(ref.watch(eventChatListServiceProvider));
-});
+      return EventChatListController(ref.watch(eventChatListServiceProvider));
+    });
 
 class EventChatListController extends StateNotifier<EventChatListState> {
   EventChatListController(this._service)
-      : super(const EventChatListState.initial());
+    : super(const EventChatListState.initial());
 
   final EventChatListService _service;
 
@@ -68,7 +64,7 @@ class EventChatListController extends StateNotifier<EventChatListState> {
     } catch (error) {
       state = EventChatListState(
         status: EventChatListStatus.error,
-        message: '$error',
+        message: friendlyErrorMessage(error),
       );
     }
   }

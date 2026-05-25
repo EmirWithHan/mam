@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/error_messages.dart';
 import 'profile_activity_models.dart';
 import 'profile_activity_service.dart';
 
@@ -75,7 +76,7 @@ class ProfileActivityController extends StateNotifier<ProfileActivityState> {
     } catch (error) {
       state = state.copyWith(
         status: ProfileActivityStatus.error,
-        message: '$error',
+        message: friendlyErrorMessage(error),
       );
     }
   }

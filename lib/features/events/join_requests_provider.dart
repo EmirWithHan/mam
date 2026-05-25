@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/error_messages.dart';
 import 'join_requests_models.dart';
 import 'join_requests_service.dart';
 
@@ -37,20 +38,24 @@ final joinRequestsServiceProvider = Provider<JoinRequestsService>((ref) {
   return const JoinRequestsService();
 });
 
-final joinRequestControllerProvider = StateNotifierProvider.family<
-    JoinRequestController, JoinRequestsState, String>((ref, eventId) {
-  return JoinRequestController(
-    eventId: eventId,
-    service: ref.watch(joinRequestsServiceProvider),
-  );
-});
+final joinRequestControllerProvider =
+    StateNotifierProvider.family<
+      JoinRequestController,
+      JoinRequestsState,
+      String
+    >((ref, eventId) {
+      return JoinRequestController(
+        eventId: eventId,
+        service: ref.watch(joinRequestsServiceProvider),
+      );
+    });
 
 class JoinRequestController extends StateNotifier<JoinRequestsState> {
   JoinRequestController({
     required this.eventId,
     required JoinRequestsService service,
-  })  : _service = service,
-        super(const JoinRequestsState());
+  }) : _service = service,
+       super(const JoinRequestsState());
 
   final String eventId;
   final JoinRequestsService _service;
@@ -66,7 +71,10 @@ class JoinRequestController extends StateNotifier<JoinRequestsState> {
         clearMyRequest: request == null,
       );
     } catch (error) {
-      state = state.copyWith(loading: false, message: '$error');
+      state = state.copyWith(
+        loading: false,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 
@@ -77,7 +85,10 @@ class JoinRequestController extends StateNotifier<JoinRequestsState> {
       final request = await _service.requestToJoinEvent(eventId);
       state = state.copyWith(loading: false, myRequest: request);
     } catch (error) {
-      state = state.copyWith(loading: false, message: '$error');
+      state = state.copyWith(
+        loading: false,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 
@@ -93,7 +104,10 @@ class JoinRequestController extends StateNotifier<JoinRequestsState> {
         clearMyRequest: request == null,
       );
     } catch (error) {
-      state = state.copyWith(loading: false, message: '$error');
+      state = state.copyWith(
+        loading: false,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 
@@ -104,7 +118,10 @@ class JoinRequestController extends StateNotifier<JoinRequestsState> {
       final requests = await _service.fetchJoinRequestsForEvent(eventId);
       state = state.copyWith(loading: false, hostRequests: requests);
     } catch (error) {
-      state = state.copyWith(loading: false, message: '$error');
+      state = state.copyWith(
+        loading: false,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 
@@ -116,7 +133,10 @@ class JoinRequestController extends StateNotifier<JoinRequestsState> {
       final requests = await _service.fetchJoinRequestsForEvent(eventId);
       state = state.copyWith(loading: false, hostRequests: requests);
     } catch (error) {
-      state = state.copyWith(loading: false, message: '$error');
+      state = state.copyWith(
+        loading: false,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 
@@ -128,7 +148,10 @@ class JoinRequestController extends StateNotifier<JoinRequestsState> {
       final requests = await _service.fetchJoinRequestsForEvent(eventId);
       state = state.copyWith(loading: false, hostRequests: requests);
     } catch (error) {
-      state = state.copyWith(loading: false, message: '$error');
+      state = state.copyWith(
+        loading: false,
+        message: friendlyErrorMessage(error),
+      );
     }
   }
 }

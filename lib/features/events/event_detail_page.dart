@@ -274,7 +274,7 @@ class _EventDetailBody extends ConsumerWidget {
                 final message = ref.read(eventsControllerProvider).message;
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(message ?? 'Could not request to join.'),
+                    content: Text(message ?? 'Katılım isteği gönderilemedi.'),
                   ),
                 );
                 return;
@@ -489,7 +489,7 @@ class _EventHeroCard extends StatelessWidget {
                 ),
                 if (event.isSponsored)
                   _MiniChip(
-                    label: 'Sponsored',
+                    label: 'Sponsorlu',
                     color: AppColors.tertiarySoft,
                     textColor: AppColors.warning,
                   ),
@@ -536,7 +536,7 @@ class _EventOverflowButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return IconButton(
       visualDensity: VisualDensity.compact,
-      tooltip: 'Event actions',
+      tooltip: 'Etkinlik işlemleri',
       icon: const Icon(Icons.more_horiz, color: AppColors.textMuted),
       onPressed: () => _showEventActions(context, ref),
     );
@@ -575,7 +575,7 @@ class _EventOverflowButton extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                Text('Event actions', style: AppTextStyles.title),
+                Text('Etkinlik işlemleri', style: AppTextStyles.title),
                 const SizedBox(height: AppSpacing.sm),
                 DecoratedBox(
                   decoration: BoxDecoration(
@@ -627,19 +627,19 @@ class _EventOverflowButton extends ConsumerWidget {
       context: context,
       builder: (dialogContext) {
         return AlertDialog(
-          title: const Text('Delete event?'),
+          title: const Text('Etkinlik silinsin mi?'),
           content: const Text(
-            'This event will be removed. Event chat and join requests will also be removed.',
+            'Bu etkinlik kaldırılacak. Etkinlik sohbeti ve katılım istekleri de kaldırılır.',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: const Text('Vazgeç'),
             ),
             TextButton(
               style: TextButton.styleFrom(foregroundColor: AppColors.error),
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Delete'),
+              child: const Text('Sil'),
             ),
           ],
         );
@@ -657,14 +657,16 @@ class _EventOverflowButton extends ConsumerWidget {
     if (deleted) {
       final messenger = ScaffoldMessenger.of(context);
       context.goNamed(RouteNames.events);
-      messenger.showSnackBar(const SnackBar(content: Text('Event deleted.')));
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Etkinlik silindi.')),
+      );
       return;
     }
 
     final message = ref.read(eventsControllerProvider).message;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message ?? 'Could not delete event.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message ?? 'Etkinlik silinemedi.')));
   }
 }
 
@@ -678,7 +680,7 @@ class _EventDeleteMenuItem extends StatelessWidget {
     return ListTile(
       leading: const Icon(Icons.delete_outline, color: AppColors.error),
       title: Text(
-        'Delete event',
+        'Etkinliği sil',
         style: AppTextStyles.bodyStrong.copyWith(color: AppColors.error),
       ),
       onTap: onTap,
@@ -1063,9 +1065,9 @@ class _LocationCard extends StatelessWidget {
       );
     } catch (error) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('$error')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Harita açılırken bir sorun oluştu.')),
+      );
     }
   }
 }

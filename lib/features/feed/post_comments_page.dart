@@ -43,16 +43,15 @@ class _PostCommentsPageState extends ConsumerState<PostCommentsPage> {
   Future<void> _sendComment() async {
     final text = _commentController.text.trim();
     if (text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Write a comment first.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Önce bir yorum yaz.')));
       return;
     }
 
-    final comment = await ref.read(feedControllerProvider.notifier).addComment(
-          postId: widget.postId,
-          comment: text,
-        );
+    final comment = await ref
+        .read(feedControllerProvider.notifier)
+        .addComment(postId: widget.postId, comment: text);
 
     if (comment != null) {
       _commentController.clear();
@@ -68,11 +67,11 @@ class _PostCommentsPageState extends ConsumerState<PostCommentsPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: 'Geri',
           onPressed: () => _goBack(context),
           icon: const Icon(Icons.arrow_back),
         ),
-        title: const Text('Comments'),
+        title: const Text('Yorumlar'),
       ),
       body: SafeArea(
         child: Column(
@@ -148,7 +147,8 @@ class _CommentsBody extends StatelessWidget {
     return ListView.separated(
       padding: const EdgeInsets.all(AppSpacing.lg),
       itemCount: comments.length,
-      separatorBuilder: (context, index) => const SizedBox(height: AppSpacing.sm),
+      separatorBuilder: (context, index) =>
+          const SizedBox(height: AppSpacing.sm),
       itemBuilder: (context, index) {
         return CommentTile(
           comment: comments[index],
@@ -179,8 +179,8 @@ class _CommentComposer extends StatelessWidget {
         children: [
           Expanded(
             child: AppTextField(
-              label: 'Comment',
-              hintText: 'Add a quick thought',
+              label: 'Yorum',
+              hintText: 'Kısa bir yorum yaz',
               controller: controller,
               prefixIcon: const Icon(Icons.mode_comment_outlined),
               maxLines: 4,
@@ -192,11 +192,11 @@ class _CommentComposer extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.sm),
           SizedBox(
-            width: 96,
+            width: 104,
             child: AppButton(
-              label: 'Send',
+              label: 'Gönder',
               isLoading: isLoading,
-              onPressed: onSend,
+              onPressed: isLoading ? null : onSend,
             ),
           ),
         ],
