@@ -25,6 +25,7 @@ Match A Man is not being claimed as store-ready yet. This checklist is for later
 - [ ] Report behavior documented.
 - [ ] Block behavior documented.
 - [ ] Account privacy behavior documented.
+- [ ] Follow request behavior documented.
 - [ ] Gallery archive/delete/comment visibility behavior documented.
 - [ ] Participant visibility and chat/call access gating explained.
 - [ ] Age rating considerations reviewed.
@@ -59,5 +60,6 @@ Match A Man is not being claimed as store-ready yet. This checklist is for later
 - [ ] Closed beta issues triaged.
 - [ ] Known limitations reviewed with stakeholders.
 - [ ] Privacy/RLS behavior verified in production-like Supabase project.
+- [ ] Follow request and notification behavior verified in production-like Supabase project.
 - [ ] Crash/error monitoring plan approved.
 - [ ] Rollback plan documented.

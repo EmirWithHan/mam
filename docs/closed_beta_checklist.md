@@ -18,12 +18,25 @@
 - [ ] Private Geçmiş Events is locked for non-followers.
 - [ ] Followers and owners can see allowed private content.
 
+## Follow Requests
+
+- [ ] Public account follow works immediately.
+- [ ] Public account follow creates a "Yeni takipçi" notification.
+- [ ] Private account follow creates a pending request, not an immediate follow.
+- [ ] Private profile button changes to "İstek Gönderildi".
+- [ ] Pending request does not unlock gallery or Geçmiş Events.
+- [ ] Private user receives a follow request notification.
+- [ ] "Onayla" creates the follow relationship.
+- [ ] "Reddet" does not create the follow relationship.
+- [ ] Approved requester can see private gallery and Geçmiş Events after refresh.
+
 ## Followers/Following
 
 - [ ] Own followers list opens.
 - [ ] Own following list opens.
 - [ ] Public profile followers list opens.
 - [ ] Public profile following list opens.
+- [ ] Private profile followers/following lists follow intended basic-profile visibility.
 - [ ] Empty followers state says "Henüz takipçi yok."
 - [ ] Empty following state says "Henüz kimse takip edilmiyor."
 - [ ] Row tap opens public profile safely.
@@ -68,6 +81,7 @@
 - [ ] Likes update locally.
 - [ ] Comments handle long text.
 - [ ] Follow/unfollow works from supported surfaces.
+- [ ] Private follow request state is clear from supported follow buttons.
 - [ ] Own post delete works.
 - [ ] Report/block controls are reachable and safe.
 
@@ -77,6 +91,8 @@
 - [ ] Unread/read visual states are clear.
 - [ ] Tapping event notification opens event detail.
 - [ ] Tapping profile/follow notification opens profile when available.
+- [ ] Follow request notification shows "Onayla" and "Reddet".
+- [ ] Approve/reject actions disable while loading.
 - [ ] Mark one read works.
 - [ ] Mark all read works and disables during loading.
 - [ ] Empty state says "Henüz bildirimin yok."
@@ -100,7 +116,7 @@
 ## Security/RLS
 
 - [ ] Supabase RLS policies are reviewed before beta.
-- [ ] Safe RPCs are used for public profile, gallery, event history, followers, and following.
+- [ ] Safe RPCs are used for public profile, gallery, event history, followers, following, and follow requests.
 - [ ] No broad direct profile SELECT was added for public data.
 - [ ] Service role keys are not present in the client.
 - [ ] `.env` files are not committed.
@@ -117,10 +133,11 @@
 
 - [ ] Host user prepared.
 - [ ] Approved participant prepared.
-- [ ] Pending requester prepared.
-- [ ] Rejected requester prepared.
+- [ ] Pending event requester prepared.
+- [ ] Rejected event requester prepared.
 - [ ] Social/feed-heavy user prepared.
 - [ ] Private profile user prepared.
+- [ ] Follow request requester prepared.
 - [ ] New empty user prepared.
 - [ ] Passwords are stored outside the repository.
 
@@ -138,4 +155,4 @@
 - [ ] Keep a known-good Supabase migration state documented.
 - [ ] Prepare a short "demo reset" procedure for test accounts.
 - [ ] Assign one owner for beta issue triage.
-- [ ] Pause invites if auth, event joins, profile privacy, or notifications regress.
+- [ ] Pause invites if auth, event joins, follow requests, profile privacy, or notifications regress.

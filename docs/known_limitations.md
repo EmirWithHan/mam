@@ -23,6 +23,7 @@ This document lists intentional MVP limitations for demo and closed beta plannin
 ## Beta Expectations
 
 - In-app notifications are Supabase-backed and require users to open the app.
+- Follow request approval/rejection is in-app only; there is no push alert yet.
 - Closed beta should use staged accounts and staged demo data.
 - Demo data should not include real personal data.
 - Privacy behavior should be validated after every Supabase migration push.
