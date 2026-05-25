@@ -17,12 +17,12 @@ class FeedService {
     final data = await SupabaseService.client
         .from('posts')
         .select()
-        .eq('is_archived', false)
         .order('created_at', ascending: false);
     final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
 
     return data
         .map(Post.fromJson)
+        .where((post) => !post.isArchived)
         .where((post) => !blockedUserIds.contains(post.userId))
         .toList();
   }
@@ -262,7 +262,7 @@ class FeedService {
     final userId = SupabaseService.client.auth.currentUser?.id;
     final post = await SupabaseService.client
         .from('posts')
-        .select('user_id,comments_hidden')
+        .select()
         .eq('id', postId)
         .maybeSingle();
 

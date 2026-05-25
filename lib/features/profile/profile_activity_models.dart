@@ -21,13 +21,13 @@ class ProfileGalleryPost {
 
   factory ProfileGalleryPost.fromJson(Map<String, dynamic> json) {
     return ProfileGalleryPost(
-      id: json['id'] as String,
-      imageUrl: json['image_url'] as String,
+      id: json['id'].toString(),
+      imageUrl: json['image_url'] as String? ?? '',
       caption: json['caption'] as String?,
       eventId: json['event_id'] as String?,
       commentsHidden: json['comments_hidden'] as bool? ?? false,
       isArchived: json['is_archived'] as bool? ?? false,
-      createdAt: DateTime.parse(json['created_at'].toString()),
+      createdAt: _dateTimeFromJson(json['created_at']) ?? DateTime.now(),
     );
   }
 }
@@ -77,16 +77,21 @@ class ProfileActivityEvent {
     String? attendanceStatus,
   }) {
     return ProfileActivityEvent(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      sportType: json['sport_type'] as String,
-      city: json['city'] as String,
+      id: json['id'].toString(),
+      title: json['title'] as String? ?? '',
+      sportType: json['sport_type'] as String? ?? '',
+      city: json['city'] as String? ?? '',
       district: json['district'] as String?,
-      eventDate: DateTime.parse(json['event_date'].toString()),
+      eventDate: _dateTimeFromJson(json['event_date']) ?? DateTime.now(),
       role: role,
       attendanceStatus: attendanceStatus,
       capacityTotal: (json['capacity_total'] as num?)?.toInt(),
       approvedCount: (json['approved_count'] as num?)?.toInt(),
     );
   }
+}
+
+DateTime? _dateTimeFromJson(Object? value) {
+  if (value == null) return null;
+  return DateTime.tryParse(value.toString());
 }
