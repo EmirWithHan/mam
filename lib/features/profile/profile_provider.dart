@@ -6,24 +6,15 @@ import '../../core/utils/error_messages.dart';
 import 'profile_models.dart';
 import 'profile_service.dart';
 
-enum ProfileStatus {
-  initial,
-  loading,
-  success,
-  error,
-}
+enum ProfileStatus { initial, loading, success, error }
 
 class ProfileState {
-  const ProfileState({
-    required this.status,
-    this.profile,
-    this.message,
-  });
+  const ProfileState({required this.status, this.profile, this.message});
 
   const ProfileState.initial()
-      : status = ProfileStatus.initial,
-        profile = null,
-        message = null;
+    : status = ProfileStatus.initial,
+      profile = null,
+      message = null;
 
   final ProfileStatus status;
   final Profile? profile;
@@ -53,26 +44,33 @@ final profileServiceProvider = Provider<ProfileService>((ref) {
 
 final profileControllerProvider =
     StateNotifierProvider<ProfileController, ProfileState>((ref) {
-  return ProfileController(ref.watch(profileServiceProvider));
-});
+      return ProfileController(ref.watch(profileServiceProvider));
+    });
 
 final publicProfileDetailProvider =
     FutureProvider.family<PublicProfileDetail?, String>((ref, userId) {
-  return ref.watch(profileServiceProvider).fetchPublicProfileDetail(userId);
-});
+      return ref.watch(profileServiceProvider).fetchPublicProfileDetail(userId);
+    });
 
 final publicProfileGalleryProvider =
-    FutureProvider.family<List<PublicProfileGalleryItem>, String>((ref, userId) {
-  return ref.watch(profileServiceProvider).fetchPublicProfileGallery(userId);
-});
+    FutureProvider.family<List<PublicProfileGalleryItem>, String>((
+      ref,
+      userId,
+    ) {
+      return ref
+          .watch(profileServiceProvider)
+          .fetchPublicProfileGallery(userId);
+    });
 
 final publicProfileEventHistoryProvider =
     FutureProvider.family<List<PublicProfileEventHistoryItem>, String>((
-  ref,
-  userId,
-) {
-  return ref.watch(profileServiceProvider).fetchPublicProfileEventHistory(userId);
-});
+      ref,
+      userId,
+    ) {
+      return ref
+          .watch(profileServiceProvider)
+          .fetchPublicProfileEventHistory(userId);
+    });
 
 class ProfileController extends StateNotifier<ProfileState> {
   ProfileController(this._profileService) : super(const ProfileState.initial());
@@ -124,6 +122,25 @@ class ProfileController extends StateNotifier<ProfileState> {
         message: friendlyErrorMessage(error),
       );
       return null;
+    }
+  }
+
+  Future<bool> updatePrivacy({required bool isPrivate}) async {
+    state = state.copyWith(status: ProfileStatus.loading);
+
+    try {
+      final profile = await _profileService.updateMyProfilePrivacy(
+        isPrivate: isPrivate,
+      );
+      state = ProfileState(status: ProfileStatus.success, profile: profile);
+      return true;
+    } catch (error) {
+      state = ProfileState(
+        status: ProfileStatus.error,
+        profile: state.profile,
+        message: friendlyErrorMessage(error),
+      );
+      return false;
     }
   }
 

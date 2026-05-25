@@ -48,6 +48,45 @@ class ProfileService {
     return Profile.fromJson(data);
   }
 
+  Future<Profile> updateMyProfilePrivacy({required bool isPrivate}) async {
+    final userId = _currentUserId();
+    final data = await SupabaseService.client
+        .from('profiles')
+        .update({
+          'is_private': isPrivate,
+          'updated_at': DateTime.now().toIso8601String(),
+        })
+        .eq('user_id', userId)
+        .select()
+        .single();
+
+    return Profile.fromJson(data);
+  }
+
+  Future<void> updateGalleryPostControls({
+    required String postId,
+    bool? commentsHidden,
+    bool? isArchived,
+  }) async {
+    _currentUserId();
+    await SupabaseService.client.rpc(
+      'update_my_gallery_post_controls',
+      params: {
+        'p_post_id': postId,
+        'p_comments_hidden': commentsHidden,
+        'p_is_archived': isArchived,
+      },
+    );
+  }
+
+  Future<void> deleteMyGalleryPost(String postId) async {
+    _currentUserId();
+    await SupabaseService.client.rpc(
+      'delete_my_post',
+      params: {'p_post_id': postId},
+    );
+  }
+
   Future<String> uploadAvatar({
     required Uint8List bytes,
     required String fileName,

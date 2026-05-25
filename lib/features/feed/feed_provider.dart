@@ -4,12 +4,7 @@ import '../../core/utils/error_messages.dart';
 import 'feed_models.dart';
 import 'feed_service.dart';
 
-enum FeedStatus {
-  initial,
-  loading,
-  success,
-  error,
-}
+enum FeedStatus { initial, loading, success, error }
 
 class FeedState {
   const FeedState({
@@ -23,13 +18,13 @@ class FeedState {
   });
 
   const FeedState.initial()
-      : status = FeedStatus.initial,
-        posts = const [],
-        message = null,
-        isCreating = false,
-        commentsLoading = false,
-        commentsMessage = null,
-        commentsByPostId = const {};
+    : status = FeedStatus.initial,
+      posts = const [],
+      message = null,
+      isCreating = false,
+      commentsLoading = false,
+      commentsMessage = null,
+      commentsByPostId = const {};
 
   final FeedStatus status;
   final List<PostWithStats> posts;
@@ -70,13 +65,15 @@ final feedServiceProvider = Provider<FeedService>((ref) {
   return const FeedService();
 });
 
-final feedControllerProvider =
-    StateNotifierProvider<FeedController, FeedState>((ref) {
-  return FeedController(ref.watch(feedServiceProvider));
-});
+final feedControllerProvider = StateNotifierProvider<FeedController, FeedState>(
+  (ref) {
+    return FeedController(ref.watch(feedServiceProvider));
+  },
+);
 
-final linkedEventsProvider =
-    FutureProvider.autoDispose<List<LinkableEvent>>((ref) {
+final linkedEventsProvider = FutureProvider.autoDispose<List<LinkableEvent>>((
+  ref,
+) {
   return ref.watch(feedServiceProvider).fetchMyLinkableEvents();
 });
 
@@ -151,10 +148,7 @@ class FeedController extends StateNotifier<FeedState> {
   }
 
   Future<void> fetchComments(String postId) async {
-    state = state.copyWith(
-      commentsLoading: true,
-      clearCommentsMessage: true,
-    );
+    state = state.copyWith(commentsLoading: true, clearCommentsMessage: true);
 
     try {
       final comments = await _feedService.fetchComments(postId);
@@ -178,10 +172,7 @@ class FeedController extends StateNotifier<FeedState> {
     required String postId,
     required String comment,
   }) async {
-    state = state.copyWith(
-      commentsLoading: true,
-      clearCommentsMessage: true,
-    );
+    state = state.copyWith(commentsLoading: true, clearCommentsMessage: true);
 
     try {
       final newComment = await _feedService.addComment(

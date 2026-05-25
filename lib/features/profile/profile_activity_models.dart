@@ -6,6 +6,8 @@ class ProfileGalleryPost {
     required this.imageUrl,
     this.caption,
     this.eventId,
+    this.commentsHidden = false,
+    this.isArchived = false,
     required this.createdAt,
   });
 
@@ -13,6 +15,8 @@ class ProfileGalleryPost {
   final String imageUrl;
   final String? caption;
   final String? eventId;
+  final bool commentsHidden;
+  final bool isArchived;
   final DateTime createdAt;
 
   factory ProfileGalleryPost.fromJson(Map<String, dynamic> json) {
@@ -21,6 +25,8 @@ class ProfileGalleryPost {
       imageUrl: json['image_url'] as String,
       caption: json['caption'] as String?,
       eventId: json['event_id'] as String?,
+      commentsHidden: json['comments_hidden'] as bool? ?? false,
+      isArchived: json['is_archived'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'].toString()),
     );
   }

@@ -33,6 +33,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   @override
   Widget build(BuildContext context) {
     final profile = ref.watch(profileControllerProvider).profile;
+    final profileState = ref.watch(profileControllerProvider);
     final authState = ref.watch(authControllerProvider);
 
     return Scaffold(
@@ -61,6 +62,33 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
             const SizedBox(height: AppSpacing.lg),
             _SettingsUserCard(profile: profile),
+            const SizedBox(height: AppSpacing.lg),
+            _PrivacySection(
+              profile: profile,
+              isLoading: profileState.isLoading,
+              onChanged: (value) async {
+                final success = await ref
+                    .read(profileControllerProvider.notifier)
+                    .updatePrivacy(isPrivate: value);
+                if (!context.mounted) return;
+                if (!success) {
+                  final message = ref.read(profileControllerProvider).message;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(message ?? 'İşlem tamamlanamadı.')),
+                  );
+                  return;
+                }
+                final userId = ref
+                    .read(profileControllerProvider)
+                    .profile
+                    ?.userId;
+                if (userId != null) {
+                  ref.invalidate(publicProfileDetailProvider(userId));
+                  ref.invalidate(publicProfileGalleryProvider(userId));
+                  ref.invalidate(publicProfileEventHistoryProvider(userId));
+                }
+              },
+            ),
             const SizedBox(height: AppSpacing.lg),
             SettingsMenuTile(
               icon: Icons.person_outline,
@@ -100,6 +128,41 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PrivacySection extends StatelessWidget {
+  const _PrivacySection({
+    required this.profile,
+    required this.isLoading,
+    required this.onChanged,
+  });
+
+  final Profile? profile;
+  final bool isLoading;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final isPrivate = profile?.isPrivate ?? false;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
+        borderRadius: AppRadius.lgBorder,
+      ),
+      child: SwitchListTile.adaptive(
+        value: isPrivate,
+        onChanged: isLoading || profile == null ? null : onChanged,
+        activeThumbColor: AppColors.primary,
+        secondary: const Icon(Icons.lock_outline, color: AppColors.primary),
+        title: Text('Gizli hesap', style: AppTextStyles.bodyStrong),
+        subtitle: const Text(
+          'Gizli hesapta galeri ve Geçmiş Events sadece takipçilerine görünür.',
         ),
       ),
     );

@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/router/route_names.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_logo.dart';
 import '../../../core/widgets/empty_state.dart';
+import '../profile_activity_provider.dart';
+import '../profile_provider.dart';
 
 class ProfileGalleryViewerArgs {
   const ProfileGalleryViewerArgs({
@@ -23,35 +27,56 @@ class ProfileGalleryViewerItem {
     required this.id,
     required this.imageUrl,
     this.caption,
+    this.commentsHidden = false,
+    this.isArchived = false,
+    this.isOwner = false,
     required this.createdAt,
   });
 
   final String id;
   final String imageUrl;
   final String? caption;
+  final bool commentsHidden;
+  final bool isArchived;
+  final bool isOwner;
   final DateTime createdAt;
+
+  ProfileGalleryViewerItem copyWith({bool? commentsHidden, bool? isArchived}) {
+    return ProfileGalleryViewerItem(
+      id: id,
+      imageUrl: imageUrl,
+      caption: caption,
+      commentsHidden: commentsHidden ?? this.commentsHidden,
+      isArchived: isArchived ?? this.isArchived,
+      isOwner: isOwner,
+      createdAt: createdAt,
+    );
+  }
 }
 
-class ProfileGalleryViewerPage extends StatefulWidget {
-  const ProfileGalleryViewerPage({
-    super.key,
-    required this.args,
-  });
+class ProfileGalleryViewerPage extends ConsumerStatefulWidget {
+  const ProfileGalleryViewerPage({super.key, required this.args});
 
   final ProfileGalleryViewerArgs? args;
 
   @override
-  State<ProfileGalleryViewerPage> createState() =>
+  ConsumerState<ProfileGalleryViewerPage> createState() =>
       _ProfileGalleryViewerPageState();
 }
 
-class _ProfileGalleryViewerPageState extends State<ProfileGalleryViewerPage> {
+class _ProfileGalleryViewerPageState
+    extends ConsumerState<ProfileGalleryViewerPage> {
   late final PageController _pageController;
+  late List<ProfileGalleryViewerItem> _items;
+  var _currentIndex = 0;
+  var _isUpdating = false;
 
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(initialPage: _initialIndex());
+    _items = [...?widget.args?.items];
+    _currentIndex = _initialIndex();
+    _pageController = PageController(initialPage: _currentIndex);
   }
 
   @override
@@ -62,7 +87,10 @@ class _ProfileGalleryViewerPageState extends State<ProfileGalleryViewerPage> {
 
   @override
   Widget build(BuildContext context) {
-    final items = widget.args?.items ?? const <ProfileGalleryViewerItem>[];
+    final items = _items;
+    final currentItem = items.isEmpty
+        ? null
+        : items[_currentIndex.clamp(0, items.length - 1)];
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -77,6 +105,17 @@ class _ProfileGalleryViewerPageState extends State<ProfileGalleryViewerPage> {
           icon: const Icon(Icons.arrow_back),
         ),
         title: const AppLogo(size: 32, showText: true),
+        actions: [
+          if (currentItem?.isOwner == true)
+            IconButton(
+              tooltip: 'İşlemler',
+              onPressed: _isUpdating || currentItem == null
+                  ? null
+                  : () => _showOwnerMenu(currentItem),
+              icon: const Icon(Icons.more_horiz),
+            ),
+          const SizedBox(width: AppSpacing.sm),
+        ],
       ),
       body: SafeArea(
         child: items.isEmpty
@@ -89,6 +128,7 @@ class _ProfileGalleryViewerPageState extends State<ProfileGalleryViewerPage> {
                 controller: _pageController,
                 scrollDirection: Axis.vertical,
                 itemCount: items.length,
+                onPageChanged: (index) => setState(() => _currentIndex = index),
                 itemBuilder: (context, index) {
                   return _GalleryViewerPost(item: items[index]);
                 },
@@ -100,8 +140,173 @@ class _ProfileGalleryViewerPageState extends State<ProfileGalleryViewerPage> {
   int _initialIndex() {
     final args = widget.args;
     if (args == null || args.items.isEmpty) return 0;
-    final index = args.items.indexWhere((item) => item.id == args.initialItemId);
+    final index = args.items.indexWhere(
+      (item) => item.id == args.initialItemId,
+    );
     return index < 0 ? 0 : index;
+  }
+
+  Future<void> _showOwnerMenu(ProfileGalleryViewerItem item) {
+    return showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              AppSpacing.md,
+              AppSpacing.lg,
+              AppSpacing.lg,
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _GalleryMenuItem(
+                  icon: Icons.mode_comment_outlined,
+                  label: item.commentsHidden
+                      ? 'Yorumları göster'
+                      : 'Yorumları gizle',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _updateItem(item, commentsHidden: !item.commentsHidden);
+                  },
+                ),
+                _GalleryMenuItem(
+                  icon: item.isArchived
+                      ? Icons.lock_open_outlined
+                      : Icons.archive_outlined,
+                  label: item.isArchived ? 'Arşivden çıkar' : 'Arşivle',
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _updateItem(item, isArchived: !item.isArchived);
+                  },
+                ),
+                _GalleryMenuItem(
+                  icon: Icons.delete_outline,
+                  label: 'Sil',
+                  destructive: true,
+                  onTap: () {
+                    Navigator.of(sheetContext).pop();
+                    _confirmDelete(item);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _updateItem(
+    ProfileGalleryViewerItem item, {
+    bool? commentsHidden,
+    bool? isArchived,
+  }) async {
+    setState(() => _isUpdating = true);
+    try {
+      await ref
+          .read(profileServiceProvider)
+          .updateGalleryPostControls(
+            postId: item.id,
+            commentsHidden: commentsHidden,
+            isArchived: isArchived,
+          );
+      if (!mounted) return;
+      setState(() {
+        _items = [
+          for (final entry in _items)
+            if (entry.id == item.id)
+              entry.copyWith(
+                commentsHidden: commentsHidden,
+                isArchived: isArchived,
+              )
+            else
+              entry,
+        ];
+        _isUpdating = false;
+      });
+      ref.read(profileActivityControllerProvider.notifier).refresh();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isUpdating = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('İşlem tamamlanamadı.')));
+    }
+  }
+
+  Future<void> _confirmDelete(ProfileGalleryViewerItem item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Bu gönderiyi silmek istediğine emin misin?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Vazgeç'),
+            ),
+            TextButton(
+              style: TextButton.styleFrom(foregroundColor: AppColors.error),
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('Sil'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isUpdating = true);
+    try {
+      await ref.read(profileServiceProvider).deleteMyGalleryPost(item.id);
+      ref.read(profileActivityControllerProvider.notifier).refresh();
+      if (!mounted) return;
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.goNamed(RouteNames.profile);
+      }
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isUpdating = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Gönderi silinemedi.')));
+    }
+  }
+}
+
+class _GalleryMenuItem extends StatelessWidget {
+  const _GalleryMenuItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+    this.destructive = false,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+  final bool destructive;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = destructive ? AppColors.error : AppColors.textSecondary;
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(
+        label,
+        style: AppTextStyles.bodyStrong.copyWith(color: color),
+      ),
+      onTap: onTap,
+    );
   }
 }
 

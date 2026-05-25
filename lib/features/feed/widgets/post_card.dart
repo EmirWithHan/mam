@@ -32,6 +32,7 @@ class PostCard extends ConsumerWidget {
     final caption = post.caption?.trim();
     final currentUserId = ref.watch(authControllerProvider).userId;
     final isMine = currentUserId != null && post.userId == currentUserId;
+    final commentsLocked = post.commentsHidden && !isMine;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -166,12 +167,18 @@ class PostCard extends ConsumerWidget {
                         ),
                         const SizedBox(width: AppSpacing.sm),
                         TextButton.icon(
-                          onPressed: onOpenComments,
-                          icon: const Icon(
-                            Icons.mode_comment_outlined,
+                          onPressed: commentsLocked ? null : onOpenComments,
+                          icon: Icon(
+                            commentsLocked
+                                ? Icons.lock_outline
+                                : Icons.mode_comment_outlined,
                             color: AppColors.textMuted,
                           ),
-                          label: Text('${item.commentCount}'),
+                          label: Text(
+                            commentsLocked
+                                ? 'Yorumlar gizlendi'
+                                : '${item.commentCount}',
+                          ),
                         ),
                       ],
                     ),

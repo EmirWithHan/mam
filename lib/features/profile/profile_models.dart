@@ -14,6 +14,7 @@ class Profile {
     this.bio,
     this.avatarUrl,
     this.trustScore,
+    this.isPrivate = false,
     this.isProfileCompleted = false,
     this.createdAt,
     this.updatedAt,
@@ -33,6 +34,7 @@ class Profile {
   final String? bio;
   final String? avatarUrl;
   final int? trustScore;
+  final bool isPrivate;
   final bool isProfileCompleted;
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -71,6 +73,7 @@ class Profile {
       bio: json['bio'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       trustScore: (json['trust_score'] as num?)?.toInt(),
+      isPrivate: json['is_private'] as bool? ?? false,
       isProfileCompleted: json['is_profile_completed'] as bool? ?? false,
       createdAt: _dateTimeFromJson(json['created_at']),
       updatedAt: _dateTimeFromJson(json['updated_at']),
@@ -92,6 +95,7 @@ class Profile {
     String? bio,
     String? avatarUrl,
     int? trustScore,
+    bool? isPrivate,
     bool? isProfileCompleted,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -111,6 +115,7 @@ class Profile {
       bio: bio ?? this.bio,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       trustScore: trustScore ?? this.trustScore,
+      isPrivate: isPrivate ?? this.isPrivate,
       isProfileCompleted: isProfileCompleted ?? this.isProfileCompleted,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -185,6 +190,7 @@ class PublicProfileDetail {
     this.avatarUrl,
     this.bio,
     this.trustScore,
+    this.isPrivate = false,
     this.followersCount = 0,
     this.followingCount = 0,
     this.isFollowing = false,
@@ -202,6 +208,7 @@ class PublicProfileDetail {
   final String? avatarUrl;
   final String? bio;
   final int? trustScore;
+  final bool isPrivate;
   final int followersCount;
   final int followingCount;
   final bool isFollowing;
@@ -250,6 +257,7 @@ class PublicProfileDetail {
       avatarUrl: json['avatar_url'] as String?,
       bio: json['bio'] as String?,
       trustScore: (json['trust_score'] as num?)?.toInt(),
+      isPrivate: json['is_private'] as bool? ?? false,
       followersCount: (json['followers_count'] as num?)?.toInt() ?? 0,
       followingCount: (json['following_count'] as num?)?.toInt() ?? 0,
       isFollowing: json['is_following'] as bool? ?? false,
@@ -345,6 +353,8 @@ class PublicProfileGalleryItem {
     required this.imageUrl,
     this.caption,
     this.eventId,
+    this.commentsHidden = false,
+    this.isArchived = false,
     required this.createdAt,
   });
 
@@ -352,6 +362,8 @@ class PublicProfileGalleryItem {
   final String imageUrl;
   final String? caption;
   final String? eventId;
+  final bool commentsHidden;
+  final bool isArchived;
   final DateTime createdAt;
 
   factory PublicProfileGalleryItem.fromJson(Map<String, dynamic> json) {
@@ -360,6 +372,8 @@ class PublicProfileGalleryItem {
       imageUrl: json['image_url'] as String? ?? '',
       caption: json['caption'] as String?,
       eventId: json['event_id'] as String?,
+      commentsHidden: json['comments_hidden'] as bool? ?? false,
+      isArchived: json['is_archived'] as bool? ?? false,
       createdAt: _dateTimeFromJson(json['created_at']) ?? DateTime.now(),
     );
   }

@@ -56,6 +56,10 @@ String friendlyErrorMessage(Object error) {
     return 'Bio en fazla 160 karakter olabilir.';
   }
 
+  if (normalized.contains('yorumlar gizlendi')) {
+    return 'Yorumlar gizlendi.';
+  }
+
   if (normalized.contains('network') ||
       normalized.contains('socket') ||
       normalized.contains('connection') ||

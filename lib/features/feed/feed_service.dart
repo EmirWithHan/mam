@@ -7,8 +7,8 @@ class FeedService {
   const FeedService({
     StorageService storageService = const StorageService(),
     BlocksService blocksService = const BlocksService(),
-  })  : _storageService = storageService,
-        _blocksService = blocksService;
+  }) : _storageService = storageService,
+       _blocksService = blocksService;
 
   final StorageService _storageService;
   final BlocksService _blocksService;
@@ -17,6 +17,7 @@ class FeedService {
     final data = await SupabaseService.client
         .from('posts')
         .select()
+        .eq('is_archived', false)
         .order('created_at', ascending: false);
     final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
 
@@ -37,11 +38,14 @@ class FeedService {
         column: 'post_id',
         value: post.id,
       );
-      final commentCount = await _countRows(
-        table: 'post_comments',
-        column: 'post_id',
-        value: post.id,
-      );
+      final isOwner = userId != null && post.userId == userId;
+      final commentCount = post.commentsHidden && !isOwner
+          ? 0
+          : await _countRows(
+              table: 'post_comments',
+              column: 'post_id',
+              value: post.id,
+            );
       final isLikedByMe = userId == null
           ? false
           : await _hasMyLike(postId: post.id, userId: userId);
@@ -183,6 +187,8 @@ class FeedService {
   }
 
   Future<List<PostComment>> fetchComments(String postId) async {
+    await _ensureCommentsVisible(postId);
+
     final data = await SupabaseService.client
         .from('post_comments')
         .select()
@@ -209,14 +215,11 @@ class FeedService {
     if (trimmed.isEmpty) {
       throw StateError('Comment cannot be empty.');
     }
+    await _ensureCommentsVisible(postId);
 
     final data = await SupabaseService.client
         .from('post_comments')
-        .insert({
-          'post_id': postId,
-          'user_id': userId,
-          'comment': trimmed,
-        })
+        .insert({'post_id': postId, 'user_id': userId, 'comment': trimmed})
         .select()
         .single();
 
@@ -253,6 +256,22 @@ class FeedService {
         .single();
 
     return Post.fromJson(created);
+  }
+
+  Future<void> _ensureCommentsVisible(String postId) async {
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    final post = await SupabaseService.client
+        .from('posts')
+        .select('user_id,comments_hidden')
+        .eq('id', postId)
+        .maybeSingle();
+
+    if (post == null) return;
+    final isOwner = userId != null && post['user_id'] == userId;
+    final commentsHidden = post['comments_hidden'] as bool? ?? false;
+    if (commentsHidden && !isOwner) {
+      throw StateError('Yorumlar gizlendi.');
+    }
   }
 }
 

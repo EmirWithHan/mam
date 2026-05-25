@@ -118,18 +118,19 @@ class _PublicProfilePageState extends ConsumerState<PublicProfilePage> {
                     onFollowChanged: _refreshPublicProfile,
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  if (detail.canViewExtendedProfile) ...[
-                    _ProfileTabs(
-                      selectedTab: _selectedTab,
-                      onChanged: (tab) => setState(() => _selectedTab = tab),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    if (_selectedTab == _PublicProfileTab.gallery)
-                      _GallerySection(userId: widget.userId)
-                    else
-                      _PastEventsSection(userId: widget.userId),
-                  ] else
+                  _ProfileTabs(
+                    selectedTab: _selectedTab,
+                    onChanged: (tab) => setState(() => _selectedTab = tab),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  if (!detail.canViewExtendedProfile)
                     const _LockedExtendedProfileCard(),
+                  if (detail.canViewExtendedProfile &&
+                      _selectedTab == _PublicProfileTab.gallery)
+                    _GallerySection(userId: widget.userId),
+                  if (detail.canViewExtendedProfile &&
+                      _selectedTab == _PublicProfileTab.events)
+                    _PastEventsSection(userId: widget.userId),
                 ],
               ),
             );
@@ -212,6 +213,11 @@ class _PublicProfileHeader extends StatelessWidget {
                   _InfoPill(
                     icon: Icons.verified_user_outlined,
                     label: 'Güven ${detail.trustScore}',
+                  ),
+                if (detail.isPrivate)
+                  const _InfoPill(
+                    icon: Icons.lock_outline,
+                    label: 'Gizli hesap',
                   ),
               ],
             ),
@@ -605,6 +611,8 @@ class _GallerySection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final galleryAsync = ref.watch(publicProfileGalleryProvider(userId));
+    final currentUserId = ref.watch(authControllerProvider).userId;
+    final isOwner = currentUserId != null && currentUserId == userId;
     return galleryAsync.when(
       loading: () => const _SectionLoader(),
       error: (error, _) => _SectionError(
@@ -633,18 +641,44 @@ class _GallerySection extends ConsumerWidget {
             final item = items[index];
             return InkWell(
               borderRadius: AppRadius.mdBorder,
-              onTap: () => _openGalleryViewer(context, items, item),
+              onTap: () => _openGalleryViewer(context, items, item, isOwner),
               child: ClipRRect(
                 borderRadius: AppRadius.mdBorder,
-                child: Image.network(
-                  item.imageUrl,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const ColoredBox(
-                      color: AppColors.border,
-                      child: Icon(Icons.image_not_supported_outlined),
-                    );
-                  },
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    Image.network(
+                      item.imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return const ColoredBox(
+                          color: AppColors.border,
+                          child: Icon(Icons.image_not_supported_outlined),
+                        );
+                      },
+                    ),
+                    if (item.isArchived)
+                      Positioned(
+                        top: AppSpacing.xs,
+                        right: AppSpacing.xs,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: AppColors.textPrimary.withValues(
+                              alpha: 0.74,
+                            ),
+                            borderRadius: AppRadius.pillBorder,
+                          ),
+                          child: const Padding(
+                            padding: EdgeInsets.all(AppSpacing.xs),
+                            child: Icon(
+                              Icons.lock_outline,
+                              color: AppColors.surface,
+                              size: 16,
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             );
@@ -658,6 +692,7 @@ class _GallerySection extends ConsumerWidget {
     BuildContext context,
     List<PublicProfileGalleryItem> items,
     PublicProfileGalleryItem item,
+    bool isOwner,
   ) {
     context.pushNamed(
       RouteNames.profileGalleryViewer,
@@ -669,6 +704,9 @@ class _GallerySection extends ConsumerWidget {
                 id: entry.postId,
                 imageUrl: entry.imageUrl,
                 caption: entry.caption,
+                commentsHidden: entry.commentsHidden,
+                isArchived: entry.isArchived,
+                isOwner: isOwner,
                 createdAt: entry.createdAt,
               ),
             )

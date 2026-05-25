@@ -11,10 +11,7 @@ import '../profile_activity_models.dart';
 import 'profile_gallery_viewer_page.dart';
 
 class ProfileGalleryGrid extends StatelessWidget {
-  const ProfileGalleryGrid({
-    super.key,
-    required this.posts,
-  });
+  const ProfileGalleryGrid({super.key, required this.posts});
 
   final List<ProfileGalleryPost> posts;
 
@@ -54,10 +51,7 @@ class ProfileGalleryGrid extends StatelessWidget {
                 childAspectRatio: 0.82,
               ),
               itemBuilder: (context, index) {
-                return _GalleryTile(
-                  post: posts[index],
-                  posts: posts,
-                );
+                return _GalleryTile(post: posts[index], posts: posts);
               },
             );
           },
@@ -77,10 +71,7 @@ class _SectionTitle extends StatelessWidget {
 }
 
 class _GalleryTile extends StatelessWidget {
-  const _GalleryTile({
-    required this.post,
-    required this.posts,
-  });
+  const _GalleryTile({required this.post, required this.posts});
 
   final ProfileGalleryPost post;
   final List<ProfileGalleryPost> posts;
@@ -116,6 +107,12 @@ class _GalleryTile extends StatelessWidget {
                   top: AppSpacing.sm,
                   right: AppSpacing.sm,
                   child: _EventMarker(),
+                ),
+              if (post.isArchived)
+                const Positioned(
+                  top: AppSpacing.sm,
+                  left: AppSpacing.sm,
+                  child: _ArchiveMarker(),
                 ),
               if (caption != null && caption.isNotEmpty)
                 Positioned(
@@ -169,6 +166,9 @@ class _GalleryTile extends StatelessWidget {
                 id: item.id,
                 imageUrl: item.imageUrl,
                 caption: item.caption,
+                commentsHidden: item.commentsHidden,
+                isArchived: item.isArchived,
+                isOwner: true,
                 createdAt: item.createdAt,
               ),
             )
@@ -178,11 +178,26 @@ class _GalleryTile extends StatelessWidget {
   }
 }
 
+class _ArchiveMarker extends StatelessWidget {
+  const _ArchiveMarker();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.textPrimary.withValues(alpha: 0.74),
+        borderRadius: AppRadius.pillBorder,
+      ),
+      child: const Padding(
+        padding: EdgeInsets.all(AppSpacing.xs),
+        child: Icon(Icons.lock_outline, color: AppColors.surface, size: 16),
+      ),
+    );
+  }
+}
+
 class _GalleryImage extends StatelessWidget {
-  const _GalleryImage({
-    required this.imageUrl,
-    required this.fit,
-  });
+  const _GalleryImage({required this.imageUrl, required this.fit});
 
   final String imageUrl;
   final BoxFit fit;

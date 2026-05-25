@@ -8,7 +8,9 @@ class ProfileActivityService {
     final userId = _currentUserId();
     final data = await SupabaseService.client
         .from('posts')
-        .select('id,image_url,caption,event_id,created_at')
+        .select(
+          'id,image_url,caption,event_id,comments_hidden,is_archived,created_at',
+        )
         .eq('user_id', userId)
         .order('created_at', ascending: false)
         .limit(30);
@@ -71,8 +73,7 @@ class ProfileActivityService {
         role: rolesByEventId[entry.key],
         attendanceStatus: statusesByEventId[entry.key],
       );
-    }).toList()
-      ..sort((a, b) => b.eventDate.compareTo(a.eventDate));
+    }).toList()..sort((a, b) => b.eventDate.compareTo(a.eventDate));
 
     return events;
   }

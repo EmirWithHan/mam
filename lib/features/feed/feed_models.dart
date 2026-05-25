@@ -9,6 +9,8 @@ class Post {
     this.eventId,
     required this.imageUrl,
     this.caption,
+    this.commentsHidden = false,
+    this.isArchived = false,
     required this.createdAt,
     this.updatedAt,
   });
@@ -18,6 +20,8 @@ class Post {
   final String? eventId;
   final String imageUrl;
   final String? caption;
+  final bool commentsHidden;
+  final bool isArchived;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -28,6 +32,8 @@ class Post {
       eventId: json['event_id'] as String?,
       imageUrl: json['image_url'] as String,
       caption: json['caption'] as String?,
+      commentsHidden: json['comments_hidden'] as bool? ?? false,
+      isArchived: json['is_archived'] as bool? ?? false,
       createdAt: DateTime.parse(json['created_at'].toString()),
       updatedAt: _dateTimeFromJson(json['updated_at']),
     );
@@ -54,6 +60,8 @@ class Post {
     String? eventId,
     String? imageUrl,
     String? caption,
+    bool? commentsHidden,
+    bool? isArchived,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -63,6 +71,8 @@ class Post {
       eventId: eventId ?? this.eventId,
       imageUrl: imageUrl ?? this.imageUrl,
       caption: caption ?? this.caption,
+      commentsHidden: commentsHidden ?? this.commentsHidden,
+      isArchived: isArchived ?? this.isArchived,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -115,12 +125,9 @@ class LinkableEvent {
   String get displayDate => DateFormatter.turkishEventDateTime(eventDate);
 
   String get searchText {
-    return _normalizeSearchText([
-      title,
-      sportType,
-      city,
-      district,
-    ].whereType<String>().join(' '));
+    return _normalizeSearchText(
+      [title, sportType, city, district].whereType<String>().join(' '),
+    );
   }
 
   factory LinkableEvent.fromJson(
@@ -174,11 +181,7 @@ class PostComment {
   }
 
   Map<String, dynamic> toCreateJson() {
-    return {
-      'post_id': postId,
-      'user_id': userId,
-      'comment': comment.trim(),
-    };
+    return {'post_id': postId, 'user_id': userId, 'comment': comment.trim()};
   }
 }
 

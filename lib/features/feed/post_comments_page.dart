@@ -63,6 +63,7 @@ class _PostCommentsPageState extends ConsumerState<PostCommentsPage> {
     final feedState = ref.watch(feedControllerProvider);
     final authState = ref.watch(authControllerProvider);
     final comments = feedState.commentsByPostId[widget.postId] ?? const [];
+    final commentsHidden = feedState.commentsMessage == 'Yorumlar gizlendi.';
 
     return Scaffold(
       appBar: AppBar(
@@ -84,11 +85,12 @@ class _PostCommentsPageState extends ConsumerState<PostCommentsPage> {
                 message: feedState.commentsMessage,
               ),
             ),
-            _CommentComposer(
-              controller: _commentController,
-              isLoading: feedState.commentsLoading,
-              onSend: _sendComment,
-            ),
+            if (!commentsHidden)
+              _CommentComposer(
+                controller: _commentController,
+                isLoading: feedState.commentsLoading,
+                onSend: _sendComment,
+              ),
           ],
         ),
       ),
