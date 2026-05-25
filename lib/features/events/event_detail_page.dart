@@ -90,7 +90,10 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
       body: SafeArea(
         child: eventAsync.when(
           loading: () => const AppLoader(),
-          error: (error, _) => ErrorView(message: '$error'),
+          error: (error, _) => ErrorView(
+            message: 'Etkinlik yüklenemedi.',
+            onRetry: () => ref.invalidate(eventDetailProvider(widget.eventId)),
+          ),
           data: (event) {
             final authState = ref.watch(authControllerProvider);
             final isHost = event.isHost(authState.userId);
@@ -145,7 +148,8 @@ class _EventDetailBody extends ConsumerWidget {
     final hasLeftEvent = myParticipation?.hasLeftEvent ?? false;
     final canLeaveApprovedEvent =
         !isHost && (myParticipation?.canLeaveApprovedEvent ?? false);
-    final isApprovedParticipant = !isHost &&
+    final isApprovedParticipant =
+        !isHost &&
         !hasLeftEvent &&
         (hasMyParticipation
             ? myParticipation?.isActiveApprovedParticipant == true
@@ -199,9 +203,8 @@ class _EventDetailBody extends ConsumerWidget {
             errorMessage: publicParticipantsAsync.hasError
                 ? '${publicParticipantsAsync.error}'
                 : null,
-            onRetry: () => ref.invalidate(
-              eventPublicParticipantsProvider(event.id),
-            ),
+            onRetry: () =>
+                ref.invalidate(eventPublicParticipantsProvider(event.id)),
           ),
         ],
         const SizedBox(height: AppSpacing.lg),
@@ -226,11 +229,8 @@ class _EventDetailBody extends ConsumerWidget {
           if (canLeaveApprovedEvent) ...[
             const SizedBox(height: AppSpacing.sm),
             _LeaveApprovedEventButton(
-              onPressed: () => _confirmLeaveApprovedEvent(
-                context,
-                ref,
-                requestController,
-              ),
+              onPressed: () =>
+                  _confirmLeaveApprovedEvent(context, ref, requestController),
             ),
           ],
           const SizedBox(height: AppSpacing.lg),
@@ -239,7 +239,8 @@ class _EventDetailBody extends ConsumerWidget {
           _HostRequestsSection(
             eventId: event.id,
             state: requestState,
-            participantStatuses: participantStatusesAsync.valueOrNull ?? const {},
+            participantStatuses:
+                participantStatusesAsync.valueOrNull ?? const {},
             onApprove: (requestId) async {
               await requestController.approveRequest(requestId);
               ref.invalidate(
@@ -483,7 +484,9 @@ class _EventHeroCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(child: Text(event.title, style: AppTextStyles.headline)),
+                Expanded(
+                  child: Text(event.title, style: AppTextStyles.headline),
+                ),
                 if (event.isSponsored)
                   _MiniChip(
                     label: 'Sponsored',
@@ -524,10 +527,7 @@ class _EventHeroCard extends StatelessWidget {
 }
 
 class _EventOverflowButton extends ConsumerWidget {
-  const _EventOverflowButton({
-    required this.event,
-    required this.isHost,
-  });
+  const _EventOverflowButton({required this.event, required this.isHost});
 
   final Event event;
   final bool isHost;
@@ -549,9 +549,7 @@ class _EventOverflowButton extends ConsumerWidget {
       context: context,
       backgroundColor: AppColors.background,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadius.xl),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
       builder: (sheetContext) {
         return SafeArea(
@@ -650,9 +648,9 @@ class _EventOverflowButton extends ConsumerWidget {
 
     if (confirmed != true || !context.mounted) return;
 
-    final deleted = await ref.read(eventsControllerProvider.notifier).deleteEvent(
-          event.id,
-        );
+    final deleted = await ref
+        .read(eventsControllerProvider.notifier)
+        .deleteEvent(event.id);
     ref.invalidate(eventDetailProvider(event.id));
     if (!context.mounted) return;
 
@@ -695,6 +693,7 @@ class _HostPreviewCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final trimmedHostId = hostId.trim();
     final asyncProfile = ref.watch(publicProfilePreviewProvider(hostId));
 
     return asyncProfile.maybeWhen(
@@ -704,10 +703,12 @@ class _HostPreviewCard extends ConsumerWidget {
 
         return InkWell(
           borderRadius: AppRadius.lgBorder,
-          onTap: () => context.pushNamed(
-            RouteNames.publicProfile,
-            pathParameters: {'userId': hostId},
-          ),
+          onTap: trimmedHostId.isEmpty
+              ? null
+              : () => context.pushNamed(
+                  RouteNames.publicProfile,
+                  pathParameters: {'userId': trimmedHostId},
+                ),
           child: DecoratedBox(
             decoration: BoxDecoration(
               color: AppColors.surface,
@@ -718,7 +719,11 @@ class _HostPreviewCard extends ConsumerWidget {
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Row(
                 children: [
-                  PublicProfileAvatar(profile: profile, radius: 24),
+                  PublicProfileAvatar(
+                    profile: profile,
+                    radius: 24,
+                    enableNavigation: false,
+                  ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Column(
@@ -727,9 +732,16 @@ class _HostPreviewCard extends ConsumerWidget {
                         Text(
                           profile?.displayName ?? 'MaM User',
                           style: AppTextStyles.bodyStrong,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                         const SizedBox(height: AppSpacing.xs),
-                        Text(secondaryText, style: AppTextStyles.caption),
+                        Text(
+                          secondaryText,
+                          style: AppTextStyles.caption,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ],
                     ),
                   ),
@@ -749,31 +761,52 @@ class _HostPreviewCard extends ConsumerWidget {
                           style: AppTextStyles.label.copyWith(
                             color: AppColors.primary,
                           ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                     ),
+                  if (trimmedHostId.isNotEmpty) ...[
+                    const SizedBox(width: AppSpacing.sm),
+                    const Icon(Icons.chevron_right, color: AppColors.textMuted),
+                  ],
                 ],
               ),
             ),
           ),
         );
       },
-      orElse: () => DecoratedBox(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          border: Border.all(color: AppColors.border),
-          borderRadius: AppRadius.lgBorder,
-        ),
-        child: const Padding(
-          padding: EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              PublicProfileAvatar(radius: 24),
-              SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text('MaM User', style: AppTextStyles.bodyStrong),
+      orElse: () => InkWell(
+        borderRadius: AppRadius.lgBorder,
+        onTap: trimmedHostId.isEmpty
+            ? null
+            : () => context.pushNamed(
+                RouteNames.publicProfile,
+                pathParameters: {'userId': trimmedHostId},
               ),
-            ],
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            border: Border.all(color: AppColors.border),
+            borderRadius: AppRadius.lgBorder,
+          ),
+          child: const Padding(
+            padding: EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                PublicProfileAvatar(radius: 24, enableNavigation: false),
+                SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    'MaM User',
+                    style: AppTextStyles.bodyStrong,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Icon(Icons.chevron_right, color: AppColors.textMuted),
+              ],
+            ),
           ),
         ),
       ),
@@ -1030,9 +1063,9 @@ class _LocationCard extends StatelessWidget {
       );
     } catch (error) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$error')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('$error')));
     }
   }
 }
@@ -1069,10 +1102,7 @@ class _MiniChip extends StatelessWidget {
               Icon(icon, size: 15, color: textColor),
               const SizedBox(width: AppSpacing.xs),
             ],
-            Text(
-              label,
-              style: AppTextStyles.label.copyWith(color: textColor),
-            ),
+            Text(label, style: AppTextStyles.label.copyWith(color: textColor)),
           ],
         ),
       ),

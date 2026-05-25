@@ -37,6 +37,32 @@ class _PublicProfilePageState extends ConsumerState<PublicProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.userId.trim().isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            tooltip: 'Geri',
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+                return;
+              }
+              context.goNamed(RouteNames.events);
+            },
+            icon: const Icon(Icons.arrow_back),
+          ),
+          title: const AppLogo(size: 32, showText: true),
+        ),
+        body: const SafeArea(
+          child: EmptyState(
+            title: 'Kullanıcı bulunamadı.',
+            message: 'Bu profil bağlantısı geçerli değil.',
+            icon: Icons.person_off_outlined,
+          ),
+        ),
+      );
+    }
+
     final detailAsync = ref.watch(publicProfileDetailProvider(widget.userId));
     final currentUserId = ref.watch(authControllerProvider).userId;
 

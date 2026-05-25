@@ -28,6 +28,12 @@ class PublicProfilePreviewTile extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final trimmedUserId = userId.trim();
+    final canNavigate = enableNavigation && trimmedUserId.isNotEmpty;
+    if (trimmedUserId.isEmpty) {
+      return _PreviewFallbackTile(compact: compact, trailing: trailing);
+    }
+
     final asyncProfile = ref.watch(publicProfilePreviewProvider(userId));
 
     return asyncProfile.maybeWhen(
@@ -47,7 +53,7 @@ class PublicProfilePreviewTile extends ConsumerWidget {
               PublicProfileAvatar(
                 profile: profile,
                 radius: compact ? 16 : 22,
-                enableNavigation: enableNavigation,
+                enableNavigation: false,
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
@@ -83,37 +89,54 @@ class PublicProfilePreviewTile extends ConsumerWidget {
           ),
         );
 
-        if (!enableNavigation) return tile;
+        if (!canNavigate) return tile;
 
         return InkWell(
           borderRadius: AppRadius.lgBorder,
           onTap: () => context.pushNamed(
             RouteNames.publicProfile,
-            pathParameters: {'userId': userId},
+            pathParameters: {'userId': trimmedUserId},
           ),
           child: tile,
         );
       },
-      orElse: () => Container(
-        padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.md),
-        decoration: BoxDecoration(
-          color: compact ? Colors.transparent : AppColors.surface,
-          border: compact ? null : Border.all(color: AppColors.border),
-          borderRadius: AppRadius.lgBorder,
-        ),
-        child: Row(
-          children: [
-            PublicProfileAvatar(radius: compact ? 16 : 22),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(
-                'MaM User',
-                style: compact ? AppTextStyles.caption : AppTextStyles.bodyStrong,
-              ),
+      orElse: () => _PreviewFallbackTile(compact: compact, trailing: trailing),
+    );
+  }
+}
+
+class _PreviewFallbackTile extends StatelessWidget {
+  const _PreviewFallbackTile({required this.compact, required this.trailing});
+
+  final bool compact;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(compact ? AppSpacing.sm : AppSpacing.md),
+      decoration: BoxDecoration(
+        color: compact ? Colors.transparent : AppColors.surface,
+        border: compact ? null : Border.all(color: AppColors.border),
+        borderRadius: AppRadius.lgBorder,
+      ),
+      child: Row(
+        children: [
+          PublicProfileAvatar(radius: compact ? 16 : 22),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              'MaM User',
+              style: compact ? AppTextStyles.caption : AppTextStyles.bodyStrong,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            ?trailing,
+          ),
+          if (trailing != null) ...[
+            const SizedBox(width: AppSpacing.sm),
+            trailing!,
           ],
-        ),
+        ],
       ),
     );
   }

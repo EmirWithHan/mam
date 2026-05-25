@@ -50,16 +50,15 @@ class PublicProfileAvatar extends ConsumerWidget {
 }
 
 class _TappableProfile extends StatelessWidget {
-  const _TappableProfile({
-    required this.userId,
-    required this.child,
-  });
+  const _TappableProfile({required this.userId, required this.child});
 
   final String userId;
   final Widget child;
 
   @override
   Widget build(BuildContext context) {
+    if (userId.trim().isEmpty) return child;
+
     return GestureDetector(
       behavior: HitTestBehavior.opaque,
       onTap: () => context.pushNamed(
@@ -72,10 +71,7 @@ class _TappableProfile extends StatelessWidget {
 }
 
 class _Avatar extends StatelessWidget {
-  const _Avatar({
-    required this.profile,
-    required this.radius,
-  });
+  const _Avatar({required this.profile, required this.radius});
 
   final PublicProfilePreview? profile;
   final double radius;

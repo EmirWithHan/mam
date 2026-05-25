@@ -59,7 +59,7 @@ class EventParticipantsPreview extends StatelessWidget {
                 child: AppLoader(),
               )
             else if (errorMessage != null)
-              ErrorView(message: errorMessage!, onRetry: onRetry)
+              ErrorView(message: 'Katılımcılar yüklenemedi.', onRetry: onRetry)
             else if (visibleParticipants.isEmpty)
               Text('Katılımcı bilgisi yok.', style: AppTextStyles.bodySmall)
             else
@@ -99,13 +99,16 @@ class _ParticipantTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final secondary = participant.handleLabel ?? participant.city;
+    final userId = participant.userId.trim();
 
     return InkWell(
       borderRadius: AppRadius.lgBorder,
-      onTap: () => context.pushNamed(
-        RouteNames.publicProfile,
-        pathParameters: {'userId': participant.userId},
-      ),
+      onTap: userId.isEmpty
+          ? null
+          : () => context.pushNamed(
+              RouteNames.publicProfile,
+              pathParameters: {'userId': userId},
+            ),
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
         child: Row(
@@ -116,16 +119,30 @@ class _ParticipantTile extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(participant.displayName, style: AppTextStyles.bodyStrong),
+                  Text(
+                    participant.displayName,
+                    style: AppTextStyles.bodyStrong,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   if (secondary != null && secondary.trim().isNotEmpty) ...[
                     const SizedBox(height: AppSpacing.xs),
-                    Text(secondary, style: AppTextStyles.caption),
+                    Text(
+                      secondary,
+                      style: AppTextStyles.caption,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ],
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
             _RoleChip(label: participant.isHost ? 'Host' : 'Katılımcı'),
+            if (userId.isNotEmpty) ...[
+              const SizedBox(width: AppSpacing.xs),
+              const Icon(Icons.chevron_right, color: AppColors.textMuted),
+            ],
           ],
         ),
       ),
@@ -189,6 +206,8 @@ class _RoleChip extends StatelessWidget {
           style: AppTextStyles.label.copyWith(
             color: label == 'Host' ? AppColors.surface : AppColors.primary,
           ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
     );
