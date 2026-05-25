@@ -267,6 +267,7 @@ class _ProfileFollowListTile extends StatelessWidget {
                 const SizedBox(width: AppSpacing.sm),
                 _FollowListButton(
                   isFollowing: item.isFollowingByMe,
+                  requestPending: item.pendingFollowRequestByMe,
                   isLoading: isToggling,
                   onPressed: onToggleFollow,
                 ),
@@ -366,22 +367,28 @@ class _FollowListText extends StatelessWidget {
 class _FollowListButton extends StatelessWidget {
   const _FollowListButton({
     required this.isFollowing,
+    required this.requestPending,
     required this.isLoading,
     required this.onPressed,
   });
 
   final bool isFollowing;
+  final bool requestPending;
   final bool isLoading;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
     return AppButton(
-      label: isFollowing ? 'Takipte' : 'Takip et',
+      label: isFollowing
+          ? 'Takip Ediliyor'
+          : requestPending
+          ? 'İstek Gönderildi'
+          : 'Takip Et',
       onPressed: onPressed,
       isLoading: isLoading,
       fullWidth: false,
-      variant: isFollowing
+      variant: isFollowing || requestPending
           ? AppButtonVariant.outlined
           : AppButtonVariant.primary,
     );

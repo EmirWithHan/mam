@@ -92,6 +92,8 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                       timeLabel: _timeLabel(notification.createdAt),
                       isBusy: state.isUpdating,
                       onTap: () => _handleNotificationTap(notification),
+                      onApprove: () => _approveFollowRequest(notification),
+                      onReject: () => _rejectFollowRequest(notification),
                     ),
                   ),
                 ),
@@ -159,6 +161,22 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
       if (!mounted) return;
       _showMessage('Bildirim açılırken bir sorun oluştu.');
     }
+  }
+
+  Future<void> _approveFollowRequest(AppNotification notification) async {
+    final success = await ref
+        .read(notificationsControllerProvider.notifier)
+        .approveFollowRequest(notification);
+    if (!mounted) return;
+    _showMessage(success ? 'Takip isteği onaylandı.' : 'İstek işlenemedi.');
+  }
+
+  Future<void> _rejectFollowRequest(AppNotification notification) async {
+    final success = await ref
+        .read(notificationsControllerProvider.notifier)
+        .rejectFollowRequest(notification);
+    if (!mounted) return;
+    _showMessage(success ? 'Takip isteği reddedildi.' : 'İstek işlenemedi.');
   }
 
   void _showMessage(String message) {

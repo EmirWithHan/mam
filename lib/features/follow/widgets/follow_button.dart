@@ -86,7 +86,11 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
             );
     }
 
-    final label = stats.isFollowedByMe ? 'Takip Ediliyor' : 'Takip Et';
+    final label = stats.isFollowedByMe
+        ? 'Takip Ediliyor'
+        : stats.hasPendingRequestByMe
+        ? 'İstek Gönderildi'
+        : 'Takip Et';
     final followerCount = stats.followerCount;
 
     if (widget.compact) {
@@ -99,10 +103,12 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
             FilledButton.tonal(
               onPressed: followState.loading ? null : _toggleFollow,
               style: FilledButton.styleFrom(
-                backgroundColor: stats.isFollowedByMe
+                backgroundColor:
+                    stats.isFollowedByMe || stats.hasPendingRequestByMe
                     ? AppColors.primarySoft
                     : AppColors.primary,
-                foregroundColor: stats.isFollowedByMe
+                foregroundColor:
+                    stats.isFollowedByMe || stats.hasPendingRequestByMe
                     ? AppColors.primary
                     : Colors.white,
                 shape: const StadiumBorder(),
@@ -138,7 +144,7 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
       children: [
         AppButton(
           label: label,
-          variant: stats.isFollowedByMe
+          variant: stats.isFollowedByMe || stats.hasPendingRequestByMe
               ? AppButtonVariant.secondary
               : AppButtonVariant.primary,
           isLoading: followState.loading,

@@ -40,6 +40,20 @@ class AppNotification {
         (entity == 'profile' || entity == 'user' || entity == 'profile/user');
   }
 
+  bool get isFollowRequest {
+    return type.trim().toLowerCase() == 'follow_request' &&
+        entityId?.trim().isNotEmpty == true;
+  }
+
+  String get followRequestStatus {
+    final value = metadata['request_status'] ?? metadata['status'];
+    return value?.toString().trim().toLowerCase() ?? 'pending';
+  }
+
+  bool get canRespondToFollowRequest {
+    return isFollowRequest && followRequestStatus == 'pending';
+  }
+
   String get displayTitle {
     return switch (type.trim().toLowerCase()) {
       'event_join_request' => 'Yeni katılım isteği',
@@ -48,6 +62,9 @@ class AppNotification {
       'event_join_cancelled' => 'Katılım isteği iptal edildi',
       'event_left' => 'Bir katılımcı etkinlikten ayrıldı',
       'follow' => 'Yeni takipçi',
+      'follow_request' => 'Takip isteği',
+      'follow_request_approved' => 'Takip isteğin onaylandı',
+      'follow_request_rejected' => 'Takip isteğin reddedildi',
       'system' => 'Sistem bildirimi',
       _ => title.trim().isEmpty ? 'Bildirim' : title.trim(),
     };
@@ -66,6 +83,9 @@ class AppNotification {
       'event_join_cancelled' => 'Bir katılım isteği iptal edildi.',
       'event_left' => 'Onaylı bir katılımcı etkinlikten ayrıldı.',
       'follow' => 'Seni takip etmeye başlayan yeni biri var.',
+      'follow_request' => 'Yeni bir takip isteğin var.',
+      'follow_request_approved' => 'Takip isteğin onaylandı.',
+      'follow_request_rejected' => 'Takip isteğin reddedildi.',
       'system' => 'Match A Man güncellemesi.',
       _ => '',
     };
@@ -79,12 +99,15 @@ class AppNotification {
       'event_join_cancelled' ||
       'event_left' => 'Etkinlik',
       'follow' => 'Sosyal',
+      'follow_request' ||
+      'follow_request_approved' ||
+      'follow_request_rejected' => 'Sosyal',
       'system' => 'MaM',
       _ => 'Bildirim',
     };
   }
 
-  AppNotification copyWith({bool? isRead}) {
+  AppNotification copyWith({bool? isRead, Map<String, dynamic>? metadata}) {
     return AppNotification(
       id: id,
       recipientId: recipientId,
@@ -94,7 +117,7 @@ class AppNotification {
       body: body,
       entityType: entityType,
       entityId: entityId,
-      metadata: metadata,
+      metadata: metadata ?? this.metadata,
       isRead: isRead ?? this.isRead,
       createdAt: createdAt,
     );

@@ -187,13 +187,24 @@ class ProfileFollowListController
     );
 
     final wasFollowing = item.isFollowingByMe;
+    final wasPending = item.pendingFollowRequestByMe;
 
     try {
-      await _followService.toggleFollow(
+      final result = await _followService.toggleFollow(
         targetUserId: item.userId,
         currentlyFollowing: wasFollowing,
+        requestPending: wasPending,
       );
-      _updateItemFollowState(item.userId, isFollowing: !wasFollowing);
+      _updateItemFollowState(
+        item.userId,
+        isFollowing: result?.isFollowing ?? false,
+        requestPending: result?.isRequested ?? false,
+        followerDelta: wasFollowing
+            ? -1
+            : (result?.isFollowing ?? false)
+            ? 1
+            : 0,
+      );
     } catch (error) {
       state = state.copyWith(message: friendlyErrorMessage(error));
     } finally {
@@ -219,14 +230,20 @@ class ProfileFollowListController
     }
   }
 
-  void _updateItemFollowState(String userId, {required bool isFollowing}) {
+  void _updateItemFollowState(
+    String userId, {
+    required bool isFollowing,
+    required bool requestPending,
+    required int followerDelta,
+  }) {
     state = state.copyWith(
       items: [
         for (final item in state.items)
           if (item.userId == userId)
             item.copyWith(
               isFollowingByMe: isFollowing,
-              followerCount: (item.followerCount + (isFollowing ? 1 : -1))
+              pendingFollowRequestByMe: requestPending,
+              followerCount: (item.followerCount + followerDelta)
                   .clamp(0, 1 << 31)
                   .toInt(),
             )

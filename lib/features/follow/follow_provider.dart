@@ -5,11 +5,7 @@ import 'follow_models.dart';
 import 'follow_service.dart';
 
 class FollowState {
-  const FollowState({
-    this.loading = false,
-    this.message,
-    this.stats,
-  });
+  const FollowState({this.loading = false, this.message, this.stats});
 
   final bool loading;
   final String? message;
@@ -34,21 +30,20 @@ final followServiceProvider = Provider<FollowService>((ref) {
 });
 
 final followControllerProvider =
-    StateNotifierProvider.family<FollowController, FollowState, String>(
-  (ref, targetUserId) {
-    return FollowController(
-      targetUserId: targetUserId,
-      service: ref.watch(followServiceProvider),
-    );
-  },
-);
+    StateNotifierProvider.family<FollowController, FollowState, String>((
+      ref,
+      targetUserId,
+    ) {
+      return FollowController(
+        targetUserId: targetUserId,
+        service: ref.watch(followServiceProvider),
+      );
+    });
 
 class FollowController extends StateNotifier<FollowState> {
-  FollowController({
-    required this.targetUserId,
-    required FollowService service,
-  })  : _service = service,
-        super(const FollowState());
+  FollowController({required this.targetUserId, required FollowService service})
+    : _service = service,
+      super(const FollowState());
 
   final String targetUserId;
   final FollowService _service;
@@ -99,12 +94,14 @@ class FollowController extends StateNotifier<FollowState> {
 
   Future<void> toggleFollow() async {
     final currentlyFollowing = state.stats?.isFollowedByMe ?? false;
+    final requestPending = state.stats?.hasPendingRequestByMe ?? false;
     state = state.copyWith(loading: true, clearMessage: true);
 
     try {
       await _service.toggleFollow(
         targetUserId: targetUserId,
         currentlyFollowing: currentlyFollowing,
+        requestPending: requestPending,
       );
       final stats = await _service.fetchFollowStats(targetUserId);
       state = state.copyWith(loading: false, stats: stats);

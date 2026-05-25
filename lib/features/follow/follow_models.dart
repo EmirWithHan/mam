@@ -28,6 +28,8 @@ class FollowStats {
     required this.followingCount,
     required this.isFollowedByMe,
     required this.isMe,
+    this.isPrivate = false,
+    this.hasPendingRequestByMe = false,
   });
 
   final String targetUserId;
@@ -35,6 +37,8 @@ class FollowStats {
   final int followingCount;
   final bool isFollowedByMe;
   final bool isMe;
+  final bool isPrivate;
+  final bool hasPendingRequestByMe;
 
   FollowStats copyWith({
     String? targetUserId,
@@ -42,6 +46,8 @@ class FollowStats {
     int? followingCount,
     bool? isFollowedByMe,
     bool? isMe,
+    bool? isPrivate,
+    bool? hasPendingRequestByMe,
   }) {
     return FollowStats(
       targetUserId: targetUserId ?? this.targetUserId,
@@ -49,6 +55,26 @@ class FollowStats {
       followingCount: followingCount ?? this.followingCount,
       isFollowedByMe: isFollowedByMe ?? this.isFollowedByMe,
       isMe: isMe ?? this.isMe,
+      isPrivate: isPrivate ?? this.isPrivate,
+      hasPendingRequestByMe:
+          hasPendingRequestByMe ?? this.hasPendingRequestByMe,
+    );
+  }
+}
+
+class FollowActionResult {
+  const FollowActionResult({required this.status, this.pendingRequestId});
+
+  final String status;
+  final String? pendingRequestId;
+
+  bool get isFollowing => status == 'following';
+  bool get isRequested => status == 'requested';
+
+  factory FollowActionResult.fromJson(Map<String, dynamic> json) {
+    return FollowActionResult(
+      status: json['status'] as String? ?? 'following',
+      pendingRequestId: json['pending_request_id'] as String?,
     );
   }
 }

@@ -12,6 +12,28 @@ class FollowService {
       throw StateError('You must be signed in to view follow stats.');
     }
 
+    try {
+      final data = await SupabaseService.client.rpc(
+        'get_public_profile_detail',
+        params: {'p_user_id': targetUserId},
+      );
+      final row = _firstRow(data);
+      if (row != null) {
+        return FollowStats(
+          targetUserId: targetUserId,
+          followerCount: (row['followers_count'] as num?)?.toInt() ?? 0,
+          followingCount: (row['following_count'] as num?)?.toInt() ?? 0,
+          isFollowedByMe: row['is_following'] as bool? ?? false,
+          isMe: userId == targetUserId,
+          isPrivate: row['is_private'] as bool? ?? false,
+          hasPendingRequestByMe:
+              row['pending_follow_request_by_me'] as bool? ?? false,
+        );
+      }
+    } catch (_) {
+      // Older databases may not expose the extended public profile RPC yet.
+    }
+
     final followerCount = await _countRows(
       column: 'following_id',
       value: targetUserId,
@@ -34,7 +56,7 @@ class FollowService {
     );
   }
 
-  Future<void> followUser(String targetUserId) async {
+  Future<FollowActionResult> followUser(String targetUserId) async {
     final userId = currentUserId;
     if (userId == null) {
       throw StateError('You must be signed in to follow members.');
@@ -43,16 +65,27 @@ class FollowService {
       throw StateError('You cannot follow yourself.');
     }
 
-    final alreadyFollowing = await _isFollowing(
-      followerId: userId,
-      followingId: targetUserId,
+    final data = await SupabaseService.client.rpc(
+      'follow_or_request_user',
+      params: {'p_target_user_id': targetUserId},
     );
-    if (alreadyFollowing) return;
+    final row = _firstRow(data);
+    if (row == null) {
+      return const FollowActionResult(status: 'following');
+    }
+    return FollowActionResult.fromJson(row);
+  }
 
-    await SupabaseService.client.from('follows').insert({
-      'follower_id': userId,
-      'following_id': targetUserId,
-    });
+  Future<void> cancelFollowRequest(String targetUserId) async {
+    final userId = currentUserId;
+    if (userId == null) {
+      throw StateError('You must be signed in to manage follow requests.');
+    }
+
+    await SupabaseService.client.rpc(
+      'cancel_follow_request',
+      params: {'p_target_user_id': targetUserId},
+    );
   }
 
   Future<void> unfollowUser(String targetUserId) async {
@@ -68,23 +101,34 @@ class FollowService {
         .eq('following_id', targetUserId);
   }
 
-  Future<void> toggleFollow({
+  Future<FollowActionResult?> toggleFollow({
     required String targetUserId,
     required bool currentlyFollowing,
+    bool requestPending = false,
   }) async {
     if (currentlyFollowing) {
       await unfollowUser(targetUserId);
-      return;
+      return const FollowActionResult(status: 'not_following');
     }
 
-    await followUser(targetUserId);
+    if (requestPending) {
+      await cancelFollowRequest(targetUserId);
+      return const FollowActionResult(status: 'cancelled');
+    }
+
+    return followUser(targetUserId);
   }
 }
 
-Future<int> _countRows({
-  required String column,
-  required String value,
-}) async {
+Map<String, dynamic>? _firstRow(Object? data) {
+  if (data is List && data.isNotEmpty) {
+    return Map<String, dynamic>.from(data.first as Map);
+  }
+  if (data is Map) return Map<String, dynamic>.from(data);
+  return null;
+}
+
+Future<int> _countRows({required String column, required String value}) async {
   final data = await SupabaseService.client
       .from('follows')
       .select('id')

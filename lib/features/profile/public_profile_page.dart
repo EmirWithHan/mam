@@ -497,10 +497,15 @@ class _PublicProfileFollowActionState
     );
     final stats = followState.stats;
     final isFollowing = stats?.isFollowedByMe ?? false;
+    final requestPending = stats?.hasPendingRequestByMe ?? false;
 
     return AppButton(
-      label: isFollowing ? 'Takip Ediliyor' : 'Takip Et',
-      variant: isFollowing
+      label: isFollowing
+          ? 'Takip Ediliyor'
+          : requestPending
+          ? 'İstek Gönderildi'
+          : 'Takip Et',
+      variant: isFollowing || requestPending
           ? AppButtonVariant.secondary
           : AppButtonVariant.primary,
       isLoading: followState.loading || stats == null,

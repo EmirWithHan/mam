@@ -195,6 +195,7 @@ class PublicProfileDetail {
     this.followingCount = 0,
     this.isFollowing = false,
     this.isFollowedBy = false,
+    this.pendingFollowRequestByMe = false,
     this.canViewExtendedProfile = false,
   });
 
@@ -213,6 +214,7 @@ class PublicProfileDetail {
   final int followingCount;
   final bool isFollowing;
   final bool isFollowedBy;
+  final bool pendingFollowRequestByMe;
   final bool canViewExtendedProfile;
 
   String get displayName {
@@ -262,6 +264,8 @@ class PublicProfileDetail {
       followingCount: (json['following_count'] as num?)?.toInt() ?? 0,
       isFollowing: json['is_following'] as bool? ?? false,
       isFollowedBy: json['is_followed_by'] as bool? ?? false,
+      pendingFollowRequestByMe:
+          json['pending_follow_request_by_me'] as bool? ?? false,
       canViewExtendedProfile:
           json['can_view_extended_profile'] as bool? ?? false,
     );
@@ -282,6 +286,8 @@ class PublicProfileFollowListItem {
     this.followingCount = 0,
     this.isFollowingByMe = false,
     this.followsMe = false,
+    this.isPrivate = false,
+    this.pendingFollowRequestByMe = false,
     this.createdAt,
   });
 
@@ -297,6 +303,8 @@ class PublicProfileFollowListItem {
   final int followingCount;
   final bool isFollowingByMe;
   final bool followsMe;
+  final bool isPrivate;
+  final bool pendingFollowRequestByMe;
   final DateTime? createdAt;
 
   String get displayName {
@@ -309,6 +317,7 @@ class PublicProfileFollowListItem {
 
   PublicProfileFollowListItem copyWith({
     bool? isFollowingByMe,
+    bool? pendingFollowRequestByMe,
     int? followerCount,
   }) {
     return PublicProfileFollowListItem(
@@ -324,6 +333,9 @@ class PublicProfileFollowListItem {
       followingCount: followingCount,
       isFollowingByMe: isFollowingByMe ?? this.isFollowingByMe,
       followsMe: followsMe,
+      isPrivate: isPrivate,
+      pendingFollowRequestByMe:
+          pendingFollowRequestByMe ?? this.pendingFollowRequestByMe,
       createdAt: createdAt,
     );
   }
@@ -342,6 +354,9 @@ class PublicProfileFollowListItem {
       followingCount: (json['following_count'] as num?)?.toInt() ?? 0,
       isFollowingByMe: json['is_following_by_me'] as bool? ?? false,
       followsMe: json['follows_me'] as bool? ?? false,
+      isPrivate: json['is_private'] as bool? ?? false,
+      pendingFollowRequestByMe:
+          json['pending_follow_request_by_me'] as bool? ?? false,
       createdAt: _dateTimeFromJson(json['created_at']),
     );
   }

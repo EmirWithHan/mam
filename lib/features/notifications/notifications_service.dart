@@ -18,7 +18,9 @@ class NotificationsService {
           .limit(50);
 
       return rows
-          .map((row) => AppNotification.fromJson(Map<String, dynamic>.from(row)))
+          .map(
+            (row) => AppNotification.fromJson(Map<String, dynamic>.from(row)),
+          )
           .toList(growable: false);
     } catch (error) {
       throw Exception(_notificationError(error, 'Bildirimler yüklenemedi.'));
@@ -55,6 +57,28 @@ class NotificationsService {
       await SupabaseService.client.rpc('mark_all_notifications_read');
     } catch (error) {
       throw Exception(_notificationError(error, 'Bildirim güncellenemedi.'));
+    }
+  }
+
+  Future<void> approveFollowRequest(String requestId) async {
+    try {
+      await SupabaseService.client.rpc(
+        'approve_follow_request',
+        params: {'p_request_id': requestId},
+      );
+    } catch (error) {
+      throw Exception(_notificationError(error, 'İstek işlenemedi.'));
+    }
+  }
+
+  Future<void> rejectFollowRequest(String requestId) async {
+    try {
+      await SupabaseService.client.rpc(
+        'reject_follow_request',
+        params: {'p_request_id': requestId},
+      );
+    } catch (error) {
+      throw Exception(_notificationError(error, 'İstek işlenemedi.'));
     }
   }
 

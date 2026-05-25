@@ -149,6 +149,63 @@ class NotificationsController extends StateNotifier<NotificationsState> {
     }
   }
 
+  Future<bool> approveFollowRequest(AppNotification notification) {
+    return _handleFollowRequestAction(
+      notification: notification,
+      action: () => _service.approveFollowRequest(notification.entityId ?? ''),
+      status: 'approved',
+    );
+  }
+
+  Future<bool> rejectFollowRequest(AppNotification notification) {
+    return _handleFollowRequestAction(
+      notification: notification,
+      action: () => _service.rejectFollowRequest(notification.entityId ?? ''),
+      status: 'rejected',
+    );
+  }
+
+  Future<bool> _handleFollowRequestAction({
+    required AppNotification notification,
+    required Future<void> Function() action,
+    required String status,
+  }) async {
+    if (state.isUpdating) return false;
+    final requestId = notification.entityId?.trim();
+    if (requestId == null || requestId.isEmpty) {
+      state = state.copyWith(message: 'İstek işlenemedi.');
+      return false;
+    }
+
+    state = state.copyWith(isUpdating: true, clearMessage: true);
+
+    try {
+      await action();
+      final notifications = state.notifications
+          .map((item) {
+            if (item.id != notification.id) return item;
+            return item.copyWith(
+              isRead: true,
+              metadata: {...item.metadata, 'request_status': status},
+            );
+          })
+          .toList(growable: false);
+      state = state.copyWith(
+        status: NotificationsStatus.success,
+        notifications: notifications,
+        isUpdating: false,
+      );
+      _ref.invalidate(notificationsUnreadCountProvider);
+      return true;
+    } catch (error) {
+      state = state.copyWith(
+        isUpdating: false,
+        message: _readableMessage(error),
+      );
+      return false;
+    }
+  }
+
   String _readableMessage(Object error) {
     final message = error.toString().replaceFirst('Exception: ', '').trim();
     if (message.isNotEmpty && message.length <= 90) return message;

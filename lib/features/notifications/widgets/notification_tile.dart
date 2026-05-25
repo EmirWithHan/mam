@@ -13,12 +13,16 @@ class NotificationTile extends StatelessWidget {
     required this.timeLabel,
     required this.onTap,
     this.isBusy = false,
+    this.onApprove,
+    this.onReject,
   });
 
   final AppNotification notification;
   final String timeLabel;
   final VoidCallback onTap;
   final bool isBusy;
+  final VoidCallback? onApprove;
+  final VoidCallback? onReject;
 
   @override
   Widget build(BuildContext context) {
@@ -130,6 +134,34 @@ class NotificationTile extends StatelessWidget {
                                 maxLines: 1,
                                 overflow: TextOverflow.ellipsis,
                               ),
+                              if (notification.canRespondToFollowRequest) ...[
+                                const SizedBox(height: AppSpacing.md),
+                                Wrap(
+                                  spacing: AppSpacing.sm,
+                                  runSpacing: AppSpacing.sm,
+                                  children: [
+                                    FilledButton(
+                                      onPressed: isBusy ? null : onApprove,
+                                      style: FilledButton.styleFrom(
+                                        backgroundColor: AppColors.primary,
+                                        foregroundColor: Colors.white,
+                                      ),
+                                      child: isBusy
+                                          ? const SizedBox.square(
+                                              dimension: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : const Text('Onayla'),
+                                    ),
+                                    OutlinedButton(
+                                      onPressed: isBusy ? null : onReject,
+                                      child: const Text('Reddet'),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -207,6 +239,9 @@ IconData _iconForType(String type) {
     'event_join_cancelled' => Icons.remove_circle_outline,
     'event_left' => Icons.logout,
     'follow' => Icons.person_add_alt_1,
+    'follow_request' => Icons.person_add_alt_1,
+    'follow_request_approved' => Icons.check_circle_outline,
+    'follow_request_rejected' => Icons.cancel_outlined,
     'system' => Icons.auto_awesome,
     _ => Icons.notifications_none_rounded,
   };

@@ -242,6 +242,12 @@ class ProfileService {
                   followerId: preview.userId,
                   followingId: currentUserId,
                 ),
+          pendingFollowRequestByMe: currentUserId == preview.userId
+              ? false
+              : await _hasPendingFollowRequest(
+                  requesterId: currentUserId,
+                  targetUserId: preview.userId,
+                ),
         ),
       );
     }
@@ -309,4 +315,23 @@ Future<bool> _hasFollow({
       .maybeSingle();
 
   return data != null;
+}
+
+Future<bool> _hasPendingFollowRequest({
+  required String requesterId,
+  required String targetUserId,
+}) async {
+  try {
+    final data = await SupabaseService.client
+        .from('follow_requests')
+        .select('id')
+        .eq('requester_id', requesterId)
+        .eq('target_user_id', targetUserId)
+        .eq('status', 'pending')
+        .maybeSingle();
+
+    return data != null;
+  } catch (_) {
+    return false;
+  }
 }
