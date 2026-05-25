@@ -40,6 +40,7 @@ class _ProfileFollowListPageState extends ConsumerState<ProfileFollowListPage> {
   void initState() {
     super.initState();
     _scrollController = ScrollController()..addListener(_onScroll);
+    if (widget.userId.trim().isEmpty) return;
     Future.microtask(() {
       ref
           .read(profileFollowListControllerProvider(_args).notifier)
@@ -53,6 +54,7 @@ class _ProfileFollowListPageState extends ConsumerState<ProfileFollowListPage> {
     if (oldWidget.userId == widget.userId && oldWidget.type == widget.type) {
       return;
     }
+    if (widget.userId.trim().isEmpty) return;
 
     Future.microtask(() {
       ref
@@ -71,6 +73,32 @@ class _ProfileFollowListPageState extends ConsumerState<ProfileFollowListPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (widget.userId.trim().isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            tooltip: 'Geri',
+            onPressed: () {
+              if (context.canPop()) {
+                context.pop();
+                return;
+              }
+              context.goNamed(RouteNames.profile);
+            },
+            icon: const Icon(Icons.arrow_back),
+          ),
+          title: Text(widget.type.title),
+        ),
+        body: const SafeArea(
+          child: EmptyState(
+            title: 'Kullanıcı bulunamadı.',
+            message: 'Bu liste bağlantısı geçerli değil.',
+            icon: Icons.person_off_outlined,
+          ),
+        ),
+      );
+    }
+
     final state = ref.watch(profileFollowListControllerProvider(_args));
     final controller = ref.read(
       profileFollowListControllerProvider(_args).notifier,
