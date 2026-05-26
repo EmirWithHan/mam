@@ -9,6 +9,7 @@ A new Flutter project.
 - [Closed beta checklist](docs/closed_beta_checklist.md)
 - [Known limitations](docs/known_limitations.md)
 - [Store readiness precheck](docs/store_readiness_precheck.md)
+- [Manual QA checklist](docs/manual_qa_checklist.md)
 
 ## Getting Started
 

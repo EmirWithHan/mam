@@ -1,33 +1,33 @@
 # Known Limitations
 
-This document lists intentional MVP limitations for demo and closed beta planning.
+This document lists intentional MVP limitations for demo and closed beta planning. These are not surprises or secret blockers; they are items to communicate clearly before wider release.
 
-## Postponed Platform Work
+## Postponed Platform Features
 
 - Push notifications are postponed.
 - Firebase/FCM is not active.
+- Firebase Auth was not added.
 - Realtime notifications are not implemented.
-- Apple login is postponed until Apple Developer Program setup is available.
-- App Store and Play Store assets are pending.
-- Store signing, provisioning, and release metadata are not complete.
+- Apple login is postponed until Apple Developer Program is active.
+- Apple Developer Program is required for iOS device distribution, TestFlight, and App Store submission.
 
 ## Product And Operations
 
-- Advanced moderation is postponed.
+- Advanced moderation tooling is postponed.
 - Production-grade abuse detection is not implemented.
-- Admin panel is not implemented.
+- Advanced rate limiting may need backend review before a larger public launch.
 - Production analytics are postponed.
-- Real payment or monetization flows are not implemented.
-- Advanced rate limiting may need backend review before a wider launch.
+- Admin panel is not implemented.
+- Real payment/monetization is not implemented.
+
+## Store And Release Readiness
+
+- App Store and Play Store assets are pending.
+- Store screenshots, descriptions, privacy copy, and review notes need final review.
+- Data deletion request handling should be documented before store submission.
+- Content moderation and report/block behavior should be described clearly for reviewers.
 
 ## Beta Expectations
 
-- In-app notifications are Supabase-backed and require users to open the app.
-- Follow request approval/rejection is in-app only; there is no push alert yet.
-- Username and name are enough for general app access. City, district, and birth
-  date are required only for event participation/creation, and event-launched
-  profile completion returns through a safe internal path.
-- Closed beta should use staged accounts and staged demo data.
-- Demo data should not include real personal data.
-- Privacy behavior should be validated after every Supabase migration push.
-- Any public launch should wait for privacy policy, terms, support process, and data deletion process approval.
+- Closed beta should focus on auth, onboarding, event discovery, event participation, privacy boundaries, follow requests, gallery controls, notifications, and UI stability.
+- Beta users should not expect push alerts, realtime inbox updates, production analytics, payments, or admin tooling.

@@ -2,160 +2,171 @@
 
 ## Auth/Profile
 
-- [ ] Login works with staged test accounts.
-- [ ] Register flow creates a Supabase Auth user.
-- [ ] Core profile completion requires only name and username; city, district,
-      and birth date are required only for event create/join actions.
-- [ ] Event profile completion returns safely to event detail/create when
-      opened from an event action.
-- [ ] Username validation copy fits on narrow screens.
-- [ ] Logout returns safely to the auth flow.
-- [ ] No raw Supabase errors are shown to users.
+- [ ] Email register works.
+- [ ] Email login works.
+- [ ] Logout returns to auth flow safely.
+- [ ] Auth state restores after refresh/reopen.
+- [ ] Core profile requires username and name/full_name only.
+- [ ] username#0000 display appears on profile surfaces.
+- [ ] Uppercase username input saves lowercase.
+- [ ] Duplicate username shows friendly Turkish copy.
+- [ ] No surname/last_name is required.
+
+## Social Login
+
+- [ ] Google login starts Supabase OAuth.
+- [ ] Facebook login starts Supabase OAuth.
+- [ ] OAuth callback route returns users safely to the app.
+- [ ] Social signup creates username, name/full_name, and 4-digit tag.
+- [ ] Optional fields do not block social users from browsing.
+- [ ] Apple is disabled or clearly marked Yakında.
 
 ## Public/Private Profile
 
-- [ ] Profiles are public by default.
-- [ ] "Gizli hesap" toggle saves and reflects the saved value.
-- [ ] Private profile header and counts remain visible to authenticated users.
-- [ ] Private gallery is locked for non-followers.
-- [ ] Private Geçmiş Events is locked for non-followers.
-- [ ] Followers and owners can see allowed private content.
+- [ ] Public profiles show allowed content.
+- [ ] Private profiles hide Gallery from non-followers.
+- [ ] Private profiles hide Geçmiş Events from non-followers.
+- [ ] Owner always sees own private content.
+- [ ] Followers can see allowed private content.
+- [ ] Locked copy says: "Bu alanı görmek için kullanıcıyı takip etmelisin."
 
 ## Follow Requests
 
-- [ ] Public account follow works immediately.
-- [ ] Public account follow creates a "Yeni takipçi" notification.
-- [ ] Private account follow creates a pending request, not an immediate follow.
-- [ ] Private profile button changes to "İstek Gönderildi".
-- [ ] Pending request does not unlock gallery or Geçmiş Events.
-- [ ] Private user receives a follow request notification.
-- [ ] "Onayla" creates the follow relationship.
-- [ ] "Reddet" does not create the follow relationship.
-- [ ] Approved requester can see private gallery and Geçmiş Events after refresh.
+- [ ] Public account follow is instant.
+- [ ] Private account follow creates a request, not a follow.
+- [ ] Pending request state is visible.
+- [ ] Approve creates the follow relationship.
+- [ ] Reject does not create the follow relationship.
+- [ ] Pending request does not reveal private content.
 
 ## Followers/Following
 
-- [ ] Own followers list opens.
-- [ ] Own following list opens.
-- [ ] Public profile followers list opens.
-- [ ] Public profile following list opens.
-- [ ] Private profile followers/following lists follow intended basic-profile visibility.
-- [ ] Empty followers state says "Henüz takipçi yok."
-- [ ] Empty following state says "Henüz kimse takip edilmiyor."
-- [ ] Row tap opens public profile safely.
+- [ ] Followers list loads.
+- [ ] Following list loads.
+- [ ] Empty followers state is friendly.
+- [ ] Empty following state is friendly.
+- [ ] Self follow button never appears.
+- [ ] Row tap opens the correct public profile.
 
 ## Gallery
 
 - [ ] Own gallery loads.
 - [ ] Public gallery loads when allowed.
 - [ ] Private gallery shows locked state when not allowed.
-- [ ] Gallery viewer opens and closes safely.
-- [ ] Owner three-dot menu appears only for owner.
-- [ ] Archived item is visible to owner with lock overlay.
-- [ ] Archived item is hidden from other users.
-- [ ] Delete action asks for confirmation.
+- [ ] Owner menu appears only for owner.
+- [ ] Archive/unarchive works.
+- [ ] Archived items are visible only to owner.
+- [ ] Delete confirmation works.
+- [ ] Gallery viewer back navigation works.
 
 ## Events
 
 - [ ] Events list loads.
 - [ ] Event filters work.
+- [ ] Event detail opens.
 - [ ] Create event validates required fields.
-- [ ] Event detail opens from event list and notifications.
-- [ ] Host profile navigation from event detail works.
 - [ ] Past events are viewable but not joinable.
-- [ ] Active Events appear above Geçmiş Events in profiles.
+- [ ] Full events show full-capacity behavior.
+- [ ] Host profile opens from event detail.
+
+## Event-Required Profile Fields
+
+- [ ] Home loads without city/district/birth date.
+- [ ] Feed loads without city/district/birth date.
+- [ ] Events browsing loads without city/district/birth date.
+- [ ] Event detail loads without city/district/birth date.
+- [ ] Join/create event requires city, district, and birth date.
+- [ ] "Profili tamamla" opens profile completion/edit.
+- [ ] Saving required fields returns safely to the intended flow.
 
 ## Participation
 
-- [ ] User can request to join a future event.
-- [ ] User can cancel a pending request.
-- [ ] Host can approve a request.
-- [ ] Host can reject a request.
-- [ ] Approved participant can leave.
-- [ ] Full capacity state is clear.
-- [ ] Buttons disable while actions are running.
-- [ ] Chat/call access gating matches participation state.
+- [ ] Request to join works.
+- [ ] Cancel pending request works.
+- [ ] Host approve works.
+- [ ] Host reject works.
+- [ ] Approved participant leave works.
+- [ ] Buttons disable while actions are loading.
+- [ ] Participant list visibility matches access rules.
+- [ ] Event notifications are created/displayed where expected.
 
 ## Feed/Social
 
 - [ ] Feed loads without false error states.
+- [ ] Empty feed state is clear.
 - [ ] Create post works.
-- [ ] Event-linked post opens event detail.
-- [ ] Likes update locally.
-- [ ] Comments handle long text.
-- [ ] Follow/unfollow works from supported surfaces.
-- [ ] Private follow request state is clear from supported follow buttons.
-- [ ] Own post delete works.
-- [ ] Report/block controls are reachable and safe.
+- [ ] Likes work.
+- [ ] Comments work.
+- [ ] Long captions/comments wrap.
+- [ ] Missing images/avatars fall back safely.
+- [ ] Private or archived content does not leak.
 
 ## Notifications
 
-- [ ] Notifications list loads newest first.
-- [ ] Unread/read visual states are clear.
-- [ ] Tapping event notification opens event detail.
-- [ ] Tapping profile/follow notification opens profile when available.
-- [ ] Follow request notification shows "Onayla" and "Reddet".
-- [ ] Approve/reject actions disable while loading.
-- [ ] Mark one read works.
-- [ ] Mark all read works and disables during loading.
-- [ ] Empty state says "Henüz bildirimin yok."
+- [ ] Notifications page loads.
+- [ ] Empty state says: "Henüz bildirimin yok."
+- [ ] Error state says: "Bildirimler yüklenemedi."
+- [ ] Event notification opens event detail.
+- [ ] Follow notification opens profile safely.
+- [ ] Follow request notification shows Onayla/Reddet.
+- [ ] Mark read works.
+- [ ] Mark all read works.
 
 ## Safety/Moderation
 
-- [ ] Report flow does not crash.
-- [ ] Block flow does not crash.
-- [ ] Blocked/reported content behavior is understood by the demo team.
-- [ ] No private media or archived items leak to unauthorized users.
-- [ ] Participant visibility rules are preserved.
+- [ ] Report action is reachable.
+- [ ] Block action is reachable.
+- [ ] Blocked/reported users do not create unsafe UI states.
+- [ ] Trust score display, if visible, is understandable.
+- [ ] No harmful real demo content is used.
 
 ## Performance
 
-- [ ] Cold start is acceptable on demo devices.
-- [ ] Feed scroll is smooth enough for closed beta.
-- [ ] Event list scroll is smooth enough for closed beta.
-- [ ] Profile gallery does not overflow or freeze.
-- [ ] Large text and missing images do not cause layout errors.
+- [ ] App starts quickly on test devices.
+- [ ] Feed and events list scrolling are smooth enough for beta.
+- [ ] Large images do not crash common screens.
+- [ ] Loading states do not get stuck after actions.
 
 ## Security/RLS
 
-- [ ] Supabase RLS policies are reviewed before beta.
-- [ ] Safe RPCs are used for public profile, gallery, event history, followers, following, and follow requests.
-- [ ] No broad direct profile SELECT was added for public data.
-- [ ] Service role keys are not present in the client.
-- [ ] `.env` files are not committed.
+- [ ] No secrets are stored in docs or source.
+- [ ] Private profile data is not visible to unauthorized users.
+- [ ] Archived gallery items are hidden from others.
+- [ ] Event participant data follows intended visibility rules.
+- [ ] RLS policies are reviewed before public beta.
 
 ## Mobile Responsiveness
 
-- [ ] Narrow Android layout checked.
-- [ ] Narrow iPhone layout checked.
-- [ ] Chrome/web layout checked if used for demo.
-- [ ] Long Turkish names and usernames do not overflow.
-- [ ] Buttons have safe spacing near screen edges.
+- [ ] Narrow mobile widths do not overflow.
+- [ ] Web/Chrome demo width looks acceptable.
+- [ ] Long names and username#0000 handles fit.
+- [ ] Keyboard open/close does not block key actions.
+- [ ] Primary buttons do not touch screen edges.
 
 ## Test Accounts
 
-- [ ] Host user prepared.
+- [ ] Host account prepared.
 - [ ] Approved participant prepared.
-- [ ] Pending event requester prepared.
-- [ ] Rejected event requester prepared.
-- [ ] Social/feed-heavy user prepared.
-- [ ] Private profile user prepared.
+- [ ] Pending requester prepared.
+- [ ] Rejected requester prepared.
+- [ ] Private profile account prepared.
 - [ ] Follow request requester prepared.
 - [ ] New empty user prepared.
-- [ ] Passwords are stored outside the repository.
+- [ ] Safety/report demo user prepared.
 
 ## Known Risks
 
-- [ ] Remote Supabase migrations are confirmed applied.
-- [ ] Demo data can be reset if a walkthrough changes state.
-- [ ] Network failure behavior is acceptable.
-- [ ] Push/realtime expectations are clearly positioned as postponed.
-- [ ] Abuse/rate limiting limits are understood before inviting testers.
+- [ ] Push notifications are postponed.
+- [ ] Realtime notifications are postponed.
+- [ ] Apple login is postponed.
+- [ ] Advanced moderation is postponed.
+- [ ] Store assets are not final.
+- [ ] Production analytics are not active.
 
 ## Rollback Plan
 
-- [ ] Keep a known-good app build available.
-- [ ] Keep a known-good Supabase migration state documented.
-- [ ] Prepare a short "demo reset" procedure for test accounts.
-- [ ] Assign one owner for beta issue triage.
-- [ ] Pause invites if auth, event joins, follow requests, profile privacy, or notifications regress.
+- [ ] Keep beta cohort small.
+- [ ] Preserve known-good staging data snapshot where possible.
+- [ ] Document reproduction steps for critical bugs.
+- [ ] Disable beta invites if auth, privacy, or event participation breaks.
+- [ ] Communicate postponed features clearly to testers.

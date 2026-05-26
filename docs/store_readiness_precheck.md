@@ -1,65 +1,61 @@
 # Store Readiness Precheck
 
-Match A Man is not being claimed as store-ready yet. This checklist is for later preparation before App Store or Play Store submission.
+Match A Man is not being marked store-ready by this checklist. Use it as a later pre-submission review before TestFlight, Play Console testing, App Store review, or Play Store review.
 
-## App Identity
+## Product Listing
 
 - [ ] Final app icon prepared.
 - [ ] Final splash screen prepared.
-- [ ] Bundle ID and Android package name confirmed.
-- [ ] App display name confirmed.
-- [ ] App category selected.
+- [ ] Bundle id/package name confirmed.
+- [ ] App name and subtitle/tagline confirmed.
+- [ ] App description drafted.
+- [ ] Screenshots prepared for required device sizes.
+- [ ] Age rating considerations reviewed for social features, user content, report/block, and sports meetups.
 
 ## Legal And Support
 
-- [ ] Privacy policy published.
-- [ ] Terms of service published.
-- [ ] Support email created and monitored.
+- [ ] Privacy policy URL ready.
+- [ ] Terms of service URL ready.
+- [ ] Support email ready.
 - [ ] Data deletion request path documented.
-- [ ] Test account prepared for reviewers.
-- [ ] Contact information reviewed for store listings.
+- [ ] Test account credentials prepared for reviewers without exposing secrets publicly.
+- [ ] Permission descriptions reviewed.
 
-## Safety And Privacy
+## Safety And Moderation
 
-- [ ] Content moderation explanation written.
+- [ ] Content moderation explanation prepared.
 - [ ] Report behavior documented.
 - [ ] Block behavior documented.
 - [ ] Account privacy behavior documented.
 - [ ] Follow request behavior documented.
-- [ ] Gallery archive/delete/comment visibility behavior documented.
-- [ ] Participant visibility and chat/call access gating explained.
-- [ ] Age rating considerations reviewed.
+- [ ] User-generated content review notes prepared for store reviewers.
 
-## Permissions And Data
+## Auth And Platform Policy
 
-- [ ] Permission descriptions reviewed.
-- [ ] Media/gallery permission copy reviewed if applicable.
-- [ ] Location-related copy reviewed if city/district selection expands later.
-- [ ] Supabase data collection and retention notes reviewed.
-- [ ] No service role keys or secrets are bundled in the app.
+- [ ] Email auth reviewed.
+- [ ] Google/Facebook login reviewed.
+- [ ] Apple Developer Program status confirmed.
+- [ ] iOS Apple login requirement reviewed if third-party login remains available on iOS.
+- [ ] Apple login implementation plan prepared before iOS store submission if required.
 
-## Store Assets
-
-- [ ] Screenshots prepared for required device sizes.
-- [ ] App description drafted.
-- [ ] Short description/subtitle drafted.
-- [ ] Keywords reviewed.
-- [ ] Demo video prepared if needed.
-
-## Platform Requirements
+## Android
 
 - [ ] Android package signing configured.
-- [ ] Android release build tested.
-- [ ] iOS signing and provisioning configured.
-- [ ] iOS release build tested.
-- [ ] Apple Sign In requirement reviewed if third-party login is added later.
-- [ ] Review notes include test account and demo flow.
+- [ ] Play Console account ready.
+- [ ] Internal/closed testing track planned.
+- [ ] Android privacy/data safety form drafted.
 
-## Final Pre-Submission
+## iOS
 
-- [ ] Closed beta issues triaged.
-- [ ] Known limitations reviewed with stakeholders.
-- [ ] Privacy/RLS behavior verified in production-like Supabase project.
-- [ ] Follow request and notification behavior verified in production-like Supabase project.
-- [ ] Crash/error monitoring plan approved.
-- [ ] Rollback plan documented.
+- [ ] Apple Developer Program account active.
+- [ ] iOS signing/provisioning configured.
+- [ ] TestFlight plan prepared.
+- [ ] App Store privacy nutrition labels drafted.
+
+## Closed Beta
+
+- [ ] Closed beta invite plan prepared.
+- [ ] Beta tester instructions prepared.
+- [ ] Demo/test accounts prepared.
+- [ ] Known limitations shared with testers.
+- [ ] Rollback/communication plan prepared for critical issues.
