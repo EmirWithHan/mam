@@ -16,6 +16,7 @@ import '../../core/utils/date_formatter.dart';
 import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
+import '../auth/auth_provider.dart';
 import 'profile_models.dart';
 import 'profile_provider.dart';
 
@@ -146,6 +147,9 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
 
     if (!mounted) return;
     if (profile != null) {
+      ref
+          .read(authControllerProvider.notifier)
+          .markProfileCompletion(isCompleted: profile.isProfileCompleted);
       context.goNamed(RouteNames.home);
       return;
     }

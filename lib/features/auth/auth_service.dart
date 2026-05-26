@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
+import '../../core/constants/auth_redirects.dart';
 import '../../services/supabase_service.dart';
 
 class AuthService {
@@ -26,9 +28,13 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    return SupabaseService.client.auth.signUp(
-      email: email,
-      password: password,
+    return SupabaseService.client.auth.signUp(email: email, password: password);
+  }
+
+  Future<bool> signInWithGoogle() {
+    return SupabaseService.client.auth.signInWithOAuth(
+      supabase.OAuthProvider.google,
+      redirectTo: kIsWeb ? null : AuthRedirects.googleOAuthCallback,
     );
   }
 

@@ -37,13 +37,28 @@ GoRouter createAppRouter(AuthState authState) {
     redirect: (context, state) {
       final location = state.matchedLocation;
       final isAuthenticated = authState.status == AuthStatus.authenticated;
+      final needsProfileCompletion =
+          isAuthenticated && !authState.isProfileCompleted;
       final isAuthRoute =
           location == RoutePaths.auth ||
           location == RoutePaths.login ||
           location == RoutePaths.register;
       final isSplashRoute = location == RoutePaths.splash;
+      final isProfileCompletionRoute = location == RoutePaths.profileComplete;
 
       if (isAuthenticated && (isAuthRoute || isSplashRoute)) {
+        return needsProfileCompletion
+            ? RoutePaths.profileComplete
+            : RoutePaths.events;
+      }
+
+      if (needsProfileCompletion && !isProfileCompletionRoute) {
+        return RoutePaths.profileComplete;
+      }
+
+      if (isAuthenticated &&
+          authState.isProfileCompleted &&
+          isProfileCompletionRoute) {
         return RoutePaths.events;
       }
 

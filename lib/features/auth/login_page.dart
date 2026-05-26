@@ -35,7 +35,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    await ref.read(authControllerProvider.notifier).signInWithEmailAndPassword(
+    await ref
+        .read(authControllerProvider.notifier)
+        .signInWithEmailAndPassword(
           email: _emailController.text,
           password: _passwordController.text,
         );
@@ -44,9 +46,22 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     final authState = ref.read(authControllerProvider);
 
     if (authState.message != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(authState.message!)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(authState.message!)));
+    }
+  }
+
+  Future<void> _signInWithGoogle() async {
+    await ref.read(authControllerProvider.notifier).signInWithGoogle();
+
+    if (!mounted) return;
+    final authState = ref.read(authControllerProvider);
+
+    if (authState.message != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(authState.message!)));
     }
   }
 
@@ -114,6 +129,15 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         label: 'Giriş Yap',
                         isLoading: authState.isLoading,
                         onPressed: _submit,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      AppButton(
+                        label: 'Google ile devam et',
+                        variant: AppButtonVariant.outlined,
+                        isLoading: authState.isLoading,
+                        onPressed: authState.isLoading
+                            ? null
+                            : _signInWithGoogle,
                       ),
                     ],
                   ),

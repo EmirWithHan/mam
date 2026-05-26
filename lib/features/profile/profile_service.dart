@@ -31,7 +31,7 @@ class ProfileService {
 
     final data = await SupabaseService.client
         .from('profiles')
-        .insert({'user_id': userId})
+        .insert(_newProfileJson(userId))
         .select()
         .single();
 
@@ -263,6 +263,21 @@ class ProfileService {
     return userId;
   }
 
+  Map<String, dynamic> _newProfileJson(String userId) {
+    final metadata =
+        SupabaseService.client.auth.currentUser?.userMetadata ?? const {};
+    final fullName = _metadataString(metadata, ['full_name', 'name']);
+    final nameParts = _splitFullName(fullName);
+    final avatarUrl = _metadataString(metadata, ['avatar_url', 'picture']);
+
+    final profileJson = <String, dynamic>{'user_id': userId};
+    if (nameParts.$1 != null) profileJson['first_name'] = nameParts.$1;
+    if (nameParts.$2 != null) profileJson['last_name'] = nameParts.$2;
+    if (avatarUrl != null) profileJson['avatar_url'] = avatarUrl;
+
+    return profileJson;
+  }
+
   Map<String, dynamic>? _firstRow(Object? data) {
     if (data is List && data.isNotEmpty) {
       return Map<String, dynamic>.from(data.first as Map);
@@ -334,4 +349,22 @@ Future<bool> _hasPendingFollowRequest({
   } catch (_) {
     return false;
   }
+}
+
+String? _metadataString(Map<String, dynamic> metadata, List<String> keys) {
+  for (final key in keys) {
+    final value = metadata[key]?.toString().trim();
+    if (value != null && value.isNotEmpty) return value;
+  }
+  return null;
+}
+
+(String?, String?) _splitFullName(String? fullName) {
+  final normalized = fullName?.trim().replaceAll(RegExp(r'\s+'), ' ');
+  if (normalized == null || normalized.isEmpty) return (null, null);
+
+  final parts = normalized.split(' ');
+  if (parts.length == 1) return (parts.first, null);
+
+  return (parts.first, parts.skip(1).join(' '));
 }

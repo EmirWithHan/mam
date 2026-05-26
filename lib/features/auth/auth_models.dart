@@ -1,43 +1,45 @@
-enum AuthStatus {
-  initial,
-  loading,
-  authenticated,
-  unauthenticated,
-  error,
-}
+enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
 
 class AuthState {
   const AuthState({
     required this.status,
     this.message,
     this.userId,
+    this.isProfileCompleted = false,
   });
 
   const AuthState.initial()
     : status = AuthStatus.initial,
       message = null,
-      userId = null;
+      userId = null,
+      isProfileCompleted = false;
 
   const AuthState.loading()
     : status = AuthStatus.loading,
       message = null,
-      userId = null;
+      userId = null,
+      isProfileCompleted = false;
 
   const AuthState.unauthenticated({this.message})
     : status = AuthStatus.unauthenticated,
-      userId = null;
+      userId = null,
+      isProfileCompleted = false;
 
-  const AuthState.authenticated({required this.userId})
-    : status = AuthStatus.authenticated,
-      message = null;
+  const AuthState.authenticated({
+    required this.userId,
+    required this.isProfileCompleted,
+  }) : status = AuthStatus.authenticated,
+       message = null;
 
   const AuthState.error({required this.message})
     : status = AuthStatus.error,
-      userId = null;
+      userId = null,
+      isProfileCompleted = false;
 
   final AuthStatus status;
   final String? message;
   final String? userId;
+  final bool isProfileCompleted;
 
   bool get isLoading => status == AuthStatus.loading;
 
@@ -45,11 +47,13 @@ class AuthState {
     AuthStatus? status,
     Object? message = _unset,
     Object? userId = _unset,
+    bool? isProfileCompleted,
   }) {
     return AuthState(
       status: status ?? this.status,
       message: message == _unset ? this.message : message as String?,
       userId: userId == _unset ? this.userId : userId as String?,
+      isProfileCompleted: isProfileCompleted ?? this.isProfileCompleted,
     );
   }
 }
