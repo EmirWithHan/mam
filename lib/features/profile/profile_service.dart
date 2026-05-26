@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
+import '../../core/utils/user_handle.dart';
 import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
 import 'profile_models.dart';
@@ -59,13 +60,20 @@ class ProfileService {
     final user = SupabaseService.client.auth.currentUser;
     final existingProfile = await getMyProfile();
     if (existingProfile != null) {
-      if (!_isSocialUser(user) || existingProfile.hasCoreIdentity) {
+      final shouldCompleteSocial =
+          _isSocialUser(user) && !existingProfile.hasCoreIdentity;
+      if (!shouldCompleteSocial && UserHandle.isValidTag(existingProfile.tag)) {
         return existingProfile;
       }
 
-      debugPrint('[Profile] completing existing social profile');
-      final defaults = await _socialProfileDefaults(user, existingProfile);
-      final data = await _updateMyProfileRow(defaults, userId);
+      final payload = shouldCompleteSocial
+          ? await _socialProfileDefaults(user, existingProfile)
+          : {
+              'tag': _generateProfileTag(),
+              'updated_at': DateTime.now().toIso8601String(),
+            };
+      debugPrint('[Profile] completing profile identity/tag');
+      final data = await _updateMyProfileRow(payload, userId);
 
       return Profile.fromJson(data);
     }
@@ -91,7 +99,12 @@ class ProfileService {
     if (usernameError != null) {
       throw ProfileSaveException(usernameError);
     }
-    final data = await _upsertMyProfileRow(formData.toUpdateJson(), userId);
+    final existingProfile = await getMyProfile();
+    final payload = formData.toUpdateJson();
+    payload['tag'] = UserHandle.isValidTag(existingProfile?.tag)
+        ? existingProfile!.tag!.trim()
+        : _generateProfileTag();
+    final data = await _upsertMyProfileRow(payload, userId);
 
     return Profile.fromJson(data);
   }
@@ -263,7 +276,8 @@ class ProfileService {
       items.add(
         PublicProfileFollowListItem(
           userId: preview.userId,
-          username: preview.usernameTag ?? preview.username,
+          username: preview.username,
+          tag: preview.tag,
           fullName: _previewFullName(preview),
           avatarUrl: preview.avatarUrl,
           city: preview.city,
@@ -315,7 +329,10 @@ class ProfileService {
     final fullName = _metadataString(metadata, ['full_name', 'name']);
     final avatarUrl = _metadataString(metadata, ['avatar_url', 'picture']);
 
-    final profileJson = <String, dynamic>{'user_id': userId};
+    final profileJson = <String, dynamic>{
+      'user_id': userId,
+      'tag': _generateProfileTag(),
+    };
     if (fullName != null) profileJson['first_name'] = fullName;
     if (avatarUrl != null) profileJson['avatar_url'] = avatarUrl;
 
@@ -363,6 +380,9 @@ class ProfileService {
     final username = currentUsername == null || currentUsername.isEmpty
         ? await _uniqueGeneratedUsername(_usernameSeed(user, fullName))
         : ProfileUsername.normalize(currentUsername);
+    final tag = UserHandle.isValidTag(existingProfile?.tag)
+        ? existingProfile!.tag!.trim()
+        : _generateProfileTag();
     debugPrint('[Profile] generated username ready');
     final name = currentName == null || currentName.isEmpty
         ? (fullName ?? username)
@@ -370,6 +390,7 @@ class ProfileService {
 
     final profileJson = <String, dynamic>{
       'username': username,
+      'tag': tag,
       'first_name': name,
       'is_profile_completed': true,
       'updated_at': DateTime.now().toIso8601String(),
@@ -526,6 +547,10 @@ class ProfileService {
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
     final random = Random.secure();
     return List.generate(4, (_) => chars[random.nextInt(chars.length)]).join();
+  }
+
+  String _generateProfileTag() {
+    return UserHandle.generateTag();
   }
 
   Map<String, dynamic>? _firstRow(Object? data) {

@@ -324,7 +324,7 @@ class _ProfileHeader extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              _displayHandle(profile),
+              profile.displayHandle ?? 'Your profile',
               style: AppTextStyles.bodySmall,
               textAlign: TextAlign.center,
             ),
@@ -532,19 +532,6 @@ String _initials(Profile profile) {
   }
 
   return 'M';
-}
-
-String _displayHandle(Profile profile) {
-  final username = profile.username?.trim();
-  final tag = profile.tag?.trim();
-  if (username != null &&
-      username.isNotEmpty &&
-      tag != null &&
-      tag.isNotEmpty) {
-    return '$username#$tag';
-  }
-  if (username != null && username.isNotEmpty) return username;
-  return 'Your profile';
 }
 
 String _displayName(Profile profile) {

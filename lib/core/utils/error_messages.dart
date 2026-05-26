@@ -52,6 +52,15 @@ String friendlyErrorMessage(Object error) {
     return 'Bu kullanıcı adı alınmış.';
   }
 
+  if (normalized.contains('tag') &&
+      (normalized.contains('profiles_tag_check') ||
+          normalized.contains('profile tag') ||
+          normalized.contains('user tag') ||
+          normalized.contains('constraint') ||
+          normalized.contains('23514'))) {
+    return 'Profil etiketi oluşturulamadı. Tekrar dene.';
+  }
+
   if (normalized.contains('kullanıcı adı en az 2') ||
       normalized.contains('username_min') ||
       (normalized.contains('username') && normalized.contains('too short'))) {

@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -133,7 +132,7 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
 
     final formData = ProfileFormData(
       username: _usernameController.text.trim(),
-      tag: _tag?.isNotEmpty == true ? _tag! : _generateTag(),
+      tag: _tag,
       firstName: _nameController.text.trim(),
       birthDate: _selectedBirthDate,
       gender: _genderController.text.trim(),
@@ -284,9 +283,9 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
                           : const Icon(Icons.expand_more),
                       validator: _isEventRequirementsMode
                           ? (value) => Validators.district(
-                                value,
-                                city: _cityController.text,
-                              )
+                              value,
+                              city: _cityController.text,
+                            )
                           : null,
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -471,11 +470,6 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
       return 'Doğum tarihi seçmelisin.';
     }
     return null;
-  }
-
-  String _generateTag() {
-    final value = Random().nextInt(10000);
-    return value.toString().padLeft(4, '0');
   }
 
   String _formatBirthDate(DateTime? value) {

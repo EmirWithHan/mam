@@ -1,3 +1,5 @@
+import '../../core/utils/user_handle.dart';
+
 class Event {
   const Event({
     required this.id,
@@ -293,11 +295,7 @@ class EventPublicParticipant {
   }
 
   String? get handleLabel {
-    final user = username?.trim();
-    final userTag = tag?.trim();
-    if (user == null || user.isEmpty) return null;
-    if (userTag != null && userTag.isNotEmpty) return '$user#$userTag';
-    return user;
+    return formatUserHandle(username, tag);
   }
 
   factory EventPublicParticipant.fromJson(Map<String, dynamic> json) {

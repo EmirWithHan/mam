@@ -305,7 +305,7 @@ class _FollowListText extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final username = item.username?.trim();
+    final handle = item.displayHandle;
     final location = _locationLabel(item);
     final bio = item.bio?.trim();
 
@@ -318,10 +318,10 @@ class _FollowListText extends StatelessWidget {
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),
-        if (username != null && username.isNotEmpty) ...[
+        if (handle != null && handle.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.xs),
           Text(
-            username,
+            handle,
             style: AppTextStyles.caption.copyWith(color: AppColors.primary),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

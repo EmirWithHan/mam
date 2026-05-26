@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:match_a_man/core/router/route_names.dart';
 import 'package:match_a_man/core/utils/error_messages.dart';
+import 'package:match_a_man/core/utils/user_handle.dart';
 import 'package:match_a_man/features/auth/auth_service.dart';
 import 'package:match_a_man/features/profile/profile_models.dart';
 import 'package:match_a_man/features/profile/profile_provider.dart';
@@ -74,7 +75,19 @@ void main() {
         ProfileUsername.validate('emir han'),
         'Kullanıcı adı sadece harf, rakam ve _ içerebilir.',
       );
+      expect(
+        ProfileUsername.validate('emir#1932'),
+        'Kullanıcı adına # ekleme; etiket otomatik oluşturulur.',
+      );
       expect(ProfileUsername.validate('EmirHan'), isNull);
+    });
+
+    test('formats profile display handles with tags', () {
+      expect(formatUserHandle('emirwithhan', '6385'), 'emirwithhan#6385');
+      expect(formatUserHandle('emirwithhan', '0047'), 'emirwithhan#0047');
+      expect(formatUserHandle('emirwithhan', null), 'emirwithhan');
+      expect(formatUserHandle(null, '6385'), isNull);
+      expect(formatUserHandle('selin#1932', '1932'), 'selin#1932');
     });
 
     test('builds social username seed from email or name', () {
@@ -117,6 +130,7 @@ void main() {
       expect(formData.isComplete, isTrue);
       expect(formData.toUpdateJson()['username'], 'emirhan');
       expect(formData.toUpdateJson().containsKey('last_name'), isFalse);
+      expect(formData.toUpdateJson()['tag'], '1234');
       expect(formData.toUpdateJson()['city'], isNull);
       expect(formData.toUpdateJson()['district'], isNull);
       expect(formData.toUpdateJson()['birth_date'], isNull);
@@ -132,6 +146,17 @@ void main() {
       expect(profile.id, 'user-1');
       expect(profile.userId, 'user-1');
       expect(profile.hasCoreIdentity, isTrue);
+    });
+
+    test('profile form does not require a typed tag', () {
+      const formData = ProfileFormData(
+        username: 'EmirHan',
+        tag: null,
+        firstName: 'Emir',
+      );
+
+      expect(formData.isComplete, isTrue);
+      expect(formData.toUpdateJson().containsKey('tag'), isFalse);
     });
 
     test('duplicate username errors are friendly', () {

@@ -76,10 +76,13 @@ credentials.
   OAuth callback and session recovery before the app routes to setup or Events.
 - Flutter Web uses path URL routing so `http://localhost:3000/auth/callback`
   is handled as an app route instead of a hash route.
-- Google and Facebook signup create a safe lowercase username automatically
-  when the profile is missing or incomplete. Generation tries the email local
-  part first, then provider display name, then `user_<short uuid>`, with a
-  suffix retry for collisions.
+- Google and Facebook signup create a safe lowercase username and a 4-digit
+  profile tag automatically when the profile is missing or incomplete.
+  Username generation tries the email local part first, then provider display
+  name, then `user_<short uuid>`, with a suffix retry for collisions.
+- Email signup/profile completion also gets a generated 4-digit profile tag.
+  Public handles display as `username#0000`; users type only `username`, never
+  the `#0000` tag.
 - If the OAuth session succeeds but the profile row is missing, the app creates
   the profile during first authenticated bootstrap instead of sending the user
   back to login.

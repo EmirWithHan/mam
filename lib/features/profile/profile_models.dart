@@ -1,3 +1,5 @@
+import '../../core/utils/user_handle.dart';
+
 class Profile {
   const Profile({
     required this.id,
@@ -50,6 +52,8 @@ class Profile {
         district?.trim().isNotEmpty == true &&
         birthDate != null;
   }
+
+  String? get displayHandle => formatUserHandle(username, tag);
 
   String get trustLabel {
     final score = trustScoreValue;
@@ -150,7 +154,7 @@ class ProfileFormData {
   });
 
   final String username;
-  final String tag;
+  final String? tag;
   final DateTime? birthDate;
   final String firstName;
   final String? gender;
@@ -161,9 +165,7 @@ class ProfileFormData {
   final String? avatarUrl;
 
   bool get isComplete {
-    return normalizedUsername.isNotEmpty &&
-        tag.trim().isNotEmpty &&
-        firstName.trim().isNotEmpty;
+    return normalizedUsername.isNotEmpty && firstName.trim().isNotEmpty;
   }
 
   String get normalizedUsername => ProfileUsername.normalize(username);
@@ -171,7 +173,7 @@ class ProfileFormData {
   Map<String, dynamic> toUpdateJson() {
     return {
       'username': normalizedUsername,
-      'tag': tag.trim(),
+      if (UserHandle.isValidTag(tag)) 'tag': tag!.trim(),
       'first_name': firstName.trim(),
       'birth_date': birthDate == null ? null : _dateToJson(birthDate!),
       'gender': _nullableTrim(gender),
@@ -209,6 +211,9 @@ class ProfileUsername {
     }
     if (normalized.length > maxLength) {
       return 'Kullanıcı adı en fazla 20 karakter olmalı.';
+    }
+    if ((value ?? '').contains('#')) {
+      return 'Kullanıcı adına # ekleme; etiket otomatik oluşturulur.';
     }
     if (!_validPattern.hasMatch(normalized)) {
       return 'Kullanıcı adı sadece harf, rakam ve _ içerebilir.';
@@ -324,11 +329,7 @@ class PublicProfileDetail {
   }
 
   String? get handleLabel {
-    final user = username?.trim();
-    final userTag = tag?.trim();
-    if (user == null || user.isEmpty) return null;
-    if (userTag != null && userTag.isNotEmpty) return '$user#$userTag';
-    return '@$user';
+    return formatUserHandle(username, tag);
   }
 
   bool get hasBio => bio?.trim().isNotEmpty == true;
@@ -369,6 +370,7 @@ class PublicProfileFollowListItem {
   const PublicProfileFollowListItem({
     required this.userId,
     this.username,
+    this.tag,
     this.fullName,
     this.avatarUrl,
     this.city,
@@ -386,6 +388,7 @@ class PublicProfileFollowListItem {
 
   final String userId;
   final String? username;
+  final String? tag;
   final String? fullName;
   final String? avatarUrl;
   final String? city;
@@ -408,6 +411,8 @@ class PublicProfileFollowListItem {
     return 'MaM User';
   }
 
+  String? get displayHandle => formatUserHandle(username, tag);
+
   PublicProfileFollowListItem copyWith({
     bool? isFollowingByMe,
     bool? pendingFollowRequestByMe,
@@ -416,6 +421,7 @@ class PublicProfileFollowListItem {
     return PublicProfileFollowListItem(
       userId: userId,
       username: username,
+      tag: tag,
       fullName: fullName,
       avatarUrl: avatarUrl,
       city: city,
@@ -437,6 +443,7 @@ class PublicProfileFollowListItem {
     return PublicProfileFollowListItem(
       userId: json['user_id'].toString(),
       username: json['username'] as String?,
+      tag: json['tag'] as String?,
       fullName: json['full_name'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       city: json['city'] as String?,

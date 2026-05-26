@@ -1,3 +1,5 @@
+import '../../core/utils/user_handle.dart';
+
 class PublicProfilePreview {
   const PublicProfilePreview({
     required this.userId,
@@ -35,13 +37,7 @@ class PublicProfilePreview {
   }
 
   String? get usernameTag {
-    final usernameValue = username?.trim();
-    final tagValue = tag?.trim();
-    if (usernameValue == null || usernameValue.isEmpty) return null;
-    if (tagValue != null && tagValue.isNotEmpty) {
-      return '$usernameValue#$tagValue';
-    }
-    return usernameValue;
+    return formatUserHandle(username, tag);
   }
 
   String get initials {
