@@ -47,10 +47,7 @@ class Profile {
   }
 
   bool get hasEventRequiredFields {
-    return hasCoreIdentity &&
-        city?.trim().isNotEmpty == true &&
-        district?.trim().isNotEmpty == true &&
-        birthDate != null;
+    return EventProfileRequirements.hasRequiredFields(this);
   }
 
   String? get displayHandle => formatUserHandle(username, tag);
@@ -279,6 +276,26 @@ class ProfileSaveException implements Exception {
 
   @override
   String toString() => message;
+}
+
+class EventProfileRequirements {
+  const EventProfileRequirements._();
+
+  static bool hasRequiredFields(Profile? profile) {
+    return missingFields(profile).isEmpty;
+  }
+
+  static List<String> missingFields(Profile? profile) {
+    if (profile == null) {
+      return const ['city', 'district', 'birthDate'];
+    }
+
+    final missing = <String>[];
+    if (profile.city?.trim().isNotEmpty != true) missing.add('city');
+    if (profile.district?.trim().isNotEmpty != true) missing.add('district');
+    if (profile.birthDate == null) missing.add('birthDate');
+    return missing;
+  }
 }
 
 class PublicProfileDetail {

@@ -22,8 +22,10 @@ class ProfileState {
 
   bool get isLoading => status == ProfileStatus.loading;
   bool get isProfileCompleted => profile?.hasCoreIdentity ?? false;
-  bool get canCreateEvent => profile?.hasEventRequiredFields ?? false;
-  bool get canRequestToJoinEvent => profile?.hasEventRequiredFields ?? false;
+  bool get canCreateEvent =>
+      EventProfileRequirements.hasRequiredFields(profile);
+  bool get canRequestToJoinEvent =>
+      EventProfileRequirements.hasRequiredFields(profile);
 
   ProfileState copyWith({
     required ProfileStatus status,

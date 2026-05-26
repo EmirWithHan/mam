@@ -292,6 +292,24 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
       return const Scaffold(body: SafeArea(child: AppLoader()));
     }
 
+    if (profileState.status == ProfileStatus.error) {
+      return Scaffold(
+        appBar: _CreateEventAppBar(onBack: () => _goBack(context)),
+        body: const SafeArea(
+          child: Center(
+            child: Padding(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              child: Text(
+                'Profil bilgileri kontrol edilemedi.',
+                style: AppTextStyles.title,
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
     if (!profileState.canCreateEvent) {
       return Scaffold(
         appBar: _CreateEventAppBar(onBack: () => _goBack(context)),

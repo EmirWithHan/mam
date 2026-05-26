@@ -33,11 +33,14 @@ class JoinRequestButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (profileState.isLoading) {
-      return AppButton(
-        label: 'Profil kontrol ediliyor',
-        isLoading: isLoading,
-        onPressed: null,
+    final currentRequest = request;
+
+    if (event.isPast) {
+      return const _StatusPanel(
+        icon: Icons.event_busy_outlined,
+        title: 'Bu etkinlik geçmişte kaldı.',
+        message: 'Geçmiş etkinlikler için katılım işlemi yapılamaz.',
+        color: AppColors.textMuted,
       );
     }
 
@@ -50,41 +53,6 @@ class JoinRequestButton extends StatelessWidget {
       );
     }
 
-    if (event.isPast) {
-      return const _StatusPanel(
-        icon: Icons.event_busy_outlined,
-        title: 'Bu etkinlik geçmişte kaldı.',
-        message: 'Geçmiş etkinlikler için katılım işlemi yapılamaz.',
-        color: AppColors.textMuted,
-      );
-    }
-
-    if (!profileState.canRequestToJoinEvent) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const _StatusPanel(
-            icon: Icons.assignment_ind_outlined,
-            title: 'Etkinliklere katılmak için profilini tamamlamalısın.',
-            message: 'Gerekli bilgiler: şehir, ilçe ve doğum tarihi.',
-            color: AppColors.primary,
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          AppButton(
-            label: 'Profili tamamla',
-            onPressed: () => context.pushNamed(
-              RouteNames.profileComplete,
-              queryParameters: {
-                'mode': RoutePaths.profileCompleteModeEventRequirements,
-                'returnTo': _currentReturnPath(context),
-              },
-            ),
-          ),
-        ],
-      );
-    }
-
-    final currentRequest = request;
     if (currentRequest?.isPending == true) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -127,8 +95,50 @@ class JoinRequestButton extends StatelessWidget {
       return const _StatusPanel(
         icon: Icons.lock_outline,
         title: 'Etkinlik dolu',
-        message: 'Bu etkinlik onaylı katılımcı kapasitesine ulaştı.',
+        message: 'Bu etkinlik şu anda dolu.',
         color: AppColors.textMuted,
+      );
+    }
+
+    if (profileState.isLoading) {
+      return AppButton(
+        label: 'Profil kontrol ediliyor',
+        isLoading: isLoading,
+        onPressed: null,
+      );
+    }
+
+    if (profileState.status == ProfileStatus.error) {
+      return const _StatusPanel(
+        icon: Icons.info_outline,
+        title: 'Profil bilgileri kontrol edilemedi.',
+        message: 'Birazdan tekrar deneyebilirsin.',
+        color: AppColors.error,
+      );
+    }
+
+    if (!profileState.canRequestToJoinEvent) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _StatusPanel(
+            icon: Icons.assignment_ind_outlined,
+            title: 'Etkinliklere katılmak için profilini tamamlamalısın.',
+            message: 'Gerekli bilgiler: şehir, ilçe ve doğum tarihi.',
+            color: AppColors.primary,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          AppButton(
+            label: 'Profili tamamla',
+            onPressed: () => context.pushNamed(
+              RouteNames.profileComplete,
+              queryParameters: {
+                'mode': RoutePaths.profileCompleteModeEventRequirements,
+                'returnTo': _currentReturnPath(context),
+              },
+            ),
+          ),
+        ],
       );
     }
 

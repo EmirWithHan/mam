@@ -6,6 +6,8 @@
 - [ ] Register flow creates a Supabase Auth user.
 - [ ] Core profile completion requires only name and username; city, district,
       and birth date are required only for event create/join actions.
+- [ ] Event profile completion returns safely to event detail/create when
+      opened from an event action.
 - [ ] Username validation copy fits on narrow screens.
 - [ ] Logout returns safely to the auth flow.
 - [ ] No raw Supabase errors are shown to users.

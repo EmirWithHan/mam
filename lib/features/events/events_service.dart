@@ -57,6 +57,9 @@ class EventsService {
     if (event.isPast) {
       throw StateError('Bu etkinlik geçmişte kaldı.');
     }
+    if (event.isFull) {
+      throw StateError('Bu etkinlik şu anda dolu.');
+    }
 
     await SupabaseService.client.rpc(
       'request_event_join',

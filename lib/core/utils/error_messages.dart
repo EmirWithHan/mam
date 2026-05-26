@@ -28,6 +28,26 @@ String friendlyErrorMessage(Object error) {
     }
   }
 
+  if (normalized.contains('profil bilgileri kontrol edilemedi')) {
+    return 'Profil bilgileri kontrol edilemedi.';
+  }
+
+  if (normalized.contains('etkinliklere katılmak') ||
+      normalized.contains('event profile')) {
+    return 'Etkinliklere katılmak için profilini tamamlamalısın.';
+  }
+
+  if (normalized.contains('bu etkinlik geçmişte kaldı') ||
+      normalized.contains('event is past')) {
+    return 'Bu etkinlik geçmişte kaldı.';
+  }
+
+  if (normalized.contains('bu etkinlik şu anda dolu') ||
+      normalized.contains('event is full') ||
+      normalized.contains('capacity')) {
+    return 'Bu etkinlik şu anda dolu.';
+  }
+
   if (normalized.contains('email not confirmed')) {
     return 'E-posta doğrulaması gerekiyorsa gelen kutunu kontrol et.';
   }

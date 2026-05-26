@@ -4,6 +4,8 @@ import 'package:match_a_man/core/router/route_names.dart';
 import 'package:match_a_man/core/utils/error_messages.dart';
 import 'package:match_a_man/core/utils/user_handle.dart';
 import 'package:match_a_man/features/auth/auth_service.dart';
+import 'package:match_a_man/features/events/events_models.dart';
+import 'package:match_a_man/features/events/widgets/join_request_button.dart';
 import 'package:match_a_man/features/profile/profile_models.dart';
 import 'package:match_a_man/features/profile/profile_provider.dart';
 import 'package:match_a_man/features/profile/widgets/safe_avatar.dart';
@@ -205,6 +207,120 @@ void main() {
 
       expect(profile.hasEventRequiredFields, isTrue);
     });
+
+    test('event readiness reports each missing required field', () {
+      final base = Profile(
+        id: 'profile-1',
+        userId: 'user-1',
+        username: 'emirhan',
+        firstName: 'Emir',
+        city: 'İstanbul',
+        district: 'Kadıköy',
+        birthDate: DateTime(1998),
+        phone: null,
+        bio: null,
+        avatarUrl: null,
+      );
+
+      expect(EventProfileRequirements.hasRequiredFields(base), isTrue);
+      expect(
+        EventProfileRequirements.missingFields(base.copyWith(city: '')),
+        contains('city'),
+      );
+      expect(
+        EventProfileRequirements.missingFields(base.copyWith(district: '')),
+        contains('district'),
+      );
+      expect(
+        EventProfileRequirements.missingFields(
+          Profile(
+            id: base.id,
+            userId: base.userId,
+            username: base.username,
+            firstName: base.firstName,
+            city: base.city,
+            district: base.district,
+          ),
+        ),
+        contains('birthDate'),
+      );
+    });
+
+    test('event requirement route is profile completion, not events', () {
+      expect(RouteNames.profileComplete, isNot(RouteNames.events));
+      expect(RoutePaths.profileComplete, isNot(RoutePaths.events));
+      expect(RoutePaths.profileComplete, startsWith('/profile'));
+    });
+  });
+
+  group('event action precedence', () {
+    testWidgets('past event block appears before profile requirement', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: JoinRequestButton(
+              event: _event(
+                eventDate: DateTime.now().subtract(const Duration(days: 1)),
+              ),
+              profileState: const ProfileState(
+                status: ProfileStatus.success,
+                profile: Profile(
+                  id: 'profile-1',
+                  userId: 'user-1',
+                  username: 'emirhan',
+                  firstName: 'Emir',
+                ),
+              ),
+              request: null,
+              isLoading: false,
+              onRequest: () {},
+              onCancel: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Bu etkinlik geçmişte kaldı.'), findsOneWidget);
+      expect(
+        find.text('Etkinliklere katılmak için profilini tamamlamalısın.'),
+        findsNothing,
+      );
+    });
+
+    testWidgets('full event block appears before profile requirement', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: JoinRequestButton(
+              event: _event(approvedCount: 12, capacityTotal: 12),
+              profileState: const ProfileState(
+                status: ProfileStatus.success,
+                profile: Profile(
+                  id: 'profile-1',
+                  userId: 'user-1',
+                  username: 'emirhan',
+                  firstName: 'Emir',
+                ),
+              ),
+              request: null,
+              isLoading: false,
+              onRequest: () {},
+              onCancel: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Bu etkinlik şu anda dolu.'), findsOneWidget);
+      expect(
+        find.text('Etkinliklere katılmak için profilini tamamlamalısın.'),
+        findsNothing,
+      );
+    });
   });
 
   group('avatar fallback', () {
@@ -220,4 +336,22 @@ void main() {
       expect(find.text('E'), findsOneWidget);
     });
   });
+}
+
+Event _event({
+  DateTime? eventDate,
+  int approvedCount = 0,
+  int capacityTotal = 12,
+}) {
+  return Event(
+    id: 'event-1',
+    hostId: 'host-1',
+    title: 'Basketbol',
+    sportType: 'Basketbol',
+    city: 'İstanbul',
+    eventDate: eventDate ?? DateTime.now().add(const Duration(days: 1)),
+    capacityTotal: capacityTotal,
+    approvedCount: approvedCount,
+    status: 'active',
+  );
 }

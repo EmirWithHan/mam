@@ -96,6 +96,9 @@ credentials.
 - Missing optional fields do not block Home, Feed, Events browsing, Profile,
   Follow, or Notifications. Creating or joining events can still require city,
   district, and birth date.
+- When profile completion starts from an event action, the app uses a safe
+  internal `returnTo` path to return to the event detail or create flow after
+  save.
 - Apple remains postponed and the app does not start Apple OAuth.
 - Email from social providers must not be exposed publicly.
 - Automated tests cover redirect helper and onboarding rules, but they cannot
