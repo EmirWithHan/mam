@@ -121,6 +121,12 @@ class EventsService {
             Map<String, dynamic>.from(row as Map),
           ),
         )
+        .where(
+          (participant) => EventPublicParticipantVisibility.canShow(
+            role: participant.role,
+            attendanceStatus: participant.attendanceStatus,
+          ),
+        )
         .toList(growable: false);
   }
 

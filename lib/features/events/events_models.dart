@@ -280,8 +280,10 @@ class EventPublicParticipant {
   bool get isHost => role == 'host';
 
   bool get isActiveParticipant {
-    return role == 'participant' &&
-        EventParticipationStatus.isActiveApprovedParticipant(attendanceStatus);
+    return EventPublicParticipantVisibility.isActiveParticipant(
+      role: role,
+      attendanceStatus: attendanceStatus,
+    );
   }
 
   String get displayName {
@@ -309,6 +311,26 @@ class EventPublicParticipant {
       role: json['role'] as String? ?? 'participant',
       attendanceStatus: json['attendance_status'] as String? ?? '',
     );
+  }
+}
+
+class EventPublicParticipantVisibility {
+  const EventPublicParticipantVisibility._();
+
+  static bool canShow({
+    required String role,
+    required String attendanceStatus,
+  }) {
+    return role == 'host' ||
+        isActiveParticipant(role: role, attendanceStatus: attendanceStatus);
+  }
+
+  static bool isActiveParticipant({
+    required String role,
+    required String attendanceStatus,
+  }) {
+    return role == 'participant' &&
+        EventParticipationStatus.isActiveApprovedParticipant(attendanceStatus);
   }
 }
 

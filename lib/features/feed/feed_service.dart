@@ -14,13 +14,12 @@ class FeedService {
   final BlocksService _blocksService;
 
   Future<List<Post>> fetchPosts() async {
-    final data = await SupabaseService.client
-        .from('posts')
-        .select()
-        .order('created_at', ascending: false);
+    final data = await SupabaseService.client.rpc('get_visible_feed_posts');
     final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
 
-    return data
+    return (data as List<dynamic>)
+        .whereType<Map>()
+        .map((row) => Map<String, dynamic>.from(row))
         .map(Post.fromJson)
         .where((post) => !post.isArchived)
         .where((post) => !blockedUserIds.contains(post.userId))

@@ -255,6 +255,54 @@ void main() {
   });
 
   group('event action precedence', () {
+    test(
+      'public participant visibility excludes pending/rejected/left users',
+      () {
+        expect(
+          EventPublicParticipantVisibility.canShow(
+            role: 'host',
+            attendanceStatus: 'planned',
+          ),
+          isTrue,
+        );
+        expect(
+          EventPublicParticipantVisibility.canShow(
+            role: 'participant',
+            attendanceStatus: 'planned',
+          ),
+          isTrue,
+        );
+        expect(
+          EventPublicParticipantVisibility.canShow(
+            role: 'participant',
+            attendanceStatus: 'attended',
+          ),
+          isTrue,
+        );
+        expect(
+          EventPublicParticipantVisibility.canShow(
+            role: 'participant',
+            attendanceStatus: 'pending',
+          ),
+          isFalse,
+        );
+        expect(
+          EventPublicParticipantVisibility.canShow(
+            role: 'participant',
+            attendanceStatus: 'rejected',
+          ),
+          isFalse,
+        );
+        expect(
+          EventPublicParticipantVisibility.canShow(
+            role: 'participant',
+            attendanceStatus: 'left',
+          ),
+          isFalse,
+        );
+      },
+    );
+
     testWidgets('past event block appears before profile requirement', (
       tester,
     ) async {
