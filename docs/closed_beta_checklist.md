@@ -4,7 +4,8 @@
 
 - [ ] Login works with staged test accounts.
 - [ ] Register flow creates a Supabase Auth user.
-- [ ] Profile completion requires name, username, city, and district.
+- [ ] Core profile completion requires only name and username; city, district,
+      and birth date are required only for event create/join actions.
 - [ ] Username validation copy fits on narrow screens.
 - [ ] Logout returns safely to the auth flow.
 - [ ] No raw Supabase errors are shown to users.

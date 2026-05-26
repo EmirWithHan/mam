@@ -7,7 +7,9 @@ This script is for a Supabase-only MVP demo or closed beta walkthrough.
 1. Open the app and show the clean auth entry point.
 2. Log in with the host user.
 3. Optionally register or open the new empty user to show profile completion.
-4. Complete or review required profile fields: name, username, city, district, bio, and avatar.
+4. Complete or review core profile fields: name and username. City, district,
+   birth date, bio, and avatar can be completed later; city, district, and
+   birth date are required only for event create/join actions.
 5. Point out that Supabase Auth is the source of truth.
 
 ## B. Event Discovery

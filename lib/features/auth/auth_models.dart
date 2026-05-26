@@ -28,8 +28,8 @@ class AuthState {
   const AuthState.authenticated({
     required this.userId,
     required this.isProfileCompleted,
-  }) : status = AuthStatus.authenticated,
-       message = null;
+    this.message,
+  }) : status = AuthStatus.authenticated;
 
   const AuthState.error({required this.message})
     : status = AuthStatus.error,

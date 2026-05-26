@@ -28,9 +28,12 @@ String friendlyErrorMessage(Object error) {
     }
   }
 
+  if (normalized.contains('email not confirmed')) {
+    return 'E-posta doğrulaması gerekiyorsa gelen kutunu kontrol et.';
+  }
+
   if (normalized.contains('invalid login credentials') ||
-      normalized.contains('invalid credentials') ||
-      normalized.contains('email not confirmed')) {
+      normalized.contains('invalid credentials')) {
     return 'E-posta veya şifre hatalı.';
   }
 

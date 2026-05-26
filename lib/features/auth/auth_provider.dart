@@ -51,7 +51,7 @@ class AuthController extends StateNotifier<AuthState> {
   final ProfileService _profileService;
   late final StreamSubscription<supabase.AuthState> _authSubscription;
 
-  Future<void> _setAuthenticatedState(String userId) async {
+  Future<void> _setAuthenticatedState(String userId, {String? message}) async {
     try {
       debugPrint('[Auth] loading profile for authenticated user');
       final profile = await _profileService.createEmptyProfileIfMissing();
@@ -62,6 +62,7 @@ class AuthController extends StateNotifier<AuthState> {
       state = AuthState.authenticated(
         userId: userId,
         isProfileCompleted: profile.hasCoreIdentity,
+        message: message,
       );
     } catch (error) {
       if (!mounted) return;
@@ -72,6 +73,7 @@ class AuthController extends StateNotifier<AuthState> {
         state = AuthState.authenticated(
           userId: currentUser.id,
           isProfileCompleted: false,
+          message: message,
         );
         return;
       }
@@ -94,11 +96,11 @@ class AuthController extends StateNotifier<AuthState> {
       final session = response.session;
 
       if (user == null || session == null) {
-        state = const AuthState.error(message: 'E-posta veya şifre hatalı.');
+        state = const AuthState.error(message: 'Giriş işlemi tamamlanamadı.');
         return;
       }
 
-      await _setAuthenticatedState(user.id);
+      await _setAuthenticatedState(user.id, message: 'Giriş yapıldı.');
     } on supabase.AuthException catch (error) {
       state = AuthState.error(message: friendlyErrorMessage(error));
     } catch (error) {
@@ -122,7 +124,7 @@ class AuthController extends StateNotifier<AuthState> {
 
       if (user == null) {
         state = const AuthState.error(
-          message: 'Hesap oluşturulamadı. Tekrar dene.',
+          message: 'Giriş işlemi tamamlanamadı.',
         );
         return;
       }
@@ -135,7 +137,7 @@ class AuthController extends StateNotifier<AuthState> {
         return;
       }
 
-      await _setAuthenticatedState(user.id);
+      await _setAuthenticatedState(user.id, message: 'Hesabın oluşturuldu.');
     } on supabase.AuthException catch (error) {
       state = AuthState.error(message: friendlyErrorMessage(error));
     } catch (error) {
@@ -205,6 +207,9 @@ String _socialAuthError(Object error, String providerName) {
   final normalized = error.toString().toLowerCase();
   if (normalized.contains('cancel') || normalized.contains('dismiss')) {
     return 'İşlem iptal edildi.';
+  }
+  if (providerName == 'Facebook') {
+    return 'Facebook ile giriş tamamlanamadı.';
   }
   return '$providerName ile giriş başlatılamadı.';
 }

@@ -22,11 +22,13 @@ class OAuthCallbackPage extends ConsumerStatefulWidget {
 class _OAuthCallbackPageState extends ConsumerState<OAuthCallbackPage> {
   Timer? _fallbackTimer;
   bool _showFailure = false;
+  late final String _failureMessage;
 
   @override
   void initState() {
     super.initState();
     final uri = Uri.base;
+    _failureMessage = _oauthFailureMessage(uri);
     debugPrint(
       '[AuthCallback] reached path=${uri.path} '
       'queryKeys=${uri.queryParameters.keys.join(',')} '
@@ -78,7 +80,7 @@ class _OAuthCallbackPageState extends ConsumerState<OAuthCallbackPage> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        'Giriş işlemi tamamlanamadı.',
+                        _failureMessage,
                         style: AppTextStyles.title,
                         textAlign: TextAlign.center,
                       ),
@@ -106,4 +108,15 @@ class _OAuthCallbackPageState extends ConsumerState<OAuthCallbackPage> {
       ),
     );
   }
+}
+
+String _oauthFailureMessage(Uri uri) {
+  final values = [
+    ...uri.queryParameters.values,
+    uri.fragment,
+  ].join(' ').toLowerCase();
+  if (values.contains('facebook')) {
+    return 'Facebook ile giriş tamamlanamadı.';
+  }
+  return 'Giriş işlemi tamamlanamadı.';
 }

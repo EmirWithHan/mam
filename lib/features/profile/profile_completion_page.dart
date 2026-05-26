@@ -206,7 +206,9 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
               Text('Profilini tamamla', style: AppTextStyles.headline),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Etkinlik oluşturmak ve katılım isteği göndermek için profil bilgilerini tamamla.',
+                _isEventRequirementsMode
+                    ? 'Etkinliklere katılmak için profilini tamamlamalısın. Gerekli bilgiler: şehir, ilçe ve doğum tarihi.'
+                    : 'Devam etmek için kullanıcı adını ve adını ekle. Diğer bilgileri sonra tamamlayabilirsin.',
                 style: AppTextStyles.body,
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -234,7 +236,9 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Doğum tarihi (opsiyonel)',
+                      label: _isEventRequirementsMode
+                          ? 'Doğum tarihi'
+                          : 'Doğum tarihi (opsiyonel)',
                       hintText: 'Tarih seç',
                       controller: _birthDateController,
                       readOnly: true,
@@ -254,16 +258,23 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Şehir (opsiyonel)',
+                      label: _isEventRequirementsMode
+                          ? 'Şehir'
+                          : 'Şehir (opsiyonel)',
                       controller: _cityController,
                       readOnly: true,
                       onTap: _selectCity,
                       prefixIcon: const Icon(Icons.location_city_outlined),
                       suffixIcon: const Icon(Icons.expand_more),
+                      validator: _isEventRequirementsMode
+                          ? Validators.city
+                          : null,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'İlçe (opsiyonel)',
+                      label: _isEventRequirementsMode
+                          ? 'İlçe'
+                          : 'İlçe (opsiyonel)',
                       controller: _districtController,
                       readOnly: true,
                       onTap: districts.isEmpty ? null : _selectDistrict,
@@ -271,6 +282,12 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
                       suffixIcon: districts.isEmpty
                           ? null
                           : const Icon(Icons.expand_more),
+                      validator: _isEventRequirementsMode
+                          ? (value) => Validators.district(
+                                value,
+                                city: _cityController.text,
+                              )
+                          : null,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
@@ -450,7 +467,7 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
   }
 
   String? _birthDateValidator(String? value) {
-    if (value == null && value != null) {
+    if (_isEventRequirementsMode && _selectedBirthDate == null) {
       return 'Doğum tarihi seçmelisin.';
     }
     return null;

@@ -232,9 +232,9 @@ class ProfileUsername {
   }) {
     final emailLocalPart = email?.split('@').first.trim();
     final rawSeed = [
-      preferredUsername,
       emailLocalPart,
       fullName,
+      preferredUsername,
       'user_${_shortFallbackId(fallbackId)}',
     ].firstWhere((value) => value != null && value.trim().isNotEmpty)!;
 

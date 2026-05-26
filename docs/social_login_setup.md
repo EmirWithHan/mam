@@ -76,20 +76,23 @@ credentials.
   OAuth callback and session recovery before the app routes to setup or Events.
 - Flutter Web uses path URL routing so `http://localhost:3000/auth/callback`
   is handled as an app route instead of a hash route.
-- Google and Facebook signup create a safe default username automatically when
-  the profile is missing or incomplete.
+- Google and Facebook signup create a safe lowercase username automatically
+  when the profile is missing or incomplete. Generation tries the email local
+  part first, then provider display name, then `user_<short uuid>`, with a
+  suffix retry for collisions.
 - If the OAuth session succeeds but the profile row is missing, the app creates
   the profile during first authenticated bootstrap instead of sending the user
   back to login.
-- The database profile-completion constraint is aligned with the app: completed
-  core profiles require username and `first_name`; birth date, gender, city,
+- The database profile-completion constraint is aligned with the app: core
+  profiles require username and name/full_name; birth date, gender, city,
   district, phone, bio, and avatar remain optional for general access.
 - Generated and manually entered usernames are stored lowercase. Uppercase input
   is accepted in the app, normalized before save, and must resolve to letters,
   numbers, or `_`.
 - Social metadata may prefill name and avatar only.
-- Missing optional fields do not block general app access. Creating or joining
-  events can still require city, district, and birth date.
+- Missing optional fields do not block Home, Feed, Events browsing, Profile,
+  Follow, or Notifications. Creating or joining events can still require city,
+  district, and birth date.
 - Apple remains postponed and the app does not start Apple OAuth.
 - Email from social providers must not be exposed publicly.
 - Automated tests cover redirect helper and onboarding rules, but they cannot

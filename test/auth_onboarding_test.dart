@@ -4,6 +4,7 @@ import 'package:match_a_man/core/router/route_names.dart';
 import 'package:match_a_man/core/utils/error_messages.dart';
 import 'package:match_a_man/features/auth/auth_service.dart';
 import 'package:match_a_man/features/profile/profile_models.dart';
+import 'package:match_a_man/features/profile/profile_provider.dart';
 import 'package:match_a_man/features/profile/widgets/safe_avatar.dart';
 
 void main() {
@@ -79,6 +80,7 @@ void main() {
     test('builds social username seed from email or name', () {
       expect(
         ProfileUsername.socialSeed(
+          preferredUsername: 'ProviderUser',
           email: 'EmirHan@gmail.com',
           fullName: 'Ignored Name',
           fallbackId: 'a1b2c3d4',
@@ -91,6 +93,10 @@ void main() {
           fallbackId: 'a1b2c3d4',
         ),
         'emir_han',
+      );
+      expect(
+        ProfileUsername.socialSeed(fallbackId: 'a1b2c3d4-0000'),
+        'user_a1b2c3',
       );
     });
 
@@ -151,6 +157,13 @@ void main() {
 
         expect(profile.hasCoreIdentity, isTrue);
         expect(profile.hasEventRequiredFields, isFalse);
+        final state = ProfileState(
+          status: ProfileStatus.success,
+          profile: profile,
+        );
+        expect(state.isProfileCompleted, isTrue);
+        expect(state.canCreateEvent, isFalse);
+        expect(state.canRequestToJoinEvent, isFalse);
       },
     );
 
