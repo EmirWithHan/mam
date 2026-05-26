@@ -16,6 +16,7 @@ import 'profile_models.dart';
 import 'profile_provider.dart';
 import 'widgets/profile_event_list.dart';
 import 'widgets/profile_gallery_grid.dart';
+import 'widgets/safe_avatar.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -503,33 +504,20 @@ class _Avatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final avatarUrl = profile.avatarUrl;
 
-    return CircleAvatar(
+    return SafeAvatar(
       radius: 42,
-      backgroundColor: AppColors.primarySoft,
-      backgroundImage: avatarUrl == null || avatarUrl.trim().isEmpty
-          ? null
-          : NetworkImage(avatarUrl),
-      child: avatarUrl == null || avatarUrl.trim().isEmpty
-          ? Text(
-              _initials(profile),
-              style: const TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w800,
-                fontSize: 30,
-              ),
-            )
-          : null,
+      avatarUrl: avatarUrl,
+      fallbackText: _initials(profile),
+      fontSize: 30,
     );
   }
 }
 
 String _initials(Profile profile) {
   final firstName = profile.firstName?.trim();
-  final lastName = profile.lastName?.trim();
   final username = profile.username?.trim();
   final parts = [
     firstName,
-    lastName,
   ].where((part) => part != null && part.isNotEmpty).cast<String>().toList();
 
   if (parts.isNotEmpty) {
@@ -561,10 +549,8 @@ String _displayHandle(Profile profile) {
 
 String _displayName(Profile profile) {
   final firstName = profile.firstName?.trim();
-  final lastName = profile.lastName?.trim();
   final name = [
     firstName,
-    lastName,
   ].where((part) => part != null && part.isNotEmpty).join(' ');
 
   if (name.isNotEmpty) return name;

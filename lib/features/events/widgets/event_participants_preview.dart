@@ -8,6 +8,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/app_loader.dart';
 import '../../../core/widgets/error_view.dart';
+import '../../profile/widgets/safe_avatar.dart';
 import '../events_models.dart';
 
 class EventParticipantsPreview extends StatelessWidget {
@@ -159,21 +160,10 @@ class _ParticipantAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final avatarUrl = participant.avatarUrl?.trim();
 
-    return CircleAvatar(
+    return SafeAvatar(
       radius: 22,
-      backgroundColor: AppColors.primarySoft,
-      backgroundImage: avatarUrl == null || avatarUrl.isEmpty
-          ? null
-          : NetworkImage(avatarUrl),
-      child: avatarUrl == null || avatarUrl.isEmpty
-          ? Text(
-              _initial(participant.displayName),
-              style: const TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w800,
-              ),
-            )
-          : null,
+      avatarUrl: avatarUrl,
+      fallbackText: _initial(participant.displayName),
     );
   }
 

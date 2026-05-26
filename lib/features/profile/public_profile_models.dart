@@ -4,7 +4,6 @@ class PublicProfilePreview {
     this.username,
     this.tag,
     this.firstName,
-    this.lastName,
     this.city,
     this.avatarUrl,
     this.trustScore,
@@ -15,7 +14,6 @@ class PublicProfilePreview {
   final String? username;
   final String? tag;
   final String? firstName;
-  final String? lastName;
   final String? city;
   final String? avatarUrl;
   final int? trustScore;
@@ -23,13 +21,9 @@ class PublicProfilePreview {
 
   String get displayName {
     final first = firstName?.trim();
-    final last = lastName?.trim();
     final usernameValue = username?.trim();
 
     if (first != null && first.isNotEmpty) {
-      if (last != null && last.isNotEmpty) {
-        return '$first ${last[0].toUpperCase()}.';
-      }
       return first;
     }
 
@@ -44,21 +38,19 @@ class PublicProfilePreview {
     final usernameValue = username?.trim();
     final tagValue = tag?.trim();
     if (usernameValue == null || usernameValue.isEmpty) return null;
-    if (tagValue != null && tagValue.isNotEmpty) return '$usernameValue#$tagValue';
+    if (tagValue != null && tagValue.isNotEmpty) {
+      return '$usernameValue#$tagValue';
+    }
     return usernameValue;
   }
 
   String get initials {
     final parts = [
       firstName?.trim(),
-      lastName?.trim(),
     ].where((part) => part != null && part.isNotEmpty).cast<String>().toList();
 
     if (parts.isNotEmpty) {
-      return parts
-          .take(2)
-          .map((part) => part[0].toUpperCase())
-          .join();
+      return parts.take(2).map((part) => part[0].toUpperCase()).join();
     }
 
     final usernameValue = username?.trim();
@@ -83,7 +75,6 @@ class PublicProfilePreview {
       username: json['username'] as String?,
       tag: json['tag'] as String?,
       firstName: json['first_name'] as String?,
-      lastName: json['last_name'] as String?,
       city: json['city'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       trustScore: (json['trust_score'] as num?)?.toInt(),

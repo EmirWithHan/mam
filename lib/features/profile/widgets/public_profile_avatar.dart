@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/router/route_names.dart';
-import '../../../core/theme/app_colors.dart';
 import '../public_profile_models.dart';
 import '../public_profile_provider.dart';
+import 'safe_avatar.dart';
 
 class PublicProfileAvatar extends ConsumerWidget {
   const PublicProfileAvatar({
@@ -80,22 +80,11 @@ class _Avatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final avatarUrl = profile?.avatarUrl?.trim();
 
-    return CircleAvatar(
+    return SafeAvatar(
       radius: radius,
-      backgroundColor: AppColors.primarySoft,
-      backgroundImage: avatarUrl == null || avatarUrl.isEmpty
-          ? null
-          : NetworkImage(avatarUrl),
-      child: avatarUrl == null || avatarUrl.isEmpty
-          ? Text(
-              profile?.initials ?? 'M',
-              style: TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w800,
-                fontSize: radius * 0.8,
-              ),
-            )
-          : null,
+      avatarUrl: avatarUrl,
+      fallbackText: profile?.initials ?? 'M',
+      fontSize: radius * 0.8,
     );
   }
 }

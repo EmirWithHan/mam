@@ -65,15 +65,20 @@ class JoinRequestButton extends StatelessWidget {
         children: [
           const _StatusPanel(
             icon: Icons.assignment_ind_outlined,
-            title: 'Profilini tamamla',
-            message:
-                'Etkinliğe katılım isteği göndermeden önce profilini tamamlamalısın.',
+            title: 'Etkinliklere katılmak için profilini tamamlamalısın.',
+            message: 'Gerekli bilgiler: şehir, ilçe ve doğum tarihi.',
             color: AppColors.primary,
           ),
           const SizedBox(height: AppSpacing.sm),
           AppButton(
             label: 'Profili tamamla',
-            onPressed: () => context.pushNamed(RouteNames.profileComplete),
+            onPressed: () => context.pushNamed(
+              RouteNames.profileComplete,
+              queryParameters: {
+                'mode': RoutePaths.profileCompleteModeEventRequirements,
+                'returnTo': _currentReturnPath(context),
+              },
+            ),
           ),
         ],
       );
@@ -136,6 +141,11 @@ class JoinRequestButton extends StatelessWidget {
     }
 
     return AppButton(label: currentRequest.status, onPressed: null);
+  }
+
+  String _currentReturnPath(BuildContext context) {
+    final uri = GoRouterState.of(context).uri;
+    return uri.hasQuery ? '${uri.path}?${uri.query}' : uri.path;
   }
 }
 

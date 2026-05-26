@@ -212,10 +212,8 @@ class _SettingsUserCard extends StatelessWidget {
 
   String _displayName(Profile? profile) {
     final firstName = profile?.firstName?.trim();
-    final lastName = profile?.lastName?.trim();
     final name = [
       firstName,
-      lastName,
     ].where((part) => part != null && part.isNotEmpty).join(' ');
     return name.isNotEmpty ? name : 'MaM Kullanıcısı';
   }

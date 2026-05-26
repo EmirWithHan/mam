@@ -303,21 +303,26 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Text(
-                  'Etkinlik oluşturmak için profil gerekli',
+                  'Etkinliklere katılmak için profilini tamamlamalısın.',
                   style: AppTextStyles.title,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Topluluk güvenliği için etkinlik oluşturmadan önce temel profil bilgilerini tamamla.',
+                  'Gerekli bilgiler: şehir, ilçe ve doğum tarihi.',
                   style: AppTextStyles.body,
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 AppButton(
                   label: 'Profili tamamla',
-                  onPressed: () =>
-                      context.pushNamed(RouteNames.profileComplete),
+                  onPressed: () => context.pushNamed(
+                    RouteNames.profileComplete,
+                    queryParameters: {
+                      'mode': RoutePaths.profileCompleteModeEventRequirements,
+                      'returnTo': RoutePaths.createEvent,
+                    },
+                  ),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 AppButton(

@@ -14,6 +14,7 @@ import '../../core/widgets/error_view.dart';
 import '../auth/auth_provider.dart';
 import 'profile_follow_list_provider.dart';
 import 'profile_models.dart';
+import 'widgets/safe_avatar.dart';
 
 class ProfileFollowListPage extends ConsumerStatefulWidget {
   const ProfileFollowListPage({
@@ -288,22 +289,11 @@ class _FollowListAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final avatarUrl = item.avatarUrl?.trim();
-    return CircleAvatar(
+    return SafeAvatar(
       radius: 26,
-      backgroundColor: AppColors.primarySoft,
-      backgroundImage: avatarUrl == null || avatarUrl.isEmpty
-          ? null
-          : NetworkImage(avatarUrl),
-      child: avatarUrl == null || avatarUrl.isEmpty
-          ? Text(
-              _initials(item),
-              style: const TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.w800,
-                fontSize: 18,
-              ),
-            )
-          : null,
+      avatarUrl: avatarUrl,
+      fallbackText: _initials(item),
+      fontSize: 18,
     );
   }
 }

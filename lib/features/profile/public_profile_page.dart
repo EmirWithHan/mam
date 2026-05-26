@@ -20,6 +20,7 @@ import '../follow/follow_provider.dart';
 import 'profile_models.dart';
 import 'profile_provider.dart';
 import 'widgets/profile_gallery_viewer_page.dart';
+import 'widgets/safe_avatar.dart';
 
 enum _PublicProfileTab { gallery, events }
 
@@ -258,21 +259,15 @@ class _ProfileAvatar extends StatelessWidget {
         color: AppColors.primarySoft,
       ),
       child: CircleAvatar(
-        radius: 48,
+        radius: 52,
         backgroundColor: AppColors.surface,
-        backgroundImage: avatarUrl == null || avatarUrl.isEmpty
-            ? null
-            : NetworkImage(avatarUrl),
-        child: avatarUrl == null || avatarUrl.isEmpty
-            ? Text(
-                _initials(detail),
-                style: const TextStyle(
-                  color: AppColors.primary,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 34,
-                ),
-              )
-            : null,
+        child: SafeAvatar(
+          radius: 48,
+          avatarUrl: avatarUrl,
+          fallbackText: _initials(detail),
+          fontSize: 34,
+          backgroundColor: AppColors.surface,
+        ),
       ),
     );
   }
@@ -978,7 +973,6 @@ class _LockedExtendedProfileCard extends StatelessWidget {
 String _initials(PublicProfileDetail detail) {
   final parts = [
     detail.firstName?.trim(),
-    detail.lastName?.trim(),
   ].where((part) => part != null && part.isNotEmpty).cast<String>().toList();
 
   if (parts.isNotEmpty) {

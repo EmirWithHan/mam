@@ -5,7 +5,6 @@ class Profile {
     this.username,
     this.tag,
     this.firstName,
-    this.lastName,
     this.birthDate,
     this.gender,
     this.city,
@@ -25,7 +24,6 @@ class Profile {
   final String? username;
   final String? tag;
   final String? firstName;
-  final String? lastName;
   final DateTime? birthDate;
   final String? gender;
   final String? city;
@@ -40,6 +38,18 @@ class Profile {
   final DateTime? updatedAt;
 
   int get trustScoreValue => trustScore ?? 50;
+
+  bool get hasCoreIdentity {
+    return username?.trim().isNotEmpty == true &&
+        firstName?.trim().isNotEmpty == true;
+  }
+
+  bool get hasEventRequiredFields {
+    return hasCoreIdentity &&
+        city?.trim().isNotEmpty == true &&
+        district?.trim().isNotEmpty == true &&
+        birthDate != null;
+  }
 
   String get trustLabel {
     final score = trustScoreValue;
@@ -58,13 +68,17 @@ class Profile {
   }
 
   factory Profile.fromJson(Map<String, dynamic> json) {
+    final userId = json['user_id']?.toString();
+    if (userId == null || userId.isEmpty) {
+      throw const ProfileSaveException('Profil kaydedilemedi. Tekrar dene.');
+    }
+
     return Profile(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
+      id: (json['id'] ?? userId).toString(),
+      userId: userId,
       username: json['username'] as String?,
       tag: json['tag'] as String?,
       firstName: json['first_name'] as String?,
-      lastName: json['last_name'] as String?,
       birthDate: _dateTimeFromJson(json['birth_date']),
       gender: json['gender'] as String?,
       city: json['city'] as String?,
@@ -86,7 +100,6 @@ class Profile {
     String? username,
     String? tag,
     String? firstName,
-    String? lastName,
     DateTime? birthDate,
     String? gender,
     String? city,
@@ -106,7 +119,6 @@ class Profile {
       username: username ?? this.username,
       tag: tag ?? this.tag,
       firstName: firstName ?? this.firstName,
-      lastName: lastName ?? this.lastName,
       birthDate: birthDate ?? this.birthDate,
       gender: gender ?? this.gender,
       city: city ?? this.city,
@@ -128,10 +140,9 @@ class ProfileFormData {
     required this.username,
     required this.tag,
     required this.firstName,
-    required this.lastName,
-    required this.birthDate,
-    required this.gender,
-    required this.city,
+    this.birthDate,
+    this.gender,
+    this.city,
     this.district,
     this.phone,
     this.bio,
@@ -140,34 +151,31 @@ class ProfileFormData {
 
   final String username;
   final String tag;
-  final DateTime birthDate;
+  final DateTime? birthDate;
   final String firstName;
-  final String lastName;
-  final String gender;
-  final String city;
+  final String? gender;
+  final String? city;
   final String? district;
   final String? phone;
   final String? bio;
   final String? avatarUrl;
 
   bool get isComplete {
-    return username.trim().isNotEmpty &&
+    return normalizedUsername.isNotEmpty &&
         tag.trim().isNotEmpty &&
-        firstName.trim().isNotEmpty &&
-        lastName.trim().isNotEmpty &&
-        gender.trim().isNotEmpty &&
-        city.trim().isNotEmpty;
+        firstName.trim().isNotEmpty;
   }
+
+  String get normalizedUsername => ProfileUsername.normalize(username);
 
   Map<String, dynamic> toUpdateJson() {
     return {
-      'username': username.trim(),
+      'username': normalizedUsername,
       'tag': tag.trim(),
       'first_name': firstName.trim(),
-      'last_name': lastName.trim(),
-      'birth_date': _dateToJson(birthDate),
-      'gender': gender.trim(),
-      'city': city.trim(),
+      'birth_date': birthDate == null ? null : _dateToJson(birthDate!),
+      'gender': _nullableTrim(gender),
+      'city': _nullableTrim(city),
       'district': _nullableTrim(district),
       'phone': _nullableTrim(phone),
       'bio': _nullableTrim(bio),
@@ -178,13 +186,102 @@ class ProfileFormData {
   }
 }
 
+class ProfileUsername {
+  const ProfileUsername._();
+
+  static const minLength = 2;
+  static const maxLength = 20;
+  static final _validPattern = RegExp(r'^[a-z0-9_]+$');
+
+  static String normalize(String value) {
+    return value
+        .trim()
+        .replaceAll('İ', 'i')
+        .replaceAll('I', 'i')
+        .replaceAll('ı', 'i')
+        .toLowerCase();
+  }
+
+  static String? validate(String? value) {
+    final normalized = normalize(value ?? '');
+    if (normalized.length < minLength) {
+      return 'Kullanıcı adı en az 2 karakter olmalı.';
+    }
+    if (normalized.length > maxLength) {
+      return 'Kullanıcı adı en fazla 20 karakter olmalı.';
+    }
+    if (!_validPattern.hasMatch(normalized)) {
+      return 'Kullanıcı adı sadece harf, rakam ve _ içerebilir.';
+    }
+    return null;
+  }
+
+  static String slug(String value) {
+    final normalized = normalize(value);
+    final underscored = normalized.replaceAll(RegExp(r'[\s.\-]+'), '_');
+    final cleaned = underscored.replaceAll(RegExp(r'[^a-z0-9_]+'), '');
+    final collapsed = cleaned.replaceAll(RegExp(r'_+'), '_');
+    return collapsed.replaceAll(RegExp(r'^_+|_+$'), '');
+  }
+
+  static String socialSeed({
+    String? preferredUsername,
+    String? email,
+    String? fullName,
+    required String fallbackId,
+  }) {
+    final emailLocalPart = email?.split('@').first.trim();
+    final rawSeed = [
+      preferredUsername,
+      emailLocalPart,
+      fullName,
+      'user_${_shortFallbackId(fallbackId)}',
+    ].firstWhere((value) => value != null && value.trim().isNotEmpty)!;
+
+    final value = slug(rawSeed);
+    if (value.length >= minLength) return value;
+    return 'user_${_shortFallbackId(fallbackId)}';
+  }
+
+  static String withSuffix(String base, String suffix) {
+    final cleanBase = slug(base);
+    final cleanSuffix = slug(suffix);
+    if (cleanSuffix.isEmpty) return fit(cleanBase);
+
+    final prefixMaxLength = maxLength - cleanSuffix.length - 1;
+    final prefix = fit(cleanBase, limit: prefixMaxLength);
+    return '${prefix}_$cleanSuffix';
+  }
+
+  static String fit(String value, {int limit = maxLength}) {
+    final fallback = value.length >= minLength ? value : 'user';
+    if (fallback.length <= limit) return fallback;
+    return fallback.substring(0, limit);
+  }
+
+  static String _shortFallbackId(String id) {
+    final compact = id.replaceAll('-', '');
+    if (compact.length >= 6) return compact.substring(0, 6);
+    if (compact.isNotEmpty) return compact;
+    return '000000';
+  }
+}
+
+class ProfileSaveException implements Exception {
+  const ProfileSaveException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}
+
 class PublicProfileDetail {
   const PublicProfileDetail({
     required this.userId,
     this.username,
     this.tag,
     this.firstName,
-    this.lastName,
     this.city,
     this.district,
     this.avatarUrl,
@@ -203,7 +300,6 @@ class PublicProfileDetail {
   final String? username;
   final String? tag;
   final String? firstName;
-  final String? lastName;
   final String? city;
   final String? district;
   final String? avatarUrl;
@@ -219,10 +315,8 @@ class PublicProfileDetail {
 
   String get displayName {
     final first = firstName?.trim();
-    final last = lastName?.trim();
     final user = username?.trim();
     if (first != null && first.isNotEmpty) {
-      if (last != null && last.isNotEmpty) return '$first $last';
       return first;
     }
     if (user != null && user.isNotEmpty) return user;
@@ -253,7 +347,6 @@ class PublicProfileDetail {
       username: json['username'] as String?,
       tag: json['tag'] as String?,
       firstName: json['first_name'] as String?,
-      lastName: json['last_name'] as String?,
       city: json['city'] as String?,
       district: json['district'] as String?,
       avatarUrl: json['avatar_url'] as String?,

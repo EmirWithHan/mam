@@ -1,9 +1,12 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/auth_page.dart';
 import '../../features/auth/auth_models.dart';
 import '../../features/auth/login_page.dart';
+import '../../features/auth/oauth_callback_page.dart';
 import '../../features/auth/register_page.dart';
 import '../../features/chat/event_chat_page.dart';
 import '../../features/events/create_event_page.dart';
@@ -32,19 +35,42 @@ import '../widgets/main_navigation_shell.dart';
 import 'route_names.dart';
 
 GoRouter createAppRouter(AuthState authState) {
+  _ensureWebPathUrlStrategy();
+
   return GoRouter(
     initialLocation: RoutePaths.splash,
     redirect: (context, state) {
       final location = state.matchedLocation;
+      final uri = state.uri;
+      final isInitializing =
+          authState.status == AuthStatus.initial ||
+          authState.status == AuthStatus.loading;
       final isAuthenticated = authState.status == AuthStatus.authenticated;
       final needsProfileCompletion =
           isAuthenticated && !authState.isProfileCompleted;
       final isAuthRoute =
           location == RoutePaths.auth ||
           location == RoutePaths.login ||
-          location == RoutePaths.register;
+          location == RoutePaths.register ||
+          location == RoutePaths.authCallback;
       final isSplashRoute = location == RoutePaths.splash;
       final isProfileCompletionRoute = location == RoutePaths.profileComplete;
+
+      debugPrint(
+        '[Router] location=$location path=${uri.path} '
+        'queryKeys=${uri.queryParameters.keys.join(',')} '
+        'fragmentPresent=${uri.fragment.isNotEmpty} '
+        'auth=${authState.status.name} profileDone=${authState.isProfileCompleted}',
+      );
+
+      if (_isOAuthReturnUri(uri) && location != RoutePaths.authCallback) {
+        debugPrint('[Router] OAuth return detected; routing to auth callback');
+        return RoutePaths.authCallback;
+      }
+
+      if (isInitializing) {
+        return null;
+      }
 
       if (isAuthenticated && (isAuthRoute || isSplashRoute)) {
         return needsProfileCompletion
@@ -54,12 +80,6 @@ GoRouter createAppRouter(AuthState authState) {
 
       if (needsProfileCompletion && !isProfileCompletionRoute) {
         return RoutePaths.profileComplete;
-      }
-
-      if (isAuthenticated &&
-          authState.isProfileCompleted &&
-          isProfileCompletionRoute) {
-        return RoutePaths.events;
       }
 
       if (!isAuthenticated && !isAuthRoute) {
@@ -88,6 +108,11 @@ GoRouter createAppRouter(AuthState authState) {
         path: RoutePaths.register,
         name: RouteNames.register,
         builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.authCallback,
+        name: RouteNames.authCallback,
+        builder: (context, state) => const OAuthCallbackPage(),
       ),
       GoRoute(
         path: RoutePaths.profileGalleryViewer,
@@ -128,9 +153,21 @@ GoRouter createAppRouter(AuthState authState) {
       GoRoute(
         path: RoutePaths.profileComplete,
         name: RouteNames.profileComplete,
-        builder: (context, state) => const MainNavigationShell(
+        builder: (context, state) => MainNavigationShell(
           currentIndex: 4,
-          child: ProfileCompletionPage(),
+          child: ProfileCompletionPage(
+            mode:
+                state.uri.queryParameters['mode'] ==
+                    RoutePaths.profileCompleteModeEventRequirements
+                ? RoutePaths.profileCompleteModeEventRequirements
+                : null,
+            returnTo:
+                RoutePaths.isSafeReturnPath(
+                  state.uri.queryParameters['returnTo'],
+                )
+                ? state.uri.queryParameters['returnTo']
+                : null,
+          ),
         ),
       ),
       GoRoute(
@@ -246,9 +283,24 @@ GoRouter createAppRouter(AuthState authState) {
   );
 }
 
+var _webPathUrlStrategyReady = false;
+
+void _ensureWebPathUrlStrategy() {
+  if (!kIsWeb || _webPathUrlStrategyReady) return;
+  usePathUrlStrategy();
+  _webPathUrlStrategyReady = true;
+}
+
 ProfileFollowListType _profileFollowListType(String? value) {
   if (value == 'following') return ProfileFollowListType.following;
   return ProfileFollowListType.followers;
+}
+
+bool _isOAuthReturnUri(Uri uri) {
+  return uri.queryParameters.containsKey('code') ||
+      uri.queryParameters.containsKey('error') ||
+      uri.fragment.contains('access_token') ||
+      uri.fragment.contains('error_description');
 }
 
 class _SplashPage extends StatelessWidget {

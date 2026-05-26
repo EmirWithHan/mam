@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
-import '../../core/constants/auth_redirects.dart';
 import '../../services/supabase_service.dart';
 
 class AuthService {
@@ -32,13 +31,42 @@ class AuthService {
   }
 
   Future<bool> signInWithGoogle() {
+    return _signInWithOAuth(supabase.OAuthProvider.google, 'Google');
+  }
+
+  Future<bool> signInWithFacebook() {
+    return _signInWithOAuth(supabase.OAuthProvider.facebook, 'Facebook');
+  }
+
+  Future<bool> _signInWithOAuth(
+    supabase.OAuthProvider provider,
+    String providerName,
+  ) {
+    final redirectTo = oauthRedirectTo(isWeb: kIsWeb);
+    debugPrint(
+      '[Auth] OAuth start provider=$providerName redirectTo=$redirectTo',
+    );
     return SupabaseService.client.auth.signInWithOAuth(
-      supabase.OAuthProvider.google,
-      redirectTo: kIsWeb ? null : AuthRedirects.googleOAuthCallback,
+      provider,
+      redirectTo: redirectTo,
     );
   }
 
   Future<void> signOut() async {
     await SupabaseService.client.auth.signOut();
+  }
+
+  @visibleForTesting
+  static String oauthRedirectTo({required bool isWeb, Uri? baseUri}) {
+    if (!isWeb) return 'matchaman://login-callback/';
+    return webOAuthCallbackForOrigin((baseUri ?? Uri.base).origin);
+  }
+
+  @visibleForTesting
+  static String webOAuthCallbackForOrigin(String origin) {
+    final cleanOrigin = origin.endsWith('/')
+        ? origin.substring(0, origin.length - 1)
+        : origin;
+    return '$cleanOrigin/auth/callback';
   }
 }

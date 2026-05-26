@@ -46,7 +46,35 @@ String friendlyErrorMessage(Object error) {
           normalized.contains('unique') ||
           normalized.contains('already') ||
           normalized.contains('23505'))) {
-    return 'Bu kullanıcı adı zaten kullanılıyor.';
+    return 'Bu kullanıcı adı alınmış.';
+  }
+
+  if (normalized.contains('kullanıcı adı en az 2') ||
+      normalized.contains('username_min') ||
+      (normalized.contains('username') && normalized.contains('too short'))) {
+    return 'Kullanıcı adı en az 2 karakter olmalı.';
+  }
+
+  if (normalized.contains('kullanıcı adı sadece') ||
+      normalized.contains('username_format') ||
+      normalized.contains('invalid username') ||
+      (normalized.contains('username') &&
+          (normalized.contains('check') ||
+              normalized.contains('constraint') ||
+              normalized.contains('invalid')))) {
+    return 'Kullanıcı adı sadece harf, rakam ve _ içerebilir.';
+  }
+
+  if ((normalized.contains('profile') || normalized.contains('profiles')) &&
+      (normalized.contains('save') ||
+          normalized.contains('update') ||
+          normalized.contains('insert') ||
+          normalized.contains('could not be created') ||
+          normalized.contains('pgrst116') ||
+          normalized.contains('cannot coerce') ||
+          normalized.contains('23514') ||
+          normalized.contains('profiles_completed_required_fields'))) {
+    return 'Profil kaydedilemedi. Tekrar dene.';
   }
 
   if (normalized.contains('bio') &&

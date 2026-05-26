@@ -12,6 +12,7 @@ import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_text_field.dart';
 import 'auth_provider.dart';
+import 'widgets/social_auth_buttons.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -53,7 +54,19 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   }
 
   Future<void> _signInWithGoogle() async {
-    await ref.read(authControllerProvider.notifier).signInWithGoogle();
+    await _startSocialSignIn(
+      ref.read(authControllerProvider.notifier).signInWithGoogle,
+    );
+  }
+
+  Future<void> _signInWithFacebook() async {
+    await _startSocialSignIn(
+      ref.read(authControllerProvider.notifier).signInWithFacebook,
+    );
+  }
+
+  Future<void> _startSocialSignIn(Future<void> Function() startSignIn) async {
+    await startSignIn();
 
     if (!mounted) return;
     final authState = ref.read(authControllerProvider);
@@ -63,6 +76,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         context,
       ).showSnackBar(SnackBar(content: Text(authState.message!)));
     }
+  }
+
+  void _showAppleComingSoon() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Apple ile giriş yakında eklenecek.')),
+    );
   }
 
   @override
@@ -131,13 +150,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         onPressed: _submit,
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      AppButton(
-                        label: 'Google ile devam et',
-                        variant: AppButtonVariant.outlined,
+                      SocialAuthButtons(
                         isLoading: authState.isLoading,
-                        onPressed: authState.isLoading
-                            ? null
-                            : _signInWithGoogle,
+                        onGooglePressed: _signInWithGoogle,
+                        onFacebookPressed: _signInWithFacebook,
+                        onApplePressed: _showAppleComingSoon,
                       ),
                     ],
                   ),

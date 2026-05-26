@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
@@ -24,9 +25,19 @@ final authControllerProvider = StateNotifierProvider<AuthController, AuthState>(
 
 class AuthController extends StateNotifier<AuthState> {
   AuthController(this._authService, this._profileService)
-    : super(_initialState(_authService)) {
+    : super(const AuthState.loading()) {
+    final initialUser = _authService.currentUser;
+    debugPrint('[Auth] controller init hasCurrentUser=${initialUser != null}');
+    if (initialUser != null) {
+      unawaited(_setAuthenticatedState(initialUser.id));
+    }
+
     _authSubscription = _authService.authStateChanges.listen((authState) {
       final user = authState.session?.user;
+      debugPrint(
+        '[Auth] auth state event=${authState.event.name} '
+        'sessionRestored=${authState.session != null}',
+      );
       if (user == null) {
         state = const AuthState.unauthenticated();
         return;
@@ -40,22 +51,30 @@ class AuthController extends StateNotifier<AuthState> {
   final ProfileService _profileService;
   late final StreamSubscription<supabase.AuthState> _authSubscription;
 
-  static AuthState _initialState(AuthService authService) {
-    final user = authService.currentUser;
-    if (user == null) return const AuthState.unauthenticated();
-    return AuthState.authenticated(userId: user.id, isProfileCompleted: false);
-  }
-
   Future<void> _setAuthenticatedState(String userId) async {
     try {
+      debugPrint('[Auth] loading profile for authenticated user');
       final profile = await _profileService.createEmptyProfileIfMissing();
       if (!mounted) return;
+      debugPrint(
+        '[Auth] authenticated profileCompleted=${profile.hasCoreIdentity}',
+      );
       state = AuthState.authenticated(
         userId: userId,
-        isProfileCompleted: profile.isProfileCompleted,
+        isProfileCompleted: profile.hasCoreIdentity,
       );
     } catch (error) {
       if (!mounted) return;
+      debugPrint('[Auth] profile load failed: ${friendlyErrorMessage(error)}');
+      final currentUser = _authService.currentUser;
+      if (currentUser != null) {
+        debugPrint('[Auth] preserving session after profile bootstrap failure');
+        state = AuthState.authenticated(
+          userId: currentUser.id,
+          isProfileCompleted: false,
+        );
+        return;
+      }
       state = AuthState.error(message: friendlyErrorMessage(error));
     }
   }
@@ -72,8 +91,9 @@ class AuthController extends StateNotifier<AuthState> {
         password: password,
       );
       final user = response.user;
+      final session = response.session;
 
-      if (user == null) {
+      if (user == null || session == null) {
         state = const AuthState.error(message: 'E-posta veya şifre hatalı.');
         return;
       }
@@ -98,10 +118,19 @@ class AuthController extends StateNotifier<AuthState> {
         password: password,
       );
       final user = response.user;
+      final session = response.session;
 
       if (user == null) {
         state = const AuthState.error(
           message: 'Hesap oluşturulamadı. Tekrar dene.',
+        );
+        return;
+      }
+
+      if (session == null) {
+        state = const AuthState.unauthenticated(
+          message:
+              'Hesabın oluşturuldu. E-posta doğrulaması gerekiyorsa gelen kutunu kontrol et.',
         );
         return;
       }
@@ -115,19 +144,35 @@ class AuthController extends StateNotifier<AuthState> {
   }
 
   Future<void> signInWithGoogle() async {
+    await _startSocialSignIn(
+      startOAuth: _authService.signInWithGoogle,
+      providerName: 'Google',
+    );
+  }
+
+  Future<void> signInWithFacebook() async {
+    await _startSocialSignIn(
+      startOAuth: _authService.signInWithFacebook,
+      providerName: 'Facebook',
+    );
+  }
+
+  Future<void> _startSocialSignIn({
+    required Future<bool> Function() startOAuth,
+    required String providerName,
+  }) async {
     state = const AuthState.loading();
 
     try {
-      final launched = await _authService.signInWithGoogle();
+      debugPrint('[Auth] social OAuth start provider=$providerName');
+      final launched = await startOAuth();
       if (!launched) {
         state = const AuthState.unauthenticated(message: 'İşlem iptal edildi.');
-        return;
       }
-      state = const AuthState.unauthenticated();
     } on supabase.AuthException catch (error) {
-      state = AuthState.error(message: _googleAuthError(error));
+      state = AuthState.error(message: _socialAuthError(error, providerName));
     } catch (error) {
-      state = AuthState.error(message: _googleAuthError(error));
+      state = AuthState.error(message: _socialAuthError(error, providerName));
     }
   }
 
@@ -156,19 +201,10 @@ class AuthController extends StateNotifier<AuthState> {
   }
 }
 
-String _googleAuthError(Object error) {
+String _socialAuthError(Object error, String providerName) {
   final normalized = error.toString().toLowerCase();
   if (normalized.contains('cancel') || normalized.contains('dismiss')) {
     return 'İşlem iptal edildi.';
   }
-  if (normalized.contains('already') ||
-      normalized.contains('exists') ||
-      normalized.contains('registered') ||
-      normalized.contains('identity')) {
-    return 'Bu e-posta ile zaten hesap oluşturulmuş. E-posta ile giriş yapmayı dene.';
-  }
-  if (normalized.contains('launch') || normalized.contains('url')) {
-    return 'Google ile giriş başlatılamadı.';
-  }
-  return 'Giriş işlemi tamamlanamadı. Tekrar dene.';
+  return '$providerName ile giriş başlatılamadı.';
 }

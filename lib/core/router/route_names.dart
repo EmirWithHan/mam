@@ -5,6 +5,7 @@ class RouteNames {
   static const auth = 'auth';
   static const login = 'login';
   static const register = 'register';
+  static const authCallback = 'authCallback';
   static const profile = 'profile';
   static const publicProfile = 'publicProfile';
   static const profileFollowList = 'profileFollowList';
@@ -33,6 +34,7 @@ class RoutePaths {
   static const auth = '/auth';
   static const login = '/auth/login';
   static const register = '/auth/register';
+  static const authCallback = '/auth/callback';
   static const profile = '/profile';
   static const publicProfile = '/profile/public/:userId';
   static const profileFollowList = '/profile/public/:userId/follows/:type';
@@ -52,4 +54,14 @@ class RoutePaths {
   static const eventChat = '/events/:eventId/chat';
   static const createEvent = '/events/create';
   static const home = '/home';
+  static const profileCompleteModeEventRequirements = 'eventRequirements';
+
+  static bool isSafeReturnPath(String? value) {
+    if (value == null || value.isEmpty) return false;
+    if (!value.startsWith('/') || value.startsWith('//')) return false;
+
+    final uri = Uri.tryParse(value);
+    if (uri == null) return false;
+    return !uri.hasScheme && uri.host.isEmpty;
+  }
 }

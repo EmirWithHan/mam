@@ -19,9 +19,13 @@ import '../../core/widgets/app_text_field.dart';
 import '../auth/auth_provider.dart';
 import 'profile_models.dart';
 import 'profile_provider.dart';
+import 'widgets/safe_avatar.dart';
 
 class ProfileCompletionPage extends ConsumerStatefulWidget {
-  const ProfileCompletionPage({super.key});
+  const ProfileCompletionPage({super.key, this.mode, this.returnTo});
+
+  final String? mode;
+  final String? returnTo;
 
   @override
   ConsumerState<ProfileCompletionPage> createState() =>
@@ -31,8 +35,7 @@ class ProfileCompletionPage extends ConsumerStatefulWidget {
 class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
-  final _firstNameController = TextEditingController();
-  final _lastNameController = TextEditingController();
+  final _nameController = TextEditingController();
   final _birthDateController = TextEditingController();
   final _genderController = TextEditingController();
   final _cityController = TextEditingController();
@@ -50,6 +53,9 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
 
   static const _genderOptions = ['Erkek', 'Kadın', 'Belirtmek istemiyorum'];
 
+  bool get _isEventRequirementsMode =>
+      widget.mode == RoutePaths.profileCompleteModeEventRequirements;
+
   @override
   void initState() {
     super.initState();
@@ -63,8 +69,7 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
     if (!mounted || profile == null) return;
 
     _usernameController.text = profile.username ?? '';
-    _firstNameController.text = profile.firstName ?? '';
-    _lastNameController.text = profile.lastName ?? '';
+    _nameController.text = profile.firstName ?? '';
     _selectedBirthDate = profile.birthDate;
     _birthDateController.text = _formatBirthDate(profile.birthDate);
     _genderController.text = profile.gender ?? '';
@@ -84,8 +89,7 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
   @override
   void dispose() {
     _usernameController.dispose();
-    _firstNameController.dispose();
-    _lastNameController.dispose();
+    _nameController.dispose();
     _birthDateController.dispose();
     _genderController.dispose();
     _cityController.dispose();
@@ -130,12 +134,11 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
     final formData = ProfileFormData(
       username: _usernameController.text.trim(),
       tag: _tag?.isNotEmpty == true ? _tag! : _generateTag(),
-      firstName: _firstNameController.text.trim(),
-      lastName: _lastNameController.text.trim(),
-      birthDate: _selectedBirthDate!,
+      firstName: _nameController.text.trim(),
+      birthDate: _selectedBirthDate,
       gender: _genderController.text.trim(),
-      city: city,
-      district: district,
+      city: city.isEmpty ? null : city,
+      district: district.isEmpty ? null : district,
       phone: _phoneController.text.trim(),
       bio: _bioController.text.trim(),
       avatarUrl: avatarUrl,
@@ -149,8 +152,8 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
     if (profile != null) {
       ref
           .read(authControllerProvider.notifier)
-          .markProfileCompletion(isCompleted: profile.isProfileCompleted);
-      context.goNamed(RouteNames.home);
+          .markProfileCompletion(isCompleted: profile.hasCoreIdentity);
+      _navigateAfterSave(context);
       return;
     }
 
@@ -220,25 +223,18 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
                       label: 'Username',
                       controller: _usernameController,
                       prefixIcon: const Icon(Icons.alternate_email),
-                      validator: Validators.username,
+                      validator: ProfileUsername.validate,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'First name',
-                      controller: _firstNameController,
+                      label: 'Ad',
+                      controller: _nameController,
                       prefixIcon: const Icon(Icons.person_outline),
                       validator: Validators.firstName,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Last name',
-                      controller: _lastNameController,
-                      prefixIcon: const Icon(Icons.person_outline),
-                      validator: Validators.lastName,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppTextField(
-                      label: 'Birth date',
+                      label: 'Doğum tarihi (opsiyonel)',
                       hintText: 'Tarih seç',
                       controller: _birthDateController,
                       readOnly: true,
@@ -249,27 +245,25 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Gender',
+                      label: 'Cinsiyet (opsiyonel)',
                       controller: _genderController,
                       readOnly: true,
                       onTap: _selectGender,
                       prefixIcon: const Icon(Icons.badge_outlined),
                       suffixIcon: const Icon(Icons.expand_more),
-                      validator: _requiredValidator('Gender'),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'City',
+                      label: 'Şehir (opsiyonel)',
                       controller: _cityController,
                       readOnly: true,
                       onTap: _selectCity,
                       prefixIcon: const Icon(Icons.location_city_outlined),
                       suffixIcon: const Icon(Icons.expand_more),
-                      validator: Validators.city,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'District',
+                      label: 'İlçe (opsiyonel)',
                       controller: _districtController,
                       readOnly: true,
                       onTap: districts.isEmpty ? null : _selectDistrict,
@@ -277,10 +271,6 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
                       suffixIcon: districts.isEmpty
                           ? null
                           : const Icon(Icons.expand_more),
-                      validator: (value) => Validators.district(
-                        value,
-                        city: _cityController.text,
-                      ),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
@@ -305,7 +295,7 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
               ),
               const SizedBox(height: AppSpacing.xl),
               AppButton(
-                label: 'Save profile',
+                label: 'Devam et',
                 isLoading: profileState.isLoading,
                 onPressed: _submit,
               ),
@@ -434,24 +424,33 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
   }
 
   void _goBack(BuildContext context) {
-    if (context.canPop()) {
+    final returnTo = widget.returnTo;
+    if (RoutePaths.isSafeReturnPath(returnTo)) {
+      context.go(returnTo!);
+      return;
+    }
+    if (_isEventRequirementsMode && context.canPop()) {
       context.pop();
       return;
     }
     context.goNamed(RouteNames.profile);
   }
 
-  String? Function(String?) _requiredValidator(String label) {
-    return (value) {
-      if (value == null || value.trim().isEmpty) {
-        return '$label gerekli.';
-      }
-      return null;
-    };
+  void _navigateAfterSave(BuildContext context) {
+    final returnTo = widget.returnTo;
+    if (RoutePaths.isSafeReturnPath(returnTo)) {
+      context.go(returnTo!);
+      return;
+    }
+    if (_isEventRequirementsMode && context.canPop()) {
+      context.pop();
+      return;
+    }
+    context.goNamed(RouteNames.home);
   }
 
   String? _birthDateValidator(String? value) {
-    if (_selectedBirthDate == null || value == null || value.trim().isEmpty) {
+    if (value == null && value != null) {
       return 'Doğum tarihi seçmelisin.';
     }
     return null;
@@ -640,31 +639,11 @@ class _AvatarPicker extends StatelessWidget {
           child: Stack(
             alignment: Alignment.bottomRight,
             children: [
-              CircleAvatar(
+              SafeAvatar(
                 radius: 48,
-                backgroundColor: AppColors.primarySoft,
-                backgroundImage:
-                    imageBytes == null &&
-                        currentAvatarUrl != null &&
-                        currentAvatarUrl.isNotEmpty
-                    ? NetworkImage(currentAvatarUrl)
-                    : null,
-                child: imageBytes != null
-                    ? ClipOval(
-                        child: Image.memory(
-                          imageBytes!,
-                          width: 96,
-                          height: 96,
-                          fit: BoxFit.cover,
-                        ),
-                      )
-                    : currentAvatarUrl == null || currentAvatarUrl.isEmpty
-                    ? const Icon(
-                        Icons.person,
-                        color: AppColors.primary,
-                        size: 46,
-                      )
-                    : null,
+                imageBytes: imageBytes,
+                avatarUrl: currentAvatarUrl,
+                fallbackIcon: Icons.person,
               ),
               Container(
                 width: 34,

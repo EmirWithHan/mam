@@ -260,7 +260,6 @@ class EventPublicParticipant {
     this.username,
     this.tag,
     this.firstName,
-    this.lastName,
     this.city,
     this.avatarUrl,
     required this.role,
@@ -271,7 +270,6 @@ class EventPublicParticipant {
   final String? username;
   final String? tag;
   final String? firstName;
-  final String? lastName;
   final String? city;
   final String? avatarUrl;
   final String role;
@@ -286,12 +284,8 @@ class EventPublicParticipant {
 
   String get displayName {
     final first = firstName?.trim();
-    final last = lastName?.trim();
     final user = username?.trim();
     if (first != null && first.isNotEmpty) {
-      if (last != null && last.isNotEmpty) {
-        return '$first ${last.substring(0, 1).toUpperCase()}.';
-      }
       return first;
     }
     if (user != null && user.isNotEmpty) return user;
@@ -312,7 +306,6 @@ class EventPublicParticipant {
       username: json['username'] as String?,
       tag: json['tag'] as String?,
       firstName: json['first_name'] as String?,
-      lastName: json['last_name'] as String?,
       city: json['city'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       role: json['role'] as String? ?? 'participant',
