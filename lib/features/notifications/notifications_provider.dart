@@ -208,7 +208,17 @@ class NotificationsController extends StateNotifier<NotificationsState> {
 
   String _readableMessage(Object error) {
     final message = error.toString().replaceFirst('Exception: ', '').trim();
-    if (message.isNotEmpty && message.length <= 90) return message;
+    final normalized = message.toLowerCase();
+    final looksTechnical =
+        normalized.contains('postgrest') ||
+        normalized.contains('exception') ||
+        normalized.contains('pgrst') ||
+        normalized.contains('duplicate key') ||
+        normalized.contains('constraint') ||
+        normalized.contains('stack trace');
+    if (message.isNotEmpty && message.length <= 90 && !looksTechnical) {
+      return message;
+    }
     return friendlyErrorMessage(error);
   }
 }

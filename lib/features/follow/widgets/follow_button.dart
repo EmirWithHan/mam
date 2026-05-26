@@ -29,11 +29,20 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      ref
-          .read(followControllerProvider(widget.targetUserId).notifier)
-          .loadStats();
-    });
+    Future.microtask(_loadStats);
+  }
+
+  @override
+  void didUpdateWidget(covariant FollowButton oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.targetUserId == widget.targetUserId) return;
+    Future.microtask(_loadStats);
+  }
+
+  void _loadStats() {
+    ref
+        .read(followControllerProvider(widget.targetUserId).notifier)
+        .loadStats();
   }
 
   Future<void> _toggleFollow() async {
@@ -122,7 +131,7 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
                       dimension: 16,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : Text(label),
+                  : Text(label, maxLines: 1, overflow: TextOverflow.ellipsis),
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(

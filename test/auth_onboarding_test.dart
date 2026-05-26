@@ -6,6 +6,7 @@ import 'package:match_a_man/core/utils/user_handle.dart';
 import 'package:match_a_man/features/auth/auth_service.dart';
 import 'package:match_a_man/features/events/events_models.dart';
 import 'package:match_a_man/features/events/widgets/join_request_button.dart';
+import 'package:match_a_man/features/notifications/notifications_models.dart';
 import 'package:match_a_man/features/profile/profile_models.dart';
 import 'package:match_a_man/features/profile/profile_provider.dart';
 import 'package:match_a_man/features/profile/widgets/safe_avatar.dart';
@@ -320,6 +321,26 @@ void main() {
         find.text('Etkinliklere katılmak için profilini tamamlamalısın.'),
         findsNothing,
       );
+    });
+  });
+
+  group('notifications', () {
+    test('notification type mapping is user-facing', () {
+      final notification = AppNotification(
+        id: 'notification-1',
+        recipientId: 'user-1',
+        type: 'follow_request',
+        title: 'follow_request',
+        entityId: 'request-1',
+        entityType: 'profile',
+        isRead: false,
+        createdAt: DateTime(2026),
+      );
+
+      expect(notification.displayTitle, 'Takip isteği');
+      expect(notification.displayBody, 'Yeni bir takip isteğin var.');
+      expect(notification.typeLabel, 'Sosyal');
+      expect(notification.canRespondToFollowRequest, isTrue);
     });
   });
 
