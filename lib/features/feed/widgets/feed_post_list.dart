@@ -25,22 +25,20 @@ class FeedPostList extends StatelessWidget {
     return SliverPadding(
       padding: EdgeInsets.only(bottom: bottomPadding),
       sliver: SliverList(
-        delegate: SliverChildBuilderDelegate(
-          (context, index) {
-            if (index.isOdd) {
-              return const SizedBox(height: AppSpacing.md);
-            }
+        delegate: SliverChildBuilderDelegate((context, index) {
+          if (index.isOdd) {
+            return const SizedBox(height: AppSpacing.md);
+          }
 
-            final item = posts[index ~/ 2];
-            return PostCard(
-              key: ValueKey(item.post.id),
-              item: item,
-              onToggleLike: () => onToggleLike(item),
-              onOpenComments: () => onOpenComments(item),
-            );
-          },
-          childCount: itemCount,
-        ),
+          final item = posts[index ~/ 2];
+          return PostCard(
+            key: ValueKey(item.post.id),
+            item: item,
+            isLikeLoading: false,
+            onToggleLike: () => onToggleLike(item),
+            onOpenComments: () => onOpenComments(item),
+          );
+        }, childCount: itemCount),
       ),
     );
   }

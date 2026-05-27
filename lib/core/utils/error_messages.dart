@@ -155,3 +155,49 @@ String friendlyErrorMessage(Object error) {
   }
   return 'Bir şeyler ters gitti. Tekrar dene.';
 }
+
+String friendlyFeedLoadErrorMessage(Object error) {
+  final normalized = error.toString().toLowerCase();
+  if (normalized.contains('pgrst202') ||
+      normalized.contains('schema cache') ||
+      normalized.contains('could not find the function')) {
+    return 'Ak\u0131\u015f y\u00fcklenemedi.';
+  }
+  if (normalized.contains('network') ||
+      normalized.contains('socket') ||
+      normalized.contains('connection') ||
+      normalized.contains('timeout') ||
+      normalized.contains('failed host lookup')) {
+    return 'Ba\u011flant\u0131 sorunu olu\u015ftu. Tekrar dene.';
+  }
+  return 'Ak\u0131\u015f y\u00fcklenemedi.';
+}
+
+String friendlyFeedRefreshErrorMessage(Object error) {
+  final normalized = error.toString().toLowerCase();
+  if (normalized.contains('network') ||
+      normalized.contains('socket') ||
+      normalized.contains('connection') ||
+      normalized.contains('timeout') ||
+      normalized.contains('failed host lookup')) {
+    return 'Ba\u011flant\u0131 sorunu olu\u015ftu. Tekrar dene.';
+  }
+  return 'Ak\u0131\u015f yenilenemedi. Tekrar dene.';
+}
+
+String friendlyCreatePostErrorMessage(Object error) {
+  final normalized = error.toString().toLowerCase();
+  if (normalized.contains('storage') ||
+      normalized.contains('bucket') ||
+      normalized.contains('upload')) {
+    return 'Foto\u011fraf y\u00fcklenemedi. Tekrar dene.';
+  }
+  if (normalized.contains('network') ||
+      normalized.contains('socket') ||
+      normalized.contains('connection') ||
+      normalized.contains('timeout') ||
+      normalized.contains('failed host lookup')) {
+    return 'Ba\u011flant\u0131 sorunu olu\u015ftu. Tekrar dene.';
+  }
+  return 'Payla\u015f\u0131m olu\u015fturulamad\u0131. Tekrar dene.';
+}

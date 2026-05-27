@@ -42,7 +42,7 @@ class HostJoinRequestTile extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.sm),
         child: PublicProfilePreviewTile(
           userId: request.userId,
-          subtitle: 'Join request',
+          subtitle: 'Katılım isteği',
           compact: true,
           trailing: Wrap(
             crossAxisAlignment: WrapCrossAlignment.center,
@@ -53,11 +53,11 @@ class HostJoinRequestTile extends StatelessWidget {
               if (request.isPending && actionsEnabled) ...[
                 TextButton(
                   onPressed: isLoading ? null : onApprove,
-                  child: const Text('Approve'),
+                  child: const Text('Onayla'),
                 ),
                 TextButton(
                   onPressed: isLoading ? null : onReject,
-                  child: const Text('Reject'),
+                  child: const Text('Reddet'),
                 ),
               ] else if (request.isPending && !actionsEnabled) ...[
                 const _PastEventChip(),
@@ -118,8 +118,21 @@ class _StatusChip extends StatelessWidget {
           horizontal: AppSpacing.sm,
           vertical: AppSpacing.xs,
         ),
-        child: Text(status, style: AppTextStyles.label.copyWith(color: color)),
+        child: Text(
+          _statusLabel(status),
+          style: AppTextStyles.label.copyWith(color: color),
+        ),
       ),
     );
+  }
+
+  String _statusLabel(String status) {
+    return switch (status) {
+      'approved' => 'Onaylandı',
+      'rejected' => 'Reddedildi',
+      'cancelled' => 'İptal edildi',
+      'pending' => 'Bekliyor',
+      _ => 'Bekliyor',
+    };
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:match_a_man/core/router/route_names.dart';
@@ -6,6 +8,9 @@ import 'package:match_a_man/core/utils/user_handle.dart';
 import 'package:match_a_man/features/auth/auth_service.dart';
 import 'package:match_a_man/features/events/events_models.dart';
 import 'package:match_a_man/features/events/widgets/join_request_button.dart';
+import 'package:match_a_man/features/feed/feed_models.dart';
+import 'package:match_a_man/features/feed/feed_provider.dart';
+import 'package:match_a_man/features/feed/feed_service.dart';
 import 'package:match_a_man/features/notifications/notifications_models.dart';
 import 'package:match_a_man/features/profile/profile_models.dart';
 import 'package:match_a_man/features/profile/profile_provider.dart';
@@ -392,6 +397,108 @@ void main() {
     });
   });
 
+  group('feed polish helpers', () {
+    test('feed state tracks per-post like loading', () {
+      const state = FeedState(
+        status: FeedStatus.success,
+        likeLoadingPostIds: {'post-1'},
+      );
+
+      expect(state.isLikeLoading('post-1'), isTrue);
+      expect(state.isLikeLoading('post-2'), isFalse);
+    });
+
+    test('feed post stats mapping tolerates missing media fields', () {
+      final item = PostWithStats.fromFeedJson({
+        'id': 'post-1',
+        'user_id': 'user-1',
+        'image_url': null,
+        'caption': 'Match day',
+        'author_username': 'emirwithhan',
+        'author_tag': '6385',
+        'author_avatar_url': null,
+        'created_at': '2026-05-27T10:00:00Z',
+        'like_count': 2,
+        'comment_count': 1,
+        'is_liked_by_me': true,
+      });
+
+      expect(item.post.imageUrl, '');
+      expect(
+        formatUserHandle(item.post.authorUsername, item.post.authorTag),
+        'emirwithhan#6385',
+      );
+      expect(item.post.authorAvatarUrl, isNull);
+      expect(item.likeCount, 2);
+      expect(item.commentCount, 1);
+      expect(item.isLikedByMe, isTrue);
+    });
+
+    test('empty successful feed state is not an error', () {
+      const state = FeedState(status: FeedStatus.success);
+
+      expect(state.posts, isEmpty);
+      expect(state.isEmptySuccess, isTrue);
+      expect(state.status, isNot(FeedStatus.error));
+    });
+
+    test('create post payload omits null event link', () {
+      final input = CreatePostInput(
+        imageBytes: Uint8List(1),
+        fileName: 'match.jpg',
+        caption: '  Great match  ',
+      );
+
+      final payload = input.toInsertJson(
+        userId: 'user-1',
+        imageUrl: 'https://example.com/match.jpg',
+      );
+
+      expect(payload['caption'], 'Great match');
+      expect(payload.containsKey('event_id'), isFalse);
+    });
+
+    test('feed and create post errors use focused Turkish copy', () {
+      expect(
+        friendlyFeedLoadErrorMessage('PostgrestException policy 42501'),
+        'Ak\u0131\u015f y\u00fcklenemedi.',
+      );
+      expect(
+        friendlyFeedLoadErrorMessage('PGRST202 schema cache missing function'),
+        'Ak\u0131\u015f y\u00fcklenemedi.',
+      );
+      expect(
+        friendlyCreatePostErrorMessage('Storage bucket not found'),
+        'Foto\u011fraf y\u00fcklenemedi. Tekrar dene.',
+      );
+      expect(
+        friendlyCreatePostErrorMessage('PostgrestException insert failed'),
+        'Payla\u015f\u0131m olu\u015fturulamad\u0131. Tekrar dene.',
+      );
+      expect(
+        friendlyFeedRefreshErrorMessage('PGRST202 schema cache'),
+        'Ak\u0131\u015f yenilenemedi. Tekrar dene.',
+      );
+    });
+
+    test('post creation success survives feed refresh failure', () async {
+      final controller = FeedController(
+        const _CreateSucceedsRefreshFailsFeedService(),
+      );
+
+      final post = await controller.createPost(
+        CreatePostInput(imageBytes: Uint8List(1), fileName: 'match.jpg'),
+      );
+
+      expect(post?.id, 'post-1');
+      expect(controller.state.isCreating, isFalse);
+      expect(
+        controller.state.message,
+        'Ak\u0131\u015f yenilenemedi. Tekrar dene.',
+      );
+    });
+  });
+
   group('avatar fallback', () {
     testWidgets('safe avatar shows fallback without a usable URL', (
       tester,
@@ -405,6 +512,25 @@ void main() {
       expect(find.text('E'), findsOneWidget);
     });
   });
+}
+
+class _CreateSucceedsRefreshFailsFeedService extends FeedService {
+  const _CreateSucceedsRefreshFailsFeedService();
+
+  @override
+  Future<Post> createPost(CreatePostInput input) async {
+    return Post(
+      id: 'post-1',
+      userId: 'user-1',
+      imageUrl: 'https://example.com/post.jpg',
+      createdAt: DateTime(2026, 5, 27),
+    );
+  }
+
+  @override
+  Future<List<PostWithStats>> fetchPostsWithStats() async {
+    throw StateError('PGRST202 schema cache');
+  }
 }
 
 Event _event({

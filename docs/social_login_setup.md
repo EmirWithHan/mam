@@ -35,6 +35,10 @@ Supabase Dashboard per environment.
 
 - Open Authentication -> Providers -> Google and confirm it is enabled.
 - Open Authentication -> Providers -> Facebook and confirm it is enabled.
+- If Facebook shows "App not active" on Meta's external page, keep the Flutter
+  and Supabase OAuth code unchanged first. In Meta Developer settings, either
+  switch the Facebook App to Live for public users or add the signing-in account
+  under app roles/test users while the app is in Development Mode.
 - Add the provider Client ID and Client Secret values in Supabase only.
 - Open Authentication -> URL Configuration.
 - Add allowed redirect URLs for mobile, local web, and production web:

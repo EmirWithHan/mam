@@ -18,11 +18,13 @@ class PostCard extends ConsumerWidget {
   const PostCard({
     super.key,
     required this.item,
+    required this.isLikeLoading,
     required this.onToggleLike,
     required this.onOpenComments,
   });
 
   final PostWithStats item;
+  final bool isLikeLoading;
   final VoidCallback onToggleLike;
   final VoidCallback onOpenComments;
 
@@ -151,21 +153,30 @@ class PostCard extends ConsumerWidget {
                       horizontal: AppSpacing.sm,
                       vertical: AppSpacing.xs,
                     ),
-                    child: Row(
+                    child: Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      spacing: AppSpacing.sm,
+                      runSpacing: AppSpacing.xs,
                       children: [
                         TextButton.icon(
-                          onPressed: onToggleLike,
-                          icon: Icon(
-                            item.isLikedByMe
-                                ? Icons.favorite
-                                : Icons.favorite_border,
-                            color: item.isLikedByMe
-                                ? AppColors.primary
-                                : AppColors.textMuted,
-                          ),
+                          onPressed: isLikeLoading ? null : onToggleLike,
+                          icon: isLikeLoading
+                              ? const SizedBox.square(
+                                  dimension: 16,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : Icon(
+                                  item.isLikedByMe
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: item.isLikedByMe
+                                      ? AppColors.primary
+                                      : AppColors.textMuted,
+                                ),
                           label: Text('${item.likeCount}'),
                         ),
-                        const SizedBox(width: AppSpacing.sm),
                         TextButton.icon(
                           onPressed: commentsLocked ? null : onOpenComments,
                           icon: Icon(
@@ -178,6 +189,7 @@ class PostCard extends ConsumerWidget {
                             commentsLocked
                                 ? 'Yorumlar gizlendi'
                                 : '${item.commentCount}',
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],

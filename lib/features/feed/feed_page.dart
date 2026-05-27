@@ -155,7 +155,7 @@ class _FeedHeader extends ConsumerWidget {
         ),
         const SizedBox(height: AppSpacing.sm),
         Text(
-          'Sports days, match energy, and community snapshots.',
+          'Spor günleri, maç enerjisi ve topluluk anları.',
           style: AppTextStyles.body,
         ),
         if (showCreatePrompt) ...[
@@ -231,7 +231,7 @@ class _CreatePostPrompt extends StatelessWidget {
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Text(
-                'Share a photo from your day or activity.',
+                'Gününden veya etkinliğinden bir fotoğraf paylaş.',
                 style: AppTextStyles.bodySmall,
               ),
             ),
@@ -239,7 +239,7 @@ class _CreatePostPrompt extends StatelessWidget {
             SizedBox(
               width: 132,
               child: AppButton(
-                label: 'Post photo',
+                label: 'Paylaş',
                 onPressed: () => context.pushNamed(RouteNames.createPost),
               ),
             ),
@@ -278,6 +278,7 @@ class _FeedItem extends ConsumerWidget {
     return PostCard(
       key: ValueKey(item.post.id),
       item: item,
+      isLikeLoading: feedState.isLikeLoading(item.post.id),
       onToggleLike: () {
         ref.read(feedControllerProvider.notifier).toggleLike(item);
       },
@@ -309,7 +310,7 @@ class _FeedStatePanel extends ConsumerWidget {
 
     if (feedState.status == FeedStatus.error) {
       return ErrorView(
-        message: feedState.message ?? 'Akış yüklenemedi.',
+        message: feedState.message ?? 'Liste yüklenemedi.',
         onRetry: () {
           ref.read(feedControllerProvider.notifier).refreshPosts();
         },

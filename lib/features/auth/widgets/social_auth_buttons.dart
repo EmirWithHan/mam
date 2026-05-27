@@ -21,8 +21,11 @@ class SocialAuthButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      runAlignment: WrapAlignment.center,
+      spacing: AppSpacing.md,
+      runSpacing: AppSpacing.md,
       children: [
         _SocialIconButton(
           tooltip: 'Google ile devam et',
@@ -30,7 +33,6 @@ class SocialAuthButtons extends StatelessWidget {
           isLoading: isLoading,
           onPressed: isLoading ? null : onGooglePressed,
         ),
-        const SizedBox(width: AppSpacing.md),
         _SocialIconButton(
           tooltip: 'Facebook ile devam et',
           label: 'f',
@@ -41,7 +43,6 @@ class SocialAuthButtons extends StatelessWidget {
           isLoading: isLoading,
           onPressed: isLoading ? null : onFacebookPressed,
         ),
-        const SizedBox(width: AppSpacing.md),
         _SocialIconButton(
           tooltip: 'Apple ile devam et yakında',
           icon: Icons.apple,

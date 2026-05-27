@@ -7,11 +7,7 @@ import '../theme/app_text_styles.dart';
 import 'app_button.dart';
 
 class ErrorView extends StatelessWidget {
-  const ErrorView({
-    super.key,
-    required this.message,
-    this.onRetry,
-  });
+  const ErrorView({super.key, required this.message, this.onRetry});
 
   final String message;
   final VoidCallback? onRetry;
@@ -46,7 +42,7 @@ class ErrorView extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
-                  'Bir şey ters gitti',
+                  'Bir şeyler ters gitti',
                   style: AppTextStyles.title,
                   textAlign: TextAlign.center,
                 ),

@@ -11,6 +11,9 @@ class Post {
     this.caption,
     this.commentsHidden = false,
     this.isArchived = false,
+    this.authorUsername,
+    this.authorTag,
+    this.authorAvatarUrl,
     required this.createdAt,
     this.updatedAt,
   });
@@ -22,18 +25,24 @@ class Post {
   final String? caption;
   final bool commentsHidden;
   final bool isArchived;
+  final String? authorUsername;
+  final String? authorTag;
+  final String? authorAvatarUrl;
   final DateTime createdAt;
   final DateTime? updatedAt;
 
   factory Post.fromJson(Map<String, dynamic> json) {
     return Post(
-      id: json['id'] as String,
-      userId: json['user_id'] as String,
-      eventId: json['event_id'] as String?,
-      imageUrl: json['image_url'] as String,
+      id: json['id'].toString(),
+      userId: json['user_id'].toString(),
+      eventId: json['event_id']?.toString(),
+      imageUrl: json['image_url']?.toString() ?? '',
       caption: json['caption'] as String?,
       commentsHidden: json['comments_hidden'] as bool? ?? false,
       isArchived: json['is_archived'] as bool? ?? false,
+      authorUsername: json['author_username'] as String?,
+      authorTag: json['author_tag'] as String?,
+      authorAvatarUrl: json['author_avatar_url'] as String?,
       createdAt: DateTime.parse(json['created_at'].toString()),
       updatedAt: _dateTimeFromJson(json['updated_at']),
     );
@@ -62,6 +71,9 @@ class Post {
     String? caption,
     bool? commentsHidden,
     bool? isArchived,
+    String? authorUsername,
+    String? authorTag,
+    String? authorAvatarUrl,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -73,6 +85,9 @@ class Post {
       caption: caption ?? this.caption,
       commentsHidden: commentsHidden ?? this.commentsHidden,
       isArchived: isArchived ?? this.isArchived,
+      authorUsername: authorUsername ?? this.authorUsername,
+      authorTag: authorTag ?? this.authorTag,
+      authorAvatarUrl: authorAvatarUrl ?? this.authorAvatarUrl,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -93,6 +108,24 @@ class CreatePostInput {
   final String? contentType;
   final String? caption;
   final String? eventId;
+
+  Map<String, dynamic> toInsertJson({
+    required String userId,
+    required String imageUrl,
+  }) {
+    final data = <String, dynamic>{
+      'user_id': userId,
+      'image_url': imageUrl,
+      'caption': _nullableTrim(caption),
+    };
+
+    final linkedEventId = _nullableTrim(eventId);
+    if (linkedEventId != null) {
+      data['event_id'] = linkedEventId;
+    }
+
+    return data;
+  }
 }
 
 class LinkableEvent {
@@ -197,6 +230,15 @@ class PostWithStats {
   final int likeCount;
   final int commentCount;
   final bool isLikedByMe;
+
+  factory PostWithStats.fromFeedJson(Map<String, dynamic> json) {
+    return PostWithStats(
+      post: Post.fromJson(json),
+      likeCount: (json['like_count'] as num?)?.toInt() ?? 0,
+      commentCount: (json['comment_count'] as num?)?.toInt() ?? 0,
+      isLikedByMe: json['is_liked_by_me'] as bool? ?? false,
+    );
+  }
 
   PostWithStats copyWith({
     Post? post,

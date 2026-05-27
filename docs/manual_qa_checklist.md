@@ -39,7 +39,10 @@ Use this checklist for closed beta testers and internal manual regression passes
 ## D. Social
 
 - [ ] Feed loads.
+- [ ] Home/Moments feed loads through `get_visible_feed_posts_with_stats` after DB migrations are pushed.
 - [ ] Create a post.
+- [ ] Create a photo post without an event link; confirm success is not shown as failed if feed refresh needs retry.
+- [ ] Create a photo post with an event link when one is available.
 - [ ] Like a post.
 - [ ] Comment on a post.
 - [ ] Follow a public account.
@@ -75,7 +78,15 @@ Use this checklist for closed beta testers and internal manual regression passes
 - [ ] Trust score behavior is understandable if visible.
 - [ ] Blocking/reporting does not crash feed, profile, or event screens.
 
-## H. Bug Reporting Format
+## H. UX And Responsiveness
+
+- [ ] Social login buttons wrap cleanly on narrow screens.
+- [ ] Feed like/comment actions do not overflow with long Turkish copy.
+- [ ] Repeated taps on like/share/create actions do not create confusing duplicate loading states.
+- [ ] Long names, username#0000 handles, captions, comments, and event titles stay readable.
+- [ ] Loading, empty, and error states use friendly Turkish copy.
+
+## I. Bug Reporting Format
 
 - Device/browser:
 - Account used:

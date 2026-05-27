@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
 import '../reports/blocks_service.dart';
@@ -27,39 +30,23 @@ class FeedService {
   }
 
   Future<List<PostWithStats>> fetchPostsWithStats() async {
-    final posts = await fetchPosts();
-    final userId = SupabaseService.client.auth.currentUser?.id;
-    final items = <PostWithStats>[];
-
-    for (final post in posts) {
-      final likeCount = await _countRows(
-        table: 'post_likes',
-        column: 'post_id',
-        value: post.id,
+    try {
+      final data = await SupabaseService.client.rpc(
+        'get_visible_feed_posts_with_stats',
       );
-      final isOwner = userId != null && post.userId == userId;
-      final commentCount = post.commentsHidden && !isOwner
-          ? 0
-          : await _countRows(
-              table: 'post_comments',
-              column: 'post_id',
-              value: post.id,
-            );
-      final isLikedByMe = userId == null
-          ? false
-          : await _hasMyLike(postId: post.id, userId: userId);
+      final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
 
-      items.add(
-        PostWithStats(
-          post: post,
-          likeCount: likeCount,
-          commentCount: commentCount,
-          isLikedByMe: isLikedByMe,
-        ),
-      );
+      return (data as List<dynamic>)
+          .whereType<Map>()
+          .map((row) => Map<String, dynamic>.from(row))
+          .map(PostWithStats.fromFeedJson)
+          .where((item) => !item.post.isArchived)
+          .where((item) => !blockedUserIds.contains(item.post.userId))
+          .toList();
+    } catch (error) {
+      _logFeedError('feed posts with stats query failed', error);
+      rethrow;
     }
-
-    return items;
   }
 
   Future<List<LinkableEvent>> fetchMyLinkableEvents() async {
@@ -237,22 +224,17 @@ class FeedService {
       contentType: input.contentType,
     );
 
-    final data = <String, dynamic>{
-      'user_id': userId,
-      'image_url': imageUrl,
-      'caption': _nullableTrim(input.caption),
-    };
-
-    final eventId = _nullableTrim(input.eventId);
-    if (eventId != null) {
-      data['event_id'] = eventId;
-    }
+    final data = input.toInsertJson(userId: userId, imageUrl: imageUrl);
 
     final created = await SupabaseService.client
         .from('posts')
         .insert(data)
         .select()
-        .single();
+        .single()
+        .catchError((Object error) {
+          _logFeedError('post insert failed', error);
+          throw error;
+        });
 
     return Post.fromJson(created);
   }
@@ -274,19 +256,6 @@ class FeedService {
   }
 }
 
-Future<int> _countRows({
-  required String table,
-  required String column,
-  required String value,
-}) async {
-  final data = await SupabaseService.client
-      .from(table)
-      .select('id')
-      .eq(column, value);
-
-  return data.length;
-}
-
 Future<bool> _hasMyLike({
   required String postId,
   required String userId,
@@ -301,8 +270,14 @@ Future<bool> _hasMyLike({
   return data != null;
 }
 
-String? _nullableTrim(String? value) {
-  final trimmed = value?.trim();
-  if (trimmed == null || trimmed.isEmpty) return null;
-  return trimmed;
+void _logFeedError(String label, Object error) {
+  final code = error is PostgrestException ? error.code : null;
+  final message = error is PostgrestException
+      ? error.message
+      : error.toString();
+  debugPrint(
+    '[Feed] $label'
+    '${code == null ? '' : ' code=$code'}'
+    ' message=$message',
+  );
 }

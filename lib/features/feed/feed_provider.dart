@@ -15,6 +15,7 @@ class FeedState {
     this.commentsLoading = false,
     this.commentsMessage,
     this.commentsByPostId = const {},
+    this.likeLoadingPostIds = const {},
   });
 
   const FeedState.initial()
@@ -24,7 +25,8 @@ class FeedState {
       isCreating = false,
       commentsLoading = false,
       commentsMessage = null,
-      commentsByPostId = const {};
+      commentsByPostId = const {},
+      likeLoadingPostIds = const {};
 
   final FeedStatus status;
   final List<PostWithStats> posts;
@@ -33,8 +35,10 @@ class FeedState {
   final bool commentsLoading;
   final String? commentsMessage;
   final Map<String, List<PostComment>> commentsByPostId;
+  final Set<String> likeLoadingPostIds;
 
   bool get isLoading => status == FeedStatus.loading;
+  bool get isEmptySuccess => status == FeedStatus.success && posts.isEmpty;
 
   FeedState copyWith({
     FeedStatus? status,
@@ -44,6 +48,7 @@ class FeedState {
     bool? commentsLoading,
     String? commentsMessage,
     Map<String, List<PostComment>>? commentsByPostId,
+    Set<String>? likeLoadingPostIds,
     bool clearMessage = false,
     bool clearCommentsMessage = false,
   }) {
@@ -57,8 +62,11 @@ class FeedState {
           ? null
           : commentsMessage ?? this.commentsMessage,
       commentsByPostId: commentsByPostId ?? this.commentsByPostId,
+      likeLoadingPostIds: likeLoadingPostIds ?? this.likeLoadingPostIds,
     );
   }
+
+  bool isLikeLoading(String postId) => likeLoadingPostIds.contains(postId);
 }
 
 final feedServiceProvider = Provider<FeedService>((ref) {
@@ -91,7 +99,7 @@ class FeedController extends StateNotifier<FeedState> {
     } catch (error) {
       state = state.copyWith(
         status: FeedStatus.error,
-        message: friendlyErrorMessage(error),
+        message: friendlyFeedLoadErrorMessage(error),
       );
     }
   }
@@ -103,30 +111,50 @@ class FeedController extends StateNotifier<FeedState> {
 
     try {
       final post = await _feedService.createPost(input);
-      final posts = await _feedService.fetchPostsWithStats();
-      state = FeedState(status: FeedStatus.success, posts: posts);
+      try {
+        final posts = await _feedService.fetchPostsWithStats();
+        state = FeedState(status: FeedStatus.success, posts: posts);
+      } catch (refreshError) {
+        state = state.copyWith(
+          isCreating: false,
+          message: friendlyFeedRefreshErrorMessage(refreshError),
+        );
+      }
       return post;
     } catch (error) {
       state = state.copyWith(
         isCreating: false,
-        message: friendlyErrorMessage(error),
+        message: friendlyCreatePostErrorMessage(error),
       );
       return null;
     }
   }
 
   Future<void> toggleLike(PostWithStats item) async {
-    state = state.copyWith(clearMessage: true);
+    final postId = item.post.id;
+    if (state.isLikeLoading(postId)) return;
+
+    state = state.copyWith(
+      clearMessage: true,
+      likeLoadingPostIds: {...state.likeLoadingPostIds, postId},
+    );
 
     try {
       await _feedService.toggleLike(
-        postId: item.post.id,
+        postId: postId,
         currentlyLiked: item.isLikedByMe,
       );
       final posts = await _feedService.fetchPostsWithStats();
-      state = state.copyWith(status: FeedStatus.success, posts: posts);
+      state = state.copyWith(
+        status: FeedStatus.success,
+        posts: posts,
+        likeLoadingPostIds: _withoutLikeLoading(postId),
+      );
     } catch (error) {
-      state = state.copyWith(message: friendlyErrorMessage(error));
+      state = state.copyWith(
+        message: friendlyErrorMessage(error),
+        likeLoadingPostIds: _withoutLikeLoading(postId),
+      );
     }
   }
 
@@ -199,5 +227,11 @@ class FeedController extends StateNotifier<FeedState> {
       );
       return null;
     }
+  }
+
+  Set<String> _withoutLikeLoading(String postId) {
+    return state.likeLoadingPostIds
+        .where((loadingPostId) => loadingPostId != postId)
+        .toSet();
   }
 }

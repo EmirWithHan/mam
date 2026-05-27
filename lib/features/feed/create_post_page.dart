@@ -70,7 +70,9 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
       return;
     }
 
-    final post = await ref.read(feedControllerProvider.notifier).createPost(
+    final post = await ref
+        .read(feedControllerProvider.notifier)
+        .createPost(
           CreatePostInput(
             imageBytes: bytes,
             fileName: fileName,
@@ -88,9 +90,9 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
 
     final message = ref.read(feedControllerProvider).message;
     if (message != null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     }
   }
 
@@ -113,51 +115,52 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
-            Text('Share a moment', style: AppTextStyles.headline),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Post a photo from your day, match, or activity.',
-              style: AppTextStyles.body,
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            _ImagePickerPreview(
-              imageBytes: _imageBytes,
-              onPickImage: _pickImage,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            AppTextField(
-              label: 'Caption',
-              controller: _captionController,
-              prefixIcon: const Icon(Icons.short_text),
-              maxLines: 3,
-              validator: Validators.postCaption,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            LinkedEventPicker(
-              selectedEventId: _selectedEventId,
-              onChanged: (eventId) {
-                setState(() => _selectedEventId = eventId);
-              },
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'İstersen bu paylaşımı katıldığın bir etkinlikle ilişkilendirebilirsin.',
-              style: AppTextStyles.caption,
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            AppButton(
-              label: 'Post photo',
-              isLoading: feedState.isCreating,
-              onPressed: _createPost,
-            ),
-            if (feedState.message != null) ...[
-              const SizedBox(height: AppSpacing.md),
+              Text('Bir an paylaş', style: AppTextStyles.headline),
+              const SizedBox(height: AppSpacing.sm),
               Text(
-                feedState.message!,
-                style: const TextStyle(color: AppColors.error),
-                textAlign: TextAlign.center,
+                'Gününden, maçtan veya etkinlikten bir fotoğraf paylaş.',
+                style: AppTextStyles.body,
               ),
-            ],
+              const SizedBox(height: AppSpacing.lg),
+              _ImagePickerPreview(
+                imageBytes: _imageBytes,
+                onPickImage: feedState.isCreating ? null : _pickImage,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppTextField(
+                label: 'Açıklama',
+                controller: _captionController,
+                prefixIcon: const Icon(Icons.short_text),
+                maxLines: 3,
+                validator: Validators.postCaption,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              LinkedEventPicker(
+                selectedEventId: _selectedEventId,
+                onChanged: (eventId) {
+                  if (feedState.isCreating) return;
+                  setState(() => _selectedEventId = eventId);
+                },
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'İstersen bu paylaşımı katıldığın bir etkinlikle ilişkilendirebilirsin.',
+                style: AppTextStyles.caption,
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              AppButton(
+                label: 'Fotoğraf paylaş',
+                isLoading: feedState.isCreating,
+                onPressed: feedState.isCreating ? null : _createPost,
+              ),
+              if (feedState.message != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  feedState.message!,
+                  style: const TextStyle(color: AppColors.error),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ],
           ),
         ),
@@ -181,7 +184,7 @@ class _ImagePickerPreview extends StatelessWidget {
   });
 
   final Uint8List? imageBytes;
-  final VoidCallback onPickImage;
+  final VoidCallback? onPickImage;
 
   @override
   Widget build(BuildContext context) {
