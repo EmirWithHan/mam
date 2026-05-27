@@ -23,9 +23,13 @@ This document lists intentional MVP limitations for demo and closed beta plannin
 ## Store And Release Readiness
 
 - App Store and Play Store assets are pending.
+- Facebook/Meta public launch remains blocked until app icon, Privacy Policy URL, User Data Deletion URL/instructions, category, and app mode are completed.
+- Facebook Development Mode is limited to roles/test users.
 - Store screenshots, descriptions, privacy copy, and review notes need final review.
 - Data deletion request handling should be documented before store submission.
 - Content moderation and report/block behavior should be described clearly for reviewers.
+- Android release signing is not configured.
+- iOS Apple Developer signing/provisioning is not configured.
 
 ## Beta Expectations
 

@@ -1,8 +1,8 @@
-# mam
+# Match A Man
 
-A new Flutter project.
+A social sports and events Flutter app.
 
-## Demo / Release Docs
+## Demo Docs
 
 - [Demo data plan](docs/demo_data_plan.md)
 - [Manual demo flow](docs/demo_flow.md)
@@ -11,16 +11,26 @@ A new Flutter project.
 - [Store readiness precheck](docs/store_readiness_precheck.md)
 - [Manual QA checklist](docs/manual_qa_checklist.md)
 
-## Getting Started
+## Release / Beta Docs
 
-This project is a starting point for a Flutter application.
+- [Release readiness audit](docs/release_readiness_audit.md)
+- [Privacy and data requirements](docs/privacy_and_data_requirements.md)
+- [Facebook / Meta readiness](docs/facebook_meta_readiness.md)
+- [Google OAuth readiness](docs/google_oauth_readiness.md)
+- [Apple login readiness](docs/apple_login_readiness.md)
+- [Android release checklist](docs/android_release_checklist.md)
+- [iOS release checklist](docs/ios_release_checklist.md)
+- [Web beta checklist](docs/web_beta_checklist.md)
+- [Build commands](docs/build_commands.md)
+- [Launch blockers](docs/launch_blockers.md)
 
-A few resources to get you started if this is your first Flutter project:
+## Development
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Run with Supabase values supplied by `--dart-define` or local tooling. Do not
+commit Supabase keys, OAuth secrets, signing files, or service role keys.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+flutter pub get
+flutter analyze
+flutter test
+```
