@@ -103,8 +103,11 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = switch (status) {
       'approved' => AppColors.success,
+      'confirmed' => AppColors.success,
       'rejected' => AppColors.error,
       'cancelled' => AppColors.textMuted,
+      'pending_confirmation' => AppColors.primary,
+      'waitlisted' => AppColors.warning,
       _ => AppColors.warning,
     };
 
@@ -129,6 +132,9 @@ class _StatusChip extends StatelessWidget {
   String _statusLabel(String status) {
     return switch (status) {
       'approved' => 'Onaylandı',
+      'pending_confirmation' => 'Doğrulama bekliyor',
+      'confirmed' => 'Doğrulandı',
+      'waitlisted' => 'Yedek listede',
       'rejected' => 'Reddedildi',
       'cancelled' => 'İptal edildi',
       'pending' => 'Bekliyor',

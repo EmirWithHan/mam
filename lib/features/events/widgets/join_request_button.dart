@@ -20,6 +20,7 @@ class JoinRequestButton extends StatelessWidget {
     required this.isLoading,
     required this.onRequest,
     required this.onCancel,
+    this.onConfirm,
     this.hasLeftEvent = false,
   });
 
@@ -29,6 +30,7 @@ class JoinRequestButton extends StatelessWidget {
   final bool isLoading;
   final VoidCallback onRequest;
   final VoidCallback onCancel;
+  final VoidCallback? onConfirm;
   final bool hasLeftEvent;
 
   @override
@@ -69,6 +71,46 @@ class JoinRequestButton extends StatelessWidget {
             child: const Text('İsteği iptal et'),
           ),
         ],
+      );
+    }
+
+    if (event.isBusinessEvent &&
+        currentRequest?.isPendingConfirmation == true) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const _StatusPanel(
+            icon: Icons.verified_user_outlined,
+            title: 'KatÄ±lÄ±mÄ±n onaylandÄ±.',
+            message: 'Yerini ayÄ±rmak iÃ§in katÄ±lÄ±mÄ±nÄ± doÄŸrula.',
+            color: AppColors.primary,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          AppButton(
+            label: 'KatÄ±lÄ±mÄ± doÄŸrula',
+            isLoading: isLoading,
+            onPressed: isLoading ? null : onConfirm,
+          ),
+        ],
+      );
+    }
+
+    if (event.isBusinessEvent && currentRequest?.isConfirmed == true) {
+      return const _StatusPanel(
+        icon: Icons.check_circle_outline,
+        title: 'KatÄ±lÄ±m doÄŸrulandÄ±',
+        message: 'Ä°ÅŸletme etkinliÄŸindeki yerin kesinleÅŸti.',
+        color: AppColors.success,
+      );
+    }
+
+    if (event.isBusinessEvent && currentRequest?.isWaitlisted == true) {
+      return const _StatusPanel(
+        icon: Icons.pending_actions_outlined,
+        title: 'Yedek listedesin',
+        message:
+            'Yer aÃ§Ä±lÄ±rsa iÅŸletme etkinliÄŸi iÃ§in tekrar bilgilendirileceksin.',
+        color: AppColors.warning,
       );
     }
 

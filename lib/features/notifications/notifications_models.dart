@@ -54,9 +54,15 @@ class AppNotification {
     return isFollowRequest && followRequestStatus == 'pending';
   }
 
+  bool get isBusinessEventConfirmRequired {
+    return type.trim().toLowerCase() == 'business_event_confirm_required' &&
+        opensEvent;
+  }
+
   String get displayTitle {
     return switch (type.trim().toLowerCase()) {
       'event_join_request' => 'Yeni katılım isteği',
+      'business_event_confirm_required' => 'Katılımını doğrula',
       'event_join_approved' => 'Katılım isteğin onaylandı',
       'event_join_rejected' => 'Katılım isteğin reddedildi',
       'event_join_cancelled' => 'Katılım isteği iptal edildi',
@@ -76,6 +82,8 @@ class AppNotification {
 
     return switch (type.trim().toLowerCase()) {
       'event_join_request' => 'Etkinliğin için yeni bir katılım isteği var.',
+      'business_event_confirm_required' =>
+        'İşletme etkinliğine katılımın onaylandı. Yerini ayırmak için katılımını doğrula.',
       'event_join_approved' =>
         'Katılım isteğin ev sahibi tarafından onaylandı.',
       'event_join_rejected' =>
@@ -94,6 +102,7 @@ class AppNotification {
   String get typeLabel {
     return switch (type.trim().toLowerCase()) {
       'event_join_request' => 'Katılım',
+      'business_event_confirm_required' => 'Etkinlik',
       'event_join_approved' ||
       'event_join_rejected' ||
       'event_join_cancelled' ||

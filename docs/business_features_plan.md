@@ -15,6 +15,11 @@
 - Sponsored business event placement is available. Sponsored content is clearly
   labeled and the events list can place one active sponsored business event
   after every four normal events.
+- Business events now use double confirmation: owner approval moves the
+  requester to pending confirmation, the user confirms from event detail, and
+  only confirmed users count as final participants.
+- Waitlist foundation exists for business events when confirmed capacity is
+  full.
 
 ## Current Development Choice
 
@@ -24,9 +29,8 @@ can be tested without moderation tooling. `is_verified` defaults to `false`.
 ## Not Implemented Yet
 
 - Payment/ad dashboard for sponsored placement
-- Business event double confirmation
 - Check-in
-- Waitlists
+- Waitlist expiry/automation
 - No-show penalties
 - Phone verification
 - SMS/OTP
@@ -35,6 +39,7 @@ can be tested without moderation tooling. `is_verified` defaults to `false`.
 - Push notifications
 
 Normal user events remain personal/community events. Business event creation is
-now explicit, and sponsored placement is label-first/manual-admin for now. Double
-confirmation, check-in, no-show handling, payments/ad dashboards, ratings, and
-statistics are still later steps.
+now explicit, sponsored placement is label-first/manual-admin for now, and
+business events use a double-confirmation join lifecycle. Check-in, no-show
+handling, payments/ad dashboards, ratings, statistics, and push notifications
+are still later steps.

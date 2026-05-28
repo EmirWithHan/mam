@@ -14,6 +14,7 @@ import 'package:match_a_man/features/auth/auth_service.dart';
 import 'package:match_a_man/features/business/business_models.dart';
 import 'package:match_a_man/features/business/business_service.dart';
 import 'package:match_a_man/features/events/events_models.dart';
+import 'package:match_a_man/features/events/join_requests_models.dart';
 import 'package:match_a_man/features/events/widgets/event_card.dart';
 import 'package:match_a_man/features/events/widgets/join_request_button.dart';
 import 'package:match_a_man/features/feed/feed_models.dart';
@@ -337,6 +338,92 @@ void main() {
       },
     );
 
+    test('business confirmation lifecycle helpers map final states', () {
+      expect(
+        EventParticipationStatus.countsAsFinalParticipant(
+          isBusinessEvent: true,
+          status: EventParticipationStatus.pendingConfirmation,
+        ),
+        isFalse,
+      );
+      expect(
+        EventParticipationStatus.countsAsFinalParticipant(
+          isBusinessEvent: true,
+          status: EventParticipationStatus.confirmed,
+        ),
+        isTrue,
+      );
+      expect(
+        EventParticipationStatus.countsAsFinalParticipant(
+          isBusinessEvent: true,
+          status: EventParticipationStatus.waitlisted,
+        ),
+        isFalse,
+      );
+      expect(
+        EventParticipationStatus.countsAsFinalParticipant(
+          isBusinessEvent: false,
+          status: EventParticipationStatus.planned,
+        ),
+        isTrue,
+      );
+    });
+
+    test(
+      'join request final participant helper keeps normal flow unchanged',
+      () {
+        final normalApproved = EventJoinRequest(
+          id: 'request-1',
+          eventId: 'event-1',
+          userId: 'user-1',
+          status: EventParticipationStatus.approved,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        );
+        final businessPendingConfirmation = EventJoinRequest(
+          id: 'request-2',
+          eventId: 'event-1',
+          userId: 'user-1',
+          status: EventParticipationStatus.pendingConfirmation,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        );
+        final businessConfirmed = EventJoinRequest(
+          id: 'request-3',
+          eventId: 'event-1',
+          userId: 'user-1',
+          status: EventParticipationStatus.confirmed,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        );
+
+        expect(
+          normalApproved.isFinalParticipant(isBusinessEvent: false),
+          isTrue,
+        );
+        expect(
+          businessPendingConfirmation.isFinalParticipant(isBusinessEvent: true),
+          isFalse,
+        );
+        expect(
+          businessConfirmed.isFinalParticipant(isBusinessEvent: true),
+          isTrue,
+        );
+      },
+    );
+
+    test('waitlisted participant does not count as confirmed', () {
+      const participation = EventParticipation(
+        role: 'participant',
+        attendanceStatus: EventParticipationStatus.waitlisted,
+      );
+
+      expect(
+        participation.countsAsFinalParticipant(isBusinessEvent: true),
+        isFalse,
+      );
+    });
+
     testWidgets('past event block appears before profile requirement', (
       tester,
     ) async {
@@ -423,6 +510,23 @@ void main() {
       expect(notification.displayBody, 'Yeni bir takip isteğin var.');
       expect(notification.typeLabel, 'Sosyal');
       expect(notification.canRespondToFollowRequest, isTrue);
+    });
+
+    test('business event confirmation notification opens event', () {
+      final notification = AppNotification(
+        id: 'notification-1',
+        recipientId: 'user-1',
+        type: 'business_event_confirm_required',
+        title: '',
+        entityType: 'event',
+        entityId: 'event-1',
+        isRead: false,
+        createdAt: DateTime(2026),
+      );
+
+      expect(notification.displayTitle, 'Katılımını doğrula');
+      expect(notification.isBusinessEventConfirmRequired, isTrue);
+      expect(notification.opensEvent, isTrue);
     });
   });
 

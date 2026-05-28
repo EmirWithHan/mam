@@ -152,13 +152,19 @@ class _EventDetailBody extends ConsumerWidget {
         !event.isPast &&
         !isHost &&
         (myParticipation?.canLeaveApprovedEvent ?? false);
-    final isApprovedParticipant =
+    final isFinalParticipant =
         !isHost &&
         !hasLeftEvent &&
         (hasMyParticipation
-            ? myParticipation?.isActiveApprovedParticipant == true
-            : requestState.myRequest?.isApproved == true);
-    final canViewPublicParticipants = isHost || isApprovedParticipant;
+            ? myParticipation?.countsAsFinalParticipant(
+                    isBusinessEvent: event.isBusinessEvent,
+                  ) ==
+                  true
+            : requestState.myRequest?.isFinalParticipant(
+                    isBusinessEvent: event.isBusinessEvent,
+                  ) ==
+                  true);
+    final canViewPublicParticipants = isHost || isFinalParticipant;
     final requestController = ref.read(
       joinRequestControllerProvider(event.id).notifier,
     );
@@ -214,7 +220,7 @@ class _EventDetailBody extends ConsumerWidget {
         const SizedBox(height: AppSpacing.lg),
         const _SectionTitle(title: 'Actions'),
         const SizedBox(height: AppSpacing.sm),
-        if (!event.isPast && (isHost || isApprovedParticipant)) ...[
+        if (!event.isPast && (isHost || isFinalParticipant)) ...[
           AppButton(
             label: 'Open chat',
             onPressed: () => context.pushNamed(
@@ -224,7 +230,7 @@ class _EventDetailBody extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
         ],
-        if (!event.isPast && !isHost && isApprovedParticipant) ...[
+        if (!event.isPast && !isHost && isFinalParticipant) ...[
           EventCallButton(
             eventId: event.id,
             targetUserId: event.hostId,
@@ -244,6 +250,7 @@ class _EventDetailBody extends ConsumerWidget {
             eventId: event.id,
             state: requestState,
             isPastEvent: event.isPast,
+            isBusinessEvent: event.isBusinessEvent,
             participantStatuses:
                 participantStatusesAsync.valueOrNull ?? const {},
             onApprove: (requestId) async {
@@ -292,6 +299,26 @@ class _EventDetailBody extends ConsumerWidget {
               if (request == null) return;
               await requestController.cancelPendingRequest(request.id);
               await requestController.loadMyRequest();
+              await onRefreshEvent();
+            },
+            onConfirm: () async {
+              final confirmed = await ref
+                  .read(eventsControllerProvider.notifier)
+                  .confirmBusinessParticipation(event.id);
+              if (!confirmed) {
+                if (!context.mounted) return;
+                final message = ref.read(eventsControllerProvider).message;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(message ?? 'KatÄ±lÄ±m doÄŸrulanamadÄ±.'),
+                  ),
+                );
+                return;
+              }
+              await requestController.loadMyRequest();
+              ref.invalidate(eventMyParticipationProvider(event.id));
+              ref.invalidate(eventAttendanceStatusProvider(event.id));
+              ref.invalidate(eventPublicParticipantsProvider(event.id));
               await onRefreshEvent();
             },
           ),
@@ -395,6 +422,7 @@ class _HostRequestsSection extends StatelessWidget {
     required this.eventId,
     required this.state,
     required this.isPastEvent,
+    required this.isBusinessEvent,
     required this.participantStatuses,
     required this.onApprove,
     required this.onReject,
@@ -403,6 +431,7 @@ class _HostRequestsSection extends StatelessWidget {
   final String eventId;
   final JoinRequestsState state;
   final bool isPastEvent;
+  final bool isBusinessEvent;
   final Map<String, String> participantStatuses;
   final Future<void> Function(String requestId) onApprove;
   final Future<void> Function(String requestId) onReject;
@@ -445,8 +474,9 @@ class _HostRequestsSection extends StatelessWidget {
                       onApprove: () => onApprove(request.id),
                       onReject: () => onReject(request.id),
                     ),
-                    if (EventParticipationStatus.isActiveApprovedParticipant(
-                      participantStatuses[request.userId],
+                    if (EventParticipationStatus.countsAsFinalParticipant(
+                      isBusinessEvent: isBusinessEvent,
+                      status: participantStatuses[request.userId],
                     )) ...[
                       const SizedBox(height: AppSpacing.xs),
                       EventCallButton(

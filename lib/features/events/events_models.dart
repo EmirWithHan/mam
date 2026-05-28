@@ -375,9 +375,12 @@ class EventParticipationStatus {
   static const cancelled = 'cancelled';
   static const rejected = 'rejected';
   static const left = 'left';
+  static const pendingConfirmation = 'pending_confirmation';
+  static const confirmed = 'confirmed';
+  static const waitlisted = 'waitlisted';
 
   static bool isActiveApprovedParticipant(String? status) {
-    return status == planned || status == attended;
+    return status == planned || status == attended || status == confirmed;
   }
 
   static bool isApprovedParticipant(String? status) {
@@ -389,6 +392,20 @@ class EventParticipationStatus {
   static bool canLeaveApprovedEvent(String? status) {
     return isActiveApprovedParticipant(status);
   }
+
+  static bool countsAsFinalParticipant({
+    required bool isBusinessEvent,
+    required String? status,
+  }) {
+    if (isBusinessEvent) return status == confirmed;
+    return isActiveApprovedParticipant(status);
+  }
+
+  static bool isPendingConfirmation(String? status) {
+    return status == pendingConfirmation;
+  }
+
+  static bool isWaitlisted(String? status) => status == waitlisted;
 }
 
 class EventParticipation {
@@ -412,6 +429,14 @@ class EventParticipation {
   }
 
   bool get canLeaveApprovedEvent => isActiveApprovedParticipant;
+
+  bool countsAsFinalParticipant({required bool isBusinessEvent}) {
+    return isParticipant &&
+        EventParticipationStatus.countsAsFinalParticipant(
+          isBusinessEvent: isBusinessEvent,
+          status: attendanceStatus,
+        );
+  }
 
   factory EventParticipation.fromJson(Map<String, dynamic> json) {
     return EventParticipation(

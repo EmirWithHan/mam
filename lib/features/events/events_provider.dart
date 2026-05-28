@@ -4,12 +4,7 @@ import '../../core/utils/error_messages.dart';
 import 'events_models.dart';
 import 'events_service.dart';
 
-enum EventsStatus {
-  initial,
-  loading,
-  success,
-  error,
-}
+enum EventsStatus { initial, loading, success, error }
 
 class EventsState {
   const EventsState({
@@ -19,9 +14,9 @@ class EventsState {
   });
 
   const EventsState.initial()
-      : status = EventsStatus.initial,
-        events = const [],
-        message = null;
+    : status = EventsStatus.initial,
+      events = const [],
+      message = null;
 
   final EventsStatus status;
   final List<Event> events;
@@ -49,34 +44,41 @@ final eventsServiceProvider = Provider<EventsService>((ref) {
 
 final eventsControllerProvider =
     StateNotifierProvider<EventsController, EventsState>((ref) {
-  return EventsController(ref.watch(eventsServiceProvider));
-});
+      return EventsController(ref.watch(eventsServiceProvider));
+    });
 
-final eventDetailProvider = FutureProvider.family<Event, String>((ref, eventId) {
+final eventDetailProvider = FutureProvider.family<Event, String>((
+  ref,
+  eventId,
+) {
   return ref.watch(eventsServiceProvider).fetchEventById(eventId);
 });
 
-final eventAttendanceStatusProvider =
-    FutureProvider.family<String?, String>((ref, eventId) {
+final eventAttendanceStatusProvider = FutureProvider.family<String?, String>((
+  ref,
+  eventId,
+) {
   return ref.watch(eventsServiceProvider).fetchMyAttendanceStatus(eventId);
 });
 
 final eventMyParticipationProvider =
     FutureProvider.family<EventParticipation?, String>((ref, eventId) {
-  return ref.watch(eventsServiceProvider).fetchMyParticipation(eventId);
-});
+      return ref.watch(eventsServiceProvider).fetchMyParticipation(eventId);
+    });
 
 final eventParticipantAttendanceStatusesProvider =
     FutureProvider.family<Map<String, String>, String>((ref, eventId) {
-  return ref
-      .watch(eventsServiceProvider)
-      .fetchParticipantAttendanceStatuses(eventId);
-});
+      return ref
+          .watch(eventsServiceProvider)
+          .fetchParticipantAttendanceStatuses(eventId);
+    });
 
 final eventPublicParticipantsProvider =
     FutureProvider.family<List<EventPublicParticipant>, String>((ref, eventId) {
-  return ref.watch(eventsServiceProvider).fetchEventPublicParticipants(eventId);
-});
+      return ref
+          .watch(eventsServiceProvider)
+          .fetchEventPublicParticipants(eventId);
+    });
 
 class EventsController extends StateNotifier<EventsState> {
   EventsController(this._eventsService) : super(const EventsState.initial());
@@ -155,6 +157,22 @@ class EventsController extends StateNotifier<EventsState> {
 
     try {
       await _eventsService.leaveApprovedEvent(eventId);
+      await refreshEvents();
+      return true;
+    } catch (error) {
+      state = state.copyWith(
+        status: state.status,
+        message: friendlyErrorMessage(error),
+      );
+      return false;
+    }
+  }
+
+  Future<bool> confirmBusinessParticipation(String eventId) async {
+    state = state.copyWith(status: state.status, clearMessage: true);
+
+    try {
+      await _eventsService.confirmMyBusinessParticipation(eventId);
       await refreshEvents();
       return true;
     } catch (error) {

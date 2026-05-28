@@ -69,6 +69,18 @@ class EventsService {
     );
   }
 
+  Future<void> confirmMyBusinessParticipation(String eventId) async {
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    if (userId == null) {
+      throw StateError('You must be signed in to confirm participation.');
+    }
+
+    await SupabaseService.client.rpc(
+      'confirm_business_event_participation',
+      params: {'p_event_id': eventId},
+    );
+  }
+
   Future<String?> fetchMyAttendanceStatus(String eventId) async {
     final participation = await fetchMyParticipation(eventId);
     return participation?.attendanceStatus;

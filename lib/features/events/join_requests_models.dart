@@ -17,8 +17,16 @@ class EventJoinRequest {
 
   bool get isPending => status == 'pending';
   bool get isApproved => status == 'approved';
+  bool get isPendingConfirmation => status == 'pending_confirmation';
+  bool get isConfirmed => status == 'confirmed';
+  bool get isWaitlisted => status == 'waitlisted';
   bool get isRejected => status == 'rejected';
   bool get isCancelled => status == 'cancelled';
+
+  bool isFinalParticipant({required bool isBusinessEvent}) {
+    if (isBusinessEvent) return isConfirmed;
+    return isApproved;
+  }
 
   factory EventJoinRequest.fromJson(Map<String, dynamic> json) {
     return EventJoinRequest(

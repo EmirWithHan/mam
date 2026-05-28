@@ -162,6 +162,18 @@ class NotificationTile extends StatelessWidget {
                                   ],
                                 ),
                               ],
+                              if (notification
+                                  .isBusinessEventConfirmRequired) ...[
+                                const SizedBox(height: AppSpacing.md),
+                                FilledButton(
+                                  onPressed: isBusy ? null : onTap,
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: AppColors.primary,
+                                    foregroundColor: Colors.white,
+                                  ),
+                                  child: const Text('Katılımı doğrula'),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -223,6 +235,7 @@ class _UnreadDot extends StatelessWidget {
 
 Color _accentColor(String type) {
   return switch (type.trim().toLowerCase()) {
+    'business_event_confirm_required' => AppColors.success,
     'event_join_approved' => AppColors.success,
     'event_join_rejected' => AppColors.error,
     'event_join_cancelled' => AppColors.warning,
@@ -234,6 +247,7 @@ Color _accentColor(String type) {
 IconData _iconForType(String type) {
   return switch (type.trim().toLowerCase()) {
     'event_join_request' => Icons.person_add_alt_1,
+    'business_event_confirm_required' => Icons.verified_user_outlined,
     'event_join_approved' => Icons.check_circle_outline,
     'event_join_rejected' => Icons.cancel_outlined,
     'event_join_cancelled' => Icons.remove_circle_outline,
