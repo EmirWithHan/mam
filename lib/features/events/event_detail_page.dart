@@ -502,8 +502,8 @@ class _EventHeroCard extends StatelessWidget {
                 if (event.isSponsored)
                   _MiniChip(
                     label: 'Sponsorlu',
-                    color: AppColors.tertiarySoft,
-                    textColor: AppColors.warning,
+                    color: const Color(0xFFFF7E79),
+                    textColor: Colors.white,
                   ),
                 if (event.isPast)
                   _MiniChip(

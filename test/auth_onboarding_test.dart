@@ -86,10 +86,7 @@ void main() {
     testWidgets('main navigation keeps Events tab visible', (tester) async {
       await tester.pumpWidget(
         const MaterialApp(
-          home: MainNavigationShell(
-            currentIndex: 1,
-            child: SizedBox.shrink(),
-          ),
+          home: MainNavigationShell(currentIndex: 1, child: SizedBox.shrink()),
         ),
       );
 
@@ -588,6 +585,116 @@ void main() {
       expect(payload['price_currency'], 'TRY');
     });
 
+    test('sponsored business event is inserted after 4 normal events', () {
+      final now = DateTime(2026, 5, 28);
+      final normalEvents = List.generate(
+        5,
+        (index) => _event(
+          id: 'normal-$index',
+          eventDate: now.add(Duration(days: index + 1)),
+        ),
+      );
+      final sponsored = _event(
+        id: 'sponsored-1',
+        organizerType: EventOrganizerType.business,
+        isSponsored: true,
+        sponsoredUntil: now.add(const Duration(days: 7)),
+        sponsoredPriority: 10,
+        eventDate: now.add(const Duration(days: 2)),
+      );
+
+      final placed = eventsWithSponsoredPlacement([
+        ...normalEvents,
+        sponsored,
+      ], now: now);
+
+      expect(placed.map((event) => event.id), [
+        'normal-0',
+        'normal-1',
+        'normal-2',
+        'normal-3',
+        'sponsored-1',
+        'normal-4',
+      ]);
+    });
+
+    test('sponsored placement avoids duplicate sponsored events', () {
+      final now = DateTime(2026, 5, 28);
+      final normalEvents = List.generate(
+        4,
+        (index) => _event(id: 'normal-$index'),
+      );
+      final sponsored = _event(
+        id: 'sponsored-1',
+        organizerType: EventOrganizerType.business,
+        isSponsored: true,
+        sponsoredUntil: now.add(const Duration(days: 7)),
+      );
+
+      final placed = eventsWithSponsoredPlacement([
+        sponsored,
+        ...normalEvents,
+      ], now: now);
+
+      expect(placed.where((event) => event.id == 'sponsored-1'), hasLength(1));
+    });
+
+    test('sponsored-only list does not create placement', () {
+      final now = DateTime(2026, 5, 28);
+      final sponsored = _event(
+        id: 'sponsored-1',
+        organizerType: EventOrganizerType.business,
+        isSponsored: true,
+        sponsoredUntil: now.add(const Duration(days: 7)),
+      );
+
+      expect(eventsWithSponsoredPlacement([sponsored], now: now), isEmpty);
+    });
+
+    test('expired sponsored event is ignored for sponsored placement', () {
+      final now = DateTime(2026, 5, 28);
+      final normalEvents = List.generate(
+        4,
+        (index) => _event(id: 'normal-$index'),
+      );
+      final expired = _event(
+        id: 'expired-sponsored',
+        organizerType: EventOrganizerType.business,
+        isSponsored: true,
+        sponsoredUntil: now.subtract(const Duration(days: 1)),
+      );
+      final active = _event(
+        id: 'active-sponsored',
+        organizerType: EventOrganizerType.business,
+        isSponsored: true,
+        sponsoredUntil: now.add(const Duration(days: 1)),
+      );
+
+      final placed = eventsWithSponsoredPlacement([
+        ...normalEvents,
+        expired,
+        active,
+      ], now: now);
+
+      expect(placed[4].id, 'active-sponsored');
+      expect(placed[5].id, 'expired-sponsored');
+    });
+
+    test('normal event list remains unchanged without sponsored events', () {
+      final normalEvents = List.generate(
+        3,
+        (index) => _event(id: 'normal-$index'),
+      );
+
+      final placed = eventsWithSponsoredPlacement(normalEvents);
+
+      expect(placed.map((event) => event.id), [
+        'normal-0',
+        'normal-1',
+        'normal-2',
+      ]);
+    });
+
     testWidgets('event card renders fallback sport and compact button', (
       tester,
     ) async {
@@ -1025,21 +1132,24 @@ void main() {
       expect(payload.containsKey('status'), isFalse);
     });
 
-    test('business creation payload includes custom Diger category only then', () {
-      const input = BusinessAccountInput(
-        name: 'Kano Merkezi',
-        username: 'kano_merkezi',
-        category: BusinessCategories.other,
-        customCategory: '  Kano   Merkezi  ',
-        city: 'Antalya',
-        district: 'Konyaalti',
-      );
+    test(
+      'business creation payload includes custom Diger category only then',
+      () {
+        const input = BusinessAccountInput(
+          name: 'Kano Merkezi',
+          username: 'kano_merkezi',
+          category: BusinessCategories.other,
+          customCategory: '  Kano   Merkezi  ',
+          city: 'Antalya',
+          district: 'Konyaalti',
+        );
 
-      final payload = input.toCreateJson(ownerUserId: 'user-1');
+        final payload = input.toCreateJson(ownerUserId: 'user-1');
 
-      expect(payload['category'], BusinessCategories.other);
-      expect(payload['custom_category'], 'Kano Merkezi');
-    });
+        expect(payload['category'], BusinessCategories.other);
+        expect(payload['custom_category'], 'Kano Merkezi');
+      },
+    );
 
     test('business permission error maps to friendly message', () {
       final message = friendlyBusinessAccountErrorMessage(
@@ -1053,10 +1163,7 @@ void main() {
     });
 
     test('business settings action copy changes with account state', () {
-      expect(
-        BusinessSettingsCopy.actionTitle(null),
-        'İşletme hesabına geç',
-      );
+      expect(BusinessSettingsCopy.actionTitle(null), 'İşletme hesabına geç');
 
       const account = BusinessAccount(
         id: 'business-1',
@@ -1081,10 +1188,7 @@ void main() {
 
     test('business badge label maps verified state', () {
       expect(BusinessBadgeLabels.forVerified(false), 'İşletme');
-      expect(
-        BusinessBadgeLabels.forVerified(true),
-        'Doğrulanmış İşletme',
-      );
+      expect(BusinessBadgeLabels.forVerified(true), 'Doğrulanmış İşletme');
     });
   });
 }
@@ -1109,12 +1213,17 @@ class _CreateSucceedsRefreshFailsFeedService extends FeedService {
 }
 
 Event _event({
+  String id = 'event-1',
   DateTime? eventDate,
   int approvedCount = 0,
   int capacityTotal = 12,
+  String organizerType = EventOrganizerType.user,
+  bool isSponsored = false,
+  DateTime? sponsoredUntil,
+  int sponsoredPriority = 0,
 }) {
   return Event(
-    id: 'event-1',
+    id: id,
     hostId: 'host-1',
     title: 'Basketbol',
     sportType: 'Basketbol',
@@ -1123,5 +1232,12 @@ Event _event({
     capacityTotal: capacityTotal,
     approvedCount: approvedCount,
     status: 'active',
+    organizerType: organizerType,
+    organizerBusinessId: organizerType == EventOrganizerType.business
+        ? 'business-1'
+        : null,
+    isSponsored: isSponsored,
+    sponsoredUntil: sponsoredUntil,
+    sponsoredPriority: sponsoredPriority,
   );
 }

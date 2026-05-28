@@ -12,6 +12,9 @@
   events during event creation.
 - Business events are linked to the business account and can be marked free or
   paid in TRY.
+- Sponsored business event placement is available. Sponsored content is clearly
+  labeled and the events list can place one active sponsored business event
+  after every four normal events.
 
 ## Current Development Choice
 
@@ -20,8 +23,7 @@ can be tested without moderation tooling. `is_verified` defaults to `false`.
 
 ## Not Implemented Yet
 
-- Sponsored events
-- Every fourth event sponsorship logic
+- Payment/ad dashboard for sponsored placement
 - Business event double confirmation
 - Check-in
 - Waitlists
@@ -33,5 +35,6 @@ can be tested without moderation tooling. `is_verified` defaults to `false`.
 - Push notifications
 
 Normal user events remain personal/community events. Business event creation is
-now explicit, but double confirmation, check-in, no-show handling, sponsorship,
-ratings, and statistics are still later steps.
+now explicit, and sponsored placement is label-first/manual-admin for now. Double
+confirmation, check-in, no-show handling, payments/ad dashboards, ratings, and
+statistics are still later steps.

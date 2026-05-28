@@ -212,12 +212,14 @@ class _EventsBody extends StatelessWidget {
       );
     }
 
+    final placedEvents = eventsWithSponsoredPlacement(filteredEvents);
+
     return ListView.separated(
-      itemCount: filteredEvents.length,
+      itemCount: placedEvents.length,
       separatorBuilder: (context, index) =>
           const SizedBox(height: AppSpacing.md),
       itemBuilder: (context, index) {
-        return EventCard(event: filteredEvents[index]);
+        return EventCard(event: placedEvents[index]);
       },
     );
   }

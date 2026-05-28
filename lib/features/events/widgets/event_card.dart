@@ -45,9 +45,9 @@ class EventCard extends StatelessWidget {
           onTap: event.id.trim().isEmpty
               ? null
               : () => context.pushNamed(
-                    RouteNames.eventDetail,
-                    pathParameters: {'eventId': event.id},
-                  ),
+                  RouteNames.eventDetail,
+                  pathParameters: {'eventId': event.id},
+                ),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
@@ -84,8 +84,8 @@ class EventCard extends StatelessWidget {
                       if (event.isSponsored)
                         _Pill(
                           label: 'Sponsorlu',
-                          color: AppColors.primarySoft,
-                          textColor: AppColors.primary,
+                          color: const Color(0xFFFF7E79),
+                          textColor: Colors.white,
                         ),
                       if (event.isPast)
                         _Pill(
@@ -298,9 +298,9 @@ class _OpenEventButton extends StatelessWidget {
         onPressed: eventId.trim().isEmpty
             ? null
             : () => context.pushNamed(
-                  RouteNames.eventDetail,
-                  pathParameters: {'eventId': eventId},
-                ),
+                RouteNames.eventDetail,
+                pathParameters: {'eventId': eventId},
+              ),
         child: const Text(
           'Katil',
           maxLines: 1,

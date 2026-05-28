@@ -62,6 +62,8 @@ class Event {
     this.approvedCount = 0,
     required this.status,
     this.isSponsored = false,
+    this.sponsoredUntil,
+    this.sponsoredPriority = 0,
     this.organizerType = EventOrganizerType.user,
     this.organizerUserId,
     this.organizerBusinessId,
@@ -91,6 +93,8 @@ class Event {
   final int approvedCount;
   final String status;
   final bool isSponsored;
+  final DateTime? sponsoredUntil;
+  final int sponsoredPriority;
   final String organizerType;
   final String? organizerUserId;
   final String? organizerBusinessId;
@@ -120,6 +124,14 @@ class Event {
 
   bool get isBusinessEvent => organizerType == EventOrganizerType.business;
 
+  bool isActiveSponsoredPlacement(DateTime now) {
+    if (!isSponsored || !isBusinessEvent || eventDate.isBefore(now)) {
+      return false;
+    }
+    final until = sponsoredUntil;
+    return until == null || until.isAfter(now);
+  }
+
   String get priceLabel {
     if (!isBusinessEvent) return '';
     if (!isPaid) return 'Ücretsiz';
@@ -128,10 +140,10 @@ class Event {
     final wholeAmount = amount == amount.roundToDouble();
     final formatted = wholeAmount
         ? amount.toInt().toString()
-        : amount.toStringAsFixed(2).replaceAll(RegExp(r'0+$'), '').replaceAll(
-              RegExp(r'\.$'),
-              '',
-            );
+        : amount
+              .toStringAsFixed(2)
+              .replaceAll(RegExp(r'0+$'), '')
+              .replaceAll(RegExp(r'\.$'), '');
     return '₺$formatted';
   }
 
@@ -196,13 +208,13 @@ class Event {
       approvedCount: _intFromJson(json['approved_count']),
       status: json['status']?.toString() ?? 'active',
       isSponsored: json['is_sponsored'] as bool? ?? false,
+      sponsoredUntil: _dateTimeFromJson(json['sponsored_until']),
+      sponsoredPriority: _intFromJson(json['sponsored_priority']),
       organizerType:
           json['organizer_type']?.toString() ?? EventOrganizerType.user,
       organizerUserId: json['organizer_user_id']?.toString(),
       organizerBusinessId: json['organizer_business_id']?.toString(),
-      businessOrganizer: _businessOrganizerFromJson(
-        json['business_accounts'],
-      ),
+      businessOrganizer: _businessOrganizerFromJson(json['business_accounts']),
       isPaid: json['is_paid'] as bool? ?? false,
       priceAmount: _doubleFromJson(json['price_amount']),
       priceCurrency: json['price_currency']?.toString() ?? 'TRY',
@@ -230,6 +242,8 @@ class Event {
     int? approvedCount,
     String? status,
     bool? isSponsored,
+    DateTime? sponsoredUntil,
+    int? sponsoredPriority,
     String? organizerType,
     String? organizerUserId,
     String? organizerBusinessId,
@@ -259,6 +273,8 @@ class Event {
       approvedCount: approvedCount ?? this.approvedCount,
       status: status ?? this.status,
       isSponsored: isSponsored ?? this.isSponsored,
+      sponsoredUntil: sponsoredUntil ?? this.sponsoredUntil,
+      sponsoredPriority: sponsoredPriority ?? this.sponsoredPriority,
       organizerType: organizerType ?? this.organizerType,
       organizerUserId: organizerUserId ?? this.organizerUserId,
       organizerBusinessId: organizerBusinessId ?? this.organizerBusinessId,
@@ -270,6 +286,42 @@ class Event {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+}
+
+List<Event> eventsWithSponsoredPlacement(List<Event> events, {DateTime? now}) {
+  final referenceTime = now ?? DateTime.now();
+  final activeSponsored =
+      events
+          .where((event) => event.isActiveSponsoredPlacement(referenceTime))
+          .toList()
+        ..sort((a, b) {
+          final priority = b.sponsoredPriority.compareTo(a.sponsoredPriority);
+          if (priority != 0) return priority;
+          return a.eventDate.compareTo(b.eventDate);
+        });
+
+  if (activeSponsored.isEmpty) return events;
+
+  final activeSponsoredIds = activeSponsored.map((event) => event.id).toSet();
+  final normalEvents = events
+      .where((event) => !activeSponsoredIds.contains(event.id))
+      .toList();
+
+  if (normalEvents.isEmpty) return normalEvents;
+
+  final placed = <Event>[];
+  var sponsoredIndex = 0;
+  for (var index = 0; index < normalEvents.length; index += 1) {
+    placed.add(normalEvents[index]);
+    final shouldInsertSponsored =
+        (index + 1) % 4 == 0 && sponsoredIndex < activeSponsored.length;
+    if (shouldInsertSponsored) {
+      placed.add(activeSponsored[sponsoredIndex]);
+      sponsoredIndex += 1;
+    }
+  }
+
+  return placed;
 }
 
 enum EventDateFilter { all, today, thisWeek, upcoming }
