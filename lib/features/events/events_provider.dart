@@ -80,6 +80,103 @@ final eventPublicParticipantsProvider =
           .fetchEventPublicParticipants(eventId);
     });
 
+final businessEventCheckInParticipantsProvider =
+    FutureProvider.family<List<BusinessEventCheckInParticipant>, String>((
+      ref,
+      eventId,
+    ) {
+      return ref
+          .watch(eventsServiceProvider)
+          .fetchBusinessEventCheckInParticipants(eventId);
+    });
+
+final businessEventCheckInControllerProvider =
+    StateNotifierProvider.family<
+      BusinessEventCheckInController,
+      BusinessEventCheckInState,
+      String
+    >((ref, eventId) {
+      return BusinessEventCheckInController(
+        eventId: eventId,
+        eventsService: ref.watch(eventsServiceProvider),
+        ref: ref,
+      );
+    });
+
+class BusinessEventCheckInState {
+  const BusinessEventCheckInState({
+    this.loadingUserIds = const {},
+    this.message,
+  });
+
+  final Set<String> loadingUserIds;
+  final String? message;
+
+  bool isLoading(String userId) => loadingUserIds.contains(userId);
+
+  BusinessEventCheckInState copyWith({
+    Set<String>? loadingUserIds,
+    String? message,
+    bool clearMessage = false,
+  }) {
+    return BusinessEventCheckInState(
+      loadingUserIds: loadingUserIds ?? this.loadingUserIds,
+      message: clearMessage ? null : message ?? this.message,
+    );
+  }
+}
+
+class BusinessEventCheckInController
+    extends StateNotifier<BusinessEventCheckInState> {
+  BusinessEventCheckInController({
+    required this.eventId,
+    required EventsService eventsService,
+    required Ref ref,
+  }) : _eventsService = eventsService,
+       _ref = ref,
+       super(const BusinessEventCheckInState());
+
+  final String eventId;
+  final EventsService _eventsService;
+  final Ref _ref;
+
+  Future<bool> markAttendance({
+    required String participantUserId,
+    required String attendanceStatus,
+  }) async {
+    state = state.copyWith(
+      loadingUserIds: {...state.loadingUserIds, participantUserId},
+      clearMessage: true,
+    );
+
+    try {
+      await _eventsService.markBusinessEventAttendance(
+        eventId: eventId,
+        participantUserId: participantUserId,
+        attendanceStatus: attendanceStatus,
+      );
+      _ref.invalidate(businessEventCheckInParticipantsProvider(eventId));
+      _ref.invalidate(eventParticipantAttendanceStatusesProvider(eventId));
+      _ref.invalidate(eventPublicParticipantsProvider(eventId));
+      _ref.invalidate(eventMyParticipationProvider(eventId));
+      state = state.copyWith(
+        loadingUserIds: {
+          ...state.loadingUserIds.where((id) => id != participantUserId),
+        },
+      );
+      return true;
+    } catch (error) {
+      state = state.copyWith(
+        loadingUserIds: {
+          ...state.loadingUserIds.where((id) => id != participantUserId),
+        },
+        message: friendlyErrorMessage(error),
+      );
+      return false;
+    }
+  }
+}
+
 class EventsController extends StateNotifier<EventsState> {
   EventsController(this._eventsService) : super(const EventsState.initial());
 

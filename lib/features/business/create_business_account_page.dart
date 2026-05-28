@@ -149,9 +149,9 @@ class _CreateBusinessAccountPageState
                         prefixIcon: const Icon(Icons.edit_outlined),
                         validator: (value) =>
                             BusinessAccountValidators.customCategory(
-                          category: _category,
-                          value: value,
-                        ),
+                              category: _category,
+                              value: value,
+                            ),
                       ),
                     ],
                     const SizedBox(height: AppSpacing.md),
@@ -160,8 +160,11 @@ class _CreateBusinessAccountPageState
                       value: _city,
                       values: TurkeyLocations.getCities(),
                       icon: Icons.location_city_outlined,
-                      validator: (value) => BusinessAccountValidators
-                          .cityDistrict(city: value, district: _district),
+                      validator: (value) =>
+                          BusinessAccountValidators.cityDistrict(
+                            city: value,
+                            district: _district,
+                          ),
                       onChanged: (value) {
                         setState(() {
                           _city = value;
@@ -177,8 +180,11 @@ class _CreateBusinessAccountPageState
                           ? const []
                           : TurkeyLocations.getDistricts(_city!),
                       icon: Icons.place_outlined,
-                      validator: (value) => BusinessAccountValidators
-                          .cityDistrict(city: _city, district: value),
+                      validator: (value) =>
+                          BusinessAccountValidators.cityDistrict(
+                            city: _city,
+                            district: value,
+                          ),
                       onChanged: (value) => setState(() => _district = value),
                     ),
                   ],
@@ -350,12 +356,9 @@ class _DropdownField extends StatelessWidget {
     final effectiveValue = values.contains(value) ? value : null;
 
     return DropdownButtonFormField<String>(
-      value: effectiveValue,
+      initialValue: effectiveValue,
       isExpanded: true,
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Icon(icon),
-      ),
+      decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)),
       items: [
         for (final value in values)
           DropdownMenuItem(value: value, child: Text(value)),

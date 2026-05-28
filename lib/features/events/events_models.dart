@@ -124,6 +124,10 @@ class Event {
 
   bool get isBusinessEvent => organizerType == EventOrganizerType.business;
 
+  bool canOpenBusinessCheckIn(String? userId) {
+    return isBusinessEvent && isHost(userId);
+  }
+
   bool isActiveSponsoredPlacement(DateTime now) {
     if (!isSponsored || !isBusinessEvent || eventDate.isBefore(now)) {
       return false;
@@ -378,9 +382,14 @@ class EventParticipationStatus {
   static const pendingConfirmation = 'pending_confirmation';
   static const confirmed = 'confirmed';
   static const waitlisted = 'waitlisted';
+  static const checkedIn = 'checked_in';
+  static const noShow = 'no_show';
 
   static bool isActiveApprovedParticipant(String? status) {
-    return status == planned || status == attended || status == confirmed;
+    return status == planned ||
+        status == attended ||
+        status == confirmed ||
+        status == checkedIn;
   }
 
   static bool isApprovedParticipant(String? status) {
@@ -397,7 +406,7 @@ class EventParticipationStatus {
     required bool isBusinessEvent,
     required String? status,
   }) {
-    if (isBusinessEvent) return status == confirmed;
+    if (isBusinessEvent) return status == confirmed || status == checkedIn;
     return isActiveApprovedParticipant(status);
   }
 
@@ -406,6 +415,25 @@ class EventParticipationStatus {
   }
 
   static bool isWaitlisted(String? status) => status == waitlisted;
+
+  static bool isBusinessCheckInStatus(String? status) {
+    return status == confirmed || status == checkedIn || status == noShow;
+  }
+
+  static bool canMarkBusinessAttendance({
+    required bool isBusinessEvent,
+    required String? status,
+  }) {
+    return isBusinessEvent && status == confirmed;
+  }
+
+  static String businessAttendanceLabel(String? status) {
+    return switch (status) {
+      checkedIn => 'Geldi',
+      noShow => 'Gelmedi',
+      _ => 'Bekliyor',
+    };
+  }
 }
 
 class EventParticipation {
@@ -521,6 +549,58 @@ class EventPublicParticipantVisibility {
   }) {
     return role == 'participant' &&
         EventParticipationStatus.isActiveApprovedParticipant(attendanceStatus);
+  }
+}
+
+class BusinessEventCheckInParticipant {
+  const BusinessEventCheckInParticipant({
+    required this.userId,
+    this.username,
+    this.tag,
+    this.firstName,
+    this.avatarUrl,
+    required this.attendanceStatus,
+    this.checkedInAt,
+  });
+
+  final String userId;
+  final String? username;
+  final String? tag;
+  final String? firstName;
+  final String? avatarUrl;
+  final String attendanceStatus;
+  final DateTime? checkedInAt;
+
+  String get displayName {
+    final first = firstName?.trim();
+    if (first != null && first.isNotEmpty) return first;
+    final user = username?.trim();
+    if (user != null && user.isNotEmpty) return user;
+    return 'Katılımcı';
+  }
+
+  String? get handleLabel => formatUserHandle(username, tag);
+
+  String get statusLabel {
+    return EventParticipationStatus.businessAttendanceLabel(attendanceStatus);
+  }
+
+  bool get canMarkAttendance {
+    return attendanceStatus == EventParticipationStatus.confirmed;
+  }
+
+  factory BusinessEventCheckInParticipant.fromJson(Map<String, dynamic> json) {
+    return BusinessEventCheckInParticipant(
+      userId: json['user_id']?.toString() ?? '',
+      username: json['username']?.toString(),
+      tag: json['tag']?.toString(),
+      firstName: json['first_name']?.toString(),
+      avatarUrl: json['avatar_url']?.toString(),
+      attendanceStatus:
+          json['attendance_status']?.toString() ??
+          EventParticipationStatus.confirmed,
+      checkedInAt: _dateTimeFromJson(json['checked_in_at']),
+    );
   }
 }
 

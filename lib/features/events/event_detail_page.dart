@@ -16,7 +16,9 @@ import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/error_view.dart';
 import '../../services/maps_service.dart';
 import '../auth/auth_provider.dart';
+import '../business/business_reviews_models.dart';
 import '../business/widgets/business_badge.dart';
+import '../business/widgets/business_review_card.dart';
 import '../chat/event_chat_list_provider.dart';
 import '../chat/event_chat_provider.dart';
 import '../profile/public_profile_provider.dart';
@@ -25,6 +27,7 @@ import '../profile/widgets/public_profile_avatar.dart';
 import '../reports/reports_models.dart';
 import '../reports/widgets/block_button.dart';
 import '../reports/widgets/report_button.dart';
+import 'business_event_check_in_page.dart';
 import 'events_models.dart';
 import 'events_provider.dart';
 import 'widgets/event_call_button.dart';
@@ -168,6 +171,14 @@ class _EventDetailBody extends ConsumerWidget {
     final requestController = ref.read(
       joinRequestControllerProvider(event.id).notifier,
     );
+    final businessId = event.organizerBusinessId;
+    final canReviewBusiness =
+        businessId != null &&
+        BusinessReviewRules.canReviewBusinessEvent(
+          isBusinessEvent: event.isBusinessEvent,
+          isOwner: isHost,
+          attendanceStatus: myParticipation?.attendanceStatus,
+        );
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -220,6 +231,31 @@ class _EventDetailBody extends ConsumerWidget {
         const SizedBox(height: AppSpacing.lg),
         const _SectionTitle(title: 'Actions'),
         const SizedBox(height: AppSpacing.sm),
+        if (!isHost && event.isBusinessEvent)
+          _BusinessAttendanceNotice(status: myParticipation?.attendanceStatus),
+        if (businessId != null && canReviewBusiness) ...[
+          BusinessReviewCard(
+            eventId: event.id,
+            businessId: businessId,
+            canReview: canReviewBusiness,
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        if (!event.isPast && isHost && event.isBusinessEvent) ...[
+          OutlinedButton.icon(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => BusinessEventCheckInPage(
+                  eventId: event.id,
+                  eventTitle: event.titleLabel,
+                ),
+              ),
+            ),
+            icon: const Icon(Icons.fact_check_outlined),
+            label: const Text('Check-in / Katılımcı kontrolü'),
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
         if (!event.isPast && (isHost || isFinalParticipant)) ...[
           AppButton(
             label: 'Open chat',
@@ -389,6 +425,45 @@ class _EventDetailBody extends ConsumerWidget {
     final message = ref.read(eventsControllerProvider).message;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message ?? 'Etkinlikten çıkılamadı.')),
+    );
+  }
+}
+
+class _BusinessAttendanceNotice extends StatelessWidget {
+  const _BusinessAttendanceNotice({required this.status});
+
+  final String? status;
+
+  @override
+  Widget build(BuildContext context) {
+    final message = switch (status) {
+      EventParticipationStatus.checkedIn => 'Katılımın işaretlendi.',
+      EventParticipationStatus.noShow =>
+        'Bu etkinlikte gelmedi olarak işaretlendin.',
+      _ => null,
+    };
+
+    if (message == null) return const SizedBox.shrink();
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.primarySoft,
+          border: Border.all(color: AppColors.border),
+          borderRadius: AppRadius.lgBorder,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              const Icon(Icons.info_outline, color: AppColors.primary),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(child: Text(message, style: AppTextStyles.body)),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

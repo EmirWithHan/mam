@@ -14,6 +14,8 @@ import '../../core/widgets/error_view.dart';
 import '../auth/auth_provider.dart';
 import 'business_models.dart';
 import 'business_provider.dart';
+import 'business_reviews_models.dart';
+import 'business_reviews_provider.dart';
 import 'widgets/business_badge.dart';
 
 class BusinessProfilePage extends ConsumerWidget {
@@ -44,7 +46,8 @@ class BusinessProfilePage extends ConsumerWidget {
       body: SafeArea(
         child: accountAsync.when(
           loading: () => const AppLoader(),
-          error: (error, _) => ErrorView(message: 'Isletme profili yuklenemedi.'),
+          error: (error, _) =>
+              ErrorView(message: 'Isletme profili yuklenemedi.'),
           data: (account) {
             if (account == null) {
               return const ErrorView(message: 'Isletme profili bulunamadi.');
@@ -61,14 +64,16 @@ class BusinessProfilePage extends ConsumerWidget {
   }
 }
 
-class _BusinessProfileBody extends StatelessWidget {
+class _BusinessProfileBody extends ConsumerWidget {
   const _BusinessProfileBody({required this.account, required this.isOwner});
 
   final BusinessAccount account;
   final bool isOwner;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ratingAsync = ref.watch(businessRatingSummaryProvider(account.id));
+
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       children: [
@@ -104,6 +109,11 @@ class _BusinessProfileBody extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                 ],
+                const SizedBox(height: AppSpacing.sm),
+                ratingAsync.maybeWhen(
+                  data: (summary) => _RatingSummary(summary: summary),
+                  orElse: () => const _RatingSummaryLoading(),
+                ),
                 const SizedBox(height: AppSpacing.md),
                 Wrap(
                   spacing: AppSpacing.sm,
@@ -139,7 +149,10 @@ class _BusinessProfileBody extends StatelessWidget {
           child: Column(
             children: [
               if (account.website != null)
-                _ContactLine(icon: Icons.language_outlined, label: account.website!),
+                _ContactLine(
+                  icon: Icons.language_outlined,
+                  label: account.website!,
+                ),
               if (account.instagram != null)
                 _ContactLine(
                   icon: Icons.photo_camera_outlined,
@@ -184,6 +197,49 @@ class _BusinessAvatar extends StatelessWidget {
               style: AppTextStyles.headline.copyWith(color: AppColors.primary),
             )
           : null,
+    );
+  }
+}
+
+class _RatingSummary extends StatelessWidget {
+  const _RatingSummary({required this.summary});
+
+  final BusinessRatingSummary summary;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!summary.hasRatings) {
+      return Text(
+        summary.countLabel,
+        style: AppTextStyles.caption,
+        textAlign: TextAlign.center,
+      );
+    }
+
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.xs,
+      alignment: WrapAlignment.center,
+      children: [
+        Text(
+          summary.averageLabel,
+          style: AppTextStyles.bodyStrong.copyWith(color: AppColors.secondary),
+        ),
+        Text(summary.countLabel, style: AppTextStyles.caption),
+      ],
+    );
+  }
+}
+
+class _RatingSummaryLoading extends StatelessWidget {
+  const _RatingSummaryLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      'Henüz değerlendirme yok.',
+      style: AppTextStyles.caption,
+      textAlign: TextAlign.center,
     );
   }
 }

@@ -144,6 +144,37 @@ class EventsService {
         .toList(growable: false);
   }
 
+  Future<List<BusinessEventCheckInParticipant>>
+  fetchBusinessEventCheckInParticipants(String eventId) async {
+    final rows = await SupabaseService.client.rpc(
+      'get_business_event_check_in_participants',
+      params: {'p_event_id': eventId},
+    );
+
+    return (rows as List<dynamic>)
+        .map(
+          (row) => BusinessEventCheckInParticipant.fromJson(
+            Map<String, dynamic>.from(row as Map),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  Future<void> markBusinessEventAttendance({
+    required String eventId,
+    required String participantUserId,
+    required String attendanceStatus,
+  }) async {
+    await SupabaseService.client.rpc(
+      'mark_business_event_attendance',
+      params: {
+        'p_event_id': eventId,
+        'p_participant_user_id': participantUserId,
+        'p_attendance_status': attendanceStatus,
+      },
+    );
+  }
+
   Future<void> leaveApprovedEvent(String eventId) async {
     final userId = SupabaseService.client.auth.currentUser?.id;
     if (userId == null) {

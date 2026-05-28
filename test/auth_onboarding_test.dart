@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -12,6 +13,8 @@ import 'package:match_a_man/core/utils/trust_score_rules.dart';
 import 'package:match_a_man/core/utils/user_handle.dart';
 import 'package:match_a_man/features/auth/auth_service.dart';
 import 'package:match_a_man/features/business/business_models.dart';
+import 'package:match_a_man/features/business/business_reviews_models.dart';
+import 'package:match_a_man/features/business/business_reviews_service.dart';
 import 'package:match_a_man/features/business/business_service.dart';
 import 'package:match_a_man/features/events/events_models.dart';
 import 'package:match_a_man/features/events/join_requests_models.dart';
@@ -205,6 +208,21 @@ void main() {
         'Bu kullanıcı adı alınmış.',
       );
     });
+
+    test('business event approve RPC errors stay user-facing', () {
+      expect(
+        friendlyErrorMessage('PostgrestException business_event_not_owned'),
+        'Bu işlem için yetkin yok.',
+      );
+      expect(
+        friendlyErrorMessage('PostgrestException join_request_not_pending'),
+        'Bu istek zaten güncellenmiş.',
+      );
+      expect(
+        friendlyErrorMessage('PostgrestException join_request_not_found'),
+        'Katılım isteği bulunamadı.',
+      );
+    });
   });
 
   group('profile access rules', () {
@@ -356,6 +374,20 @@ void main() {
       expect(
         EventParticipationStatus.countsAsFinalParticipant(
           isBusinessEvent: true,
+          status: EventParticipationStatus.checkedIn,
+        ),
+        isTrue,
+      );
+      expect(
+        EventParticipationStatus.countsAsFinalParticipant(
+          isBusinessEvent: true,
+          status: EventParticipationStatus.noShow,
+        ),
+        isFalse,
+      );
+      expect(
+        EventParticipationStatus.countsAsFinalParticipant(
+          isBusinessEvent: true,
           status: EventParticipationStatus.waitlisted,
         ),
         isFalse,
@@ -421,6 +453,64 @@ void main() {
       expect(
         participation.countsAsFinalParticipant(isBusinessEvent: true),
         isFalse,
+      );
+    });
+
+    test('business check-in only accepts confirmed business participants', () {
+      final businessEvent = _event(organizerType: EventOrganizerType.business);
+      final normalEvent = _event();
+
+      expect(businessEvent.canOpenBusinessCheckIn('host-1'), isTrue);
+      expect(businessEvent.canOpenBusinessCheckIn('user-1'), isFalse);
+      expect(normalEvent.canOpenBusinessCheckIn('host-1'), isFalse);
+      expect(
+        EventParticipationStatus.canMarkBusinessAttendance(
+          isBusinessEvent: true,
+          status: EventParticipationStatus.confirmed,
+        ),
+        isTrue,
+      );
+      expect(
+        EventParticipationStatus.canMarkBusinessAttendance(
+          isBusinessEvent: false,
+          status: EventParticipationStatus.confirmed,
+        ),
+        isFalse,
+      );
+      expect(
+        EventParticipationStatus.canMarkBusinessAttendance(
+          isBusinessEvent: true,
+          status: EventParticipationStatus.waitlisted,
+        ),
+        isFalse,
+      );
+      expect(
+        EventParticipationStatus.canMarkBusinessAttendance(
+          isBusinessEvent: true,
+          status: EventParticipationStatus.pendingConfirmation,
+        ),
+        isFalse,
+      );
+    });
+
+    test('business attendance labels are calm and explicit', () {
+      expect(
+        EventParticipationStatus.businessAttendanceLabel(
+          EventParticipationStatus.confirmed,
+        ),
+        'Bekliyor',
+      );
+      expect(
+        EventParticipationStatus.businessAttendanceLabel(
+          EventParticipationStatus.checkedIn,
+        ),
+        'Geldi',
+      );
+      expect(
+        EventParticipationStatus.businessAttendanceLabel(
+          EventParticipationStatus.noShow,
+        ),
+        'Gelmedi',
       );
     });
 
@@ -527,6 +617,17 @@ void main() {
       expect(notification.displayTitle, 'Katılımını doğrula');
       expect(notification.isBusinessEventConfirmRequired, isTrue);
       expect(notification.opensEvent, isTrue);
+    });
+
+    test('approve RPC inserts notification entity id as uuid', () {
+      final migration = File(
+        'supabase/migrations/20260529114500_fix_approve_notification_entity_id_uuid.sql',
+      ).readAsStringSync();
+
+      expect(migration, contains('entity_id'));
+      expect(migration, contains("'event',\n        v_event.id,"));
+      expect(migration, isNot(contains("'event',\n        v_event.id::text,")));
+      expect(migration, contains("'event_id', v_event.id::text"));
     });
   });
 
@@ -1081,7 +1182,9 @@ void main() {
       expect(TrustScoreRules.deltaFor('first_event_approved'), 3);
       expect(TrustScoreRules.deltaFor('event_join_approved'), 1);
       expect(TrustScoreRules.deltaFor('event_linked_post'), 1);
+      expect(TrustScoreRules.deltaFor('business_event_checked_in'), 1);
       expect(TrustScoreRules.deltaFor('approved_event_left'), -2);
+      expect(TrustScoreRules.deltaFor('business_event_no_show'), -5);
     });
 
     test('trust score display handles null safely', () {
@@ -1103,6 +1206,30 @@ void main() {
       expect(first, isTrue);
       expect(second, isFalse);
     });
+
+    test(
+      'business check-in and no-show trust events are idempotent by event',
+      () {
+        final logs = <String>{};
+        final checkedInFirst = logs.add(
+          'user-1:business_event_checked_in:event:event-1',
+        );
+        final checkedInSecond = logs.add(
+          'user-1:business_event_checked_in:event:event-1',
+        );
+        final noShowFirst = logs.add(
+          'user-1:business_event_no_show:event:event-2',
+        );
+        final noShowSecond = logs.add(
+          'user-1:business_event_no_show:event:event-2',
+        );
+
+        expect(checkedInFirst, isTrue);
+        expect(checkedInSecond, isFalse);
+        expect(noShowFirst, isTrue);
+        expect(noShowSecond, isFalse);
+      },
+    );
   });
 
   group('business account helpers', () {
@@ -1293,6 +1420,85 @@ void main() {
     test('business badge label maps verified state', () {
       expect(BusinessBadgeLabels.forVerified(false), 'İşletme');
       expect(BusinessBadgeLabels.forVerified(true), 'Doğrulanmış İşletme');
+    });
+    test('business review rating validation is 1 to 5', () {
+      expect(BusinessReviewRules.isValidRating(1), isTrue);
+      expect(BusinessReviewRules.isValidRating(5), isTrue);
+      expect(BusinessReviewRules.isValidRating(0), isFalse);
+      expect(BusinessReviewRules.isValidRating(6), isFalse);
+      expect(BusinessReviewRules.clampRating(9), 5);
+      expect(BusinessReviewRules.clampRating(-2), 1);
+    });
+
+    test('business review uniqueness is one per business event user', () {
+      final reviewKeys = <String>{};
+      final first = reviewKeys.add('business-1:event-1:user-1');
+      final second = reviewKeys.add('business-1:event-1:user-1');
+
+      expect(first, isTrue);
+      expect(second, isFalse);
+    });
+
+    test('business review helper blocks own business and normal events', () {
+      expect(
+        BusinessReviewRules.canReviewBusinessEvent(
+          isBusinessEvent: true,
+          isOwner: false,
+          attendanceStatus: EventParticipationStatus.checkedIn,
+        ),
+        isTrue,
+      );
+      expect(
+        BusinessReviewRules.canReviewBusinessEvent(
+          isBusinessEvent: true,
+          isOwner: true,
+          attendanceStatus: EventParticipationStatus.checkedIn,
+        ),
+        isFalse,
+      );
+      expect(
+        BusinessReviewRules.canReviewBusinessEvent(
+          isBusinessEvent: false,
+          isOwner: false,
+          attendanceStatus: EventParticipationStatus.checkedIn,
+        ),
+        isFalse,
+      );
+      expect(
+        BusinessReviewRules.canReviewBusinessEvent(
+          isBusinessEvent: true,
+          isOwner: false,
+          attendanceStatus: EventParticipationStatus.waitlisted,
+        ),
+        isFalse,
+      );
+    });
+
+    test('business rating summary formats no rating and average', () {
+      final empty = BusinessRatingSummary.empty();
+      const rated = BusinessRatingSummary(averageRating: 4.6, ratingCount: 23);
+
+      expect(empty.hasRatings, isFalse);
+      expect(empty.countLabel, 'Henüz değerlendirme yok.');
+      expect(rated.averageLabel, '4.6 ★');
+      expect(rated.countLabel, '23 değerlendirme');
+    });
+
+    test('business review errors are friendly', () {
+      expect(
+        friendlyBusinessReviewErrorMessage('PostgrestException invalid_rating'),
+        'Puan 1 ile 5 arasında olmalı.',
+      );
+      expect(
+        friendlyBusinessReviewErrorMessage(
+          'PostgrestException event_not_attended',
+        ),
+        'Bu işletmeyi değerlendirmek için etkinliğe katılmış olmalısın.',
+      );
+      expect(
+        friendlyBusinessReviewErrorMessage('PostgrestException unknown'),
+        'Değerlendirme gönderilemedi. Tekrar dene.',
+      );
     });
   });
 }

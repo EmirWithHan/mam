@@ -48,6 +48,27 @@ String friendlyErrorMessage(Object error) {
     return 'Bu etkinlik şu anda dolu.';
   }
 
+  if (normalized.contains('event_full')) {
+    return 'Bu etkinlik şu anda dolu.';
+  }
+
+  if (normalized.contains('join_request_not_pending')) {
+    return 'Bu istek zaten güncellenmiş.';
+  }
+
+  if (normalized.contains('join_request_not_found')) {
+    return 'Katılım isteği bulunamadı.';
+  }
+
+  if (normalized.contains('business_event_not_owned') ||
+      normalized.contains('not_event_host')) {
+    return 'Bu işlem için yetkin yok.';
+  }
+
+  if (normalized.contains('not_authenticated')) {
+    return 'Bu işlem için giriş yapmalısın.';
+  }
+
   if (normalized.contains('email not confirmed')) {
     return 'E-posta doğrulaması gerekiyorsa gelen kutunu kontrol et.';
   }

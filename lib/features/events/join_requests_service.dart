@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/supabase_service.dart';
 import 'join_requests_models.dart';
@@ -56,11 +57,16 @@ class JoinRequestsService {
   }
 
   Future<void> approveJoinRequest(String requestId) async {
-    await SupabaseService.client.rpc(
-      'approve_event_join_request',
-      params: {'request_id': requestId},
-    );
-    await _applyJoinApprovalTrustEvent(requestId);
+    try {
+      await SupabaseService.client.rpc(
+        'approve_event_join_request',
+        params: {'request_id': requestId},
+      );
+      await _applyJoinApprovalTrustEvent(requestId);
+    } catch (error) {
+      _debugPrintSupabaseError('approve_event_join_request', error);
+      rethrow;
+    }
   }
 
   Future<void> rejectJoinRequest(String requestId) async {
@@ -80,4 +86,15 @@ Future<void> _applyJoinApprovalTrustEvent(String requestId) async {
   } catch (error) {
     debugPrint('[JoinRequests] trust score event failed: ${error.runtimeType}');
   }
+}
+
+void _debugPrintSupabaseError(String action, Object error) {
+  if (error is PostgrestException) {
+    debugPrint(
+      '[JoinRequests] $action failed code=${error.code} message=${error.message}',
+    );
+    return;
+  }
+
+  debugPrint('[JoinRequests] $action failed message=${error.runtimeType}');
 }

@@ -20,6 +20,16 @@
   only confirmed users count as final participants.
 - Waitlist foundation exists for business events when confirmed capacity is
   full.
+- Business owners can open participant check-in for their own business events
+  and mark confirmed participants as `Geldi` or `Gelmedi`.
+- No-show foundation is in place: `Gelmedi` marks the participant as `no_show`,
+  applies a small idempotent Trust Score penalty, and writes through the trust
+  score log system.
+- Business star rating foundation exists. Users can rate a business after they
+  attended a business event, with check-in preferred and confirmed attendance
+  accepted as the current fallback.
+- Business profiles show average stars and rating count, or an empty state when
+  there are no ratings yet.
 
 ## Current Development Choice
 
@@ -29,17 +39,16 @@ can be tested without moderation tooling. `is_verified` defaults to `false`.
 ## Not Implemented Yet
 
 - Payment/ad dashboard for sponsored placement
-- Check-in
 - Waitlist expiry/automation
-- No-show penalties
+- QR check-in
 - Phone verification
 - SMS/OTP
-- Star ratings
 - Business analytics/statistics
 - Push notifications
 
 Normal user events remain personal/community events. Business event creation is
 now explicit, sponsored placement is label-first/manual-admin for now, and
 business events use a double-confirmation join lifecycle. Check-in, no-show
-handling, payments/ad dashboards, ratings, statistics, and push notifications
-are still later steps.
+handling, and business ratings now have a safe foundation; QR check-in, phone
+verification, payments/ad dashboards, statistics, and push notifications are
+still later steps.
