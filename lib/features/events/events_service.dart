@@ -13,7 +13,7 @@ class EventsService {
   Future<List<Event>> fetchEvents() async {
     final data = await SupabaseService.client
         .from('events')
-        .select()
+        .select(_eventSelect)
         .inFilter('status', ['active', 'completed'])
         .order('event_date');
     final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
@@ -27,7 +27,7 @@ class EventsService {
   Future<Event> fetchEventById(String eventId) async {
     final data = await SupabaseService.client
         .from('events')
-        .select()
+        .select(_eventSelect)
         .eq('id', eventId)
         .single();
 
@@ -160,6 +160,17 @@ class EventsService {
     );
   }
 }
+
+const _eventSelect = '''
+*,
+business_accounts:organizer_business_id(
+  id,
+  name,
+  username,
+  business_tag,
+  is_verified
+)
+''';
 
 Future<void> _applyMyTrustScoreEvent({
   required String eventType,

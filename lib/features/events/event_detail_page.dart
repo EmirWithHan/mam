@@ -16,6 +16,7 @@ import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/error_view.dart';
 import '../../services/maps_service.dart';
 import '../auth/auth_provider.dart';
+import '../business/widgets/business_badge.dart';
 import '../chat/event_chat_list_provider.dart';
 import '../chat/event_chat_provider.dart';
 import '../profile/public_profile_provider.dart';
@@ -519,6 +520,17 @@ class _EventHeroCard extends StatelessWidget {
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.sm,
               children: [
+                if (event.isBusinessEvent) ...[
+                  BusinessBadge(
+                    isVerified: event.businessOrganizer?.isVerified ?? false,
+                  ),
+                  _MiniChip(
+                    label: event.priceLabel,
+                    color: AppColors.secondarySoft,
+                    textColor: AppColors.secondary,
+                    icon: Icons.payments_outlined,
+                  ),
+                ],
                 _MiniChip(
                   label: sportLabelFor(event.sportType),
                   color: AppColors.primary,
@@ -536,6 +548,11 @@ class _EventHeroCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             _DetailLine(label: 'Where', value: event.locationLabel),
             _DetailLine(label: 'When', value: _formatDateTime(event.eventDate)),
+            if (event.isBusinessEvent)
+              _DetailLine(
+                label: 'Organizer',
+                value: event.businessOrganizer?.displayName ?? 'İşletme',
+              ),
           ],
         ),
       ),

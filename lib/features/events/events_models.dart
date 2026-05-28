@@ -1,4 +1,46 @@
 import '../../core/utils/user_handle.dart';
+import '../business/business_models.dart';
+
+class EventOrganizerType {
+  const EventOrganizerType._();
+
+  static const user = 'user';
+  static const business = 'business';
+}
+
+class EventBusinessOrganizer {
+  const EventBusinessOrganizer({
+    required this.id,
+    required this.name,
+    required this.username,
+    this.businessTag,
+    this.isVerified = false,
+  });
+
+  final String id;
+  final String name;
+  final String username;
+  final String? businessTag;
+  final bool isVerified;
+
+  String get displayName {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return 'İşletme';
+    return trimmed;
+  }
+
+  String? get displayHandle => formatUserHandle(username, businessTag);
+
+  factory EventBusinessOrganizer.fromJson(Map<String, dynamic> json) {
+    return EventBusinessOrganizer(
+      id: json['id']?.toString() ?? '',
+      name: json['name']?.toString() ?? '',
+      username: json['username']?.toString() ?? '',
+      businessTag: json['business_tag']?.toString(),
+      isVerified: json['is_verified'] as bool? ?? false,
+    );
+  }
+}
 
 class Event {
   const Event({
@@ -20,6 +62,13 @@ class Event {
     this.approvedCount = 0,
     required this.status,
     this.isSponsored = false,
+    this.organizerType = EventOrganizerType.user,
+    this.organizerUserId,
+    this.organizerBusinessId,
+    this.businessOrganizer,
+    this.isPaid = false,
+    this.priceAmount,
+    this.priceCurrency = 'TRY',
     this.createdAt,
     this.updatedAt,
   });
@@ -42,6 +91,13 @@ class Event {
   final int approvedCount;
   final String status;
   final bool isSponsored;
+  final String organizerType;
+  final String? organizerUserId;
+  final String? organizerBusinessId;
+  final EventBusinessOrganizer? businessOrganizer;
+  final bool isPaid;
+  final double? priceAmount;
+  final String priceCurrency;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -61,6 +117,23 @@ class Event {
 
   bool get isFull =>
       safeCapacityTotal > 0 && safeApprovedCount >= safeCapacityTotal;
+
+  bool get isBusinessEvent => organizerType == EventOrganizerType.business;
+
+  String get priceLabel {
+    if (!isBusinessEvent) return '';
+    if (!isPaid) return 'Ücretsiz';
+    final amount = priceAmount;
+    if (amount == null || amount <= 0) return 'Ücretsiz';
+    final wholeAmount = amount == amount.roundToDouble();
+    final formatted = wholeAmount
+        ? amount.toInt().toString()
+        : amount.toStringAsFixed(2).replaceAll(RegExp(r'0+$'), '').replaceAll(
+              RegExp(r'\.$'),
+              '',
+            );
+    return '₺$formatted';
+  }
 
   bool get hasDescription => description?.trim().isNotEmpty == true;
 
@@ -123,6 +196,16 @@ class Event {
       approvedCount: _intFromJson(json['approved_count']),
       status: json['status']?.toString() ?? 'active',
       isSponsored: json['is_sponsored'] as bool? ?? false,
+      organizerType:
+          json['organizer_type']?.toString() ?? EventOrganizerType.user,
+      organizerUserId: json['organizer_user_id']?.toString(),
+      organizerBusinessId: json['organizer_business_id']?.toString(),
+      businessOrganizer: _businessOrganizerFromJson(
+        json['business_accounts'],
+      ),
+      isPaid: json['is_paid'] as bool? ?? false,
+      priceAmount: _doubleFromJson(json['price_amount']),
+      priceCurrency: json['price_currency']?.toString() ?? 'TRY',
       createdAt: _dateTimeFromJson(json['created_at']),
       updatedAt: _dateTimeFromJson(json['updated_at']),
     );
@@ -147,6 +230,13 @@ class Event {
     int? approvedCount,
     String? status,
     bool? isSponsored,
+    String? organizerType,
+    String? organizerUserId,
+    String? organizerBusinessId,
+    EventBusinessOrganizer? businessOrganizer,
+    bool? isPaid,
+    double? priceAmount,
+    String? priceCurrency,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -169,6 +259,13 @@ class Event {
       approvedCount: approvedCount ?? this.approvedCount,
       status: status ?? this.status,
       isSponsored: isSponsored ?? this.isSponsored,
+      organizerType: organizerType ?? this.organizerType,
+      organizerUserId: organizerUserId ?? this.organizerUserId,
+      organizerBusinessId: organizerBusinessId ?? this.organizerBusinessId,
+      businessOrganizer: businessOrganizer ?? this.businessOrganizer,
+      isPaid: isPaid ?? this.isPaid,
+      priceAmount: priceAmount ?? this.priceAmount,
+      priceCurrency: priceCurrency ?? this.priceCurrency,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -365,6 +462,10 @@ class CreateEventInput {
     required this.capacityMale,
     required this.capacityFemale,
     required this.capacityAny,
+    this.organizerType = EventOrganizerType.user,
+    this.businessAccount,
+    this.isPaid = false,
+    this.priceAmount,
   });
 
   final String title;
@@ -380,10 +481,28 @@ class CreateEventInput {
   final int capacityMale;
   final int capacityFemale;
   final int capacityAny;
+  final String organizerType;
+  final BusinessAccount? businessAccount;
+  final bool isPaid;
+  final double? priceAmount;
+
+  bool get isBusinessEvent => organizerType == EventOrganizerType.business;
+
+  static bool canSelectBusinessEvent(BusinessAccount? account) {
+    return account != null;
+  }
 
   Map<String, dynamic> toCreateJson({required String hostId}) {
     return {
       'host_id': hostId,
+      'organizer_type': isBusinessEvent
+          ? EventOrganizerType.business
+          : EventOrganizerType.user,
+      'organizer_user_id': hostId,
+      if (isBusinessEvent) 'organizer_business_id': businessAccount?.id,
+      'is_paid': isBusinessEvent && isPaid,
+      if (isBusinessEvent && isPaid) 'price_amount': priceAmount,
+      if (isBusinessEvent) 'price_currency': 'TRY',
       'title': title.trim(),
       'description': _nullableTrim(description),
       'sport_type': sportType.trim(),
@@ -410,6 +529,18 @@ DateTime? _dateTimeFromJson(Object? value) {
 int _intFromJson(Object? value) {
   if (value is num) return value.toInt();
   return int.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+double? _doubleFromJson(Object? value) {
+  if (value is num) return value.toDouble();
+  return double.tryParse(value?.toString() ?? '');
+}
+
+EventBusinessOrganizer? _businessOrganizerFromJson(Object? value) {
+  if (value is Map) {
+    return EventBusinessOrganizer.fromJson(Map<String, dynamic>.from(value));
+  }
+  return null;
 }
 
 String? _nullableTrim(String? value) {

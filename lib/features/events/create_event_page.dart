@@ -17,6 +17,8 @@ import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/sport_icon.dart';
 import '../../services/location_service.dart';
+import '../business/business_provider.dart';
+import '../business/widgets/business_badge.dart';
 import '../profile/profile_provider.dart';
 import 'events_models.dart';
 import 'events_provider.dart';
@@ -42,13 +44,16 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   final _capacityMaleController = TextEditingController(text: '0');
   final _capacityFemaleController = TextEditingController(text: '0');
   final _capacityAnyController = TextEditingController(text: '0');
+  final _priceController = TextEditingController();
   final _locationService = const LocationService();
 
   DateTime? _selectedEventDate;
   double? _locationLat;
   double? _locationLng;
   bool _locating = false;
+  bool _isPaidBusinessEvent = false;
   String? _locationHelperText;
+  String _organizerType = EventOrganizerType.user;
 
   bool get _usesCustomSport => _sportTypeController.text == SportTypes.other;
 
@@ -57,6 +62,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     super.initState();
     Future.microtask(() {
       ref.read(profileControllerProvider.notifier).loadMyProfile();
+      ref.read(myBusinessAccountProvider.notifier).loadMyBusinessAccount();
     });
   }
 
@@ -74,6 +80,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     _capacityMaleController.dispose();
     _capacityFemaleController.dispose();
     _capacityAnyController.dispose();
+    _priceController.dispose();
     super.dispose();
   }
 
@@ -86,6 +93,9 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     final district =
         TurkeyLocations.normalizeDistrictName(city, _districtController.text) ??
         _districtController.text.trim();
+    final businessAccount = ref.read(myBusinessAccountProvider).account;
+    final isBusinessEvent =
+        _organizerType == EventOrganizerType.business && businessAccount != null;
 
     final input = CreateEventInput(
       title: _titleController.text.trim(),
@@ -101,6 +111,12 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
       capacityMale: _parseIntOrZero(_capacityMaleController.text),
       capacityFemale: _parseIntOrZero(_capacityFemaleController.text),
       capacityAny: _parseIntOrZero(_capacityAnyController.text),
+      organizerType: isBusinessEvent
+          ? EventOrganizerType.business
+          : EventOrganizerType.user,
+      businessAccount: isBusinessEvent ? businessAccount : null,
+      isPaid: isBusinessEvent && _isPaidBusinessEvent,
+      priceAmount: _parsePrice(_priceController.text),
     );
 
     final event = await ref
@@ -286,6 +302,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   Widget build(BuildContext context) {
     final profileState = ref.watch(profileControllerProvider);
     final eventsState = ref.watch(eventsControllerProvider);
+    final businessAccount = ref.watch(myBusinessAccountProvider).account;
 
     if (profileState.status == ProfileStatus.initial ||
         profileState.isLoading) {
@@ -370,6 +387,25 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
               const SizedBox(height: AppSpacing.sm),
               Text('Gather your squad, let’s play.', style: AppTextStyles.body),
               const SizedBox(height: AppSpacing.lg),
+              if (businessAccount != null) ...[
+                _FormCard(
+                  child: _EventTypeSelector(
+                    organizerType: _organizerType,
+                    businessName: businessAccount.displayName,
+                    isVerified: businessAccount.isVerified,
+                    onChanged: (value) {
+                      setState(() {
+                        _organizerType = value;
+                        if (value != EventOrganizerType.business) {
+                          _isPaidBusinessEvent = false;
+                          _priceController.clear();
+                        }
+                      });
+                    },
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+              ],
               _FormCard(
                 child: Column(
                   children: [
@@ -528,6 +564,45 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
+              if (_organizerType == EventOrganizerType.business &&
+                  businessAccount != null) ...[
+                _FormCard(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text('Fiyat', style: AppTextStyles.title),
+                      const SizedBox(height: AppSpacing.md),
+                      SegmentedButton<bool>(
+                        segments: const [
+                          ButtonSegment(value: false, label: Text('Ücretsiz')),
+                          ButtonSegment(value: true, label: Text('Ücretli')),
+                        ],
+                        selected: {_isPaidBusinessEvent},
+                        onSelectionChanged: (selection) {
+                          setState(() {
+                            _isPaidBusinessEvent = selection.first;
+                            if (!_isPaidBusinessEvent) {
+                              _priceController.clear();
+                            }
+                          });
+                        },
+                      ),
+                      if (_isPaidBusinessEvent) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        AppTextField(
+                          label: 'Fiyat',
+                          controller: _priceController,
+                          keyboardType: TextInputType.number,
+                          prefixIcon: const Icon(Icons.payments_outlined),
+                          helperText: 'Para birimi: TRY',
+                          validator: _priceValidator,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+              ],
               _FormCard(
                 child: Column(
                   children: [
@@ -635,6 +710,20 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     return int.tryParse(value.trim()) ?? 0;
   }
 
+  double? _parsePrice(String value) {
+    return double.tryParse(value.trim().replaceAll(',', '.'));
+  }
+
+  String? _priceValidator(String? value) {
+    if (_organizerType != EventOrganizerType.business ||
+        !_isPaidBusinessEvent) {
+      return null;
+    }
+    final price = _parsePrice(value ?? '');
+    if (price == null || price <= 0) return 'Fiyat 0’dan büyük olmalı.';
+    return null;
+  }
+
   String _locationErrorMessage(Object error) {
     final message = '$error';
     if (message.contains('servisleri')) {
@@ -696,6 +785,81 @@ class _CreateEventAppBar extends StatelessWidget
         icon: const Icon(Icons.arrow_back),
       ),
       title: const AppLogo(size: 32, showText: true),
+    );
+  }
+}
+
+class _EventTypeSelector extends StatelessWidget {
+  const _EventTypeSelector({
+    required this.organizerType,
+    required this.businessName,
+    required this.isVerified,
+    required this.onChanged,
+  });
+
+  final String organizerType;
+  final String businessName;
+  final bool isVerified;
+  final ValueChanged<String> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Etkinlik tipi', style: AppTextStyles.title),
+        const SizedBox(height: AppSpacing.md),
+        SegmentedButton<String>(
+          segments: const [
+            ButtonSegment(
+              value: EventOrganizerType.user,
+              label: Text(
+                'Kişisel Etkinlik',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+            ButtonSegment(
+              value: EventOrganizerType.business,
+              label: Text(
+                'İşletme Etkinliği',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+          selected: {organizerType},
+          onSelectionChanged: (selection) => onChanged(selection.first),
+        ),
+        if (organizerType == EventOrganizerType.business) ...[
+          const SizedBox(height: AppSpacing.md),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              color: AppColors.primarySoft,
+              borderRadius: AppRadius.lgBorder,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                children: [
+                  const Icon(Icons.storefront_outlined, color: AppColors.primary),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      businessName,
+                      style: AppTextStyles.bodyStrong,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  BusinessBadge(isVerified: isVerified),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

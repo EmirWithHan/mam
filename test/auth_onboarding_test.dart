@@ -484,6 +484,110 @@ void main() {
       expect(eventCoverStyleForSport(event.sportType).label, 'Spor');
     });
 
+    test('event organizer type falls back to user', () {
+      final event = Event.fromJson({
+        'id': 'event-1',
+        'host_id': 'host-1',
+        'title': 'Friendly Match',
+        'sport_type': 'Futbol',
+        'city': 'Istanbul',
+        'event_date': '2026-05-28T10:00:00Z',
+        'capacity_total': 12,
+        'status': 'active',
+      });
+
+      expect(event.organizerType, EventOrganizerType.user);
+      expect(event.isBusinessEvent, isFalse);
+      expect(event.priceLabel, '');
+    });
+
+    test('business event maps organizer and paid price display', () {
+      final event = Event.fromJson({
+        'id': 'event-1',
+        'host_id': 'host-1',
+        'title': 'Padel Night',
+        'sport_type': 'Padel',
+        'city': 'Istanbul',
+        'event_date': '2026-05-28T10:00:00Z',
+        'capacity_total': 12,
+        'status': 'active',
+        'organizer_type': 'business',
+        'organizer_business_id': 'business-1',
+        'is_paid': true,
+        'price_amount': 450,
+        'price_currency': 'TRY',
+        'business_accounts': {
+          'id': 'business-1',
+          'name': 'Padel Club',
+          'username': 'padelclub',
+          'business_tag': '1234',
+          'is_verified': true,
+        },
+      });
+
+      expect(event.isBusinessEvent, isTrue);
+      expect(event.businessOrganizer?.displayName, 'Padel Club');
+      expect(event.businessOrganizer?.isVerified, isTrue);
+      expect(event.priceLabel, '₺450');
+    });
+
+    test('free business event displays Ucretsiz', () {
+      final event = Event.fromJson({
+        'id': 'event-1',
+        'host_id': 'host-1',
+        'title': 'Open Day',
+        'sport_type': 'Yoga',
+        'city': 'Istanbul',
+        'event_date': '2026-05-28T10:00:00Z',
+        'capacity_total': 12,
+        'status': 'active',
+        'organizer_type': 'business',
+        'organizer_business_id': 'business-1',
+        'is_paid': false,
+      });
+
+      expect(event.isBusinessEvent, isTrue);
+      expect(event.priceLabel, 'Ücretsiz');
+    });
+
+    test('business event create payload requires account helper', () {
+      expect(CreateEventInput.canSelectBusinessEvent(null), isFalse);
+
+      const account = BusinessAccount(
+        id: 'business-1',
+        ownerUserId: 'user-1',
+        name: 'Padel Club',
+        username: 'padelclub',
+        category: 'Padel Kortu',
+        city: 'Istanbul',
+        district: 'Kadikoy',
+      );
+      expect(CreateEventInput.canSelectBusinessEvent(account), isTrue);
+
+      final input = CreateEventInput(
+        title: 'Padel Night',
+        sportType: 'Padel',
+        city: 'Istanbul',
+        eventDate: DateTime(2026, 5, 28),
+        capacityTotal: 12,
+        capacityMale: 0,
+        capacityFemale: 0,
+        capacityAny: 12,
+        organizerType: EventOrganizerType.business,
+        businessAccount: account,
+        isPaid: true,
+        priceAmount: 450,
+      );
+      final payload = input.toCreateJson(hostId: 'user-1');
+
+      expect(payload['organizer_type'], EventOrganizerType.business);
+      expect(payload['organizer_user_id'], 'user-1');
+      expect(payload['organizer_business_id'], 'business-1');
+      expect(payload['is_paid'], isTrue);
+      expect(payload['price_amount'], 450);
+      expect(payload['price_currency'], 'TRY');
+    });
+
     testWidgets('event card renders fallback sport and compact button', (
       tester,
     ) async {

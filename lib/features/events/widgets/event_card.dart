@@ -9,6 +9,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/widgets/event_cover_image.dart';
 import '../../../core/widgets/sport_icon.dart';
+import '../../business/widgets/business_badge.dart';
 import '../../profile/widgets/public_profile_preview_tile.dart';
 import '../events_models.dart';
 
@@ -95,6 +96,24 @@ class EventCard extends StatelessWidget {
                     ],
                   ),
                 ],
+                if (event.isBusinessEvent) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.xs,
+                    children: [
+                      BusinessBadge(
+                        isVerified:
+                            event.businessOrganizer?.isVerified ?? false,
+                      ),
+                      _Pill(
+                        label: event.priceLabel,
+                        color: AppColors.secondarySoft,
+                        textColor: AppColors.secondary,
+                      ),
+                    ],
+                  ),
+                ],
                 const SizedBox(height: AppSpacing.md),
                 _MetaLine(
                   icon: Icons.schedule,
@@ -108,14 +127,7 @@ class EventCard extends StatelessWidget {
                 const SizedBox(height: AppSpacing.md),
                 Row(
                   children: [
-                    Expanded(
-                      child: PublicProfilePreviewTile(
-                        userId: event.hostId,
-                        subtitle: _participantSummary,
-                        compact: true,
-                        enableNavigation: false,
-                      ),
-                    ),
+                    Expanded(child: _OrganizerTile(event: event)),
                     const SizedBox(width: AppSpacing.sm),
                     _OpenEventButton(eventId: event.id),
                   ],
@@ -128,12 +140,6 @@ class EventCard extends StatelessWidget {
     );
   }
 
-  String get _participantSummary {
-    if (event.safeApprovedCount <= 0) return 'Ilk katilimci ol';
-    return '${event.safeApprovedCount} katilimci - '
-        '${event.safeCapacityTotal} kapasite';
-  }
-
   String _formatDateTime(DateTime value) {
     final year = value.year.toString().padLeft(4, '0');
     final month = value.month.toString().padLeft(2, '0');
@@ -141,6 +147,65 @@ class EventCard extends StatelessWidget {
     final hour = value.hour.toString().padLeft(2, '0');
     final minute = value.minute.toString().padLeft(2, '0');
     return '$year-$month-$day $hour:$minute';
+  }
+}
+
+class _OrganizerTile extends StatelessWidget {
+  const _OrganizerTile({required this.event});
+
+  final Event event;
+
+  @override
+  Widget build(BuildContext context) {
+    final business = event.businessOrganizer;
+    if (event.isBusinessEvent && business != null) {
+      return Row(
+        children: [
+          const CircleAvatar(
+            radius: 16,
+            backgroundColor: AppColors.primarySoft,
+            child: Icon(
+              Icons.storefront_outlined,
+              color: AppColors.primary,
+              size: 17,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  business.displayName,
+                  style: AppTextStyles.caption,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                Text(
+                  event.priceLabel,
+                  style: AppTextStyles.caption,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    return PublicProfilePreviewTile(
+      userId: event.hostId,
+      subtitle: _participantSummary,
+      compact: true,
+      enableNavigation: false,
+    );
+  }
+
+  String get _participantSummary {
+    if (event.safeApprovedCount <= 0) return 'Ilk katilimci ol';
+    return '${event.safeApprovedCount} katilimci - '
+        '${event.safeCapacityTotal} kapasite';
   }
 }
 
