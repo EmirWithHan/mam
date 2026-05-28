@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/constants/sport_types.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -83,7 +84,8 @@ class LinkedEventPicker extends ConsumerWidget {
                     if (selectedEvent != null) ...[
                       const SizedBox(height: 2),
                       Text(
-                        '${selectedEvent.sportType} • ${selectedEvent.locationLabel}',
+                        '${sportLabelFor(selectedEvent.sportType)} • '
+                        '${selectedEvent.locationLabel}',
                         style: AppTextStyles.caption,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -287,7 +289,7 @@ class _LinkableEventTile extends StatelessWidget {
       ),
       title: Text(event.title, maxLines: 1, overflow: TextOverflow.ellipsis),
       subtitle: Text(
-        '${event.sportType} • ${event.locationLabel}\n${event.displayDate}',
+        '${sportLabelFor(event.sportType)} • ${event.locationLabel}\n${event.displayDate}',
         maxLines: 2,
         overflow: TextOverflow.ellipsis,
       ),

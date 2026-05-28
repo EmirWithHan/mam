@@ -19,7 +19,6 @@ import '../../core/widgets/error_view.dart';
 import '../../core/widgets/sport_icon.dart';
 import '../auth/auth_provider.dart';
 import '../follow/follow_provider.dart';
-import 'profile_badges.dart';
 import 'profile_models.dart';
 import 'profile_provider.dart';
 import 'widgets/profile_badges_section.dart';
@@ -105,9 +104,7 @@ class _PublicProfilePageState extends ConsumerState<PublicProfilePage> {
 
             final isMe =
                 currentUserId != null && currentUserId == detail.userId;
-            final publicEventsAsync = ref.watch(
-              publicProfileEventHistoryProvider(widget.userId),
-            );
+            final badgesAsync = ref.watch(profileBadgesProvider(widget.userId));
 
             return RefreshIndicator(
               onRefresh: () async {
@@ -123,10 +120,13 @@ class _PublicProfilePageState extends ConsumerState<PublicProfilePage> {
                   _PublicProfileHeader(
                     detail: detail,
                     isMe: isMe,
-                    events: publicEventsAsync.valueOrNull ?? const [],
                     onFollowChanged: _refreshPublicProfile,
                   ),
                   const SizedBox(height: AppSpacing.lg),
+                  if (detail.canViewExtendedProfile) ...[
+                    ProfileBadgesSection.fromAsync(badgesAsync),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
                   _ProfileTabs(
                     selectedTab: _selectedTab,
                     onChanged: (tab) => setState(() => _selectedTab = tab),
@@ -160,13 +160,11 @@ class _PublicProfileHeader extends StatelessWidget {
   const _PublicProfileHeader({
     required this.detail,
     required this.isMe,
-    required this.events,
     required this.onFollowChanged,
   });
 
   final PublicProfileDetail detail;
   final bool isMe;
-  final List<PublicProfileEventHistoryItem> events;
   final VoidCallback onFollowChanged;
 
   @override
@@ -240,13 +238,6 @@ class _PublicProfileHeader extends StatelessWidget {
             ],
             const SizedBox(height: AppSpacing.lg),
             _ProfileStats(detail: detail),
-            const SizedBox(height: AppSpacing.lg),
-            ProfileBadgesSection(
-              badges: ProfileBadgeCatalog.forProfile(
-                publicProfile: detail,
-                publicEvents: events,
-              ),
-            ),
             const SizedBox(height: AppSpacing.lg),
             _PublicProfileFollowAction(
               targetUserId: detail.userId,
@@ -357,7 +348,7 @@ class _ProfileStats extends StatelessWidget {
       if (detail.trustScore != null)
         _StatCardData(
           value: detail.trustScore!,
-          label: 'Güven',
+          label: 'Güven Skoru',
           icon: Icons.verified_outlined,
         ),
     ];

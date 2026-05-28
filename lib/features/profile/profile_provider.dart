@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/utils/error_messages.dart';
+import 'profile_badges.dart';
 import 'profile_models.dart';
 import 'profile_service.dart';
 
@@ -73,6 +74,12 @@ final publicProfileEventHistoryProvider =
           .watch(profileServiceProvider)
           .fetchPublicProfileEventHistory(userId);
     });
+
+final profileBadgesProvider = FutureProvider.family<List<ProfileBadge>, String>(
+  (ref, userId) {
+    return ref.watch(profileServiceProvider).fetchProfileBadges(userId);
+  },
+);
 
 class ProfileController extends StateNotifier<ProfileState> {
   ProfileController(this._profileService) : super(const ProfileState.initial());

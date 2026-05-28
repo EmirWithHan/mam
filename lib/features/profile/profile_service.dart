@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 import '../../core/utils/user_handle.dart';
 import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
+import 'profile_badges.dart';
 import 'profile_models.dart';
 import 'public_profile_models.dart';
 import 'public_profile_service.dart';
@@ -105,8 +106,16 @@ class ProfileService {
         ? existingProfile!.tag!.trim()
         : _generateProfileTag();
     final data = await _upsertMyProfileRow(payload, userId);
+    final profile = Profile.fromJson(data);
+    if (profile.hasEventRequiredFields) {
+      await _applyMyTrustScoreEvent(
+        eventType: 'profile_event_ready',
+        refId: profile.userId,
+      );
+      return await getMyProfile() ?? profile;
+    }
 
-    return Profile.fromJson(data);
+    return profile;
   }
 
   Future<Profile> updateMyProfilePrivacy({required bool isPrivate}) async {
@@ -192,6 +201,18 @@ class ProfileService {
     return _rows(
       data,
     ).map(PublicProfileEventHistoryItem.fromJson).toList(growable: false);
+  }
+
+  Future<List<ProfileBadge>> fetchProfileBadges(String userId) async {
+    final data = await SupabaseService.client.rpc(
+      'get_profile_badges',
+      params: {'p_user_id': userId},
+    );
+
+    final badges = _rows(
+      data,
+    ).map(ProfileBadge.fromJson).toList(growable: false);
+    return ProfileBadgeCatalog.withUpcoming(badges);
   }
 
   Future<List<PublicProfileFollowListItem>> fetchFollowers(
@@ -567,6 +588,20 @@ class ProfileService {
         .whereType<Map>()
         .map((item) => Map<String, dynamic>.from(item))
         .toList(growable: false);
+  }
+}
+
+Future<void> _applyMyTrustScoreEvent({
+  required String eventType,
+  String? refId,
+}) async {
+  try {
+    await SupabaseService.client.rpc(
+      'apply_my_trust_score_event',
+      params: {'p_event_type': eventType, 'p_ref_id': refId},
+    );
+  } catch (error) {
+    debugPrint('[Profile] trust score event failed: ${error.runtimeType}');
   }
 }
 

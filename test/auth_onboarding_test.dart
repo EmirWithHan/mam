@@ -1,13 +1,20 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:match_a_man/core/constants/sport_types.dart';
 import 'package:match_a_man/core/router/route_names.dart';
+import 'package:match_a_man/core/widgets/event_cover_image.dart';
+import 'package:match_a_man/core/widgets/main_navigation_shell.dart';
 import 'package:match_a_man/core/utils/error_messages.dart';
+import 'package:match_a_man/core/utils/trust_score_rules.dart';
 import 'package:match_a_man/core/utils/user_handle.dart';
 import 'package:match_a_man/features/auth/auth_service.dart';
+import 'package:match_a_man/features/business/business_models.dart';
+import 'package:match_a_man/features/business/business_service.dart';
 import 'package:match_a_man/features/events/events_models.dart';
+import 'package:match_a_man/features/events/widgets/event_card.dart';
 import 'package:match_a_man/features/events/widgets/join_request_button.dart';
 import 'package:match_a_man/features/feed/feed_models.dart';
 import 'package:match_a_man/features/feed/feed_provider.dart';
@@ -65,6 +72,29 @@ void main() {
         isFalse,
       );
       expect(RoutePaths.isSafeReturnPath('//evil.example/events'), isFalse);
+    });
+
+    test('event route constants remain available', () {
+      expect(RouteNames.events, 'events');
+      expect(RoutePaths.events, '/events');
+      expect(RouteNames.eventDetail, 'eventDetail');
+      expect(RoutePaths.eventDetail, '/events/:eventId');
+      expect(RouteNames.createEvent, 'createEvent');
+      expect(RoutePaths.createEvent, '/events/create');
+    });
+
+    testWidgets('main navigation keeps Events tab visible', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: MainNavigationShell(
+            currentIndex: 1,
+            child: SizedBox.shrink(),
+          ),
+        ),
+      );
+
+      expect(find.text('Events'), findsOneWidget);
+      expect(find.byIcon(Icons.event), findsOneWidget);
     });
   });
 
@@ -417,6 +447,94 @@ void main() {
       expect(cover.icon, Icons.sports_handball);
     });
 
+    test('sport and cover mappers handle null safely', () {
+      expect(sportLabelFor(null), 'Spor');
+      expect(sportIconFor(null), Icons.sports_handball);
+
+      final cover = eventCoverStyleForSport(null);
+      expect(cover.label, 'Spor');
+      expect(cover.icon, Icons.sports_handball);
+    });
+
+    testWidgets('event cover renders fallback for null sport', (tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(body: EventCoverImage(sportType: null)),
+        ),
+      );
+
+      expect(find.byType(EventCoverImage), findsOneWidget);
+      expect(find.text('Spor'), findsOneWidget);
+    });
+
+    test('event model tolerates null or unknown sport type', () {
+      final event = Event.fromJson({
+        'id': 'event-1',
+        'host_id': 'host-1',
+        'title': 'Friendly Match',
+        'sport_type': null,
+        'city': 'Istanbul',
+        'event_date': '2026-05-28T10:00:00Z',
+        'capacity_total': 12,
+        'status': 'active',
+      });
+
+      expect(event.sportType, isNull);
+      expect(sportLabelFor(event.sportType), 'Spor');
+      expect(eventCoverStyleForSport(event.sportType).label, 'Spor');
+    });
+
+    testWidgets('event card renders fallback sport and compact button', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: SizedBox(
+                width: 320,
+                child: EventCard(
+                  event: Event(
+                    id: 'event-1',
+                    hostId: '',
+                    title: '',
+                    sportType: null,
+                    city: '',
+                    eventDate: DateTime(2026, 5, 28, 20),
+                    capacityTotal: 0,
+                    status: 'active',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Etkinlik'), findsOneWidget);
+      expect(find.text('Spor'), findsOneWidget);
+      expect(find.text('Konum belirtilmedi'), findsOneWidget);
+
+      final buttonBox = tester.renderObject<RenderBox>(
+        find.byType(FilledButton),
+      );
+      expect(buttonBox.size.width, lessThanOrEqualTo(96));
+    });
+
+    test('linkable event model tolerates null sport type', () {
+      final event = LinkableEvent.fromJson({
+        'id': 'event-1',
+        'title': 'Post Match',
+        'sport_type': null,
+        'city': 'Istanbul',
+        'event_date': '2026-05-28T10:00:00Z',
+      });
+
+      expect(event.sportType, '');
+      expect(sportLabelFor(event.sportType), 'Spor');
+    });
+
     test('feed state tracks per-post like loading', () {
       const state = FeedState(
         status: FeedStatus.success,
@@ -583,15 +701,285 @@ void main() {
       );
     });
 
+    test('duplicate badge award is idempotent by badge id', () {
+      final earnedBadgeIds = <String>{};
+
+      expect(earnedBadgeIds.add('first_event'), isTrue);
+      expect(earnedBadgeIds.add('first_event'), isFalse);
+      expect(earnedBadgeIds, hasLength(1));
+    });
+
     test('locked badges are not shown in preview as earned', () {
-      final badges = ProfileBadgeCatalog.forProfile(
-        profile: const Profile(id: 'profile-1', userId: 'user-1'),
-      );
+      final badges = ProfileBadgeCatalog.fallbackCatalog();
 
       expect(ProfileBadgeCatalog.preview(badges), isEmpty);
       expect(
         badges.any((badge) => badge.status == ProfileBadgeStatus.locked),
         isTrue,
+      );
+    });
+
+    test('locked and earned badge mapping uses earned_at', () {
+      final locked = ProfileBadge.fromJson({
+        'id': 'first_event',
+        'title': 'İlk Etkinlik',
+        'description': 'İlk etkinliğine katıldı.',
+        'icon_key': 'event',
+        'sort_order': 20,
+        'earned_at': null,
+      });
+      final earned = ProfileBadge.fromJson({
+        'id': 'first_event',
+        'title': 'İlk Etkinlik',
+        'description': 'İlk etkinliğine katıldı.',
+        'icon_key': 'event',
+        'sort_order': 20,
+        'earned_at': '2026-05-28T10:00:00Z',
+      });
+
+      expect(locked.status, ProfileBadgeStatus.locked);
+      expect(earned.status, ProfileBadgeStatus.earned);
+      expect(earned.earnedAt, isNotNull);
+    });
+
+    test('profile with no badges does not crash preview', () {
+      final badges = ProfileBadgeCatalog.withUpcoming(const []);
+
+      expect(ProfileBadgeCatalog.preview(badges), isEmpty);
+      expect(
+        badges.every((badge) => badge.status != ProfileBadgeStatus.earned),
+        isTrue,
+      );
+    });
+  });
+
+  group('trust score rules', () {
+    test('trust score clamps min and max', () {
+      expect(TrustScoreRules.clamp(-10), TrustScoreRules.minScore);
+      expect(TrustScoreRules.clamp(140), TrustScoreRules.maxScore);
+      expect(TrustScoreRules.applyDelta(99, 5), 100);
+      expect(TrustScoreRules.applyDelta(1, -5), 0);
+    });
+
+    test('trust score delta mapping is conservative', () {
+      expect(TrustScoreRules.deltaFor('profile_event_ready'), 2);
+      expect(TrustScoreRules.deltaFor('first_event_approved'), 3);
+      expect(TrustScoreRules.deltaFor('event_join_approved'), 1);
+      expect(TrustScoreRules.deltaFor('event_linked_post'), 1);
+      expect(TrustScoreRules.deltaFor('approved_event_left'), -2);
+    });
+
+    test('trust score display handles null safely', () {
+      const profile = Profile(id: 'profile-1', userId: 'user-1');
+
+      expect(profile.trustScore, isNull);
+      expect(profile.trustScoreValue, TrustScoreRules.neutralScore);
+    });
+
+    test('host rejection does not reduce trust score', () {
+      expect(TrustScoreRules.deltaFor('event_join_rejected'), 0);
+    });
+
+    test('event-ready profile bonus rule is idempotent by source', () {
+      final logs = <String>{};
+      final first = logs.add('user-1:profile_event_ready:profile:user-1');
+      final second = logs.add('user-1:profile_event_ready:profile:user-1');
+
+      expect(first, isTrue);
+      expect(second, isFalse);
+    });
+  });
+
+  group('business account helpers', () {
+    test('business username normalization is lowercase and safe', () {
+      expect(
+        BusinessAccountValidators.normalizeUsername(' Bozkir At Ciftligi '),
+        'bozkir_at_ciftligi',
+      );
+      expect(BusinessAccountValidators.username('bozkir_01'), isNull);
+      expect(BusinessAccountValidators.username('bozkir-01'), isNotNull);
+    });
+
+    test('business handle uses existing username tag formatting', () {
+      const account = BusinessAccount(
+        id: 'business-1',
+        ownerUserId: 'user-1',
+        name: 'Bozkir At Ciftligi',
+        username: 'bozkiratciftligi',
+        businessTag: '1234',
+        category: 'At Çiftliği',
+        city: 'Ankara',
+        district: 'Cankaya',
+      );
+
+      expect(account.displayHandle, 'bozkiratciftligi#1234');
+    });
+
+    test('business required field validation is friendly', () {
+      expect(BusinessAccountValidators.name(''), 'İşletme adı gerekli.');
+      expect(BusinessAccountValidators.category(null), 'Kategori seçmelisin.');
+      expect(
+        BusinessAccountValidators.cityDistrict(city: 'Ankara', district: ''),
+        'Şehir ve ilçe seçmelisin.',
+      );
+      expect(BusinessAccountValidators.website('matchaman.app'), isNull);
+      expect(BusinessAccountValidators.instagram('@bozkir.club'), isNull);
+    });
+
+    test('business category list includes expanded options', () {
+      expect(BusinessCategories.values, contains('At Çiftliği'));
+      expect(BusinessCategories.values, contains('Halı Saha'));
+      expect(BusinessCategories.values, contains('Padel Kortu'));
+      expect(BusinessCategories.values, contains('Diğer'));
+      expect(BusinessCategories.values, contains('E-Spor / Gaming Alanı'));
+    });
+
+    test('custom category is required only for Diger', () {
+      expect(
+        BusinessAccountValidators.customCategory(
+          category: BusinessCategories.other,
+          value: '',
+        ),
+        'İşletme türünü yazmalısın.',
+      );
+      expect(
+        BusinessAccountValidators.customCategory(
+          category: BusinessCategories.other,
+          value: 'A',
+        ),
+        'İşletme türü en az 2 karakter olmalı.',
+      );
+      expect(
+        BusinessAccountValidators.customCategory(
+          category: BusinessCategories.other,
+          value: List.filled(41, 'x').join(),
+        ),
+        'İşletme türü en fazla 40 karakter olabilir.',
+      );
+      expect(
+        BusinessAccountValidators.customCategory(
+          category: BusinessCategories.other,
+          value: 'Okçuluk Kulübü',
+        ),
+        isNull,
+      );
+      expect(
+        BusinessAccountValidators.customCategory(
+          category: 'Halı Saha',
+          value: '',
+        ),
+        isNull,
+      );
+    });
+
+    test('business display category prefers custom Diger value', () {
+      const custom = BusinessAccount(
+        id: 'business-1',
+        ownerUserId: 'user-1',
+        name: 'Kano Merkezi',
+        username: 'kano',
+        category: BusinessCategories.other,
+        customCategory: 'Kano Merkezi',
+        city: 'Antalya',
+        district: 'Konyaalti',
+      );
+      const normal = BusinessAccount(
+        id: 'business-2',
+        ownerUserId: 'user-1',
+        name: 'Padel Club',
+        username: 'padel',
+        category: 'Padel Kortu',
+        city: 'Istanbul',
+        district: 'Kadikoy',
+      );
+
+      expect(custom.displayCategory, 'Kano Merkezi');
+      expect(normal.displayCategory, 'Padel Kortu');
+      expect(
+        BusinessAccountValidators.normalizeCustomCategory(
+          '  Okçuluk   Kulübü  ',
+        ),
+        'Okçuluk Kulübü',
+      );
+    });
+
+    test('business creation payload is owner-scoped and not verified', () {
+      const input = BusinessAccountInput(
+        name: 'Bozkir At Ciftligi',
+        username: ' Bozkir At Ciftligi ',
+        category: 'At Çiftliği',
+        city: 'Ankara',
+        district: 'Cankaya',
+      );
+
+      final payload = input.toCreateJson(ownerUserId: 'user-1');
+
+      expect(payload['owner_user_id'], 'user-1');
+      expect(payload['username'], 'bozkir_at_ciftligi');
+      expect(payload.containsKey('custom_category'), isFalse);
+      expect(payload.containsKey('is_verified'), isFalse);
+      expect(payload.containsKey('status'), isFalse);
+    });
+
+    test('business creation payload includes custom Diger category only then', () {
+      const input = BusinessAccountInput(
+        name: 'Kano Merkezi',
+        username: 'kano_merkezi',
+        category: BusinessCategories.other,
+        customCategory: '  Kano   Merkezi  ',
+        city: 'Antalya',
+        district: 'Konyaalti',
+      );
+
+      final payload = input.toCreateJson(ownerUserId: 'user-1');
+
+      expect(payload['category'], BusinessCategories.other);
+      expect(payload['custom_category'], 'Kano Merkezi');
+    });
+
+    test('business permission error maps to friendly message', () {
+      final message = friendlyBusinessAccountErrorMessage(
+        'PostgrestException code: 42501 message: permission denied for table business_accounts',
+      );
+
+      expect(
+        message,
+        'İşletme hesabı oluşturulamadı. Yetki ayarları kontrol edilmeli.',
+      );
+    });
+
+    test('business settings action copy changes with account state', () {
+      expect(
+        BusinessSettingsCopy.actionTitle(null),
+        'İşletme hesabına geç',
+      );
+
+      const account = BusinessAccount(
+        id: 'business-1',
+        ownerUserId: 'user-1',
+        name: 'Bozkir At Ciftligi',
+        username: 'bozkiratciftligi',
+        businessTag: '1234',
+        category: 'At Çiftliği',
+        city: 'Ankara',
+        district: 'Cankaya',
+      );
+
+      expect(
+        BusinessSettingsCopy.actionTitle(account),
+        'İşletme profilini yönet',
+      );
+      expect(
+        BusinessSettingsCopy.actionSubtitle(account),
+        'Bozkir At Ciftligi · At Çiftliği',
+      );
+    });
+
+    test('business badge label maps verified state', () {
+      expect(BusinessBadgeLabels.forVerified(false), 'İşletme');
+      expect(
+        BusinessBadgeLabels.forVerified(true),
+        'Doğrulanmış İşletme',
       );
     });
   });

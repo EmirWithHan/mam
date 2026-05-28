@@ -227,7 +227,7 @@ class _EventsBody extends StatelessWidget {
     if (query.isEmpty) return true;
     return [
       event.title,
-      event.sportType,
+      event.sportType ?? '',
       event.city,
       event.district ?? '',
       event.locationText ?? '',
@@ -236,7 +236,8 @@ class _EventsBody extends StatelessWidget {
 
   bool _matchesFilters(Event event, EventFilters filters) {
     final sport = filters.selectedSportType;
-    if (sport != null && _normalize(event.sportType) != _normalize(sport)) {
+    if (sport != null &&
+        _normalize(event.sportType ?? '') != _normalize(sport)) {
       return false;
     }
 

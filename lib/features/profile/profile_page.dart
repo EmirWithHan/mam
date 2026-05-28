@@ -11,9 +11,10 @@ import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/error_view.dart';
-import 'profile_activity_models.dart';
+import '../business/business_models.dart';
+import '../business/business_provider.dart';
+import '../business/widgets/business_badge.dart';
 import 'profile_activity_provider.dart';
-import 'profile_badges.dart';
 import 'profile_models.dart';
 import 'profile_provider.dart';
 import 'widgets/profile_badges_section.dart';
@@ -37,6 +38,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     Future.microtask(() {
       ref.read(profileControllerProvider.notifier).loadMyProfile();
       ref.read(profileActivityControllerProvider.notifier).loadActivity();
+      ref.read(myBusinessAccountProvider.notifier).loadMyBusinessAccount();
     });
   }
 
@@ -100,6 +102,8 @@ class _ProfileBody extends ConsumerWidget {
     final publicDetailAsync = ref.watch(
       publicProfileDetailProvider(profile.userId),
     );
+    final badgesAsync = ref.watch(profileBadgesProvider(profile.userId));
+    final businessAccount = ref.watch(myBusinessAccountProvider).account;
 
     return RefreshIndicator(
       onRefresh: () async {
@@ -112,8 +116,10 @@ class _ProfileBody extends ConsumerWidget {
           _ProfileHeader(
             profile: profile,
             publicDetail: publicDetailAsync.valueOrNull,
-            events: activityState.events,
+            businessAccount: businessAccount,
           ),
+          const SizedBox(height: AppSpacing.lg),
+          ProfileBadgesSection.fromAsync(badgesAsync),
           const SizedBox(height: AppSpacing.lg),
           _ProfileActivityTabs(
             selectedTab: selectedTab,
@@ -298,12 +304,12 @@ class _ProfileHeader extends StatelessWidget {
   const _ProfileHeader({
     required this.profile,
     required this.publicDetail,
-    required this.events,
+    required this.businessAccount,
   });
 
   final Profile profile;
   final PublicProfileDetail? publicDetail;
-  final List<ProfileActivityEvent> events;
+  final BusinessAccount? businessAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -345,6 +351,16 @@ class _ProfileHeader extends StatelessWidget {
                 textAlign: TextAlign.center,
               ),
             ],
+            if (businessAccount != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              BusinessBadge(isVerified: businessAccount!.isVerified),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Isletme sahibi',
+                style: AppTextStyles.caption,
+                textAlign: TextAlign.center,
+              ),
+            ],
             if (profile.bio?.trim().isNotEmpty == true) ...[
               const SizedBox(height: AppSpacing.md),
               Text(
@@ -361,14 +377,13 @@ class _ProfileHeader extends StatelessWidget {
               userId: profile.userId,
               followersCount: publicDetail?.followersCount ?? 0,
               followingCount: publicDetail?.followingCount ?? 0,
+              trustScore: profile.trustScoreValue,
             ),
-            const SizedBox(height: AppSpacing.lg),
-            ProfileBadgesSection(
-              badges: ProfileBadgeCatalog.forProfile(
-                profile: profile,
-                publicProfile: publicDetail,
-                events: events,
-              ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Güven Skoru etkinlik davranışlarına göre zamanla değişir.',
+              style: AppTextStyles.caption,
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -382,11 +397,13 @@ class _OwnProfileStats extends StatelessWidget {
     required this.userId,
     required this.followersCount,
     required this.followingCount,
+    required this.trustScore,
   });
 
   final String userId;
   final int followersCount;
   final int followingCount;
+  final int trustScore;
 
   @override
   Widget build(BuildContext context) {
@@ -394,7 +411,7 @@ class _OwnProfileStats extends StatelessWidget {
       builder: (context, constraints) {
         final cardWidth = constraints.maxWidth < 420
             ? (constraints.maxWidth - AppSpacing.sm) / 2
-            : 160.0;
+            : (constraints.maxWidth - (AppSpacing.sm * 2)) / 3;
 
         return Wrap(
           spacing: AppSpacing.sm,
@@ -425,6 +442,14 @@ class _OwnProfileStats extends StatelessWidget {
                 ),
               ),
             ),
+            SizedBox(
+              width: cardWidth.clamp(132.0, 220.0),
+              child: _OwnProfileStatCard(
+                value: trustScore,
+                label: 'Güven Skoru',
+                icon: Icons.verified_outlined,
+              ),
+            ),
           ],
         );
       },
@@ -437,13 +462,13 @@ class _OwnProfileStatCard extends StatelessWidget {
     required this.value,
     required this.label,
     required this.icon,
-    required this.onTap,
+    this.onTap,
   });
 
   final int value;
   final String label;
   final IconData icon;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {

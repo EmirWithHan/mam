@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../services/supabase_service.dart';
 import 'join_requests_models.dart';
 
@@ -27,11 +29,7 @@ class JoinRequestsService {
 
     final data = await SupabaseService.client
         .from('event_join_requests')
-        .insert({
-          'event_id': eventId,
-          'user_id': userId,
-          'status': 'pending',
-        })
+        .insert({'event_id': eventId, 'user_id': userId, 'status': 'pending'})
         .select()
         .single();
 
@@ -62,6 +60,7 @@ class JoinRequestsService {
       'approve_event_join_request',
       params: {'request_id': requestId},
     );
+    await _applyJoinApprovalTrustEvent(requestId);
   }
 
   Future<void> rejectJoinRequest(String requestId) async {
@@ -69,5 +68,16 @@ class JoinRequestsService {
       'reject_event_join_request',
       params: {'request_id': requestId},
     );
+  }
+}
+
+Future<void> _applyJoinApprovalTrustEvent(String requestId) async {
+  try {
+    await SupabaseService.client.rpc(
+      'apply_join_approval_trust_event',
+      params: {'p_request_id': requestId},
+    );
+  } catch (error) {
+    debugPrint('[JoinRequests] trust score event failed: ${error.runtimeType}');
   }
 }

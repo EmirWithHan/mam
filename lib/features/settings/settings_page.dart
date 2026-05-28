@@ -10,6 +10,9 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_logo.dart';
 import '../auth/auth_provider.dart';
+import '../business/business_models.dart';
+import '../business/business_provider.dart';
+import '../business/widgets/business_badge.dart';
 import '../profile/profile_models.dart';
 import '../profile/profile_provider.dart';
 import 'widgets/settings_menu_tile.dart';
@@ -27,6 +30,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     super.initState();
     Future.microtask(() {
       ref.read(profileControllerProvider.notifier).loadMyProfile();
+      ref.read(myBusinessAccountProvider.notifier).loadMyBusinessAccount();
     });
   }
 
@@ -35,6 +39,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final profile = ref.watch(profileControllerProvider).profile;
     final profileState = ref.watch(profileControllerProvider);
     final authState = ref.watch(authControllerProvider);
+    final businessAccount = ref.watch(myBusinessAccountProvider).account;
 
     return Scaffold(
       appBar: AppBar(
@@ -104,11 +109,23 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               onTap: () => context.pushNamed(RouteNames.trustScoreHistory),
             ),
             const SizedBox(height: AppSpacing.md),
-            const SettingsMenuTile(
-              icon: Icons.tune,
-              title: 'Ayarlar',
-              subtitle: 'Tercihler yakında burada olacak',
-              trailing: Text('Yakında', style: AppTextStyles.caption),
+            SettingsMenuTile(
+              icon: Icons.storefront_outlined,
+              title: BusinessSettingsCopy.actionTitle(businessAccount),
+              subtitle: BusinessSettingsCopy.actionSubtitle(businessAccount),
+              trailing: businessAccount == null
+                  ? null
+                  : BusinessBadge(isVerified: businessAccount.isVerified),
+              onTap: () {
+                if (businessAccount == null) {
+                  context.pushNamed(RouteNames.businessCreate);
+                  return;
+                }
+                context.pushNamed(
+                  RouteNames.businessProfile,
+                  pathParameters: {'businessId': businessAccount.id},
+                );
+              },
             ),
             const SizedBox(height: AppSpacing.md),
             SettingsMenuTile(

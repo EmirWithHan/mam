@@ -317,7 +317,7 @@ class _EventDetailBody extends ConsumerWidget {
         return AlertDialog(
           title: const Text('Etkinlikten çıkılsın mı?'),
           content: const Text(
-            'Bu etkinlikten çıkarsan katılımın iptal edilir ve trust score’un 5 puan düşer.',
+            'Bu etkinlikten çıkarsan katılımın iptal edilir ve güven skorun 2 puan düşebilir.',
           ),
           actions: [
             TextButton(
@@ -352,7 +352,7 @@ class _EventDetailBody extends ConsumerWidget {
     if (left) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Etkinlikten çıkıldı. Trust score 5 puan düştü.'),
+          content: Text('Etkinlikten çıkıldı. Güven skoru güncellendi.'),
         ),
       );
       return;
@@ -520,7 +520,7 @@ class _EventHeroCard extends StatelessWidget {
               runSpacing: AppSpacing.sm,
               children: [
                 _MiniChip(
-                  label: event.sportType,
+                  label: sportLabelFor(event.sportType),
                   color: AppColors.primary,
                   textColor: Colors.white,
                   icon: sportIconFor(event.sportType),
@@ -776,7 +776,7 @@ class _HostPreviewCard extends ConsumerWidget {
                           vertical: AppSpacing.xs,
                         ),
                         child: Text(
-                          '$trustScore trust',
+                          '$trustScore güven',
                           style: AppTextStyles.label.copyWith(
                             color: AppColors.primary,
                           ),

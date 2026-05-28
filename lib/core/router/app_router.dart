@@ -8,6 +8,8 @@ import '../../features/auth/auth_models.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/auth/oauth_callback_page.dart';
 import '../../features/auth/register_page.dart';
+import '../../features/business/business_profile_page.dart';
+import '../../features/business/create_business_account_page.dart';
 import '../../features/chat/event_chat_page.dart';
 import '../../features/events/create_event_page.dart';
 import '../../features/events/event_detail_page.dart';
@@ -189,6 +191,25 @@ GoRouter createAppRouter(AuthState authState) {
           currentIndex: 4,
           child: BlockedUsersPage(),
         ),
+      ),
+      GoRoute(
+        path: RoutePaths.businessCreate,
+        name: RouteNames.businessCreate,
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 4,
+          child: CreateBusinessAccountPage(),
+        ),
+      ),
+      GoRoute(
+        path: RoutePaths.businessProfile,
+        name: RouteNames.businessProfile,
+        builder: (context, state) {
+          final businessId = state.pathParameters['businessId'] ?? '';
+          return MainNavigationShell(
+            currentIndex: 4,
+            child: BusinessProfilePage(businessId: businessId),
+          );
+        },
       ),
       GoRoute(
         path: RoutePaths.notifications,

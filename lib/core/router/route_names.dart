@@ -13,6 +13,8 @@ class RouteNames {
   static const profileComplete = 'profileComplete';
   static const settings = 'settings';
   static const blockedUsers = 'blockedUsers';
+  static const businessCreate = 'businessCreate';
+  static const businessProfile = 'businessProfile';
   static const notifications = 'notifications';
   static const trustScoreHistory = 'trustScoreHistory';
   static const feed = 'feed';
@@ -42,6 +44,8 @@ class RoutePaths {
   static const profileComplete = '/profile/complete';
   static const settings = '/settings';
   static const blockedUsers = '/settings/blocked-users';
+  static const businessCreate = '/business/create';
+  static const businessProfile = '/business/:businessId';
   static const notifications = '/notifications';
   static const trustScoreHistory = '/profile/trust-score';
   static const feed = '/feed';

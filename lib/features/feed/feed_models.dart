@@ -174,10 +174,10 @@ class LinkableEvent {
     String? status,
   }) {
     return LinkableEvent(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      sportType: json['sport_type'] as String,
-      city: json['city'] as String,
+      id: json['id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
+      sportType: json['sport_type']?.toString() ?? '',
+      city: json['city']?.toString() ?? '',
       district: json['district'] as String?,
       eventDate: DateTime.parse(json['event_date'].toString()),
       role: role,

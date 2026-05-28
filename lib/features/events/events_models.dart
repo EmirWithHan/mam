@@ -6,7 +6,7 @@ class Event {
     required this.hostId,
     required this.title,
     this.description,
-    required this.sportType,
+    this.sportType,
     required this.city,
     this.district,
     this.locationText,
@@ -28,7 +28,7 @@ class Event {
   final String hostId;
   final String title;
   final String? description;
-  final String sportType;
+  final String? sportType;
   final String city;
   final String? district;
   final String? locationText;
@@ -49,7 +49,18 @@ class Event {
 
   bool get isPast => eventDate.isBefore(DateTime.now());
 
-  bool get isFull => approvedCount >= capacityTotal;
+  int get safeCapacityTotal => capacityTotal < 0 ? 0 : capacityTotal;
+
+  int get safeApprovedCount => approvedCount < 0 ? 0 : approvedCount;
+
+  String get titleLabel {
+    final text = title.trim();
+    if (text.isEmpty) return 'Etkinlik';
+    return text;
+  }
+
+  bool get isFull =>
+      safeCapacityTotal > 0 && safeApprovedCount >= safeCapacityTotal;
 
   bool get hasDescription => description?.trim().isNotEmpty == true;
 
@@ -76,9 +87,14 @@ class Event {
   }
 
   String get locationLabel {
-    final districtValue = district;
-    if (districtValue == null || districtValue.trim().isEmpty) return city;
-    return '$city / $districtValue';
+    final cityValue = city.trim();
+    final districtValue = district?.trim();
+    if (cityValue.isEmpty && (districtValue == null || districtValue.isEmpty)) {
+      return 'Konum belirtilmedi';
+    }
+    if (districtValue == null || districtValue.isEmpty) return cityValue;
+    if (cityValue.isEmpty) return districtValue;
+    return '$cityValue / $districtValue';
   }
 
   String get capacityLabel => formattedCapacityLabel;
@@ -89,23 +105,23 @@ class Event {
 
   factory Event.fromJson(Map<String, dynamic> json) {
     return Event(
-      id: json['id'] as String,
-      hostId: json['host_id'] as String,
-      title: json['title'] as String,
+      id: json['id']?.toString() ?? '',
+      hostId: json['host_id']?.toString() ?? '',
+      title: json['title']?.toString() ?? '',
       description: json['description'] as String?,
-      sportType: json['sport_type'] as String,
-      city: json['city'] as String,
-      district: json['district'] as String?,
-      locationText: json['location_text'] as String?,
+      sportType: json['sport_type']?.toString(),
+      city: json['city']?.toString() ?? '',
+      district: json['district']?.toString(),
+      locationText: json['location_text']?.toString(),
       locationLat: (json['location_lat'] as num?)?.toDouble(),
       locationLng: (json['location_lng'] as num?)?.toDouble(),
-      eventDate: DateTime.parse(json['event_date'].toString()),
-      capacityTotal: (json['capacity_total'] as num).toInt(),
+      eventDate: _dateTimeFromJson(json['event_date']) ?? DateTime.now(),
+      capacityTotal: _intFromJson(json['capacity_total']),
       capacityMale: (json['capacity_male'] as num?)?.toInt(),
       capacityFemale: (json['capacity_female'] as num?)?.toInt(),
       capacityAny: (json['capacity_any'] as num?)?.toInt(),
-      approvedCount: (json['approved_count'] as num?)?.toInt() ?? 0,
-      status: json['status'] as String,
+      approvedCount: _intFromJson(json['approved_count']),
+      status: json['status']?.toString() ?? 'active',
       isSponsored: json['is_sponsored'] as bool? ?? false,
       createdAt: _dateTimeFromJson(json['created_at']),
       updatedAt: _dateTimeFromJson(json['updated_at']),
@@ -389,6 +405,11 @@ class CreateEventInput {
 DateTime? _dateTimeFromJson(Object? value) {
   if (value == null) return null;
   return DateTime.tryParse(value.toString());
+}
+
+int _intFromJson(Object? value) {
+  if (value is num) return value.toInt();
+  return int.tryParse(value?.toString() ?? '') ?? 0;
 }
 
 String? _nullableTrim(String? value) {

@@ -236,7 +236,15 @@ class FeedService {
           throw error;
         });
 
-    return Post.fromJson(created);
+    final post = Post.fromJson(created);
+    if (post.eventId != null) {
+      await _applyMyTrustScoreEvent(
+        eventType: 'event_linked_post',
+        refId: post.id,
+      );
+    }
+
+    return post;
   }
 
   Future<void> _ensureCommentsVisible(String postId) async {
@@ -253,6 +261,20 @@ class FeedService {
     if (commentsHidden && !isOwner) {
       throw StateError('Yorumlar gizlendi.');
     }
+  }
+}
+
+Future<void> _applyMyTrustScoreEvent({
+  required String eventType,
+  required String refId,
+}) async {
+  try {
+    await SupabaseService.client.rpc(
+      'apply_my_trust_score_event',
+      params: {'p_event_type': eventType, 'p_ref_id': refId},
+    );
+  } catch (error) {
+    debugPrint('[Feed] trust score event failed: ${error.runtimeType}');
   }
 }
 

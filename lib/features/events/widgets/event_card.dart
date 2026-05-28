@@ -19,6 +19,11 @@ class EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final spotsLeft = event.safeCapacityTotal - event.safeApprovedCount;
+    final spotsLabel = event.isPast || spotsLeft <= 0
+        ? null
+        : '$spotsLeft yer kaldi';
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -36,115 +41,84 @@ class EventCard extends StatelessWidget {
         borderRadius: AppRadius.lgBorder,
         child: InkWell(
           borderRadius: AppRadius.lgBorder,
-          onTap: () => context.pushNamed(
-            RouteNames.eventDetail,
-            pathParameters: {'eventId': event.id},
-          ),
+          onTap: event.id.trim().isEmpty
+              ? null
+              : () => context.pushNamed(
+                    RouteNames.eventDetail,
+                    pathParameters: {'eventId': event.id},
+                  ),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                EventCoverImage(sportType: event.sportType, height: 118),
+                EventCoverImage(
+                  sportType: event.sportType,
+                  height: 138,
+                  showLabel: false,
+                  topLeftLabel: spotsLabel,
+                ),
                 const SizedBox(height: AppSpacing.md),
-                IntrinsicHeight(
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        event.titleLabel,
+                        style: AppTextStyles.title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    _SportChip(sportType: event.sportType),
+                  ],
+                ),
+                if (event.isSponsored || event.isPast) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.xs,
                     children: [
-                      Container(
-                        width: 5,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: AppRadius.pillBorder,
+                      if (event.isSponsored)
+                        _Pill(
+                          label: 'Sponsorlu',
+                          color: AppColors.primarySoft,
+                          textColor: AppColors.primary,
                         ),
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    event.title,
-                                    style: AppTextStyles.title,
-                                  ),
-                                ),
-                                if (event.isSponsored)
-                                  _Pill(
-                                    label: 'Sponsorlu',
-                                    color: AppColors.primarySoft,
-                                    textColor: AppColors.primary,
-                                  ),
-                                if (event.isPast) ...[
-                                  const SizedBox(width: AppSpacing.xs),
-                                  _Pill(
-                                    label: 'Geçmiş',
-                                    color: AppColors.border,
-                                    textColor: AppColors.textMuted,
-                                  ),
-                                ],
-                              ],
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            Wrap(
-                              spacing: AppSpacing.sm,
-                              runSpacing: AppSpacing.sm,
-                              children: [
-                                _InfoChip(
-                                  sportType: event.sportType,
-                                  label: sportLabelFor(event.sportType),
-                                  color: AppColors.primarySoft,
-                                ),
-                                _InfoChip(
-                                  icon: Icons.group_outlined,
-                                  label: event.capacityLabel,
-                                  color: AppColors.tertiarySoft,
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            PublicProfilePreviewTile(
-                              userId: event.hostId,
-                              subtitle: 'Ev sahibi',
-                              compact: true,
-                              enableNavigation: false,
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
-                            _MetaLine(
-                              icon: Icons.place_outlined,
-                              label: event.locationLabel,
-                            ),
-                            const SizedBox(height: AppSpacing.xs),
-                            _MetaLine(
-                              icon: Icons.schedule,
-                              label: _formatDateTime(event.eventDate),
-                            ),
-                            const SizedBox(height: AppSpacing.md),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.end,
-                              children: [
-                                Text(
-                                  'Detayları gör',
-                                  style: AppTextStyles.label.copyWith(
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.xs),
-                                const Icon(
-                                  Icons.arrow_forward,
-                                  color: AppColors.primary,
-                                  size: 16,
-                                ),
-                              ],
-                            ),
-                          ],
+                      if (event.isPast)
+                        _Pill(
+                          label: 'Gecmis',
+                          color: AppColors.border,
+                          textColor: AppColors.textMuted,
                         ),
-                      ),
                     ],
                   ),
+                ],
+                const SizedBox(height: AppSpacing.md),
+                _MetaLine(
+                  icon: Icons.schedule,
+                  label: _formatDateTime(event.eventDate),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                _MetaLine(
+                  icon: Icons.place_outlined,
+                  label: event.locationLabel,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    Expanded(
+                      child: PublicProfilePreviewTile(
+                        userId: event.hostId,
+                        subtitle: _participantSummary,
+                        compact: true,
+                        enableNavigation: false,
+                      ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    _OpenEventButton(eventId: event.id),
+                  ],
                 ),
               ],
             ),
@@ -152,6 +126,12 @@ class EventCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String get _participantSummary {
+    if (event.safeApprovedCount <= 0) return 'Ilk katilimci ol';
+    return '${event.safeApprovedCount} katilimci - '
+        '${event.safeCapacityTotal} kapasite';
   }
 
   String _formatDateTime(DateTime value) {
@@ -164,46 +144,40 @@ class EventCard extends StatelessWidget {
   }
 }
 
-class _InfoChip extends StatelessWidget {
-  const _InfoChip({
-    required this.label,
-    required this.color,
-    this.icon,
-    this.sportType,
-  });
+class _SportChip extends StatelessWidget {
+  const _SportChip({required this.sportType});
 
-  final String label;
-  final Color color;
-  final IconData? icon;
   final String? sportType;
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: AppRadius.pillBorder,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xs,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 132),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: AppColors.primarySoft,
+          borderRadius: AppRadius.pillBorder,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (sportType != null)
-              SportIcon(sportType: sportType, size: 16, filled: false)
-            else
-              Icon(icon, size: 16, color: AppColors.primary),
-            const SizedBox(width: AppSpacing.xs),
-            Text(
-              label,
-              style: AppTextStyles.caption,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SportIcon(sportType: sportType, size: 15, filled: false),
+              const SizedBox(width: AppSpacing.xs),
+              Flexible(
+                child: Text(
+                  sportLabelFor(sportType),
+                  style: AppTextStyles.label.copyWith(color: AppColors.primary),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -222,8 +196,52 @@ class _MetaLine extends StatelessWidget {
       children: [
         Icon(icon, size: 17, color: AppColors.primary),
         const SizedBox(width: AppSpacing.xs),
-        Expanded(child: Text(label, style: AppTextStyles.caption)),
+        Expanded(
+          child: Text(
+            label,
+            style: AppTextStyles.caption,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
+    );
+  }
+}
+
+class _OpenEventButton extends StatelessWidget {
+  const _OpenEventButton({required this.eventId});
+
+  final String eventId;
+
+  @override
+  Widget build(BuildContext context) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(minHeight: 44, maxWidth: 96),
+      child: FilledButton(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.surface,
+          minimumSize: const Size(0, 44),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.pillBorder),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.md,
+            vertical: AppSpacing.sm,
+          ),
+        ),
+        onPressed: eventId.trim().isEmpty
+            ? null
+            : () => context.pushNamed(
+                  RouteNames.eventDetail,
+                  pathParameters: {'eventId': eventId},
+                ),
+        child: const Text(
+          'Katil',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
     );
   }
 }

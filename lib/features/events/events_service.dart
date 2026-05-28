@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../services/supabase_service.dart';
 import '../reports/blocks_service.dart';
 import 'events_models.dart';
@@ -140,6 +142,10 @@ class EventsService {
       'leave_approved_event',
       params: {'p_event_id': eventId},
     );
+    await _applyMyTrustScoreEvent(
+      eventType: 'approved_event_left',
+      refId: eventId,
+    );
   }
 
   Future<void> deleteMyEvent(String eventId) async {
@@ -152,5 +158,19 @@ class EventsService {
       'delete_my_event',
       params: {'p_event_id': eventId},
     );
+  }
+}
+
+Future<void> _applyMyTrustScoreEvent({
+  required String eventType,
+  required String refId,
+}) async {
+  try {
+    await SupabaseService.client.rpc(
+      'apply_my_trust_score_event',
+      params: {'p_event_type': eventType, 'p_ref_id': refId},
+    );
+  } catch (error) {
+    debugPrint('[Events] trust score event failed: ${error.runtimeType}');
   }
 }

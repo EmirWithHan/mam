@@ -13,16 +13,19 @@ class EventCoverImage extends StatelessWidget {
     this.height = 128,
     this.borderRadius = AppRadius.lg,
     this.showLabel = true,
+    this.topLeftLabel,
   });
 
   final String? sportType;
   final double height;
   final double borderRadius;
   final bool showLabel;
+  final String? topLeftLabel;
 
   @override
   Widget build(BuildContext context) {
     final style = eventCoverStyleForSport(sportType);
+    final topLabel = topLeftLabel?.trim();
 
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
@@ -49,19 +52,48 @@ class EventCoverImage extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.18),
                 ),
               ),
-              Positioned(
-                left: AppSpacing.md,
-                top: AppSpacing.md,
-                child: Container(
-                  width: 46,
-                  height: 46,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.88),
-                    shape: BoxShape.circle,
+              if (topLabel?.isNotEmpty != true)
+                Positioned(
+                  left: AppSpacing.md,
+                  top: AppSpacing.md,
+                  child: Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.88),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(style.icon, color: style.startColor, size: 25),
                   ),
-                  child: Icon(style.icon, color: style.startColor, size: 25),
                 ),
-              ),
+              if (topLabel?.isNotEmpty == true)
+                Positioned(
+                  left: AppSpacing.md,
+                  top: AppSpacing.md,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.92),
+                      borderRadius: AppRadius.pillBorder,
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.34),
+                      ),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.sm,
+                        vertical: AppSpacing.xs,
+                      ),
+                      child: Text(
+                        topLabel!,
+                        style: AppTextStyles.label.copyWith(
+                          color: AppColors.primary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ),
+                ),
               if (showLabel)
                 Positioned(
                   left: AppSpacing.md,

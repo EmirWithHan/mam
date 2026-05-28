@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
@@ -7,9 +8,29 @@ import '../../../core/theme/app_text_styles.dart';
 import '../profile_badges.dart';
 
 class ProfileBadgesSection extends StatelessWidget {
-  const ProfileBadgesSection({super.key, required this.badges});
+  const ProfileBadgesSection({
+    super.key,
+    required this.badges,
+    this.isLoading = false,
+    this.errorMessage,
+  });
+
+  factory ProfileBadgesSection.fromAsync(AsyncValue<List<ProfileBadge>> async) {
+    return async.when(
+      data: (badges) => ProfileBadgesSection(badges: badges),
+      loading: () => const ProfileBadgesSection(badges: [], isLoading: true),
+      error: (_, _) => ProfileBadgesSection(
+        badges: ProfileBadgeCatalog.withUpcoming(
+          ProfileBadgeCatalog.fallbackCatalog(),
+        ),
+        errorMessage: 'Rozetler yüklenemedi.',
+      ),
+    );
+  }
 
   final List<ProfileBadge> badges;
+  final bool isLoading;
+  final String? errorMessage;
 
   @override
   Widget build(BuildContext context) {
@@ -17,12 +38,19 @@ class ProfileBadgesSection extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.background,
+        color: AppColors.surface,
         border: Border.all(color: AppColors.border),
         borderRadius: AppRadius.lgBorder,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.textPrimary.withValues(alpha: 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -36,7 +64,19 @@ class ProfileBadgesSection extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
-            if (previewBadges.isEmpty)
+            if (isLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                child: LinearProgressIndicator(minHeight: 3),
+              )
+            else if (errorMessage != null)
+              Text(
+                errorMessage!,
+                style: AppTextStyles.bodySmall.copyWith(
+                  color: AppColors.textMuted,
+                ),
+              )
+            else if (previewBadges.isEmpty)
               Text(
                 'Henüz rozet yok. Etkinliklere katılarak rozet kazanabilirsin.',
                 style: AppTextStyles.bodySmall.copyWith(
