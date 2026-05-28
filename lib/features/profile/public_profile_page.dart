@@ -7,18 +7,22 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/constants/sport_types.dart';
 import '../../core/utils/date_formatter.dart';
 import '../../core/utils/error_messages.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/empty_state.dart';
+import '../../core/widgets/event_cover_image.dart';
 import '../../core/widgets/error_view.dart';
 import '../../core/widgets/sport_icon.dart';
 import '../auth/auth_provider.dart';
 import '../follow/follow_provider.dart';
+import 'profile_badges.dart';
 import 'profile_models.dart';
 import 'profile_provider.dart';
+import 'widgets/profile_badges_section.dart';
 import 'widgets/profile_gallery_viewer_page.dart';
 import 'widgets/safe_avatar.dart';
 
@@ -101,6 +105,9 @@ class _PublicProfilePageState extends ConsumerState<PublicProfilePage> {
 
             final isMe =
                 currentUserId != null && currentUserId == detail.userId;
+            final publicEventsAsync = ref.watch(
+              publicProfileEventHistoryProvider(widget.userId),
+            );
 
             return RefreshIndicator(
               onRefresh: () async {
@@ -116,6 +123,7 @@ class _PublicProfilePageState extends ConsumerState<PublicProfilePage> {
                   _PublicProfileHeader(
                     detail: detail,
                     isMe: isMe,
+                    events: publicEventsAsync.valueOrNull ?? const [],
                     onFollowChanged: _refreshPublicProfile,
                   ),
                   const SizedBox(height: AppSpacing.lg),
@@ -152,11 +160,13 @@ class _PublicProfileHeader extends StatelessWidget {
   const _PublicProfileHeader({
     required this.detail,
     required this.isMe,
+    required this.events,
     required this.onFollowChanged,
   });
 
   final PublicProfileDetail detail;
   final bool isMe;
+  final List<PublicProfileEventHistoryItem> events;
   final VoidCallback onFollowChanged;
 
   @override
@@ -230,6 +240,13 @@ class _PublicProfileHeader extends StatelessWidget {
             ],
             const SizedBox(height: AppSpacing.lg),
             _ProfileStats(detail: detail),
+            const SizedBox(height: AppSpacing.lg),
+            ProfileBadgesSection(
+              badges: ProfileBadgeCatalog.forProfile(
+                publicProfile: detail,
+                publicEvents: events,
+              ),
+            ),
             const SizedBox(height: AppSpacing.lg),
             _PublicProfileFollowAction(
               targetUserId: detail.userId,
@@ -813,47 +830,58 @@ class _PastEventTile extends StatelessWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: const BoxDecoration(
-                    color: AppColors.primarySoft,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: SportIcon(sportType: item.sportType, size: 22),
-                  ),
+                EventCoverImage(
+                  sportType: item.sportType,
+                  height: 82,
+                  borderRadius: AppRadius.md,
                 ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        item.title,
-                        style: AppTextStyles.bodyStrong,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: const BoxDecoration(
+                        color: AppColors.primarySoft,
+                        shape: BoxShape.circle,
                       ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        '${item.sportType} • ${item.locationLabel}',
-                        style: AppTextStyles.caption,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      child: Center(
+                        child: SportIcon(sportType: item.sportType, size: 22),
                       ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        DateFormatter.shortDate(item.eventDate),
-                        style: AppTextStyles.caption,
+                    ),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.title,
+                            style: AppTextStyles.bodyStrong,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            '${sportLabelFor(item.sportType)} • ${item.locationLabel}',
+                            style: AppTextStyles.caption,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            DateFormatter.shortDate(item.eventDate),
+                            style: AppTextStyles.caption,
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    _RoleBadge(role: item.role),
+                  ],
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                _RoleBadge(role: item.role),
               ],
             ),
           ),

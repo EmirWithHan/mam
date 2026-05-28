@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/constants/sport_types.dart';
 import '../../../core/router/route_names.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/widgets/event_cover_image.dart';
 import '../../../core/widgets/sport_icon.dart';
 import '../../profile/widgets/public_profile_preview_tile.dart';
 import '../events_models.dart';
@@ -40,104 +42,111 @@ class EventCard extends StatelessWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Container(
-                    width: 5,
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: AppRadius.pillBorder,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                EventCoverImage(sportType: event.sportType, height: 118),
+                const SizedBox(height: AppSpacing.md),
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Container(
+                        width: 5,
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: AppRadius.pillBorder,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Text(
-                                event.title,
-                                style: AppTextStyles.title,
-                              ),
+                            Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    event.title,
+                                    style: AppTextStyles.title,
+                                  ),
+                                ),
+                                if (event.isSponsored)
+                                  _Pill(
+                                    label: 'Sponsorlu',
+                                    color: AppColors.primarySoft,
+                                    textColor: AppColors.primary,
+                                  ),
+                                if (event.isPast) ...[
+                                  const SizedBox(width: AppSpacing.xs),
+                                  _Pill(
+                                    label: 'Geçmiş',
+                                    color: AppColors.border,
+                                    textColor: AppColors.textMuted,
+                                  ),
+                                ],
+                              ],
                             ),
-                            if (event.isSponsored)
-                              _Pill(
-                                label: 'Sponsorlu',
-                                color: AppColors.primarySoft,
-                                textColor: AppColors.primary,
-                              ),
-                            if (event.isPast) ...[
-                              const SizedBox(width: AppSpacing.xs),
-                              _Pill(
-                                label: 'Geçmiş',
-                                color: AppColors.border,
-                                textColor: AppColors.textMuted,
-                              ),
-                            ],
+                            const SizedBox(height: AppSpacing.md),
+                            Wrap(
+                              spacing: AppSpacing.sm,
+                              runSpacing: AppSpacing.sm,
+                              children: [
+                                _InfoChip(
+                                  sportType: event.sportType,
+                                  label: sportLabelFor(event.sportType),
+                                  color: AppColors.primarySoft,
+                                ),
+                                _InfoChip(
+                                  icon: Icons.group_outlined,
+                                  label: event.capacityLabel,
+                                  color: AppColors.tertiarySoft,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            PublicProfilePreviewTile(
+                              userId: event.hostId,
+                              subtitle: 'Ev sahibi',
+                              compact: true,
+                              enableNavigation: false,
+                            ),
+                            const SizedBox(height: AppSpacing.sm),
+                            _MetaLine(
+                              icon: Icons.place_outlined,
+                              label: event.locationLabel,
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            _MetaLine(
+                              icon: Icons.schedule,
+                              label: _formatDateTime(event.eventDate),
+                            ),
+                            const SizedBox(height: AppSpacing.md),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.end,
+                              children: [
+                                Text(
+                                  'Detayları gör',
+                                  style: AppTextStyles.label.copyWith(
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                                const SizedBox(width: AppSpacing.xs),
+                                const Icon(
+                                  Icons.arrow_forward,
+                                  color: AppColors.primary,
+                                  size: 16,
+                                ),
+                              ],
+                            ),
                           ],
                         ),
-                        const SizedBox(height: AppSpacing.md),
-                        Wrap(
-                          spacing: AppSpacing.sm,
-                          runSpacing: AppSpacing.sm,
-                          children: [
-                            _InfoChip(
-                              sportType: event.sportType,
-                              label: event.sportType,
-                              color: AppColors.primarySoft,
-                            ),
-                            _InfoChip(
-                              icon: Icons.group_outlined,
-                              label: event.capacityLabel,
-                              color: AppColors.tertiarySoft,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        PublicProfilePreviewTile(
-                          userId: event.hostId,
-                          subtitle: 'Ev sahibi',
-                          compact: true,
-                          enableNavigation: false,
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        _MetaLine(
-                          icon: Icons.place_outlined,
-                          label: event.locationLabel,
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        _MetaLine(
-                          icon: Icons.schedule,
-                          label: _formatDateTime(event.eventDate),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            Text(
-                              'Detayları gör',
-                              style: AppTextStyles.label.copyWith(
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            const SizedBox(width: AppSpacing.xs),
-                            const Icon(
-                              Icons.arrow_forward,
-                              color: AppColors.primary,
-                              size: 16,
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
@@ -188,7 +197,12 @@ class _InfoChip extends StatelessWidget {
             else
               Icon(icon, size: 16, color: AppColors.primary),
             const SizedBox(width: AppSpacing.xs),
-            Text(label, style: AppTextStyles.caption),
+            Text(
+              label,
+              style: AppTextStyles.caption,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ),
       ),
@@ -240,6 +254,8 @@ class _Pill extends StatelessWidget {
         child: Text(
           label,
           style: AppTextStyles.label.copyWith(color: textColor),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
         ),
       ),
     );

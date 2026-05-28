@@ -6,6 +6,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/constants/sport_types.dart';
+import '../../../core/widgets/event_cover_image.dart';
 import '../../../core/widgets/empty_state.dart';
 import '../../../core/widgets/sport_icon.dart';
 import '../profile_activity_models.dart';
@@ -119,44 +121,58 @@ class _ProfileEventTile extends StatelessWidget {
           ),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                SportIcon(sportType: event.sportType, size: 20),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(event.title, style: AppTextStyles.title),
-                      const SizedBox(height: AppSpacing.sm),
-                      Wrap(
-                        spacing: AppSpacing.sm,
-                        runSpacing: AppSpacing.sm,
+                EventCoverImage(
+                  sportType: event.sportType,
+                  height: 86,
+                  borderRadius: AppRadius.md,
+                ),
+                const SizedBox(height: AppSpacing.md),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SportIcon(sportType: event.sportType, size: 20),
+                    const SizedBox(width: AppSpacing.md),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _InfoChip(label: event.sportType),
-                          _InfoChip(label: event.roleLabel),
-                          if (_statusLabel(event.attendanceStatus) != null)
-                            _InfoChip(
-                              label: _statusLabel(event.attendanceStatus)!,
-                              highlighted: true,
-                            ),
+                          Text(event.title, style: AppTextStyles.title),
+                          const SizedBox(height: AppSpacing.sm),
+                          Wrap(
+                            spacing: AppSpacing.sm,
+                            runSpacing: AppSpacing.sm,
+                            children: [
+                              _InfoChip(label: sportLabelFor(event.sportType)),
+                              _InfoChip(label: event.roleLabel),
+                              if (_statusLabel(event.attendanceStatus) != null)
+                                _InfoChip(
+                                  label: _statusLabel(event.attendanceStatus)!,
+                                  highlighted: true,
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.md),
+                          _MetaLine(
+                            icon: Icons.place_outlined,
+                            label: event.locationLabel,
+                          ),
+                          const SizedBox(height: AppSpacing.xs),
+                          _MetaLine(
+                            icon: Icons.schedule,
+                            label: event.displayDate,
+                          ),
                         ],
                       ),
-                      const SizedBox(height: AppSpacing.md),
-                      _MetaLine(
-                        icon: Icons.place_outlined,
-                        label: event.locationLabel,
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      _MetaLine(icon: Icons.schedule, label: event.displayDate),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                const Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.textMuted,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppColors.textMuted,
+                    ),
+                  ],
                 ),
               ],
             ),

@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/constants/sport_types.dart';
 import '../../auth/auth_provider.dart';
 import '../../follow/widgets/follow_button.dart';
 import '../../profile/widgets/public_profile_preview_tile.dart';
@@ -106,34 +107,21 @@ class PostCard extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.md),
                 if (post.eventId != null) ...[
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: AppColors.secondarySoft,
-                      borderRadius: AppRadius.pillBorder,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.sm,
-                        vertical: AppSpacing.xs,
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.xs,
+                    children: [
+                      const _FeedPostChip(
+                        label: 'Bağlı etkinlik',
+                        icon: Icons.event_outlined,
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.event_outlined,
-                            color: AppColors.primary,
-                            size: 15,
-                          ),
-                          const SizedBox(width: AppSpacing.xs),
-                          Text(
-                            'Bağlı etkinlik',
-                            style: AppTextStyles.label.copyWith(
-                              color: AppColors.primary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                      if (post.eventSportType?.trim().isNotEmpty == true)
+                        _FeedPostChip(
+                          label: sportLabelFor(post.eventSportType),
+                          icon: sportIconFor(post.eventSportType),
+                          highlighted: true,
+                        ),
+                    ],
                   ),
                   const SizedBox(height: AppSpacing.sm),
                 ],
@@ -211,6 +199,49 @@ class PostCard extends ConsumerWidget {
     final hour = value.hour.toString().padLeft(2, '0');
     final minute = value.minute.toString().padLeft(2, '0');
     return '$year-$month-$day $hour:$minute';
+  }
+}
+
+class _FeedPostChip extends StatelessWidget {
+  const _FeedPostChip({
+    required this.label,
+    required this.icon,
+    this.highlighted = false,
+  });
+
+  final String label;
+  final IconData icon;
+  final bool highlighted;
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = highlighted ? AppColors.primary : AppColors.textSecondary;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: highlighted ? AppColors.primarySoft : AppColors.secondarySoft,
+        borderRadius: AppRadius.pillBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: textColor, size: 15),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              label,
+              style: AppTextStyles.label.copyWith(color: textColor),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

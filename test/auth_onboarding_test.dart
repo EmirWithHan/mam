@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:match_a_man/core/constants/sport_types.dart';
 import 'package:match_a_man/core/router/route_names.dart';
 import 'package:match_a_man/core/utils/error_messages.dart';
 import 'package:match_a_man/core/utils/user_handle.dart';
@@ -12,6 +13,7 @@ import 'package:match_a_man/features/feed/feed_models.dart';
 import 'package:match_a_man/features/feed/feed_provider.dart';
 import 'package:match_a_man/features/feed/feed_service.dart';
 import 'package:match_a_man/features/notifications/notifications_models.dart';
+import 'package:match_a_man/features/profile/profile_badges.dart';
 import 'package:match_a_man/features/profile/profile_models.dart';
 import 'package:match_a_man/features/profile/profile_provider.dart';
 import 'package:match_a_man/features/profile/widgets/safe_avatar.dart';
@@ -398,6 +400,23 @@ void main() {
   });
 
   group('feed polish helpers', () {
+    test('sport label mapper returns Turkish labels', () {
+      expect(sportLabelFor('football'), 'Futbol');
+      expect(sportLabelFor('basketbol'), 'Basketbol');
+      expect(sportLabelFor('voleybol'), 'Voleybol');
+      expect(sportLabelFor('running'), 'Koşu');
+      expect(sportLabelFor('bisiklet'), 'Bisiklet');
+      expect(sportLabelFor('tennis'), 'Tenis');
+      expect(sportLabelFor('hiking'), 'Outdoor');
+    });
+
+    test('event cover mapper returns fallback for unknown sport', () {
+      final cover = eventCoverStyleForSport('pickleball');
+
+      expect(cover.label, 'Spor');
+      expect(cover.icon, Icons.sports_handball);
+    });
+
     test('feed state tracks per-post like loading', () {
       const state = FeedState(
         status: FeedStatus.success,
@@ -432,6 +451,34 @@ void main() {
       expect(item.likeCount, 2);
       expect(item.commentCount, 1);
       expect(item.isLikedByMe, isTrue);
+    });
+
+    test('feed post model handles null event sport type', () {
+      final item = PostWithStats.fromFeedJson({
+        'id': 'post-1',
+        'user_id': 'user-1',
+        'event_id': 'event-1',
+        'event_sport_type': null,
+        'image_url': 'https://example.com/match.jpg',
+        'created_at': '2026-05-27T10:00:00Z',
+      });
+
+      expect(item.post.eventId, 'event-1');
+      expect(item.post.eventSportType, isNull);
+    });
+
+    test('feed post model maps event sport type when present', () {
+      final item = PostWithStats.fromFeedJson({
+        'id': 'post-1',
+        'user_id': 'user-1',
+        'event_id': 'event-1',
+        'event_sport_type': 'Futbol',
+        'image_url': 'https://example.com/match.jpg',
+        'created_at': '2026-05-27T10:00:00Z',
+      });
+
+      expect(item.post.eventSportType, 'Futbol');
+      expect(sportLabelFor(item.post.eventSportType), 'Futbol');
     });
 
     test('empty successful feed state is not an error', () {
@@ -510,6 +557,42 @@ void main() {
       );
 
       expect(find.text('E'), findsOneWidget);
+    });
+  });
+
+  group('profile badge helpers', () {
+    test('badge display helper handles empty badges', () {
+      expect(ProfileBadgeCatalog.preview(const []), isEmpty);
+    });
+
+    test('badge display helper limits preview count to earned badges', () {
+      final badges = List.generate(
+        7,
+        (index) => ProfileBadge(
+          id: 'badge-$index',
+          label: 'Badge $index',
+          description: 'Description',
+          icon: Icons.star_outline,
+          status: ProfileBadgeStatus.earned,
+        ),
+      );
+
+      expect(
+        ProfileBadgeCatalog.preview(badges),
+        hasLength(ProfileBadgeCatalog.previewLimit),
+      );
+    });
+
+    test('locked badges are not shown in preview as earned', () {
+      final badges = ProfileBadgeCatalog.forProfile(
+        profile: const Profile(id: 'profile-1', userId: 'user-1'),
+      );
+
+      expect(ProfileBadgeCatalog.preview(badges), isEmpty);
+      expect(
+        badges.any((badge) => badge.status == ProfileBadgeStatus.locked),
+        isTrue,
+      );
     });
   });
 }

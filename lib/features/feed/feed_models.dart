@@ -11,6 +11,7 @@ class Post {
     this.caption,
     this.commentsHidden = false,
     this.isArchived = false,
+    this.eventSportType,
     this.authorUsername,
     this.authorTag,
     this.authorAvatarUrl,
@@ -25,6 +26,7 @@ class Post {
   final String? caption;
   final bool commentsHidden;
   final bool isArchived;
+  final String? eventSportType;
   final String? authorUsername;
   final String? authorTag;
   final String? authorAvatarUrl;
@@ -40,6 +42,7 @@ class Post {
       caption: json['caption'] as String?,
       commentsHidden: json['comments_hidden'] as bool? ?? false,
       isArchived: json['is_archived'] as bool? ?? false,
+      eventSportType: json['event_sport_type'] as String?,
       authorUsername: json['author_username'] as String?,
       authorTag: json['author_tag'] as String?,
       authorAvatarUrl: json['author_avatar_url'] as String?,
@@ -71,6 +74,7 @@ class Post {
     String? caption,
     bool? commentsHidden,
     bool? isArchived,
+    String? eventSportType,
     String? authorUsername,
     String? authorTag,
     String? authorAvatarUrl,
@@ -85,6 +89,7 @@ class Post {
       caption: caption ?? this.caption,
       commentsHidden: commentsHidden ?? this.commentsHidden,
       isArchived: isArchived ?? this.isArchived,
+      eventSportType: eventSportType ?? this.eventSportType,
       authorUsername: authorUsername ?? this.authorUsername,
       authorTag: authorTag ?? this.authorTag,
       authorAvatarUrl: authorAvatarUrl ?? this.authorAvatarUrl,

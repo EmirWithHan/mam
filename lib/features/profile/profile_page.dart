@@ -11,9 +11,12 @@ import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/error_view.dart';
+import 'profile_activity_models.dart';
 import 'profile_activity_provider.dart';
+import 'profile_badges.dart';
 import 'profile_models.dart';
 import 'profile_provider.dart';
+import 'widgets/profile_badges_section.dart';
 import 'widgets/profile_event_list.dart';
 import 'widgets/profile_gallery_grid.dart';
 import 'widgets/safe_avatar.dart';
@@ -109,6 +112,7 @@ class _ProfileBody extends ConsumerWidget {
           _ProfileHeader(
             profile: profile,
             publicDetail: publicDetailAsync.valueOrNull,
+            events: activityState.events,
           ),
           const SizedBox(height: AppSpacing.lg),
           _ProfileActivityTabs(
@@ -291,10 +295,15 @@ class ProfileIncompleteGuidanceUnused extends StatelessWidget {
 }
 
 class _ProfileHeader extends StatelessWidget {
-  const _ProfileHeader({required this.profile, required this.publicDetail});
+  const _ProfileHeader({
+    required this.profile,
+    required this.publicDetail,
+    required this.events,
+  });
 
   final Profile profile;
   final PublicProfileDetail? publicDetail;
+  final List<ProfileActivityEvent> events;
 
   @override
   Widget build(BuildContext context) {
@@ -352,6 +361,14 @@ class _ProfileHeader extends StatelessWidget {
               userId: profile.userId,
               followersCount: publicDetail?.followersCount ?? 0,
               followingCount: publicDetail?.followingCount ?? 0,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            ProfileBadgesSection(
+              badges: ProfileBadgeCatalog.forProfile(
+                profile: profile,
+                publicProfile: publicDetail,
+                events: events,
+              ),
             ),
           ],
         ),
