@@ -57,6 +57,16 @@ class BusinessProfilePage extends ConsumerWidget {
             if (!account.isPubliclyVisible && !isOwner) {
               return const ErrorView(message: 'Isletme profili yayinda degil.');
             }
+            if (!isOwner) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!context.mounted) return;
+                context.goNamed(
+                  RouteNames.publicProfile,
+                  pathParameters: {'userId': account.ownerUserId},
+                );
+              });
+              return const AppLoader();
+            }
             return _BusinessProfileBody(account: account, isOwner: isOwner);
           },
         ),

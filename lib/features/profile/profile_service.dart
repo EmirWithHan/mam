@@ -133,6 +133,25 @@ class ProfileService {
     return Profile.fromJson(data);
   }
 
+  Future<Profile> updateMyAccountType(String accountType) async {
+    final userId = _currentUserId();
+    if (accountType != ProfileAccountType.user &&
+        accountType != ProfileAccountType.business) {
+      throw const ProfileSaveException('Hesap tipi güncellenemedi.');
+    }
+
+    final data = await SupabaseService.client.rpc(
+      'switch_profile_account_type',
+      params: {'p_account_type': accountType},
+    );
+    final row = _firstRow(data);
+    if (row == null) {
+      return await getMyProfile() ??
+          Profile(id: userId, userId: userId, accountType: accountType);
+    }
+    return Profile.fromJson(row);
+  }
+
   Future<void> updateGalleryPostControls({
     required String postId,
     bool? commentsHidden,

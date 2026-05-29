@@ -41,6 +41,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final profileState = ref.watch(profileControllerProvider);
     final authState = ref.watch(authControllerProvider);
     final businessAccount = ref.watch(myBusinessAccountProvider).account;
+    final isBusinessMode = profile?.isBusinessAccount == true;
 
     return Scaffold(
       appBar: AppBar(
@@ -67,7 +68,10 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               style: AppTextStyles.body,
             ),
             const SizedBox(height: AppSpacing.lg),
-            _SettingsUserCard(profile: profile),
+            _SettingsUserCard(
+              profile: profile,
+              businessAccount: businessAccount,
+            ),
             const SizedBox(height: AppSpacing.md),
             _PhoneVerificationTile(profile: profile),
             const SizedBox(height: AppSpacing.lg),
@@ -99,10 +103,30 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
             const SizedBox(height: AppSpacing.lg),
             SettingsMenuTile(
-              icon: Icons.person_outline,
-              title: 'Profili Düzenle',
-              subtitle: 'Oyuncu kartı bilgilerini güncelle',
-              onTap: () => context.pushNamed(RouteNames.profileComplete),
+              icon: isBusinessMode
+                  ? Icons.storefront_outlined
+                  : Icons.person_outline,
+              title: isBusinessMode
+                  ? 'İşletme hesabını düzenle'
+                  : 'Kullanıcı hesabını düzenle',
+              subtitle: isBusinessMode
+                  ? 'İşletme bilgilerini güncelle'
+                  : 'Oyuncu kartı bilgilerini güncelle',
+              onTap: () {
+                if (!isBusinessMode) {
+                  context.pushNamed(RouteNames.profileComplete);
+                  return;
+                }
+                if (businessAccount == null) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('İşletme hesabı bilgileri eksik.'),
+                    ),
+                  );
+                  return;
+                }
+                context.pushNamed(RouteNames.businessCreate);
+              },
             ),
             const SizedBox(height: AppSpacing.md),
             SettingsMenuTile(
@@ -114,19 +138,49 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const SizedBox(height: AppSpacing.md),
             SettingsMenuTile(
               icon: Icons.storefront_outlined,
-              title: BusinessSettingsCopy.actionTitle(businessAccount),
-              subtitle: BusinessSettingsCopy.actionSubtitle(businessAccount),
+              title: isBusinessMode
+                  ? 'Kullanıcı hesabına geç'
+                  : 'İşletme hesabına geç',
+              subtitle: isBusinessMode
+                  ? 'Kişisel profilini tekrar aktif kimlik yap'
+                  : BusinessSettingsCopy.actionSubtitle(businessAccount),
               trailing: businessAccount == null
                   ? null
                   : BusinessBadge(isVerified: businessAccount.isVerified),
-              onTap: () {
-                if (businessAccount == null) {
+              onTap: () async {
+                if (!isBusinessMode && businessAccount == null) {
                   context.pushNamed(RouteNames.businessCreate);
                   return;
                 }
-                context.pushNamed(
-                  RouteNames.businessProfile,
-                  pathParameters: {'businessId': businessAccount.id},
+                final nextType = isBusinessMode
+                    ? ProfileAccountType.user
+                    : ProfileAccountType.business;
+                final ok = await ref
+                    .read(profileControllerProvider.notifier)
+                    .switchAccountType(nextType);
+                if (!context.mounted) return;
+                if (!ok) {
+                  final message = ref.read(profileControllerProvider).message;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        message ?? 'İşletme hesabı bilgileri eksik.',
+                      ),
+                    ),
+                  );
+                  return;
+                }
+                if (profile != null) {
+                  ref.invalidate(publicProfileDetailProvider(profile.userId));
+                }
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      isBusinessMode
+                          ? 'Kullanıcı hesabına geçildi.'
+                          : 'İşletme hesabına geçildi.',
+                    ),
+                  ),
                 );
               },
             ),
@@ -227,9 +281,13 @@ class _PrivacySection extends StatelessWidget {
 }
 
 class _SettingsUserCard extends StatelessWidget {
-  const _SettingsUserCard({required this.profile});
+  const _SettingsUserCard({
+    required this.profile,
+    required this.businessAccount,
+  });
 
   final Profile? profile;
+  final BusinessAccount? businessAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -249,15 +307,15 @@ class _SettingsUserCard extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Row(
           children: [
-            _Avatar(profile: profile),
+            _Avatar(profile: profile, businessAccount: businessAccount),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(_displayName(profile), style: AppTextStyles.title),
+                  Text(_displayName(), style: AppTextStyles.title),
                   const SizedBox(height: AppSpacing.xs),
-                  Text(_displayHandle(profile), style: AppTextStyles.caption),
+                  Text(_displayHandle(), style: AppTextStyles.caption),
                 ],
               ),
             ),
@@ -267,7 +325,10 @@ class _SettingsUserCard extends StatelessWidget {
     );
   }
 
-  String _displayName(Profile? profile) {
+  String _displayName() {
+    if (profile?.isBusinessAccount == true && businessAccount != null) {
+      return businessAccount!.displayName;
+    }
     final firstName = profile?.firstName?.trim();
     final name = [
       firstName,
@@ -275,7 +336,10 @@ class _SettingsUserCard extends StatelessWidget {
     return name.isNotEmpty ? name : 'MaM Kullanıcısı';
   }
 
-  String _displayHandle(Profile? profile) {
+  String _displayHandle() {
+    if (profile?.isBusinessAccount == true && businessAccount != null) {
+      return businessAccount!.displayHandle ?? businessAccount!.displayCategory;
+    }
     final username = profile?.username?.trim();
     final tag = profile?.tag?.trim();
     if (username != null &&
@@ -290,13 +354,16 @@ class _SettingsUserCard extends StatelessWidget {
 }
 
 class _Avatar extends StatelessWidget {
-  const _Avatar({required this.profile});
+  const _Avatar({required this.profile, required this.businessAccount});
 
   final Profile? profile;
+  final BusinessAccount? businessAccount;
 
   @override
   Widget build(BuildContext context) {
-    final avatarUrl = profile?.avatarUrl;
+    final avatarUrl = profile?.isBusinessAccount == true
+        ? businessAccount?.logoUrl ?? profile?.avatarUrl
+        : profile?.avatarUrl;
 
     return CircleAvatar(
       radius: 30,

@@ -149,7 +149,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
         (profile?.isBusinessAccount == true ||
             _organizerType == EventOrganizerType.business);
     final sportValues = isBusinessEvent
-        ? BusinessCategories.allowedEventActivities(
+        ? BusinessCategories.allowedActivitiesForBusinessCategory(
             category: businessAccount.category,
             customCategory: businessAccount.customCategory,
           )
@@ -464,7 +464,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                     if (_usesCustomSport) ...[
                       const SizedBox(height: AppSpacing.md),
                       AppTextField(
-                        label: 'Custom sport or activity',
+                        label: 'Etkinlik türünü yaz',
                         controller: _customSportController,
                         prefixIcon: const Icon(Icons.edit_outlined),
                         validator: (_) =>

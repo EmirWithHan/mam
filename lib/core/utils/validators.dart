@@ -112,8 +112,8 @@ class Validators {
 
   static String? customSport(String? value) {
     final trimmed = value?.trim() ?? '';
-    if (trimmed.length < 2 || trimmed.length > 30) {
-      return 'Spor türü 2-30 karakter olmalı.';
+    if (trimmed.length < 2 || trimmed.length > 40) {
+      return 'Etkinlik türü 2-40 karakter olmalı.';
     }
     return null;
   }

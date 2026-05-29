@@ -1541,6 +1541,137 @@ void main() {
       expect(BusinessBadgeLabels.forVerified(false), 'İşletme');
       expect(BusinessBadgeLabels.forVerified(true), 'Doğrulanmış İşletme');
     });
+
+    test('business mode has one canonical public identity', () {
+      const account = BusinessAccount(
+        id: 'business-1',
+        ownerUserId: 'user-1',
+        name: 'Bozkir At Ciftligi',
+        username: 'bozkiratciftligi',
+        businessTag: '1234',
+        category: 'At Ã‡iftliÄŸi',
+        city: 'Ankara',
+        district: 'Cankaya',
+      );
+
+      expect(BusinessIdentityRules.canonicalProfileUserId(account), 'user-1');
+      expect(BusinessIdentityRules.isSeparatelyFollowable(account), isFalse);
+    });
+
+    test('business public route resolves to owner profile route', () {
+      const account = BusinessAccount(
+        id: 'business-1',
+        ownerUserId: 'user-1',
+        name: 'Bozkir At Ciftligi',
+        username: 'bozkiratciftligi',
+        category: 'At Ã‡iftliÄŸi',
+        city: 'Ankara',
+        district: 'Cankaya',
+      );
+
+      expect(RouteNames.businessProfile, 'businessProfile');
+      expect(RouteNames.publicProfile, 'publicProfile');
+      expect(
+        BusinessIdentityRules.canonicalProfileUserId(account),
+        account.ownerUserId,
+      );
+    });
+
+    test('user cannot follow own business identity', () {
+      const account = BusinessAccount(
+        id: 'business-1',
+        ownerUserId: 'user-1',
+        name: 'Bozkir At Ciftligi',
+        username: 'bozkiratciftligi',
+        category: 'At Ã‡iftliÄŸi',
+        city: 'Ankara',
+        district: 'Cankaya',
+      );
+
+      expect(
+        BusinessIdentityRules.canFollowBusinessIdentity(
+          currentUserId: 'user-1',
+          account: account,
+        ),
+        isFalse,
+      );
+      expect(
+        BusinessIdentityRules.canFollowBusinessIdentity(
+          currentUserId: 'user-2',
+          account: account,
+        ),
+        isFalse,
+      );
+    });
+
+    test('converting to business twice reuses existing account', () {
+      const existing = BusinessAccount(
+        id: 'business-1',
+        ownerUserId: 'user-1',
+        name: 'Bozkir At Ciftligi',
+        username: 'bozkiratciftligi',
+        category: 'At Ã‡iftliÄŸi',
+        city: 'Ankara',
+        district: 'Cankaya',
+      );
+      const suspended = BusinessAccount(
+        id: 'business-2',
+        ownerUserId: 'user-1',
+        name: 'Old Business',
+        username: 'old_business',
+        category: 'Kafe',
+        city: 'Ankara',
+        district: 'Cankaya',
+        status: BusinessAccountStatus.suspended,
+      );
+
+      expect(
+        BusinessIdentityRules.shouldReuseExistingAccount(existing),
+        isTrue,
+      );
+      expect(
+        BusinessIdentityRules.shouldReuseExistingAccount(suspended),
+        isFalse,
+      );
+      expect(BusinessIdentityRules.shouldReuseExistingAccount(null), isFalse);
+    });
+
+    test('host card links to canonical owner profile', () {
+      final event = Event(
+        id: 'event-1',
+        title: 'At Binme',
+        description: 'Hafta sonu bulusmasi',
+        sportType: 'At Binme',
+        city: 'Ankara',
+        eventDate: DateTime(2026, 6, 1),
+        capacityTotal: 12,
+        status: 'active',
+        hostId: 'user-1',
+        organizerType: EventOrganizerType.business,
+        organizerUserId: 'user-1',
+        organizerBusinessId: 'business-1',
+      );
+
+      expect(event.isBusinessEvent, isTrue);
+      expect(event.hostId, 'user-1');
+      expect(event.organizerBusinessId, isNot(event.hostId));
+      expect(RouteNames.publicProfile, 'publicProfile');
+    });
+
+    test('business account is not separately followable', () {
+      const account = BusinessAccount(
+        id: 'business-1',
+        ownerUserId: 'user-1',
+        name: 'Bozkir At Ciftligi',
+        username: 'bozkiratciftligi',
+        category: 'At Ã‡iftliÄŸi',
+        city: 'Ankara',
+        district: 'Cankaya',
+      );
+
+      expect(BusinessIdentityRules.isSeparatelyFollowable(account), isFalse);
+    });
+
     test('business account public profile replaces personal identity', () {
       final preview = PublicProfilePreview.fromJson({
         'user_id': 'user-1',
@@ -1559,7 +1690,48 @@ void main() {
       expect(preview.isBusinessAccount, isTrue);
     });
 
+    test('user mode public profile keeps personal identity', () {
+      final preview = PublicProfilePreview.fromJson({
+        'user_id': 'user-1',
+        'username': 'selin',
+        'tag': '0002',
+        'first_name': 'Selin',
+        'account_type': ProfileAccountType.user,
+        'business_name': 'Selin Studio',
+        'business_username': 'selinstudio',
+        'business_tag': '1111',
+      });
+
+      expect(preview.displayName, 'Selin');
+      expect(preview.usernameTag, 'selin#0002');
+      expect(preview.isBusinessAccount, isFalse);
+    });
+
+    test('switching business to user changes active identity helper', () {
+      const business = Profile(
+        id: 'user-1',
+        userId: 'user-1',
+        username: 'selin',
+        tag: '0002',
+        firstName: 'Selin',
+        accountType: ProfileAccountType.business,
+        businessAccountId: 'business-1',
+      );
+
+      final user = business.copyWith(accountType: ProfileAccountType.user);
+
+      expect(business.isBusinessAccount, isTrue);
+      expect(user.isBusinessAccount, isFalse);
+      expect(user.businessAccountId, 'business-1');
+    });
+
     test('At Ciftligi cannot select Futbol', () {
+      expect(
+        BusinessCategories.allowedActivitiesForBusinessCategory(
+          category: 'At Çiftliği',
+        ),
+        contains('At Binme'),
+      );
       expect(
         BusinessCategories.canCreateActivity(
           category: 'At Çiftliği',
@@ -1571,6 +1743,43 @@ void main() {
         BusinessCategories.canCreateActivity(
           category: 'At Çiftliği',
           activity: 'Futbol',
+        ),
+        isFalse,
+      );
+    });
+
+    test('Kafe category allows social workshop and custom activity', () {
+      final activities =
+          BusinessCategories.allowedActivitiesForBusinessCategory(
+            category: 'Kafe',
+          );
+
+      expect(activities, contains('Sosyal Buluşma'));
+      expect(activities, contains('Workshop'));
+      expect(activities, contains('Diğer'));
+      expect(
+        BusinessCategories.canCreateActivity(
+          category: 'Kafe',
+          activity: 'Kitap Kulübü',
+        ),
+        isTrue,
+      );
+    });
+
+    test('Diger category allows valid custom activity', () {
+      expect(
+        BusinessCategories.canCreateActivity(
+          category: BusinessCategories.other,
+          customCategory: 'Kano Merkezi',
+          activity: 'Kano Turu',
+        ),
+        isTrue,
+      );
+      expect(
+        BusinessCategories.canCreateActivity(
+          category: BusinessCategories.other,
+          customCategory: 'Kano Merkezi',
+          activity: 'A',
         ),
         isFalse,
       );

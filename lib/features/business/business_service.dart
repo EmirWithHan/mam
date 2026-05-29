@@ -22,6 +22,9 @@ class BusinessAccountService {
         .from('business_accounts')
         .select()
         .eq('owner_user_id', userId)
+        .inFilter('status', ['active', 'pending'])
+        .order('created_at', ascending: false)
+        .limit(1)
         .maybeSingle();
 
     if (data == null) return null;
@@ -53,6 +56,16 @@ class BusinessAccountService {
     }
 
     try {
+      final existing = await fetchMyBusinessAccount();
+      if (existing != null) {
+        final account = await updateBusinessAccount(
+          id: existing.id,
+          input: input,
+        );
+        await _markProfileAsBusiness();
+        return account;
+      }
+
       final data = await SupabaseService.client
           .from('business_accounts')
           .insert(input.toCreateJson(ownerUserId: userId))
@@ -60,7 +73,7 @@ class BusinessAccountService {
           .single();
 
       final account = BusinessAccount.fromJson(data);
-      await _markProfileAsBusiness(userId: userId, businessId: account.id);
+      await _markProfileAsBusiness();
       return account;
     } catch (error) {
       throw BusinessAccountException(_friendlyBusinessError(error));
@@ -86,18 +99,11 @@ class BusinessAccountService {
   }
 }
 
-Future<void> _markProfileAsBusiness({
-  required String userId,
-  required String businessId,
-}) async {
-  await SupabaseService.client
-      .from('profiles')
-      .update({
-        'account_type': 'business',
-        'business_account_id': businessId,
-        'updated_at': DateTime.now().toIso8601String(),
-      })
-      .eq('user_id', userId);
+Future<void> _markProfileAsBusiness() async {
+  await SupabaseService.client.rpc(
+    'switch_profile_account_type',
+    params: {'p_account_type': 'business'},
+  );
 }
 
 String _friendlyBusinessError(Object error) {

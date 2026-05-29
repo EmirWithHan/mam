@@ -8,14 +8,17 @@
   separate personal profile.
 - Business conversion links the profile to the business account without deleting
   existing personal data.
+- Switching back to user mode is allowed. The business account stays stored,
+  but the personal profile becomes the active public identity again.
 - Business profiles show a business badge.
 - Verified-style display is available through `is_verified`, but users cannot
   mark themselves verified.
 - Settings links to business creation or business profile management.
 - Business accounts create official business events by default; normal user
   accounts keep normal personal event creation.
-- Business event activity choices are restricted by business category. `Diğer`
-  can use validated custom activity text.
+- Business event activities are category-based. Mapped categories show relevant
+  activities, and categories that include `Diğer` allow validated custom
+  activity text.
 - Business events are linked to the business account and can be marked free or
   paid in TRY.
 - Business events are not sponsored by default. Sponsorship appears only when

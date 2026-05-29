@@ -60,10 +60,10 @@ class BusinessCategories {
 
   static bool isOther(String? value) {
     final trimmed = value?.trim();
-    return trimmed == other || trimmed == 'Diğer';
+    return trimmed == other || trimmed == 'Diğer' || trimmed == 'DiÄŸer';
   }
 
-  static List<String> allowedEventActivities({
+  static List<String> allowedActivitiesForBusinessCategory({
     required String? category,
     String? customCategory,
   }) {
@@ -71,7 +71,7 @@ class BusinessCategories {
       isOther(category) ? customCategory : category,
     );
     if (normalized.contains('at ciftligi')) {
-      return const ['At Binme', 'Doğa Gezisi', 'Outdoor'];
+      return const ['At Binme', 'Doğa Gezisi', 'Outdoor', 'Kamp'];
     }
     if (normalized.contains('hali saha') ||
         normalized.contains('futbol sahasi')) {
@@ -86,17 +86,38 @@ class BusinessCategories {
     if (normalized.contains('spor salonu') ||
         normalized.contains('fitness') ||
         normalized.contains('crossfit')) {
-      return const ['Fitness'];
+      return const ['Fitness', 'CrossFit'];
+    }
+    if (normalized.contains('board game')) {
+      return const ['Board Game', 'Sosyal Buluşma', 'Diğer'];
+    }
+    if (normalized.contains('kafe')) {
+      return const ['Sosyal Buluşma', 'Board Game', 'Workshop', 'Diğer'];
+    }
+    if (normalized.contains('etkinlik mekani') ||
+        normalized.contains('workshop') ||
+        normalized.contains('dans')) {
+      return const ['Workshop', 'Sosyal Buluşma', 'Dans', 'Diğer'];
     }
     if (normalized.contains('outdoor') ||
         normalized.contains('doga') ||
         normalized.contains('kamp') ||
         normalized.contains('trekking') ||
         normalized.contains('yuruyus')) {
-      return const ['Trekking', 'Kamp', 'Outdoor'];
+      return const ['Trekking', 'Kamp', 'Outdoor', 'Bisiklet'];
     }
     if (isOther(category)) return const ['Diğer'];
     return const ['Diğer'];
+  }
+
+  static List<String> allowedEventActivities({
+    required String? category,
+    String? customCategory,
+  }) {
+    return allowedActivitiesForBusinessCategory(
+      category: category,
+      customCategory: customCategory,
+    );
   }
 
   static bool canCreateActivity({
@@ -104,12 +125,21 @@ class BusinessCategories {
     String? customCategory,
     required String activity,
   }) {
-    final allowed = allowedEventActivities(
+    final allowed = allowedActivitiesForBusinessCategory(
       category: category,
       customCategory: customCategory,
     );
-    if (isOther(category)) return activity.trim().length >= 2;
     final normalizedActivity = _normalizeCategory(activity);
+    final allowsCustom =
+        isOther(category) ||
+        allowed.any(
+          (value) => isOther(value) || _normalizeCategory(value) == 'diger',
+        );
+    if (allowsCustom &&
+        activity.trim().length >= 2 &&
+        activity.trim().length <= 40) {
+      return true;
+    }
     return allowed.any(
       (value) => _normalizeCategory(value) == normalizedActivity,
     );
@@ -268,6 +298,33 @@ class BusinessSettingsCopy {
     return account == null
         ? 'Mekanını veya işletmeni Match A Man’da tanıt.'
         : '${account.displayName} · ${account.displayCategory}';
+  }
+}
+
+class BusinessIdentityRules {
+  const BusinessIdentityRules._();
+
+  static String canonicalProfileUserId(BusinessAccount account) {
+    return account.ownerUserId;
+  }
+
+  static bool isSeparatelyFollowable(BusinessAccount account) {
+    return false;
+  }
+
+  static bool shouldReuseExistingAccount(BusinessAccount? existing) {
+    return existing != null &&
+        (existing.status == BusinessAccountStatus.active ||
+            existing.status == BusinessAccountStatus.pending);
+  }
+
+  static bool canFollowBusinessIdentity({
+    required String? currentUserId,
+    required BusinessAccount account,
+  }) {
+    if (currentUserId == null || currentUserId.trim().isEmpty) return false;
+    if (currentUserId == account.ownerUserId) return false;
+    return isSeparatelyFollowable(account);
   }
 }
 

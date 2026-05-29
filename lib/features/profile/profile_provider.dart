@@ -153,6 +153,23 @@ class ProfileController extends StateNotifier<ProfileState> {
     }
   }
 
+  Future<bool> switchAccountType(String accountType) async {
+    state = state.copyWith(status: ProfileStatus.loading);
+
+    try {
+      final profile = await _profileService.updateMyAccountType(accountType);
+      state = ProfileState(status: ProfileStatus.success, profile: profile);
+      return true;
+    } catch (error) {
+      state = ProfileState(
+        status: ProfileStatus.error,
+        profile: state.profile,
+        message: friendlyErrorMessage(error),
+      );
+      return false;
+    }
+  }
+
   Future<String?> uploadAvatar({
     required Uint8List bytes,
     required String fileName,
