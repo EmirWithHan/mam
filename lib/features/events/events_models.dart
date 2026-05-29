@@ -649,6 +649,16 @@ class CreateEventInput {
     return account != null;
   }
 
+  static String defaultOrganizerType({
+    required bool isBusinessAccount,
+    required BusinessAccount? businessAccount,
+  }) {
+    if (isBusinessAccount && businessAccount != null) {
+      return EventOrganizerType.business;
+    }
+    return EventOrganizerType.user;
+  }
+
   Map<String, dynamic> toCreateJson({required String hostId}) {
     return {
       'host_id': hostId,

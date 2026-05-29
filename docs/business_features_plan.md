@@ -3,18 +3,24 @@
 ## Implemented Foundation
 
 - A user can create one business account.
-- Business accounts have a separate business profile.
+- One auth account has one public identity. When `profiles.account_type` is
+  `business`, the public profile presents the business identity instead of a
+  separate personal profile.
+- Business conversion links the profile to the business account without deleting
+  existing personal data.
 - Business profiles show a business badge.
 - Verified-style display is available through `is_verified`, but users cannot
   mark themselves verified.
 - Settings links to business creation or business profile management.
-- Business owners can choose between personal events and official business
-  events during event creation.
+- Business accounts create official business events by default; normal user
+  accounts keep normal personal event creation.
+- Business event activity choices are restricted by business category. `Diğer`
+  can use validated custom activity text.
 - Business events are linked to the business account and can be marked free or
   paid in TRY.
-- Sponsored business event placement is available. Sponsored content is clearly
-  labeled and the events list can place one active sponsored business event
-  after every four normal events.
+- Business events are not sponsored by default. Sponsorship appears only when
+  the database/admin marks `is_sponsored=true` and the sponsorship is still
+  active.
 - Business events now use double confirmation: owner approval moves the
   requester to pending confirmation, the user confirms from event detail, and
   only confirmed users count as final participants.
@@ -44,14 +50,16 @@ can be tested without moderation tooling. `is_verified` defaults to `false`.
 - Payment/ad dashboard for sponsored placement
 - Waitlist expiry/automation
 - QR check-in
+- Phone validation
 - Phone verification
 - SMS/OTP
 - Advanced analytics/statistics
 - Push notifications
 
-Normal user events remain personal/community events. Business event creation is
-now explicit, sponsored placement is label-first/manual-admin for now, and
-business events use a double-confirmation join lifecycle. Check-in, no-show
-handling, and business ratings now have a safe foundation; QR check-in, phone
-verification, payments/ad dashboards, advanced analytics/statistics, and push
-notifications are still later steps.
+Normal user events remain personal/community events. Business identities now
+replace the public personal profile for converted accounts, sponsored placement
+is manual-admin for now, and business events use a double-confirmation join
+lifecycle. Check-in, no-show handling, and business ratings now have a safe
+foundation; phone validation, QR check-in, phone verification, payments/ad
+dashboards, advanced analytics/statistics, and push notifications are still
+later steps.

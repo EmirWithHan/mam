@@ -29,6 +29,7 @@ import 'package:match_a_man/features/notifications/notifications_models.dart';
 import 'package:match_a_man/features/profile/profile_badges.dart';
 import 'package:match_a_man/features/profile/profile_models.dart';
 import 'package:match_a_man/features/profile/profile_provider.dart';
+import 'package:match_a_man/features/profile/public_profile_models.dart';
 import 'package:match_a_man/features/profile/widgets/safe_avatar.dart';
 
 void main() {
@@ -840,6 +841,39 @@ void main() {
       expect(payload['is_paid'], isTrue);
       expect(payload['price_amount'], 450);
       expect(payload['price_currency'], 'TRY');
+      expect(payload.containsKey('is_sponsored'), isFalse);
+      expect(payload.containsKey('sponsored_until'), isFalse);
+      expect(payload.containsKey('sponsored_priority'), isFalse);
+    });
+
+    test('business account creates business event by default', () {
+      const account = BusinessAccount(
+        id: 'business-1',
+        ownerUserId: 'user-1',
+        name: 'Padel Club',
+        username: 'padelclub',
+        category: 'Padel Kortu',
+        city: 'Istanbul',
+        district: 'Kadikoy',
+      );
+
+      expect(
+        CreateEventInput.defaultOrganizerType(
+          isBusinessAccount: true,
+          businessAccount: account,
+        ),
+        EventOrganizerType.business,
+      );
+    });
+
+    test('user account creates normal event', () {
+      expect(
+        CreateEventInput.defaultOrganizerType(
+          isBusinessAccount: false,
+          businessAccount: null,
+        ),
+        EventOrganizerType.user,
+      );
     });
 
     test('sponsored business event is inserted after 4 normal events', () {
@@ -988,6 +1022,40 @@ void main() {
         find.byType(FilledButton),
       );
       expect(buttonBox.size.width, lessThanOrEqualTo(96));
+    });
+
+    testWidgets('sponsored chip only appears when is_sponsored is true', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          child: MaterialApp(
+            home: Scaffold(
+              body: ListView(
+                children: [
+                  EventCard(
+                    event: _event(
+                      id: 'business-normal',
+                      organizerType: EventOrganizerType.business,
+                      isSponsored: false,
+                    ),
+                  ),
+                  EventCard(
+                    event: _event(
+                      id: 'business-sponsored',
+                      organizerType: EventOrganizerType.business,
+                      isSponsored: true,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Sponsorlu'), findsOneWidget);
+      expect(find.text('İşletme'), findsNWidgets(2));
     });
 
     test('linkable event model tolerates null sport type', () {
@@ -1473,6 +1541,41 @@ void main() {
       expect(BusinessBadgeLabels.forVerified(false), 'İşletme');
       expect(BusinessBadgeLabels.forVerified(true), 'Doğrulanmış İşletme');
     });
+    test('business account public profile replaces personal identity', () {
+      final preview = PublicProfilePreview.fromJson({
+        'user_id': 'user-1',
+        'username': 'emir',
+        'tag': '0001',
+        'first_name': 'Emir',
+        'account_type': ProfileAccountType.business,
+        'business_name': 'Bozkir At Ciftligi',
+        'business_username': 'bozkirat',
+        'business_tag': '1234',
+        'business_is_verified': false,
+      });
+
+      expect(preview.displayName, 'Bozkir At Ciftligi');
+      expect(preview.usernameTag, 'bozkirat#1234');
+      expect(preview.isBusinessAccount, isTrue);
+    });
+
+    test('At Ciftligi cannot select Futbol', () {
+      expect(
+        BusinessCategories.canCreateActivity(
+          category: 'At Çiftliği',
+          activity: 'At Binme',
+        ),
+        isTrue,
+      );
+      expect(
+        BusinessCategories.canCreateActivity(
+          category: 'At Çiftliği',
+          activity: 'Futbol',
+        ),
+        isFalse,
+      );
+    });
+
     test('business review rating validation is 1 to 5', () {
       expect(BusinessReviewRules.isValidRating(1), isTrue);
       expect(BusinessReviewRules.isValidRating(5), isTrue);

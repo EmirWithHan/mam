@@ -313,6 +313,27 @@ class _ProfileHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isBusinessIdentity =
+        profile.isBusinessAccount && businessAccount != null;
+    final avatarUrl = isBusinessIdentity
+        ? businessAccount!.logoUrl ?? profile.avatarUrl
+        : profile.avatarUrl;
+    final fallbackText = isBusinessIdentity
+        ? _businessInitials(businessAccount!)
+        : _initials(profile);
+    final title = isBusinessIdentity
+        ? businessAccount!.displayName
+        : _displayName(profile);
+    final handle = isBusinessIdentity
+        ? businessAccount!.displayHandle
+        : profile.displayHandle;
+    final location = isBusinessIdentity
+        ? businessAccount!.locationLabel
+        : profile.city?.trim();
+    final description = isBusinessIdentity
+        ? businessAccount!.description?.trim()
+        : profile.bio?.trim();
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -330,41 +351,46 @@ class _ProfileHeader extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Column(
           children: [
-            _Avatar(profile: profile),
+            SafeAvatar(
+              radius: 42,
+              avatarUrl: avatarUrl,
+              fallbackText: fallbackText,
+              fontSize: 30,
+            ),
             const SizedBox(height: AppSpacing.md),
             Text(
-              _displayName(profile),
+              title,
               style: AppTextStyles.headline,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              profile.displayHandle ?? 'Your profile',
+              handle ?? 'Your profile',
               style: AppTextStyles.bodySmall,
               textAlign: TextAlign.center,
             ),
-            if (profile.city?.trim().isNotEmpty == true) ...[
+            if (location?.isNotEmpty == true) ...[
               const SizedBox(height: AppSpacing.xs),
               Text(
-                profile.city!,
+                location!,
                 style: AppTextStyles.caption,
                 textAlign: TextAlign.center,
               ),
             ],
-            if (businessAccount != null) ...[
+            if (isBusinessIdentity) ...[
               const SizedBox(height: AppSpacing.md),
               BusinessBadge(isVerified: businessAccount!.isVerified),
               const SizedBox(height: AppSpacing.xs),
               Text(
-                'Isletme sahibi',
+                businessAccount!.displayCategory,
                 style: AppTextStyles.caption,
                 textAlign: TextAlign.center,
               ),
             ],
-            if (profile.bio?.trim().isNotEmpty == true) ...[
+            if (description?.isNotEmpty == true) ...[
               const SizedBox(height: AppSpacing.md),
               Text(
-                profile.bio!.trim(),
+                description!,
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.textSecondary,
                   height: 1.35,
@@ -537,24 +563,6 @@ class _ProfileEmptyState extends StatelessWidget {
   }
 }
 
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.profile});
-
-  final Profile profile;
-
-  @override
-  Widget build(BuildContext context) {
-    final avatarUrl = profile.avatarUrl;
-
-    return SafeAvatar(
-      radius: 42,
-      avatarUrl: avatarUrl,
-      fallbackText: _initials(profile),
-      fontSize: 30,
-    );
-  }
-}
-
 String _initials(Profile profile) {
   final firstName = profile.firstName?.trim();
   final username = profile.username?.trim();
@@ -574,6 +582,14 @@ String _initials(Profile profile) {
   }
 
   return 'M';
+}
+
+String _businessInitials(BusinessAccount account) {
+  final name = account.displayName.trim();
+  if (name.isNotEmpty) return name.characters.first.toUpperCase();
+  final username = account.username.trim();
+  if (username.isNotEmpty) return username.characters.first.toUpperCase();
+  return 'İ';
 }
 
 String _displayName(Profile profile) {

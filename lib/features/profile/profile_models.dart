@@ -16,6 +16,8 @@ class Profile {
     this.phoneNumber,
     this.phoneVerified = false,
     this.phoneVerifiedAt,
+    this.accountType = ProfileAccountType.user,
+    this.businessAccountId,
     this.bio,
     this.avatarUrl,
     this.trustScore,
@@ -38,6 +40,8 @@ class Profile {
   final String? phoneNumber;
   final bool phoneVerified;
   final DateTime? phoneVerifiedAt;
+  final String accountType;
+  final String? businessAccountId;
   final String? bio;
   final String? avatarUrl;
   final int? trustScore;
@@ -47,6 +51,8 @@ class Profile {
   final DateTime? updatedAt;
 
   int get trustScoreValue => trustScore ?? 50;
+
+  bool get isBusinessAccount => accountType == ProfileAccountType.business;
 
   bool get hasCoreIdentity {
     return username?.trim().isNotEmpty == true &&
@@ -95,6 +101,8 @@ class Profile {
       phoneNumber: json['phone_number'] as String? ?? json['phone'] as String?,
       phoneVerified: json['phone_verified'] as bool? ?? false,
       phoneVerifiedAt: _dateTimeFromJson(json['phone_verified_at']),
+      accountType: json['account_type']?.toString() ?? ProfileAccountType.user,
+      businessAccountId: json['business_account_id']?.toString(),
       bio: json['bio'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       trustScore: (json['trust_score'] as num?)?.toInt(),
@@ -119,6 +127,8 @@ class Profile {
     String? phoneNumber,
     bool? phoneVerified,
     DateTime? phoneVerifiedAt,
+    String? accountType,
+    String? businessAccountId,
     String? bio,
     String? avatarUrl,
     int? trustScore,
@@ -141,6 +151,8 @@ class Profile {
       phoneNumber: phoneNumber ?? this.phoneNumber,
       phoneVerified: phoneVerified ?? this.phoneVerified,
       phoneVerifiedAt: phoneVerifiedAt ?? this.phoneVerifiedAt,
+      accountType: accountType ?? this.accountType,
+      businessAccountId: businessAccountId ?? this.businessAccountId,
       bio: bio ?? this.bio,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       trustScore: trustScore ?? this.trustScore,
@@ -150,6 +162,13 @@ class Profile {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+}
+
+class ProfileAccountType {
+  const ProfileAccountType._();
+
+  static const user = 'user';
+  static const business = 'business';
 }
 
 class ProfileFormData {
@@ -329,6 +348,19 @@ class PublicProfileDetail {
     this.bio,
     this.trustScore,
     this.isPrivate = false,
+    this.accountType = ProfileAccountType.user,
+    this.businessAccountId,
+    this.businessName,
+    this.businessUsername,
+    this.businessTag,
+    this.businessCategory,
+    this.businessCustomCategory,
+    this.businessCity,
+    this.businessDistrict,
+    this.businessDescription,
+    this.businessLogoUrl,
+    this.businessCoverUrl,
+    this.businessIsVerified = false,
     this.followersCount = 0,
     this.followingCount = 0,
     this.isFollowing = false,
@@ -347,6 +379,19 @@ class PublicProfileDetail {
   final String? bio;
   final int? trustScore;
   final bool isPrivate;
+  final String accountType;
+  final String? businessAccountId;
+  final String? businessName;
+  final String? businessUsername;
+  final String? businessTag;
+  final String? businessCategory;
+  final String? businessCustomCategory;
+  final String? businessCity;
+  final String? businessDistrict;
+  final String? businessDescription;
+  final String? businessLogoUrl;
+  final String? businessCoverUrl;
+  final bool businessIsVerified;
   final int followersCount;
   final int followingCount;
   final bool isFollowing;
@@ -354,7 +399,13 @@ class PublicProfileDetail {
   final bool pendingFollowRequestByMe;
   final bool canViewExtendedProfile;
 
+  bool get isBusinessAccount => accountType == ProfileAccountType.business;
+
   String get displayName {
+    if (isBusinessAccount) {
+      final business = businessName?.trim();
+      if (business != null && business.isNotEmpty) return business;
+    }
     final first = firstName?.trim();
     final user = username?.trim();
     if (first != null && first.isNotEmpty) {
@@ -365,12 +416,45 @@ class PublicProfileDetail {
   }
 
   String? get handleLabel {
+    if (isBusinessAccount) {
+      return formatUserHandle(businessUsername, businessTag);
+    }
     return formatUserHandle(username, tag);
   }
 
   bool get hasBio => bio?.trim().isNotEmpty == true;
 
+  bool get hasBusinessDescription =>
+      businessDescription?.trim().isNotEmpty == true;
+
+  String? get identityBio {
+    if (isBusinessAccount && hasBusinessDescription) {
+      return businessDescription!.trim();
+    }
+    if (hasBio) return bio!.trim();
+    return null;
+  }
+
+  String? get businessCategoryLabel {
+    if (!isBusinessAccount) return null;
+    final custom = businessCustomCategory?.trim();
+    if (businessCategory?.trim() == 'Diğer' &&
+        custom != null &&
+        custom.isNotEmpty) {
+      return custom;
+    }
+    final category = businessCategory?.trim();
+    return category == null || category.isEmpty ? null : category;
+  }
+
   String? get locationLabel {
+    if (isBusinessAccount) {
+      final cityValue = businessCity?.trim();
+      final districtValue = businessDistrict?.trim();
+      if (cityValue == null || cityValue.isEmpty) return null;
+      if (districtValue == null || districtValue.isEmpty) return cityValue;
+      return '$cityValue / $districtValue';
+    }
     final cityValue = city?.trim();
     final districtValue = district?.trim();
     if (cityValue == null || cityValue.isEmpty) return null;
@@ -390,6 +474,19 @@ class PublicProfileDetail {
       bio: json['bio'] as String?,
       trustScore: (json['trust_score'] as num?)?.toInt(),
       isPrivate: json['is_private'] as bool? ?? false,
+      accountType: json['account_type']?.toString() ?? ProfileAccountType.user,
+      businessAccountId: json['business_account_id']?.toString(),
+      businessName: json['business_name']?.toString(),
+      businessUsername: json['business_username']?.toString(),
+      businessTag: json['business_tag']?.toString(),
+      businessCategory: json['business_category']?.toString(),
+      businessCustomCategory: json['business_custom_category']?.toString(),
+      businessCity: json['business_city']?.toString(),
+      businessDistrict: json['business_district']?.toString(),
+      businessDescription: json['business_description']?.toString(),
+      businessLogoUrl: json['business_logo_url']?.toString(),
+      businessCoverUrl: json['business_cover_url']?.toString(),
+      businessIsVerified: json['business_is_verified'] as bool? ?? false,
       followersCount: (json['followers_count'] as num?)?.toInt() ?? 0,
       followingCount: (json['following_count'] as num?)?.toInt() ?? 0,
       isFollowing: json['is_following'] as bool? ?? false,

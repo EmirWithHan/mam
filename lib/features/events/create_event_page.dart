@@ -17,6 +17,7 @@ import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/sport_icon.dart';
 import '../../services/location_service.dart';
+import '../business/business_models.dart';
 import '../business/business_provider.dart';
 import '../business/widgets/business_badge.dart';
 import '../profile/profile_provider.dart';
@@ -94,8 +95,11 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
         TurkeyLocations.normalizeDistrictName(city, _districtController.text) ??
         _districtController.text.trim();
     final businessAccount = ref.read(myBusinessAccountProvider).account;
+    final profile = ref.read(profileControllerProvider).profile;
     final isBusinessEvent =
-        _organizerType == EventOrganizerType.business && businessAccount != null;
+        businessAccount != null &&
+        (profile?.isBusinessAccount == true ||
+            _organizerType == EventOrganizerType.business);
 
     final input = CreateEventInput(
       title: _titleController.text.trim(),
@@ -138,9 +142,21 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   }
 
   Future<void> _selectSport() async {
+    final profile = ref.read(profileControllerProvider).profile;
+    final businessAccount = ref.read(myBusinessAccountProvider).account;
+    final isBusinessEvent =
+        businessAccount != null &&
+        (profile?.isBusinessAccount == true ||
+            _organizerType == EventOrganizerType.business);
+    final sportValues = isBusinessEvent
+        ? BusinessCategories.allowedEventActivities(
+            category: businessAccount.category,
+            customCategory: businessAccount.customCategory,
+          )
+        : SportTypes.values;
     final selected = await _showOptionSheet(
       title: 'Spor veya aktivite seç',
-      values: SportTypes.values,
+      values: sportValues,
       selectedValue: _sportTypeController.text,
       searchable: false,
       showSportIcons: true,
@@ -372,6 +388,10 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
       );
     }
 
+    final isBusinessIdentity = profileState.profile?.isBusinessAccount == true;
+    final isBusinessEvent =
+        businessAccount != null &&
+        (isBusinessIdentity || _organizerType == EventOrganizerType.business);
     final city = _cityController.text.trim();
     final districts = TurkeyLocations.getDistricts(city);
 
@@ -387,7 +407,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
               const SizedBox(height: AppSpacing.sm),
               Text('Gather your squad, let’s play.', style: AppTextStyles.body),
               const SizedBox(height: AppSpacing.lg),
-              if (businessAccount != null) ...[
+              if (businessAccount != null && !isBusinessIdentity) ...[
                 _FormCard(
                   child: _EventTypeSelector(
                     organizerType: _organizerType,
@@ -439,7 +459,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                       ),
                       suffixIcon: const Icon(Icons.expand_more),
                       validator: (_) =>
-                          Validators.sportType(_resolvedSportType()),
+                          _sportValidator(businessAccount, isBusinessEvent),
                     ),
                     if (_usesCustomSport) ...[
                       const SizedBox(height: AppSpacing.md),
@@ -564,8 +584,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),
-              if (_organizerType == EventOrganizerType.business &&
-                  businessAccount != null) ...[
+              if (isBusinessEvent) ...[
                 _FormCard(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -715,13 +734,35 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   }
 
   String? _priceValidator(String? value) {
-    if (_organizerType != EventOrganizerType.business ||
-        !_isPaidBusinessEvent) {
+    final profile = ref.read(profileControllerProvider).profile;
+    final businessAccount = ref.read(myBusinessAccountProvider).account;
+    final isBusinessEvent =
+        businessAccount != null &&
+        (profile?.isBusinessAccount == true ||
+            _organizerType == EventOrganizerType.business);
+    if (!isBusinessEvent || !_isPaidBusinessEvent) {
       return null;
     }
     final price = _parsePrice(value ?? '');
     if (price == null || price <= 0) return 'Fiyat 0’dan büyük olmalı.';
     return null;
+  }
+
+  String? _sportValidator(
+    BusinessAccount? businessAccount,
+    bool isBusinessEvent,
+  ) {
+    final sportError = Validators.sportType(_resolvedSportType());
+    if (sportError != null) return sportError;
+    if (!isBusinessEvent || businessAccount == null) return null;
+    if (BusinessCategories.canCreateActivity(
+      category: businessAccount.category,
+      customCategory: businessAccount.customCategory,
+      activity: _resolvedSportType(),
+    )) {
+      return null;
+    }
+    return 'Bu etkinlik türü işletme kategorinle uyumlu değil.';
   }
 
   String _locationErrorMessage(Object error) {
@@ -842,7 +883,10 @@ class _EventTypeSelector extends StatelessWidget {
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Row(
                 children: [
-                  const Icon(Icons.storefront_outlined, color: AppColors.primary),
+                  const Icon(
+                    Icons.storefront_outlined,
+                    color: AppColors.primary,
+                  ),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(

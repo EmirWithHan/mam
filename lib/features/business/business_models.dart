@@ -58,7 +58,62 @@ class BusinessCategories {
     return trimmed != null && values.contains(trimmed);
   }
 
-  static bool isOther(String? value) => value?.trim() == other;
+  static bool isOther(String? value) {
+    final trimmed = value?.trim();
+    return trimmed == other || trimmed == 'Diğer';
+  }
+
+  static List<String> allowedEventActivities({
+    required String? category,
+    String? customCategory,
+  }) {
+    final normalized = _normalizeCategory(
+      isOther(category) ? customCategory : category,
+    );
+    if (normalized.contains('at ciftligi')) {
+      return const ['At Binme', 'Doğa Gezisi', 'Outdoor'];
+    }
+    if (normalized.contains('hali saha') ||
+        normalized.contains('futbol sahasi')) {
+      return const ['Futbol'];
+    }
+    if (normalized.contains('basketbol')) return const ['Basketbol'];
+    if (normalized.contains('voleybol')) return const ['Voleybol'];
+    if (normalized.contains('tenis')) return const ['Tenis'];
+    if (normalized.contains('padel')) return const ['Padel'];
+    if (normalized.contains('yoga')) return const ['Yoga'];
+    if (normalized.contains('pilates')) return const ['Pilates'];
+    if (normalized.contains('spor salonu') ||
+        normalized.contains('fitness') ||
+        normalized.contains('crossfit')) {
+      return const ['Fitness'];
+    }
+    if (normalized.contains('outdoor') ||
+        normalized.contains('doga') ||
+        normalized.contains('kamp') ||
+        normalized.contains('trekking') ||
+        normalized.contains('yuruyus')) {
+      return const ['Trekking', 'Kamp', 'Outdoor'];
+    }
+    if (isOther(category)) return const ['Diğer'];
+    return const ['Diğer'];
+  }
+
+  static bool canCreateActivity({
+    required String? category,
+    String? customCategory,
+    required String activity,
+  }) {
+    final allowed = allowedEventActivities(
+      category: category,
+      customCategory: customCategory,
+    );
+    if (isOther(category)) return activity.trim().length >= 2;
+    final normalizedActivity = _normalizeCategory(activity);
+    return allowed.any(
+      (value) => _normalizeCategory(value) == normalizedActivity,
+    );
+  }
 }
 
 class BusinessAccount {
@@ -336,7 +391,10 @@ class BusinessAccountValidators {
     return null;
   }
 
-  static String? cityDistrict({required String? city, required String? district}) {
+  static String? cityDistrict({
+    required String? city,
+    required String? district,
+  }) {
     if ((city ?? '').trim().isEmpty || (district ?? '').trim().isEmpty) {
       return 'Şehir ve ilçe seçmelisin.';
     }
@@ -404,4 +462,29 @@ String? _nullableTrim(String? value) {
 DateTime? _dateTimeFromJson(Object? value) {
   if (value == null) return null;
   return DateTime.tryParse(value.toString());
+}
+
+String _normalizeCategory(String? value) {
+  return (value ?? '')
+      .trim()
+      .toLowerCase()
+      .replaceAll('ç', 'c')
+      .replaceAll('ğ', 'g')
+      .replaceAll('ı', 'i')
+      .replaceAll('i̇', 'i')
+      .replaceAll('ö', 'o')
+      .replaceAll('ş', 's')
+      .replaceAll('ü', 'u')
+      .replaceAll('Ã§', 'c')
+      .replaceAll('ÄŸ', 'g')
+      .replaceAll('Ä±', 'i')
+      .replaceAll('Ã¶', 'o')
+      .replaceAll('ÅŸ', 's')
+      .replaceAll('Ã¼', 'u')
+      .replaceAll('Ã‡', 'c')
+      .replaceAll('Äž', 'g')
+      .replaceAll('İ', 'i')
+      .replaceAll('Ã–', 'o')
+      .replaceAll('Åž', 's')
+      .replaceAll('Ãœ', 'u');
 }

@@ -59,7 +59,9 @@ class BusinessAccountService {
           .select()
           .single();
 
-      return BusinessAccount.fromJson(data);
+      final account = BusinessAccount.fromJson(data);
+      await _markProfileAsBusiness(userId: userId, businessId: account.id);
+      return account;
     } catch (error) {
       throw BusinessAccountException(_friendlyBusinessError(error));
     }
@@ -82,6 +84,20 @@ class BusinessAccountService {
       throw BusinessAccountException(_friendlyBusinessError(error));
     }
   }
+}
+
+Future<void> _markProfileAsBusiness({
+  required String userId,
+  required String businessId,
+}) async {
+  await SupabaseService.client
+      .from('profiles')
+      .update({
+        'account_type': 'business',
+        'business_account_id': businessId,
+        'updated_at': DateTime.now().toIso8601String(),
+      })
+      .eq('user_id', userId);
 }
 
 String _friendlyBusinessError(Object error) {

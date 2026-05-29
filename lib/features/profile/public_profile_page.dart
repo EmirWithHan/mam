@@ -18,6 +18,7 @@ import '../../core/widgets/event_cover_image.dart';
 import '../../core/widgets/error_view.dart';
 import '../../core/widgets/sport_icon.dart';
 import '../auth/auth_provider.dart';
+import '../business/widgets/business_badge.dart';
 import '../follow/follow_provider.dart';
 import 'profile_models.dart';
 import 'profile_provider.dart';
@@ -213,6 +214,14 @@ class _PublicProfileHeader extends StatelessWidget {
               spacing: AppSpacing.sm,
               runSpacing: AppSpacing.sm,
               children: [
+                if (detail.isBusinessAccount) ...[
+                  BusinessBadge(isVerified: detail.businessIsVerified),
+                  if (detail.businessCategoryLabel != null)
+                    _InfoPill(
+                      icon: Icons.category_outlined,
+                      label: detail.businessCategoryLabel!,
+                    ),
+                ],
                 if (isMe && detail.locationLabel != null)
                   _InfoPill(
                     icon: Icons.place_outlined,
@@ -225,10 +234,10 @@ class _PublicProfileHeader extends StatelessWidget {
                   ),
               ],
             ),
-            if (detail.hasBio) ...[
+            if (detail.identityBio != null) ...[
               const SizedBox(height: AppSpacing.md),
               Text(
-                detail.bio!.trim(),
+                detail.identityBio!,
                 style: AppTextStyles.bodySmall.copyWith(
                   color: AppColors.textSecondary,
                   height: 1.35,
@@ -258,7 +267,9 @@ class _ProfileAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avatarUrl = detail.avatarUrl?.trim();
+    final avatarUrl = detail.isBusinessAccount
+        ? (detail.businessLogoUrl ?? detail.avatarUrl)?.trim()
+        : detail.avatarUrl?.trim();
 
     return Container(
       padding: const EdgeInsets.all(4),
@@ -990,6 +1001,13 @@ class _LockedExtendedProfileCard extends StatelessWidget {
 }
 
 String _initials(PublicProfileDetail detail) {
+  if (detail.isBusinessAccount) {
+    final businessName = detail.businessName?.trim();
+    if (businessName != null && businessName.isNotEmpty) {
+      return businessName[0].toUpperCase();
+    }
+  }
+
   final parts = [
     detail.firstName?.trim(),
   ].where((part) => part != null && part.isNotEmpty).cast<String>().toList();

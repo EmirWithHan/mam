@@ -620,6 +620,8 @@ Map<String, dynamic> _profileToJson(Profile profile) {
     'phone_number': profile.phoneNumber,
     'phone_verified': profile.phoneVerified,
     'phone_verified_at': profile.phoneVerifiedAt?.toIso8601String(),
+    'account_type': profile.accountType,
+    'business_account_id': profile.businessAccountId,
     'bio': profile.bio,
     'avatar_url': profile.avatarUrl,
     'trust_score': profile.trustScore,
