@@ -9,6 +9,7 @@ import 'package:match_a_man/core/router/route_names.dart';
 import 'package:match_a_man/core/widgets/event_cover_image.dart';
 import 'package:match_a_man/core/widgets/main_navigation_shell.dart';
 import 'package:match_a_man/core/utils/error_messages.dart';
+import 'package:match_a_man/core/utils/phone_verification.dart';
 import 'package:match_a_man/core/utils/trust_score_rules.dart';
 import 'package:match_a_man/core/utils/user_handle.dart';
 import 'package:match_a_man/features/auth/auth_service.dart';
@@ -16,6 +17,7 @@ import 'package:match_a_man/features/business/business_models.dart';
 import 'package:match_a_man/features/business/business_reviews_models.dart';
 import 'package:match_a_man/features/business/business_reviews_service.dart';
 import 'package:match_a_man/features/business/business_service.dart';
+import 'package:match_a_man/features/business/business_stats_models.dart';
 import 'package:match_a_man/features/events/events_models.dart';
 import 'package:match_a_man/features/events/join_requests_models.dart';
 import 'package:match_a_man/features/events/widgets/event_card.dart';
@@ -198,6 +200,56 @@ void main() {
 
       expect(formData.isComplete, isTrue);
       expect(formData.toUpdateJson().containsKey('tag'), isFalse);
+    });
+
+    test('phone normalization supports Turkey formats', () {
+      expect(PhoneVerification.normalize('0532 123 45 67'), '+905321234567');
+      expect(PhoneVerification.normalize('5321234567'), '+905321234567');
+      expect(PhoneVerification.normalize('+90 532 123 45 67'), '+905321234567');
+      expect(PhoneVerification.validateOptional('0532 123 45 67'), isNull);
+      expect(
+        PhoneVerification.validateOptional('123'),
+        'Geçerli bir telefon numarası gir.',
+      );
+    });
+
+    test('duplicate phone errors are friendly', () {
+      expect(
+        friendlyErrorMessage(
+          'PostgrestException duplicate key profiles_phone_number_unique 23505',
+        ),
+        'Bu telefon numarası başka bir hesapta kullanılıyor.',
+      );
+      expect(
+        PhoneVerification.friendlyDuplicateError(
+          'duplicate key profiles_phone_number_unique',
+        ),
+        'Bu telefon numarası başka bir hesapta kullanılıyor.',
+      );
+    });
+
+    test('phone verified helper requires a real phone number', () {
+      const defaultProfile = Profile(id: 'profile-1', userId: 'user-1');
+      const fakeVerified = Profile(
+        id: 'profile-1',
+        userId: 'user-1',
+        phoneVerified: true,
+      );
+      const verified = Profile(
+        id: 'profile-1',
+        userId: 'user-1',
+        phoneNumber: '+905321234567',
+        phoneVerified: true,
+      );
+
+      expect(defaultProfile.phoneVerified, isFalse);
+      expect(PhoneVerification.isPhoneVerified(defaultProfile), isFalse);
+      expect(PhoneVerification.isPhoneVerified(fakeVerified), isFalse);
+      expect(PhoneVerification.isPhoneVerified(verified), isTrue);
+      expect(
+        PhoneVerification.canRequirePhoneForBusinessFlow(verified),
+        isTrue,
+      );
     });
 
     test('duplicate username errors are friendly', () {
@@ -1498,6 +1550,71 @@ void main() {
       expect(
         friendlyBusinessReviewErrorMessage('PostgrestException unknown'),
         'Değerlendirme gönderilemedi. Tekrar dene.',
+      );
+    });
+    test('business stats model parses nulls safely', () {
+      final stats = BusinessStats.fromJson({
+        'total_events': null,
+        'upcoming_events': '2',
+        'past_events': null,
+        'total_join_requests': 5,
+        'confirmed_participants': null,
+        'checked_in_count': 3,
+        'no_show_count': null,
+        'waitlisted_count': null,
+        'average_rating': '4.6',
+        'rating_count': null,
+        'sponsored_events_count': 1,
+      });
+
+      expect(stats.totalEvents, 0);
+      expect(stats.upcomingEvents, 2);
+      expect(stats.confirmedParticipants, 0);
+      expect(stats.checkedInCount, 3);
+      expect(stats.averageRatingLabel, '-');
+      expect(stats.sponsoredEventsCount, 1);
+    });
+
+    test('business stats empty display helper works', () {
+      final stats = BusinessStats.empty();
+
+      expect(stats.isEmpty, isTrue);
+      expect(stats.averageRatingLabel, '-');
+    });
+
+    test('business stats rating formatting works', () {
+      const stats = BusinessStats(
+        totalEvents: 1,
+        upcomingEvents: 1,
+        pastEvents: 0,
+        totalJoinRequests: 2,
+        confirmedParticipants: 2,
+        checkedInCount: 1,
+        noShowCount: 0,
+        waitlistedCount: 0,
+        averageRating: 4.56,
+        ratingCount: 4,
+        sponsoredEventsCount: 1,
+      );
+
+      expect(stats.isEmpty, isFalse);
+      expect(stats.averageRatingLabel, '4.6');
+    });
+
+    test('business stats owner helper gates private stats', () {
+      expect(
+        BusinessStatsRules.canViewStats(
+          ownerUserId: 'owner-1',
+          currentUserId: 'owner-1',
+        ),
+        isTrue,
+      );
+      expect(
+        BusinessStatsRules.canViewStats(
+          ownerUserId: 'owner-1',
+          currentUserId: 'user-1',
+        ),
+        isFalse,
       );
     });
   });

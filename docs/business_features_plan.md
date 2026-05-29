@@ -30,6 +30,9 @@
   accepted as the current fallback.
 - Business profiles show average stars and rating count, or an empty state when
   there are no ratings yet.
+- Business statistics foundation exists for owners: total/upcoming events,
+  requests, confirmed participants, check-ins, no-shows, ratings, and sponsored
+  event counts.
 
 ## Current Development Choice
 
@@ -43,12 +46,12 @@ can be tested without moderation tooling. `is_verified` defaults to `false`.
 - QR check-in
 - Phone verification
 - SMS/OTP
-- Business analytics/statistics
+- Advanced analytics/statistics
 - Push notifications
 
 Normal user events remain personal/community events. Business event creation is
 now explicit, sponsored placement is label-first/manual-admin for now, and
 business events use a double-confirmation join lifecycle. Check-in, no-show
 handling, and business ratings now have a safe foundation; QR check-in, phone
-verification, payments/ad dashboards, statistics, and push notifications are
-still later steps.
+verification, payments/ad dashboards, advanced analytics/statistics, and push
+notifications are still later steps.

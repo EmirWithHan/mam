@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/utils/phone_verification.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_logo.dart';
 import '../auth/auth_provider.dart';
@@ -67,6 +68,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             ),
             const SizedBox(height: AppSpacing.lg),
             _SettingsUserCard(profile: profile),
+            const SizedBox(height: AppSpacing.md),
+            _PhoneVerificationTile(profile: profile),
             const SizedBox(height: AppSpacing.lg),
             _PrivacySection(
               profile: profile,
@@ -145,6 +148,43 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               },
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PhoneVerificationTile extends StatelessWidget {
+  const _PhoneVerificationTile({required this.profile});
+
+  final Profile? profile;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
+        borderRadius: AppRadius.lgBorder,
+      ),
+      child: ListTile(
+        leading: Icon(
+          PhoneVerification.isPhoneVerified(profile)
+              ? Icons.verified_outlined
+              : Icons.phone_android_outlined,
+          color: AppColors.primary,
+        ),
+        title: Text('Telefon doğrulama', style: AppTextStyles.bodyStrong),
+        subtitle: Text(PhoneVerification.statusLabel(profile)),
+        trailing: TextButton(
+          onPressed: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Telefon doğrulama yakında eklenecek.'),
+              ),
+            );
+          },
+          child: const Text('Telefonu doğrula'),
         ),
       ),
     );

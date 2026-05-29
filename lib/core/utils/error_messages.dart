@@ -93,6 +93,14 @@ String friendlyErrorMessage(Object error) {
     return 'Bu kullanıcı adı alınmış.';
   }
 
+  if (normalized.contains('profiles_phone_number_unique') ||
+      (normalized.contains('phone_number') &&
+          (normalized.contains('duplicate') ||
+              normalized.contains('unique') ||
+              normalized.contains('23505')))) {
+    return 'Bu telefon numarası başka bir hesapta kullanılıyor.';
+  }
+
   if (normalized.contains('tag') &&
       (normalized.contains('profiles_tag_check') ||
           normalized.contains('profile tag') ||

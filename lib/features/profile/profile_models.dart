@@ -1,4 +1,5 @@
 import '../../core/utils/user_handle.dart';
+import '../../core/utils/phone_verification.dart';
 
 class Profile {
   const Profile({
@@ -12,6 +13,9 @@ class Profile {
     this.city,
     this.district,
     this.phone,
+    this.phoneNumber,
+    this.phoneVerified = false,
+    this.phoneVerifiedAt,
     this.bio,
     this.avatarUrl,
     this.trustScore,
@@ -31,6 +35,9 @@ class Profile {
   final String? city;
   final String? district;
   final String? phone;
+  final String? phoneNumber;
+  final bool phoneVerified;
+  final DateTime? phoneVerifiedAt;
   final String? bio;
   final String? avatarUrl;
   final int? trustScore;
@@ -85,6 +92,9 @@ class Profile {
       city: json['city'] as String?,
       district: json['district'] as String?,
       phone: json['phone'] as String?,
+      phoneNumber: json['phone_number'] as String? ?? json['phone'] as String?,
+      phoneVerified: json['phone_verified'] as bool? ?? false,
+      phoneVerifiedAt: _dateTimeFromJson(json['phone_verified_at']),
       bio: json['bio'] as String?,
       avatarUrl: json['avatar_url'] as String?,
       trustScore: (json['trust_score'] as num?)?.toInt(),
@@ -106,6 +116,9 @@ class Profile {
     String? city,
     String? district,
     String? phone,
+    String? phoneNumber,
+    bool? phoneVerified,
+    DateTime? phoneVerifiedAt,
     String? bio,
     String? avatarUrl,
     int? trustScore,
@@ -125,6 +138,9 @@ class Profile {
       city: city ?? this.city,
       district: district ?? this.district,
       phone: phone ?? this.phone,
+      phoneNumber: phoneNumber ?? this.phoneNumber,
+      phoneVerified: phoneVerified ?? this.phoneVerified,
+      phoneVerifiedAt: phoneVerifiedAt ?? this.phoneVerifiedAt,
       bio: bio ?? this.bio,
       avatarUrl: avatarUrl ?? this.avatarUrl,
       trustScore: trustScore ?? this.trustScore,
@@ -177,6 +193,9 @@ class ProfileFormData {
       'city': _nullableTrim(city),
       'district': _nullableTrim(district),
       'phone': _nullableTrim(phone),
+      'phone_number': PhoneVerification.normalize(phone).isEmpty
+          ? null
+          : PhoneVerification.normalize(phone),
       'bio': _nullableTrim(bio),
       'avatar_url': _nullableTrim(avatarUrl),
       'is_profile_completed': isComplete,

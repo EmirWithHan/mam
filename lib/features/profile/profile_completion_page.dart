@@ -12,6 +12,7 @@ import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/date_formatter.dart';
+import '../../core/utils/phone_verification.dart';
 import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_text_field.dart';
@@ -78,7 +79,7 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
         : TurkeyLocations.normalizeDistrictName(city, profile.district ?? '');
     _cityController.text = city ?? profile.city ?? '';
     _districtController.text = district ?? '';
-    _phoneController.text = profile.phone ?? '';
+    _phoneController.text = profile.phoneNumber ?? profile.phone ?? '';
     _bioController.text = profile.bio ?? '';
     _avatarUrl = profile.avatarUrl;
     _tag = profile.tag;
@@ -290,10 +291,17 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Phone (optional)',
+                      label: 'Telefon numarası',
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
                       prefixIcon: const Icon(Icons.phone_outlined),
+                      validator: PhoneVerification.validateOptional,
+                      helperText: 'Örn. 05xx xxx xx xx',
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    _PhoneVerificationStatus(
+                      profile: profileState.profile,
+                      onVerifyTap: _showPhoneVerificationComingSoon,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
@@ -475,6 +483,48 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
   String _formatBirthDate(DateTime? value) {
     if (value == null) return '';
     return DateFormatter.shortDate(value);
+  }
+
+  void _showPhoneVerificationComingSoon() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Telefon doğrulama yakında eklenecek.')),
+    );
+  }
+}
+
+class _PhoneVerificationStatus extends StatelessWidget {
+  const _PhoneVerificationStatus({
+    required this.profile,
+    required this.onVerifyTap,
+  });
+
+  final Profile? profile;
+  final VoidCallback onVerifyTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final verified = PhoneVerification.isPhoneVerified(profile);
+
+    return Row(
+      children: [
+        Icon(
+          verified ? Icons.verified_outlined : Icons.info_outline,
+          color: verified ? AppColors.primary : AppColors.textMuted,
+          size: 18,
+        ),
+        const SizedBox(width: AppSpacing.xs),
+        Expanded(
+          child: Text(
+            PhoneVerification.statusLabel(profile),
+            style: AppTextStyles.caption,
+          ),
+        ),
+        TextButton(
+          onPressed: onVerifyTap,
+          child: const Text('Telefonu doğrula'),
+        ),
+      ],
+    );
   }
 }
 

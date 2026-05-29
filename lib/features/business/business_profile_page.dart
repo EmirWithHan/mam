@@ -16,6 +16,7 @@ import 'business_models.dart';
 import 'business_provider.dart';
 import 'business_reviews_models.dart';
 import 'business_reviews_provider.dart';
+import 'business_stats_page.dart';
 import 'widgets/business_badge.dart';
 
 class BusinessProfilePage extends ConsumerWidget {
@@ -168,6 +169,18 @@ class _BusinessProfileBody extends ConsumerWidget {
           ),
         ),
         if (isOwner) ...[
+          const SizedBox(height: AppSpacing.lg),
+          _SectionCard(
+            title: 'İstatistikler',
+            child: AppButton(
+              label: 'İstatistikler',
+              onPressed: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => BusinessStatsPage(account: account),
+                ),
+              ),
+            ),
+          ),
           const SizedBox(height: AppSpacing.lg),
           AppButton(
             label: 'Isletmeyi duzenle',
