@@ -19,7 +19,6 @@ import '../../core/widgets/sport_icon.dart';
 import '../../services/location_service.dart';
 import '../business/business_models.dart';
 import '../business/business_provider.dart';
-import '../business/widgets/business_badge.dart';
 import '../profile/profile_provider.dart';
 import 'events_models.dart';
 import 'events_provider.dart';
@@ -54,7 +53,6 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   bool _locating = false;
   bool _isPaidBusinessEvent = false;
   String? _locationHelperText;
-  String _organizerType = EventOrganizerType.user;
 
   bool get _usesCustomSport => _sportTypeController.text == SportTypes.other;
 
@@ -96,10 +94,10 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
         _districtController.text.trim();
     final businessAccount = ref.read(myBusinessAccountProvider).account;
     final profile = ref.read(profileControllerProvider).profile;
-    final isBusinessEvent =
-        businessAccount != null &&
-        (profile?.isBusinessAccount == true ||
-            _organizerType == EventOrganizerType.business);
+    final isBusinessEvent = CreateEventInput.canUseBusinessEventFields(
+      isBusinessAccount: profile?.isBusinessAccount == true,
+      businessAccount: businessAccount,
+    );
 
     final input = CreateEventInput(
       title: _titleController.text.trim(),
@@ -144,14 +142,15 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   Future<void> _selectSport() async {
     final profile = ref.read(profileControllerProvider).profile;
     final businessAccount = ref.read(myBusinessAccountProvider).account;
-    final isBusinessEvent =
-        businessAccount != null &&
-        (profile?.isBusinessAccount == true ||
-            _organizerType == EventOrganizerType.business);
+    final isBusinessEvent = CreateEventInput.canUseBusinessEventFields(
+      isBusinessAccount: profile?.isBusinessAccount == true,
+      businessAccount: businessAccount,
+    );
+    final activeBusinessAccount = isBusinessEvent ? businessAccount : null;
     final sportValues = isBusinessEvent
         ? BusinessCategories.allowedActivitiesForBusinessCategory(
-            category: businessAccount.category,
-            customCategory: businessAccount.customCategory,
+            category: activeBusinessAccount!.category,
+            customCategory: activeBusinessAccount.customCategory,
           )
         : SportTypes.values;
     final selected = await _showOptionSheet(
@@ -389,9 +388,10 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     }
 
     final isBusinessIdentity = profileState.profile?.isBusinessAccount == true;
-    final isBusinessEvent =
-        businessAccount != null &&
-        (isBusinessIdentity || _organizerType == EventOrganizerType.business);
+    final isBusinessEvent = CreateEventInput.canUseBusinessEventFields(
+      isBusinessAccount: isBusinessIdentity,
+      businessAccount: businessAccount,
+    );
     final city = _cityController.text.trim();
     final districts = TurkeyLocations.getDistricts(city);
 
@@ -407,25 +407,6 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
               const SizedBox(height: AppSpacing.sm),
               Text('Gather your squad, let’s play.', style: AppTextStyles.body),
               const SizedBox(height: AppSpacing.lg),
-              if (businessAccount != null && !isBusinessIdentity) ...[
-                _FormCard(
-                  child: _EventTypeSelector(
-                    organizerType: _organizerType,
-                    businessName: businessAccount.displayName,
-                    isVerified: businessAccount.isVerified,
-                    onChanged: (value) {
-                      setState(() {
-                        _organizerType = value;
-                        if (value != EventOrganizerType.business) {
-                          _isPaidBusinessEvent = false;
-                          _priceController.clear();
-                        }
-                      });
-                    },
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-              ],
               _FormCard(
                 child: Column(
                   children: [
@@ -736,10 +717,10 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   String? _priceValidator(String? value) {
     final profile = ref.read(profileControllerProvider).profile;
     final businessAccount = ref.read(myBusinessAccountProvider).account;
-    final isBusinessEvent =
-        businessAccount != null &&
-        (profile?.isBusinessAccount == true ||
-            _organizerType == EventOrganizerType.business);
+    final isBusinessEvent = CreateEventInput.canUseBusinessEventFields(
+      isBusinessAccount: profile?.isBusinessAccount == true,
+      businessAccount: businessAccount,
+    );
     if (!isBusinessEvent || !_isPaidBusinessEvent) {
       return null;
     }
@@ -826,84 +807,6 @@ class _CreateEventAppBar extends StatelessWidget
         icon: const Icon(Icons.arrow_back),
       ),
       title: const AppLogo(size: 32, showText: true),
-    );
-  }
-}
-
-class _EventTypeSelector extends StatelessWidget {
-  const _EventTypeSelector({
-    required this.organizerType,
-    required this.businessName,
-    required this.isVerified,
-    required this.onChanged,
-  });
-
-  final String organizerType;
-  final String businessName;
-  final bool isVerified;
-  final ValueChanged<String> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text('Etkinlik tipi', style: AppTextStyles.title),
-        const SizedBox(height: AppSpacing.md),
-        SegmentedButton<String>(
-          segments: const [
-            ButtonSegment(
-              value: EventOrganizerType.user,
-              label: Text(
-                'Kişisel Etkinlik',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            ButtonSegment(
-              value: EventOrganizerType.business,
-              label: Text(
-                'İşletme Etkinliği',
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-          selected: {organizerType},
-          onSelectionChanged: (selection) => onChanged(selection.first),
-        ),
-        if (organizerType == EventOrganizerType.business) ...[
-          const SizedBox(height: AppSpacing.md),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              color: AppColors.primarySoft,
-              borderRadius: AppRadius.lgBorder,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Row(
-                children: [
-                  const Icon(
-                    Icons.storefront_outlined,
-                    color: AppColors.primary,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Expanded(
-                    child: Text(
-                      businessName,
-                      style: AppTextStyles.bodyStrong,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  BusinessBadge(isVerified: isVerified),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ],
     );
   }
 }

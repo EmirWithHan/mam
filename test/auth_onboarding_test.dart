@@ -817,7 +817,7 @@ void main() {
         city: 'Istanbul',
         district: 'Kadikoy',
       );
-      expect(CreateEventInput.canSelectBusinessEvent(account), isTrue);
+      expect(CreateEventInput.canSelectBusinessEvent(account), isFalse);
 
       final input = CreateEventInput(
         title: 'Padel Night',
@@ -874,6 +874,48 @@ void main() {
         ),
         EventOrganizerType.user,
       );
+    });
+
+    test('user mode cannot create paid business event from stale account', () {
+      const account = BusinessAccount(
+        id: 'business-1',
+        ownerUserId: 'user-1',
+        name: 'Padel Club',
+        username: 'padelclub',
+        category: 'Padel Kortu',
+        city: 'Istanbul',
+        district: 'Kadikoy',
+      );
+
+      expect(
+        CreateEventInput.canUseBusinessEventFields(
+          isBusinessAccount: false,
+          businessAccount: account,
+        ),
+        isFalse,
+      );
+
+      final input = CreateEventInput(
+        title: 'Normal Padel',
+        sportType: 'Padel',
+        city: 'Istanbul',
+        eventDate: DateTime(2026, 5, 28),
+        capacityTotal: 12,
+        capacityMale: 0,
+        capacityFemale: 0,
+        capacityAny: 12,
+        organizerType: EventOrganizerType.user,
+        businessAccount: account,
+        isPaid: true,
+        priceAmount: 450,
+      );
+      final payload = input.toCreateJson(hostId: 'user-1');
+
+      expect(payload['organizer_type'], EventOrganizerType.user);
+      expect(payload.containsKey('organizer_business_id'), isFalse);
+      expect(payload['is_paid'], isFalse);
+      expect(payload.containsKey('price_amount'), isFalse);
+      expect(payload.containsKey('price_currency'), isFalse);
     });
 
     test('sponsored business event is inserted after 4 normal events', () {
@@ -1529,7 +1571,7 @@ void main() {
 
       expect(
         BusinessSettingsCopy.actionTitle(account),
-        'İşletme profilini yönet',
+        'İşletme hesabını düzenle',
       );
       expect(
         BusinessSettingsCopy.actionSubtitle(account),
@@ -1690,6 +1732,41 @@ void main() {
       expect(preview.isBusinessAccount, isTrue);
     });
 
+    test('business mode renders business identity on old posts and events', () {
+      final post = Post.fromJson({
+        'id': 'post-1',
+        'user_id': 'user-1',
+        'image_url': 'https://example.com/post.jpg',
+        'author_username': 'golbasi_at_ciftligi',
+        'author_tag': '3031',
+        'created_at': DateTime(2026, 5, 28).toIso8601String(),
+      });
+      final event = Event(
+        id: 'event-1',
+        title: 'At Binme',
+        sportType: 'At Binme',
+        city: 'Ankara',
+        eventDate: DateTime(2026, 6, 1),
+        capacityTotal: 12,
+        status: 'active',
+        hostId: 'user-1',
+        organizerType: EventOrganizerType.business,
+        organizerUserId: 'user-1',
+        organizerBusinessId: 'business-1',
+      );
+
+      expect(post.userId, 'user-1');
+      expect(post.authorUsername, 'golbasi_at_ciftligi');
+      expect(post.authorTag, '3031');
+      expect(event.hostId, 'user-1');
+      expect(
+        event.isVisibleInPublicProfileForAccountType(
+          ProfileAccountType.business,
+        ),
+        isTrue,
+      );
+    });
+
     test('user mode public profile keeps personal identity', () {
       final preview = PublicProfilePreview.fromJson({
         'user_id': 'user-1',
@@ -1705,6 +1782,46 @@ void main() {
       expect(preview.displayName, 'Selin');
       expect(preview.usernameTag, 'selin#0002');
       expect(preview.isBusinessAccount, isFalse);
+    });
+
+    test('switching back hides future business events from user profile', () {
+      final futureBusinessEvent = Event(
+        id: 'event-1',
+        title: 'At Binme',
+        sportType: 'At Binme',
+        city: 'Ankara',
+        eventDate: DateTime(2026, 6, 1),
+        capacityTotal: 12,
+        status: 'active',
+        hostId: 'user-1',
+        organizerType: EventOrganizerType.business,
+        organizerUserId: 'user-1',
+        organizerBusinessId: 'business-1',
+      );
+      final personalEvent = futureBusinessEvent.copyWith(
+        id: 'event-2',
+        organizerType: EventOrganizerType.user,
+        organizerBusinessId: null,
+      );
+
+      expect(
+        futureBusinessEvent.shouldCancelWhenSwitchingBackToUser(
+          DateTime(2026, 5, 30),
+        ),
+        isTrue,
+      );
+      expect(
+        futureBusinessEvent.isVisibleInPublicProfileForAccountType(
+          ProfileAccountType.user,
+        ),
+        isFalse,
+      );
+      expect(
+        personalEvent.isVisibleInPublicProfileForAccountType(
+          ProfileAccountType.user,
+        ),
+        isTrue,
+      );
     });
 
     test('switching business to user changes active identity helper', () {

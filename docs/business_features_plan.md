@@ -3,13 +3,18 @@
 ## Implemented Foundation
 
 - A user can create one business account.
+- Business account mode works like Instagram professional mode: the same auth
+  account gains extra business fields, not a second social account.
 - One auth account has one public identity. When `profiles.account_type` is
   `business`, the public profile presents the business identity instead of a
   separate personal profile.
+- Business accounts are not separately followable and `/business/:id` is
+  owner/manage oriented; public surfaces resolve to the owner profile identity.
 - Business conversion links the profile to the business account without deleting
   existing personal data.
 - Switching back to user mode is allowed. The business account stays stored,
-  but the personal profile becomes the active public identity again.
+  but the personal profile becomes the active public identity again. Future
+  active business events are cancelled/hidden when switching back to user mode.
 - Business profiles show a business badge.
 - Verified-style display is available through `is_verified`, but users cannot
   mark themselves verified.

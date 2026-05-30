@@ -291,7 +291,9 @@ class BusinessSettingsCopy {
   const BusinessSettingsCopy._();
 
   static String actionTitle(BusinessAccount? account) {
-    return account == null ? 'İşletme hesabına geç' : 'İşletme profilini yönet';
+    return account == null
+        ? 'İşletme hesabına geç'
+        : 'İşletme hesabını düzenle';
   }
 
   static String actionSubtitle(BusinessAccount? account) {

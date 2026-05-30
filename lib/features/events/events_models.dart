@@ -128,6 +128,16 @@ class Event {
     return isBusinessEvent && isHost(userId);
   }
 
+  bool isVisibleInPublicProfileForAccountType(String accountType) {
+    return !isBusinessEvent || accountType == 'business';
+  }
+
+  bool shouldCancelWhenSwitchingBackToUser(DateTime now) {
+    return isBusinessEvent &&
+        status == 'active' &&
+        (eventDate.isAfter(now) || eventDate.isAtSameMomentAs(now));
+  }
+
   bool isActiveSponsoredPlacement(DateTime now) {
     if (!isSponsored || !isBusinessEvent || eventDate.isBefore(now)) {
       return false;
@@ -645,15 +655,25 @@ class CreateEventInput {
 
   bool get isBusinessEvent => organizerType == EventOrganizerType.business;
 
-  static bool canSelectBusinessEvent(BusinessAccount? account) {
-    return account != null;
+  static bool canSelectBusinessEvent(BusinessAccount? _) {
+    return false;
+  }
+
+  static bool canUseBusinessEventFields({
+    required bool isBusinessAccount,
+    required BusinessAccount? businessAccount,
+  }) {
+    return isBusinessAccount && businessAccount != null;
   }
 
   static String defaultOrganizerType({
     required bool isBusinessAccount,
     required BusinessAccount? businessAccount,
   }) {
-    if (isBusinessAccount && businessAccount != null) {
+    if (canUseBusinessEventFields(
+      isBusinessAccount: isBusinessAccount,
+      businessAccount: businessAccount,
+    )) {
       return EventOrganizerType.business;
     }
     return EventOrganizerType.user;
