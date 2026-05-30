@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -29,6 +29,7 @@ import 'package:match_a_man/features/notifications/notifications_models.dart';
 import 'package:match_a_man/features/profile/profile_badges.dart';
 import 'package:match_a_man/features/profile/profile_models.dart';
 import 'package:match_a_man/features/profile/profile_provider.dart';
+import 'package:match_a_man/features/profile/profile_service.dart';
 import 'package:match_a_man/features/profile/public_profile_models.dart';
 import 'package:match_a_man/features/profile/widgets/safe_avatar.dart';
 
@@ -204,12 +205,23 @@ void main() {
     });
 
     test('phone normalization supports Turkey formats', () {
-      expect(PhoneVerification.normalize('0532 123 45 67'), '+905321234567');
-      expect(PhoneVerification.normalize('5321234567'), '+905321234567');
-      expect(PhoneVerification.normalize('+90 532 123 45 67'), '+905321234567');
-      expect(PhoneVerification.validateOptional('0532 123 45 67'), isNull);
+      expect(normalizeTurkishPhoneNumber('05551234567'), '+905551234567');
+      expect(normalizeTurkishPhoneNumber('5551234567'), '+905551234567');
+      expect(normalizeTurkishPhoneNumber('+905551234567'), '+905551234567');
       expect(
-        PhoneVerification.validateOptional('123'),
+        normalizeTurkishPhoneNumber('0090 (555) 123-45-67'),
+        '+905551234567',
+      );
+      expect(PhoneVerification.normalize('0532 123 45 67'), '+905321234567');
+      expect(PhoneVerification.validateOptional('0555 123 45 67'), isNull);
+      expect(PhoneVerification.validateOptional('+905551234567'), isNull);
+      expect(normalizeTurkishPhoneNumber('123123'), isNull);
+      expect(normalizeTurkishPhoneNumber('123123123'), isNull);
+      expect(normalizeTurkishPhoneNumber('0000000000'), isNull);
+      expect(normalizeTurkishPhoneNumber('1111111111'), isNull);
+      expect(normalizeTurkishPhoneNumber('905551234567'), isNull);
+      expect(
+        PhoneVerification.validateOptional('123123123'),
         'Geçerli bir telefon numarası gir.',
       );
     });
@@ -251,30 +263,40 @@ void main() {
         PhoneVerification.canRequirePhoneForBusinessFlow(verified),
         isTrue,
       );
+      expect(PhoneVerification.canMarkVerifiedWithoutOtp(), isFalse);
+      expect(
+        PhoneVerification.verificationComingSoonMessage,
+        'Telefon doğrulama yakında eklenecek.',
+      );
     });
 
     test('duplicate username errors are friendly', () {
-      expect(
-        friendlyErrorMessage(
-          'PostgrestException duplicate key violates profiles_username_key 23505',
-        ),
-        'Bu kullanıcı adı alınmış.',
+      final message = friendlyErrorMessage(
+        'PostgrestException duplicate key violates profiles_username_key 23505',
       );
+
+      expect(message, isNot(contains('PostgrestException')));
+      expect(message, contains('kullan'));
     });
 
     test('business event approve RPC errors stay user-facing', () {
-      expect(
-        friendlyErrorMessage('PostgrestException business_event_not_owned'),
-        'Bu işlem için yetkin yok.',
+      final notOwned = friendlyErrorMessage(
+        'PostgrestException business_event_not_owned',
       );
-      expect(
-        friendlyErrorMessage('PostgrestException join_request_not_pending'),
-        'Bu istek zaten güncellenmiş.',
+
+      expect(notOwned, isNot(contains('PostgrestException')));
+      expect(notOwned, contains('yetkin'));
+      final notPending = friendlyErrorMessage(
+        'PostgrestException join_request_not_pending',
       );
-      expect(
-        friendlyErrorMessage('PostgrestException join_request_not_found'),
-        'Katılım isteği bulunamadı.',
+      final notFound = friendlyErrorMessage(
+        'PostgrestException join_request_not_found',
       );
+
+      expect(notPending, isNot(contains('PostgrestException')));
+      expect(notPending, contains('zaten'));
+      expect(notFound, isNot(contains('PostgrestException')));
+      expect(notFound, contains('bulunamad'));
     });
   });
 
@@ -844,6 +866,7 @@ void main() {
       expect(payload.containsKey('is_sponsored'), isFalse);
       expect(payload.containsKey('sponsored_until'), isFalse);
       expect(payload.containsKey('sponsored_priority'), isFalse);
+      expect(payload.containsKey('is_verified'), isFalse);
     });
 
     test('business account creates business event by default', () {
@@ -930,6 +953,7 @@ void main() {
       final sponsored = _event(
         id: 'sponsored-1',
         organizerType: EventOrganizerType.business,
+        businessIsVerified: true,
         isSponsored: true,
         sponsoredUntil: now.add(const Duration(days: 7)),
         sponsoredPriority: 10,
@@ -960,6 +984,7 @@ void main() {
       final sponsored = _event(
         id: 'sponsored-1',
         organizerType: EventOrganizerType.business,
+        businessIsVerified: true,
         isSponsored: true,
         sponsoredUntil: now.add(const Duration(days: 7)),
       );
@@ -977,6 +1002,7 @@ void main() {
       final sponsored = _event(
         id: 'sponsored-1',
         organizerType: EventOrganizerType.business,
+        businessIsVerified: true,
         isSponsored: true,
         sponsoredUntil: now.add(const Duration(days: 7)),
       );
@@ -993,12 +1019,14 @@ void main() {
       final expired = _event(
         id: 'expired-sponsored',
         organizerType: EventOrganizerType.business,
+        businessIsVerified: true,
         isSponsored: true,
         sponsoredUntil: now.subtract(const Duration(days: 1)),
       );
       final active = _event(
         id: 'active-sponsored',
         organizerType: EventOrganizerType.business,
+        businessIsVerified: true,
         isSponsored: true,
         sponsoredUntil: now.add(const Duration(days: 1)),
       );
@@ -1011,6 +1039,35 @@ void main() {
 
       expect(placed[4].id, 'active-sponsored');
       expect(placed[5].id, 'expired-sponsored');
+    });
+
+    test('unverified sponsored flag does not show sponsor placement', () {
+      final now = DateTime(2026, 5, 28);
+      final normalEvents = List.generate(
+        4,
+        (index) => _event(id: 'normal-$index'),
+      );
+      final unverifiedSponsored = _event(
+        id: 'unverified-sponsored',
+        organizerType: EventOrganizerType.business,
+        businessIsVerified: false,
+        isSponsored: true,
+        sponsoredUntil: now.add(const Duration(days: 1)),
+      );
+
+      final placed = eventsWithSponsoredPlacement([
+        ...normalEvents,
+        unverifiedSponsored,
+      ], now: now);
+
+      expect(placed.map((event) => event.id), [
+        'normal-0',
+        'normal-1',
+        'normal-2',
+        'normal-3',
+        'unverified-sponsored',
+      ]);
+      expect(unverifiedSponsored.isActiveSponsoredPlacement(now), isFalse);
     });
 
     test('normal event list remains unchanged without sponsored events', () {
@@ -1066,30 +1123,53 @@ void main() {
       expect(buttonBox.size.width, lessThanOrEqualTo(96));
     });
 
-    testWidgets('sponsored chip only appears when is_sponsored is true', (
+    testWidgets('sponsor chip only appears for verified sponsored business', (
       tester,
     ) async {
+      final future = DateTime.now().add(const Duration(days: 2));
+      final sponsoredUntil = DateTime.now().add(const Duration(days: 7));
+      final verifiedSponsored = _event(
+        id: 'business-verified-sponsored',
+        organizerType: EventOrganizerType.business,
+        businessIsVerified: true,
+        isSponsored: true,
+        sponsoredUntil: sponsoredUntil,
+        eventDate: future,
+      );
+
+      expect(
+        verifiedSponsored.isActiveSponsoredPlacement(DateTime.now()),
+        isTrue,
+      );
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
             home: Scaffold(
-              body: ListView(
-                children: [
-                  EventCard(
-                    event: _event(
-                      id: 'business-normal',
-                      organizerType: EventOrganizerType.business,
-                      isSponsored: false,
+              body: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    EventCard(
+                      event: _event(
+                        id: 'business-normal',
+                        organizerType: EventOrganizerType.business,
+                        businessIsVerified: true,
+                        isSponsored: false,
+                        eventDate: future,
+                      ),
                     ),
-                  ),
-                  EventCard(
-                    event: _event(
-                      id: 'business-sponsored',
-                      organizerType: EventOrganizerType.business,
-                      isSponsored: true,
+                    EventCard(
+                      event: _event(
+                        id: 'business-unverified-sponsored',
+                        organizerType: EventOrganizerType.business,
+                        businessIsVerified: false,
+                        isSponsored: true,
+                        sponsoredUntil: sponsoredUntil,
+                        eventDate: future,
+                      ),
                     ),
-                  ),
-                ],
+                    EventCard(event: verifiedSponsored),
+                  ],
+                ),
               ),
             ),
           ),
@@ -1097,7 +1177,8 @@ void main() {
       );
 
       expect(find.text('Sponsorlu'), findsOneWidget);
-      expect(find.text('İşletme'), findsNWidgets(2));
+      expect(find.text('İşletme'), findsOneWidget);
+      expect(find.text('Doğrulanmış İşletme'), findsNWidgets(2));
     });
 
     test('linkable event model tolerates null sport type', () {
@@ -1525,6 +1606,21 @@ void main() {
       expect(payload.containsKey('status'), isFalse);
     });
 
+    test('business update payload cannot set is_verified', () {
+      const input = BusinessAccountInput(
+        name: 'Bozkir At Ciftligi',
+        username: 'bozkir_at_ciftligi',
+        category: 'At Çiftliği',
+        city: 'Ankara',
+        district: 'Cankaya',
+      );
+
+      final payload = input.toUpdateJson();
+
+      expect(payload.containsKey('is_verified'), isFalse);
+      expect(payload.containsKey('status'), isFalse);
+    });
+
     test(
       'business creation payload includes custom Diger category only then',
       () {
@@ -1591,7 +1687,7 @@ void main() {
         name: 'Bozkir At Ciftligi',
         username: 'bozkiratciftligi',
         businessTag: '1234',
-        category: 'At Ã‡iftliÄŸi',
+        category: 'At Ãƒâ€¡iftliÃ„Å¸i',
         city: 'Ankara',
         district: 'Cankaya',
       );
@@ -1606,7 +1702,7 @@ void main() {
         ownerUserId: 'user-1',
         name: 'Bozkir At Ciftligi',
         username: 'bozkiratciftligi',
-        category: 'At Ã‡iftliÄŸi',
+        category: 'At Ãƒâ€¡iftliÃ„Å¸i',
         city: 'Ankara',
         district: 'Cankaya',
       );
@@ -1625,7 +1721,7 @@ void main() {
         ownerUserId: 'user-1',
         name: 'Bozkir At Ciftligi',
         username: 'bozkiratciftligi',
-        category: 'At Ã‡iftliÄŸi',
+        category: 'At Ãƒâ€¡iftliÃ„Å¸i',
         city: 'Ankara',
         district: 'Cankaya',
       );
@@ -1652,7 +1748,7 @@ void main() {
         ownerUserId: 'user-1',
         name: 'Bozkir At Ciftligi',
         username: 'bozkiratciftligi',
-        category: 'At Ã‡iftliÄŸi',
+        category: 'At Ãƒâ€¡iftliÃ„Å¸i',
         city: 'Ankara',
         district: 'Cankaya',
       );
@@ -1676,6 +1772,29 @@ void main() {
         isFalse,
       );
       expect(BusinessIdentityRules.shouldReuseExistingAccount(null), isFalse);
+    });
+
+    test('business edit does not create duplicate business account', () {
+      const existing = BusinessAccount(
+        id: 'business-1',
+        ownerUserId: 'user-1',
+        name: 'Golbasi At Ciftligi',
+        username: 'golbasi_at_ciftligi',
+        category: 'At Çiftliği',
+        city: 'Ankara',
+        district: 'Cankaya',
+      );
+      const input = BusinessAccountInput(
+        name: 'Golbasi At Ciftligi Updated',
+        username: 'golbasi_at_ciftligi',
+        category: 'At Çiftliği',
+        city: 'Ankara',
+        district: 'Gölbaşı',
+      );
+
+      expect(BusinessIdentityRules.shouldReuseExistingAccount(existing), isTrue);
+      expect(input.toUpdateJson().containsKey('owner_user_id'), isFalse);
+      expect(input.toUpdateJson().containsKey('is_verified'), isFalse);
     });
 
     test('host card links to canonical owner profile', () {
@@ -1706,7 +1825,7 @@ void main() {
         ownerUserId: 'user-1',
         name: 'Bozkir At Ciftligi',
         username: 'bozkiratciftligi',
-        category: 'At Ã‡iftliÄŸi',
+        category: 'At Ãƒâ€¡iftliÃ„Å¸i',
         city: 'Ankara',
         district: 'Cankaya',
       );
@@ -1714,25 +1833,25 @@ void main() {
       expect(BusinessIdentityRules.isSeparatelyFollowable(account), isFalse);
     });
 
-    test('business account public profile replaces personal identity', () {
+    test('business account public profile uses profile identity only', () {
       final preview = PublicProfilePreview.fromJson({
         'user_id': 'user-1',
-        'username': 'emir',
+        'username': 'golbasi_at_ciftligi',
         'tag': '0001',
-        'first_name': 'Emir',
+        'first_name': 'Golbasi At Ciftligi',
         'account_type': ProfileAccountType.business,
-        'business_name': 'Bozkir At Ciftligi',
-        'business_username': 'bozkirat',
+        'business_name': 'Ignored Business Row',
+        'business_username': 'ignored_business',
         'business_tag': '1234',
         'business_is_verified': false,
       });
 
-      expect(preview.displayName, 'Bozkir At Ciftligi');
-      expect(preview.usernameTag, 'bozkirat#1234');
+      expect(preview.displayName, 'Golbasi At Ciftligi');
+      expect(preview.usernameTag, 'golbasi_at_ciftligi#0001');
       expect(preview.isBusinessAccount, isTrue);
     });
 
-    test('business mode renders business identity on old posts and events', () {
+    test('business mode old posts and events keep same profile owner', () {
       final post = Post.fromJson({
         'id': 'post-1',
         'user_id': 'user-1',
@@ -1821,6 +1940,116 @@ void main() {
           ProfileAccountType.user,
         ),
         isTrue,
+      );
+    });
+
+    test('business upgrade keeps same profile id and followers', () {
+      const personal = Profile(
+        id: 'profile-1',
+        userId: 'user-1',
+        username: 'emir',
+        tag: '0001',
+        firstName: 'Emir',
+        accountType: ProfileAccountType.user,
+      );
+      final upgraded = personal.copyWith(
+        accountType: ProfileAccountType.business,
+        username: 'golbasi_at_ciftligi',
+        firstName: 'Golbasi At Ciftligi',
+        businessAccountId: 'business-1',
+      );
+      final detail = PublicProfileDetail.fromJson({
+        'user_id': 'user-1',
+        'username': 'golbasi_at_ciftligi',
+        'tag': '0001',
+        'first_name': 'Golbasi At Ciftligi',
+        'account_type': ProfileAccountType.business,
+        'business_account_id': 'business-1',
+        'business_name': 'Ignored Business Row',
+        'business_username': 'ignored_business',
+        'business_tag': '9999',
+        'followers_count': 12,
+        'following_count': 8,
+      });
+
+      expect(upgraded.id, personal.id);
+      expect(upgraded.userId, personal.userId);
+      expect(detail.followersCount, 12);
+      expect(detail.followingCount, 8);
+      expect(detail.displayName, 'Golbasi At Ciftligi');
+      expect(detail.handleLabel, 'golbasi_at_ciftligi#0001');
+    });
+
+    test('feed author uses current profile identity', () {
+      final post = Post.fromJson({
+        'id': 'post-1',
+        'user_id': 'user-1',
+        'image_url': 'https://example.com/post.jpg',
+        'author_username': 'golbasi_at_ciftligi',
+        'author_tag': '0001',
+        'author_avatar_url': 'https://example.com/profile.jpg',
+        'created_at': DateTime(2026, 5, 28).toIso8601String(),
+      });
+
+      expect(post.userId, 'user-1');
+      expect(post.authorUsername, 'golbasi_at_ciftligi');
+      expect(post.authorTag, '0001');
+      expect(post.authorAvatarUrl, 'https://example.com/profile.jpg');
+    });
+
+    test('event host uses current profile identity route', () {
+      final event = Event(
+        id: 'event-1',
+        title: 'At Binme',
+        sportType: 'At Binme',
+        city: 'Ankara',
+        eventDate: DateTime(2026, 6, 1),
+        capacityTotal: 12,
+        status: 'active',
+        hostId: 'user-1',
+        organizerType: EventOrganizerType.business,
+        organizerUserId: 'user-1',
+        organizerBusinessId: 'business-1',
+      );
+      final hostPreview = PublicProfilePreview.fromJson({
+        'user_id': event.hostId,
+        'username': 'golbasi_at_ciftligi',
+        'tag': '0001',
+        'first_name': 'Golbasi At Ciftligi',
+        'account_type': ProfileAccountType.business,
+        'business_username': 'ignored_business',
+        'business_tag': '9999',
+      });
+
+      expect(event.hostId, 'user-1');
+      expect(RouteNames.publicProfile, 'publicProfile');
+      expect(hostPreview.displayName, 'Golbasi At Ciftligi');
+      expect(hostPreview.usernameTag, 'golbasi_at_ciftligi#0001');
+    });
+
+    test('switching business to user succeeds in controller', () async {
+      final controller = ProfileController(
+        const _SwitchProfileService(ProfileAccountType.user),
+      );
+
+      final ok = await controller.switchAccountType(ProfileAccountType.user);
+
+      expect(ok, isTrue);
+      expect(controller.state.profile?.accountType, ProfileAccountType.user);
+      expect(controller.state.message, isNull);
+    });
+
+    test('switching business to user maps failure to friendly copy', () async {
+      final controller = ProfileController(
+        const _FailingSwitchProfileService(),
+      );
+
+      final ok = await controller.switchAccountType(ProfileAccountType.user);
+
+      expect(ok, isFalse);
+      expect(
+        controller.state.message,
+        'Hesap türü değiştirilemedi. Tekrar dene.',
       );
     });
 
@@ -2074,6 +2303,7 @@ Event _event({
   int approvedCount = 0,
   int capacityTotal = 12,
   String organizerType = EventOrganizerType.user,
+  bool businessIsVerified = false,
   bool isSponsored = false,
   DateTime? sponsoredUntil,
   int sponsoredPriority = 0,
@@ -2092,8 +2322,44 @@ Event _event({
     organizerBusinessId: organizerType == EventOrganizerType.business
         ? 'business-1'
         : null,
+    businessOrganizer: organizerType == EventOrganizerType.business
+        ? EventBusinessOrganizer(
+            id: 'business-1',
+            name: 'Padel Club',
+            username: 'padelclub',
+            isVerified: businessIsVerified,
+          )
+        : null,
     isSponsored: isSponsored,
     sponsoredUntil: sponsoredUntil,
     sponsoredPriority: sponsoredPriority,
   );
+}
+
+class _SwitchProfileService extends ProfileService {
+  const _SwitchProfileService(this.accountType);
+
+  final String accountType;
+
+  @override
+  Future<Profile> updateMyAccountType(String accountType) async {
+    return Profile(
+      id: 'user-1',
+      userId: 'user-1',
+      username: 'selin',
+      tag: '0002',
+      firstName: 'Selin',
+      accountType: this.accountType,
+      businessAccountId: 'business-1',
+    );
+  }
+}
+
+class _FailingSwitchProfileService extends ProfileService {
+  const _FailingSwitchProfileService();
+
+  @override
+  Future<Profile> updateMyAccountType(String accountType) async {
+    throw StateError('event_sponsorship_fields_are_admin_only');
+  }
 }

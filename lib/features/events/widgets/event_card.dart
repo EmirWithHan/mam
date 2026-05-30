@@ -20,6 +20,7 @@ class EventCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final showSponsorChip = event.isActiveSponsoredPlacement(DateTime.now());
     final spotsLeft = event.safeCapacityTotal - event.safeApprovedCount;
     final spotsLabel = event.isPast || spotsLeft <= 0
         ? null
@@ -75,13 +76,13 @@ class EventCard extends StatelessWidget {
                     _SportChip(sportType: event.sportType),
                   ],
                 ),
-                if (event.isSponsored || event.isPast) ...[
+                if (showSponsorChip || event.isPast) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Wrap(
                     spacing: AppSpacing.sm,
                     runSpacing: AppSpacing.xs,
                     children: [
-                      if (event.isSponsored)
+                      if (showSponsorChip)
                         _Pill(
                           label: 'Sponsorlu',
                           color: const Color(0xFFFF7E79),
@@ -157,43 +158,6 @@ class _OrganizerTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final business = event.businessOrganizer;
-    if (event.isBusinessEvent && business != null) {
-      return Row(
-        children: [
-          const CircleAvatar(
-            radius: 16,
-            backgroundColor: AppColors.primarySoft,
-            child: Icon(
-              Icons.storefront_outlined,
-              color: AppColors.primary,
-              size: 17,
-            ),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  business.displayName,
-                  style: AppTextStyles.caption,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  event.priceLabel,
-                  style: AppTextStyles.caption,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    }
-
     return PublicProfilePreviewTile(
       userId: event.hostId,
       subtitle: _participantSummary,

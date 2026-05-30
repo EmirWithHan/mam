@@ -315,24 +315,12 @@ class _ProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final isBusinessIdentity =
         profile.isBusinessAccount && businessAccount != null;
-    final avatarUrl = isBusinessIdentity
-        ? businessAccount!.logoUrl ?? profile.avatarUrl
-        : profile.avatarUrl;
-    final fallbackText = isBusinessIdentity
-        ? _businessInitials(businessAccount!)
-        : _initials(profile);
-    final title = isBusinessIdentity
-        ? businessAccount!.displayName
-        : _displayName(profile);
-    final handle = isBusinessIdentity
-        ? businessAccount!.displayHandle
-        : profile.displayHandle;
-    final location = isBusinessIdentity
-        ? businessAccount!.locationLabel
-        : profile.city?.trim();
-    final description = isBusinessIdentity
-        ? businessAccount!.description?.trim()
-        : profile.bio?.trim();
+    final avatarUrl = profile.avatarUrl;
+    final fallbackText = _initials(profile);
+    final title = _displayName(profile);
+    final handle = profile.displayHandle;
+    final location = profile.city?.trim();
+    final description = profile.bio?.trim();
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -582,14 +570,6 @@ String _initials(Profile profile) {
   }
 
   return 'M';
-}
-
-String _businessInitials(BusinessAccount account) {
-  final name = account.displayName.trim();
-  if (name.isNotEmpty) return name.characters.first.toUpperCase();
-  final username = account.username.trim();
-  if (username.isNotEmpty) return username.characters.first.toUpperCase();
-  return 'İ';
 }
 
 String _displayName(Profile profile) {

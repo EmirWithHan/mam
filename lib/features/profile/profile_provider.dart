@@ -164,7 +164,9 @@ class ProfileController extends StateNotifier<ProfileState> {
       state = ProfileState(
         status: ProfileStatus.error,
         profile: state.profile,
-        message: friendlyErrorMessage(error),
+        message: accountType == ProfileAccountType.user
+            ? 'Hesap türü değiştirilemedi. Tekrar dene.'
+            : friendlyErrorMessage(error),
       );
       return false;
     }

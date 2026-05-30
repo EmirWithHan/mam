@@ -267,9 +267,7 @@ class _ProfileAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final avatarUrl = detail.isBusinessAccount
-        ? (detail.businessLogoUrl ?? detail.avatarUrl)?.trim()
-        : detail.avatarUrl?.trim();
+    final avatarUrl = detail.avatarUrl?.trim();
 
     return Container(
       padding: const EdgeInsets.all(4),
@@ -1001,13 +999,6 @@ class _LockedExtendedProfileCard extends StatelessWidget {
 }
 
 String _initials(PublicProfileDetail detail) {
-  if (detail.isBusinessAccount) {
-    final businessName = detail.businessName?.trim();
-    if (businessName != null && businessName.isNotEmpty) {
-      return businessName[0].toUpperCase();
-    }
-  }
-
   final parts = [
     detail.firstName?.trim(),
   ].where((part) => part != null && part.isNotEmpty).cast<String>().toList();

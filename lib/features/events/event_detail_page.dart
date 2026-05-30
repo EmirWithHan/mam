@@ -604,7 +604,7 @@ class _EventHeroCard extends StatelessWidget {
                 Expanded(
                   child: Text(event.title, style: AppTextStyles.headline),
                 ),
-                if (event.isSponsored)
+                if (event.isActiveSponsoredPlacement(DateTime.now()))
                   _MiniChip(
                     label: 'Sponsorlu',
                     color: const Color(0xFFFF7E79),
@@ -654,10 +654,7 @@ class _EventHeroCard extends StatelessWidget {
             _DetailLine(label: 'Where', value: event.locationLabel),
             _DetailLine(label: 'When', value: _formatDateTime(event.eventDate)),
             if (event.isBusinessEvent)
-              _DetailLine(
-                label: 'Organizer',
-                value: event.businessOrganizer?.displayName ?? 'İşletme',
-              ),
+              _DetailLine(label: 'Organizer', value: 'İşletme etkinliği'),
           ],
         ),
       ),

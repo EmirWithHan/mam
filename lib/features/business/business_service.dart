@@ -51,7 +51,7 @@ class BusinessAccountService {
     final userId = SupabaseService.client.auth.currentUser?.id;
     if (userId == null) {
       throw const BusinessAccountException(
-        'Isletme hesabi olusturmak icin giris yapmalisin.',
+        'İşletme hesabı oluşturmak için giriş yapmalısın.',
       );
     }
 
@@ -92,7 +92,9 @@ class BusinessAccountService {
           .select()
           .single();
 
-      return BusinessAccount.fromJson(data);
+      final account = BusinessAccount.fromJson(data);
+      await _markProfileAsBusiness();
+      return account;
     } catch (error) {
       throw BusinessAccountException(_friendlyBusinessError(error));
     }

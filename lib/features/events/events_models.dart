@@ -139,7 +139,11 @@ class Event {
   }
 
   bool isActiveSponsoredPlacement(DateTime now) {
-    if (!isSponsored || !isBusinessEvent || eventDate.isBefore(now)) {
+    final verifiedBusiness = businessOrganizer?.isVerified == true;
+    if (!isSponsored ||
+        !isBusinessEvent ||
+        !verifiedBusiness ||
+        eventDate.isBefore(now)) {
       return false;
     }
     final until = sponsoredUntil;

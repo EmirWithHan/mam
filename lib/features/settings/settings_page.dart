@@ -68,10 +68,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               style: AppTextStyles.body,
             ),
             const SizedBox(height: AppSpacing.lg),
-            _SettingsUserCard(
-              profile: profile,
-              businessAccount: businessAccount,
-            ),
+            _SettingsUserCard(profile: profile),
             const SizedBox(height: AppSpacing.md),
             _PhoneVerificationTile(profile: profile),
             const SizedBox(height: AppSpacing.lg),
@@ -281,13 +278,9 @@ class _PrivacySection extends StatelessWidget {
 }
 
 class _SettingsUserCard extends StatelessWidget {
-  const _SettingsUserCard({
-    required this.profile,
-    required this.businessAccount,
-  });
+  const _SettingsUserCard({required this.profile});
 
   final Profile? profile;
-  final BusinessAccount? businessAccount;
 
   @override
   Widget build(BuildContext context) {
@@ -307,7 +300,7 @@ class _SettingsUserCard extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Row(
           children: [
-            _Avatar(profile: profile, businessAccount: businessAccount),
+            _Avatar(profile: profile),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
@@ -326,9 +319,6 @@ class _SettingsUserCard extends StatelessWidget {
   }
 
   String _displayName() {
-    if (profile?.isBusinessAccount == true && businessAccount != null) {
-      return businessAccount!.displayName;
-    }
     final firstName = profile?.firstName?.trim();
     final name = [
       firstName,
@@ -337,9 +327,6 @@ class _SettingsUserCard extends StatelessWidget {
   }
 
   String _displayHandle() {
-    if (profile?.isBusinessAccount == true && businessAccount != null) {
-      return businessAccount!.displayHandle ?? businessAccount!.displayCategory;
-    }
     final username = profile?.username?.trim();
     final tag = profile?.tag?.trim();
     if (username != null &&
@@ -354,16 +341,13 @@ class _SettingsUserCard extends StatelessWidget {
 }
 
 class _Avatar extends StatelessWidget {
-  const _Avatar({required this.profile, required this.businessAccount});
+  const _Avatar({required this.profile});
 
   final Profile? profile;
-  final BusinessAccount? businessAccount;
 
   @override
   Widget build(BuildContext context) {
-    final avatarUrl = profile?.isBusinessAccount == true
-        ? businessAccount?.logoUrl ?? profile?.avatarUrl
-        : profile?.avatarUrl;
+    final avatarUrl = profile?.avatarUrl;
 
     return CircleAvatar(
       radius: 30,

@@ -402,10 +402,6 @@ class PublicProfileDetail {
   bool get isBusinessAccount => accountType == ProfileAccountType.business;
 
   String get displayName {
-    if (isBusinessAccount) {
-      final business = businessName?.trim();
-      if (business != null && business.isNotEmpty) return business;
-    }
     final first = firstName?.trim();
     final user = username?.trim();
     if (first != null && first.isNotEmpty) {
@@ -416,9 +412,6 @@ class PublicProfileDetail {
   }
 
   String? get handleLabel {
-    if (isBusinessAccount) {
-      return formatUserHandle(businessUsername, businessTag);
-    }
     return formatUserHandle(username, tag);
   }
 
@@ -428,9 +421,6 @@ class PublicProfileDetail {
       businessDescription?.trim().isNotEmpty == true;
 
   String? get identityBio {
-    if (isBusinessAccount && hasBusinessDescription) {
-      return businessDescription!.trim();
-    }
     if (hasBio) return bio!.trim();
     return null;
   }
@@ -448,13 +438,6 @@ class PublicProfileDetail {
   }
 
   String? get locationLabel {
-    if (isBusinessAccount) {
-      final cityValue = businessCity?.trim();
-      final districtValue = businessDistrict?.trim();
-      if (cityValue == null || cityValue.isEmpty) return null;
-      if (districtValue == null || districtValue.isEmpty) return cityValue;
-      return '$cityValue / $districtValue';
-    }
     final cityValue = city?.trim();
     final districtValue = district?.trim();
     if (cityValue == null || cityValue.isEmpty) return null;

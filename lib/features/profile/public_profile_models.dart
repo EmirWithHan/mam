@@ -36,10 +36,6 @@ class PublicProfilePreview {
   bool get isBusinessAccount => accountType == 'business';
 
   String get displayName {
-    if (isBusinessAccount) {
-      final business = businessName?.trim();
-      if (business != null && business.isNotEmpty) return business;
-    }
     final first = firstName?.trim();
     final usernameValue = username?.trim();
 
@@ -55,19 +51,10 @@ class PublicProfilePreview {
   }
 
   String? get usernameTag {
-    if (isBusinessAccount) {
-      return formatUserHandle(businessUsername, businessTag);
-    }
     return formatUserHandle(username, tag);
   }
 
   String get initials {
-    if (isBusinessAccount) {
-      final business = businessName?.trim();
-      if (business != null && business.isNotEmpty) {
-        return business[0].toUpperCase();
-      }
-    }
     final parts = [
       firstName?.trim(),
     ].where((part) => part != null && part.isNotEmpty).cast<String>().toList();
@@ -99,8 +86,7 @@ class PublicProfilePreview {
       tag: json['tag'] as String?,
       firstName: json['first_name'] as String?,
       city: json['city'] as String?,
-      avatarUrl:
-          json['business_logo_url'] as String? ?? json['avatar_url'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
       trustScore: (json['trust_score'] as num?)?.toInt(),
       isProfileCompleted: json['is_profile_completed'] as bool? ?? false,
       accountType: json['account_type']?.toString() ?? 'user',

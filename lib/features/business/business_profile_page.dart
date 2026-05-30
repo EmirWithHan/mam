@@ -112,14 +112,6 @@ class _BusinessProfileBody extends ConsumerWidget {
                   style: AppTextStyles.headline,
                   textAlign: TextAlign.center,
                 ),
-                if (account.displayHandle != null) ...[
-                  const SizedBox(height: AppSpacing.xs),
-                  Text(
-                    account.displayHandle!,
-                    style: AppTextStyles.bodySmall,
-                    textAlign: TextAlign.center,
-                  ),
-                ],
                 const SizedBox(height: AppSpacing.sm),
                 ratingAsync.maybeWhen(
                   data: (summary) => _RatingSummary(summary: summary),

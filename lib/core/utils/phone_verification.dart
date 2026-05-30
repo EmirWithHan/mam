@@ -1,32 +1,17 @@
 class PhoneVerification {
   const PhoneVerification._();
 
+  static const verificationComingSoonMessage =
+      'Telefon doğrulama yakında eklenecek.';
+
   static String normalize(String? value) {
-    final trimmed = value?.trim() ?? '';
-    if (trimmed.isEmpty) return '';
-
-    var digits = trimmed.replaceAll(RegExp(r'[^0-9+]'), '');
-    if (digits.startsWith('00')) {
-      digits = '+${digits.substring(2)}';
-    }
-    if (digits.startsWith('+90')) {
-      return '+90${digits.substring(3).replaceAll(RegExp(r'[^0-9]'), '')}';
-    }
-
-    digits = digits.replaceAll(RegExp(r'[^0-9]'), '');
-    if (digits.startsWith('90') && digits.length == 12) return '+$digits';
-    if (digits.startsWith('0') && digits.length == 11) {
-      return '+90${digits.substring(1)}';
-    }
-    if (digits.length == 10 && digits.startsWith('5')) return '+90$digits';
-    return digits;
+    return normalizeTurkishPhoneNumber(value) ?? '';
   }
 
   static String? validateOptional(String? value) {
     final raw = value?.trim() ?? '';
     if (raw.isEmpty) return null;
-    final normalized = normalize(raw);
-    if (RegExp(r'^\+905[0-9]{9}$').hasMatch(normalized)) return null;
+    if (normalizeTurkishPhoneNumber(raw) != null) return null;
     return 'Geçerli bir telefon numarası gir.';
   }
 
@@ -37,6 +22,10 @@ class PhoneVerification {
 
   static bool canRequirePhoneForBusinessFlow(dynamic profile) {
     return isPhoneVerified(profile);
+  }
+
+  static bool canMarkVerifiedWithoutOtp() {
+    return false;
   }
 
   static String statusLabel(dynamic profile) {
@@ -54,4 +43,41 @@ class PhoneVerification {
     }
     return 'Geçerli bir telefon numarası gir.';
   }
+}
+
+String? normalizeTurkishPhoneNumber(String? input) {
+  final trimmed = input?.trim() ?? '';
+  if (trimmed.isEmpty) return null;
+
+  final digits = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
+  if (digits.isEmpty) return null;
+
+  String national;
+  final compact = trimmed.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+  if (compact.startsWith('+90')) {
+    national = digits.substring(2);
+  } else if (compact.startsWith('0090')) {
+    national = digits.substring(4);
+  } else if (compact.startsWith('0')) {
+    national = digits.substring(1);
+  } else if (compact.startsWith('5')) {
+    national = digits;
+  } else {
+    return null;
+  }
+
+  if (!RegExp(r'^5[0-9]{9}$').hasMatch(national)) return null;
+  if (RegExp(r'^([0-9])\1{9}$').hasMatch(national)) return null;
+  if (_hasSuspiciousRepeatedPattern(national)) return null;
+
+  return '+90$national';
+}
+
+bool _hasSuspiciousRepeatedPattern(String national) {
+  for (var size = 1; size <= 5; size++) {
+    if (national.length % size != 0) continue;
+    final part = national.substring(0, size);
+    if (part * (national.length ~/ size) == national) return true;
+  }
+  return false;
 }
