@@ -9,16 +9,22 @@ class BusinessAccountState {
   const BusinessAccountState({
     required this.status,
     this.account,
+    this.application,
+    this.isAdmin = false,
     this.message,
   });
 
   const BusinessAccountState.initial()
       : status = BusinessAccountStatusState.initial,
         account = null,
+        application = null,
+        isAdmin = false,
         message = null;
 
   final BusinessAccountStatusState status;
   final BusinessAccount? account;
+  final BusinessApplication? application;
+  final bool isAdmin;
   final String? message;
 
   bool get isLoading => status == BusinessAccountStatusState.loading;
@@ -26,12 +32,16 @@ class BusinessAccountState {
   BusinessAccountState copyWith({
     required BusinessAccountStatusState status,
     BusinessAccount? account,
+    BusinessApplication? application,
+    bool? isAdmin,
     String? message,
     bool clearMessage = false,
   }) {
     return BusinessAccountState(
       status: status,
       account: account ?? this.account,
+      application: application ?? this.application,
+      isAdmin: isAdmin ?? this.isAdmin,
       message: clearMessage ? null : message ?? this.message,
     );
   }
@@ -55,6 +65,11 @@ final publicBusinessAccountProvider =
       .fetchBusinessAccountById(businessId);
 });
 
+final pendingBusinessApplicationsProvider =
+    FutureProvider<List<BusinessApplication>>((ref) {
+  return ref.watch(businessAccountServiceProvider).fetchPendingApplications();
+});
+
 class BusinessAccountController extends StateNotifier<BusinessAccountState> {
   BusinessAccountController(this._service)
       : super(const BusinessAccountState.initial());
@@ -69,14 +84,20 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
 
     try {
       final account = await _service.fetchMyBusinessAccount();
+      final application = await _service.fetchMyLatestApplication();
+      final isAdmin = await _service.isCurrentUserAdmin();
       state = BusinessAccountState(
         status: BusinessAccountStatusState.success,
         account: account,
+        application: application,
+        isAdmin: isAdmin,
       );
     } catch (error) {
       state = BusinessAccountState(
         status: BusinessAccountStatusState.error,
         account: state.account,
+        application: state.application,
+        isAdmin: state.isAdmin,
         message: error.toString(),
       );
     }
@@ -92,7 +113,7 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
 
     try {
       final account = await _service.createBusinessAccount(input);
-      state = BusinessAccountState(
+      state = state.copyWith(
         status: BusinessAccountStatusState.success,
         account: account,
       );
@@ -101,6 +122,35 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
       state = BusinessAccountState(
         status: BusinessAccountStatusState.error,
         account: state.account,
+        application: state.application,
+        isAdmin: state.isAdmin,
+        message: error.toString(),
+      );
+      return null;
+    }
+  }
+
+  Future<BusinessApplication?> submitApplication(
+    BusinessApplicationInput input,
+  ) async {
+    state = state.copyWith(
+      status: BusinessAccountStatusState.loading,
+      clearMessage: true,
+    );
+
+    try {
+      final application = await _service.submitApplication(input);
+      state = state.copyWith(
+        status: BusinessAccountStatusState.success,
+        application: application,
+      );
+      return application;
+    } catch (error) {
+      state = BusinessAccountState(
+        status: BusinessAccountStatusState.error,
+        account: state.account,
+        application: state.application,
+        isAdmin: state.isAdmin,
         message: error.toString(),
       );
       return null;
@@ -118,7 +168,7 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
 
     try {
       final account = await _service.updateBusinessAccount(id: id, input: input);
-      state = BusinessAccountState(
+      state = state.copyWith(
         status: BusinessAccountStatusState.success,
         account: account,
       );
@@ -127,6 +177,8 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
       state = BusinessAccountState(
         status: BusinessAccountStatusState.error,
         account: state.account,
+        application: state.application,
+        isAdmin: state.isAdmin,
         message: error.toString(),
       );
       return null;

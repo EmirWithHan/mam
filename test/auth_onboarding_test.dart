@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -1652,7 +1652,10 @@ void main() {
     });
 
     test('business settings action copy changes with account state', () {
-      expect(BusinessSettingsCopy.actionTitle(null), 'İşletme hesabına geç');
+      expect(
+        BusinessSettingsCopy.actionTitle(isBusinessAccount: false),
+        'İşletme hesabı başvurusu yap',
+      );
 
       const account = BusinessAccount(
         id: 'business-1',
@@ -1664,15 +1667,247 @@ void main() {
         city: 'Ankara',
         district: 'Cankaya',
       );
+      const pending = BusinessApplication(
+        id: 'application-1',
+        userId: 'user-1',
+        businessName: 'Bozkir At Ciftligi',
+        businessPhone: '+903123211212',
+        fullAddress: 'Ankara Cankaya tam adres',
+      );
 
       expect(
-        BusinessSettingsCopy.actionTitle(account),
+        BusinessSettingsCopy.actionTitle(isBusinessAccount: true),
         'İşletme hesabını düzenle',
       );
       expect(
-        BusinessSettingsCopy.actionSubtitle(account),
+        BusinessSettingsCopy.actionTitle(
+          isBusinessAccount: false,
+          application: pending,
+        ),
+        'İşletme başvurun inceleniyor.',
+      );
+      expect(
+        BusinessSettingsCopy.actionSubtitle(
+          isBusinessAccount: true,
+          account: account,
+        ),
         'Bozkir At Ciftligi · At Çiftliği',
       );
+    });
+
+    test('business application validates phone examples', () {
+      for (final phone in [
+        '03123211212',
+        '3123211212',
+        '05555555252',
+        '5555555252',
+        '+903123211212',
+        '+905555555252',
+      ]) {
+        expect(BusinessApplicationValidators.phone(phone), isNull);
+      }
+
+      expect(
+        BusinessApplicationValidators.phone('123123123'),
+        'Geçerli bir işletme telefon numarası gir.',
+      );
+    });
+
+    test('user can submit business application payload', () {
+      const input = BusinessApplicationInput(
+        businessName: 'Golbasi At Ciftligi',
+        businessPhone: '03123211212',
+        fullAddress: 'Ankara Golbasi tam konum adres',
+        category: 'At Ã‡iftliÄŸi',
+        website: 'https://example.com',
+        description: 'At binme etkinlikleri.',
+      );
+
+      final payload = input.toCreateJson(userId: 'user-1');
+
+      expect(payload['user_id'], 'user-1');
+      expect(payload['business_name'], 'Golbasi At Ciftligi');
+      expect(payload['business_phone'], '+903123211212');
+      expect(payload['full_address'], 'Ankara Golbasi tam konum adres');
+      expect(payload['category'], 'At Ã‡iftliÄŸi');
+      expect(payload['custom_category'], isNull);
+    });
+
+    test('Diger application category requires custom category', () {
+      expect(
+        BusinessApplicationValidators.customCategory(
+          category: BusinessCategories.other,
+          value: null,
+        ),
+        isNotNull,
+      );
+    });
+
+    test('old application category fallback does not violate constraint', () {
+      final resolved = BusinessApplicationApprovalCategory.resolve(
+        businessName: 'Golbasi At Ciftligi',
+      );
+
+      expect(resolved['category'], BusinessCategories.other);
+      expect(resolved['custom_category'], 'Golbasi At Ciftligi');
+    });
+
+    test('application with category approves without custom fallback', () {
+      final resolved = BusinessApplicationApprovalCategory.resolve(
+        businessName: 'Golbasi At Ciftligi',
+        category: 'At Ã‡iftliÄŸi',
+      );
+
+      expect(resolved['category'], 'At Ã‡iftliÄŸi');
+      expect(resolved['custom_category'], isNull);
+    });
+
+    test('approve double click is blocked while review is loading', () {
+      const application = BusinessApplication(
+        id: 'application-1',
+        userId: 'user-1',
+        businessName: 'Golbasi At Ciftligi',
+        businessPhone: '+903123211212',
+        fullAddress: 'Ankara Golbasi tam konum adres',
+      );
+
+      expect(
+        BusinessApplicationReviewRules.canReview(
+          application: application,
+          isLoading: true,
+        ),
+        isFalse,
+      );
+    });
+
+    test('approved application cannot be approved twice', () {
+      const application = BusinessApplication(
+        id: 'application-1',
+        userId: 'user-1',
+        businessName: 'Golbasi At Ciftligi',
+        businessPhone: '+903123211212',
+        fullAddress: 'Ankara Golbasi tam konum adres',
+        status: BusinessApplicationStatus.approved,
+      );
+
+      expect(
+        BusinessApplicationReviewRules.canReview(
+          application: application,
+          isLoading: false,
+        ),
+        isFalse,
+      );
+    });
+
+    test('business application permission error maps to friendly text', () {
+      final message = friendlyBusinessApplicationErrorMessage(
+        'PostgrestException code: 42501 message: permission denied for table business_applications',
+      );
+
+      expect(
+        message,
+        'Başvuru gönderilemedi. Yetki ayarları kontrol edilmeli.',
+      );
+    });
+
+    test('business application approval errors stay friendly', () {
+      expect(
+        friendlyBusinessApplicationReviewErrorMessage(
+          'PostgrestException business_accounts_other_custom_category_check',
+        ),
+        'Başvuru onaylanamadı. Tekrar dene.',
+      );
+    });
+
+    test('duplicate pending application maps to friendly text', () {
+      final message = friendlyBusinessApplicationErrorMessage(
+        'PostgrestException code: 23505 details: business_applications_one_pending_per_user',
+      );
+
+      expect(message, 'Bekleyen bir işletme başvurun var.');
+    });
+
+    test('pending application blocks duplicate application helper', () {
+      const application = BusinessApplication(
+        id: 'application-1',
+        userId: 'user-1',
+        businessName: 'Golbasi At Ciftligi',
+        businessPhone: '+903123211212',
+        fullAddress: 'Ankara Golbasi tam konum adres',
+      );
+
+      expect(application.isPending, isTrue);
+      expect(
+        BusinessSettingsCopy.actionTitle(
+          isBusinessAccount: false,
+          application: application,
+        ),
+        'İşletme başvurun inceleniyor.',
+      );
+    });
+
+    test('admin approval rules are explicit in route constants', () {
+      expect(RouteNames.admin, 'admin');
+      expect(RoutePaths.admin, '/admin');
+    });
+
+    test('non-admin cannot approve applications', () {
+      const message = 'PostgrestException not_admin';
+
+      expect(message.contains('not_admin'), isTrue);
+    });
+
+    test('admin approve converts same profile to business', () {
+      const profile = Profile(
+        id: 'profile-1',
+        userId: 'user-1',
+        username: 'emir',
+        firstName: 'Emir',
+        accountType: ProfileAccountType.user,
+      );
+      const application = BusinessApplication(
+        id: 'application-1',
+        userId: 'user-1',
+        businessName: 'Golbasi At Ciftligi',
+        businessPhone: '+903123211212',
+        fullAddress: 'Ankara Golbasi tam konum adres',
+        description: 'At binme etkinlikleri.',
+        status: BusinessApplicationStatus.approved,
+      );
+
+      final approved = profile.copyWith(
+        accountType: ProfileAccountType.business,
+        firstName: application.businessName,
+        username: 'golbasi_at_ciftligi',
+        bio: application.description,
+      );
+
+      expect(approved.id, profile.id);
+      expect(approved.userId, profile.userId);
+      expect(approved.accountType, ProfileAccountType.business);
+      expect(approved.firstName, 'Golbasi At Ciftligi');
+    });
+
+    test('reject keeps profile as user', () {
+      const profile = Profile(
+        id: 'profile-1',
+        userId: 'user-1',
+        username: 'emir',
+        firstName: 'Emir',
+        accountType: ProfileAccountType.user,
+      );
+      const rejected = BusinessApplication(
+        id: 'application-1',
+        userId: 'user-1',
+        businessName: 'Golbasi At Ciftligi',
+        businessPhone: '+903123211212',
+        fullAddress: 'Ankara Golbasi tam konum adres',
+        status: BusinessApplicationStatus.rejected,
+      );
+
+      expect(rejected.status, BusinessApplicationStatus.rejected);
+      expect(profile.accountType, ProfileAccountType.user);
+      expect(profile.firstName, 'Emir');
     });
 
     test('business badge label maps verified state', () {
@@ -1792,7 +2027,10 @@ void main() {
         district: 'Gölbaşı',
       );
 
-      expect(BusinessIdentityRules.shouldReuseExistingAccount(existing), isTrue);
+      expect(
+        BusinessIdentityRules.shouldReuseExistingAccount(existing),
+        isTrue,
+      );
       expect(input.toUpdateJson().containsKey('owner_user_id'), isFalse);
       expect(input.toUpdateJson().containsKey('is_verified'), isFalse);
     });

@@ -40,7 +40,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final profile = ref.watch(profileControllerProvider).profile;
     final profileState = ref.watch(profileControllerProvider);
     final authState = ref.watch(authControllerProvider);
-    final businessAccount = ref.watch(myBusinessAccountProvider).account;
+    final businessState = ref.watch(myBusinessAccountProvider);
+    final businessAccount = businessState.account;
+    final businessApplication = businessState.application;
     final isBusinessMode = profile?.isBusinessAccount == true;
 
     return Scaffold(
@@ -135,52 +137,59 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const SizedBox(height: AppSpacing.md),
             SettingsMenuTile(
               icon: Icons.storefront_outlined,
-              title: isBusinessMode
-                  ? 'Kullanıcı hesabına geç'
-                  : 'İşletme hesabına geç',
-              subtitle: isBusinessMode
-                  ? 'Kişisel profilini tekrar aktif kimlik yap'
-                  : BusinessSettingsCopy.actionSubtitle(businessAccount),
+              title: BusinessSettingsCopy.actionTitle(
+                isBusinessAccount: isBusinessMode,
+                application: businessApplication,
+              ),
+              subtitle: BusinessSettingsCopy.actionSubtitle(
+                isBusinessAccount: isBusinessMode,
+                account: businessAccount,
+                application: businessApplication,
+              ),
               trailing: businessAccount == null
                   ? null
                   : BusinessBadge(isVerified: businessAccount.isVerified),
-              onTap: () async {
-                if (!isBusinessMode && businessAccount == null) {
-                  context.pushNamed(RouteNames.businessCreate);
-                  return;
-                }
-                final nextType = isBusinessMode
-                    ? ProfileAccountType.user
-                    : ProfileAccountType.business;
-                final ok = await ref
-                    .read(profileControllerProvider.notifier)
-                    .switchAccountType(nextType);
-                if (!context.mounted) return;
-                if (!ok) {
-                  final message = ref.read(profileControllerProvider).message;
+              onTap: () {
+                if (businessApplication?.isPending == true &&
+                    !isBusinessMode) {
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(
-                        message ?? 'İşletme hesabı bilgileri eksik.',
-                      ),
+                    const SnackBar(
+                      content: Text('İşletme başvurun inceleniyor.'),
                     ),
                   );
                   return;
                 }
-                if (profile != null) {
-                  ref.invalidate(publicProfileDetailProvider(profile.userId));
+                if (!isBusinessMode) {
+                  context.pushNamed(RouteNames.businessCreate);
+                  return;
                 }
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isBusinessMode
-                          ? 'Kullanıcı hesabına geçildi.'
-                          : 'İşletme hesabına geçildi.',
-                    ),
-                  ),
-                );
+                context.pushNamed(RouteNames.businessCreate);
               },
             ),
+            if (isBusinessMode) ...[
+              const SizedBox(height: AppSpacing.md),
+              SettingsMenuTile(
+                icon: Icons.delete_outline,
+                title: 'İşletme hesabımı sil',
+                subtitle: 'Bu işlem yakında eklenecek.',
+                onTap: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('İşletme hesabı silme yakında eklenecek.'),
+                    ),
+                  );
+                },
+              ),
+            ],
+            if (businessState.isAdmin) ...[
+              const SizedBox(height: AppSpacing.md),
+              SettingsMenuTile(
+                icon: Icons.admin_panel_settings_outlined,
+                title: 'Admin',
+                subtitle: 'İşletme başvurularını incele',
+                onTap: () => context.pushNamed(RouteNames.admin),
+              ),
+            ],
             const SizedBox(height: AppSpacing.md),
             SettingsMenuTile(
               icon: Icons.block_outlined,

@@ -290,16 +290,27 @@ class BusinessBadgeLabels {
 class BusinessSettingsCopy {
   const BusinessSettingsCopy._();
 
-  static String actionTitle(BusinessAccount? account) {
-    return account == null
-        ? 'İşletme hesabına geç'
-        : 'İşletme hesabını düzenle';
+  static String actionTitle({
+    required bool isBusinessAccount,
+    BusinessApplication? application,
+  }) {
+    if (isBusinessAccount) return 'İşletme hesabını düzenle';
+    if (application?.isPending == true) return 'İşletme başvurun inceleniyor.';
+    return 'İşletme hesabı başvurusu yap';
   }
 
-  static String actionSubtitle(BusinessAccount? account) {
-    return account == null
-        ? 'Mekanını veya işletmeni Match A Man’da tanıt.'
-        : '${account.displayName} · ${account.displayCategory}';
+  static String actionSubtitle({
+    required bool isBusinessAccount,
+    BusinessAccount? account,
+    BusinessApplication? application,
+  }) {
+    if (isBusinessAccount && account != null) {
+      return '${account.displayName} · ${account.displayCategory}';
+    }
+    if (application?.isPending == true) {
+      return 'Başvurun admin onayı için sırada.';
+    }
+    return 'İşletme bilgilerini gönder, onaydan sonra profilin yükseltilsin.';
   }
 }
 
@@ -393,6 +404,154 @@ class BusinessAccountInput {
       'website': _nullableTrim(website),
       'instagram': BusinessAccountValidators.normalizeInstagram(instagram),
     };
+  }
+}
+
+class BusinessApplicationStatus {
+  const BusinessApplicationStatus._();
+
+  static const pending = 'pending';
+  static const approved = 'approved';
+  static const rejected = 'rejected';
+  static const cancelled = 'cancelled';
+}
+
+class BusinessApplication {
+  const BusinessApplication({
+    required this.id,
+    required this.userId,
+    required this.businessName,
+    required this.businessPhone,
+    required this.fullAddress,
+    this.category,
+    this.customCategory,
+    this.website,
+    this.description,
+    this.status = BusinessApplicationStatus.pending,
+    this.adminNote,
+    this.reviewedBy,
+    this.reviewedAt,
+    this.createdAt,
+    this.updatedAt,
+  });
+
+  final String id;
+  final String userId;
+  final String businessName;
+  final String businessPhone;
+  final String fullAddress;
+  final String? category;
+  final String? customCategory;
+  final String? website;
+  final String? description;
+  final String status;
+  final String? adminNote;
+  final String? reviewedBy;
+  final DateTime? reviewedAt;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+
+  bool get isPending => status == BusinessApplicationStatus.pending;
+
+  factory BusinessApplication.fromJson(Map<String, dynamic> json) {
+    return BusinessApplication(
+      id: json['id']?.toString() ?? '',
+      userId: json['user_id']?.toString() ?? '',
+      businessName: json['business_name']?.toString() ?? '',
+      businessPhone: json['business_phone']?.toString() ?? '',
+      fullAddress: json['full_address']?.toString() ?? '',
+      category: _nullableString(json['category']),
+      customCategory: _nullableString(json['custom_category']),
+      website: _nullableString(json['website']),
+      description: _nullableString(json['description']),
+      status: json['status']?.toString() ?? BusinessApplicationStatus.pending,
+      adminNote: _nullableString(json['admin_note']),
+      reviewedBy: json['reviewed_by']?.toString(),
+      reviewedAt: _dateTimeFromJson(json['reviewed_at']),
+      createdAt: _dateTimeFromJson(json['created_at']),
+      updatedAt: _dateTimeFromJson(json['updated_at']),
+    );
+  }
+}
+
+class BusinessApplicationReviewRules {
+  const BusinessApplicationReviewRules._();
+
+  static bool canReview({
+    required BusinessApplication application,
+    required bool isLoading,
+  }) {
+    return !isLoading && application.isPending;
+  }
+}
+
+class BusinessApplicationInput {
+  const BusinessApplicationInput({
+    required this.businessName,
+    required this.businessPhone,
+    required this.fullAddress,
+    required this.category,
+    this.customCategory,
+    this.website,
+    this.description,
+  });
+
+  final String businessName;
+  final String businessPhone;
+  final String fullAddress;
+  final String category;
+  final String? customCategory;
+  final String? website;
+  final String? description;
+
+  Map<String, dynamic> toCreateJson({required String userId}) {
+    return {
+      'user_id': userId,
+      'business_name': businessName.trim(),
+      'business_phone': BusinessApplicationValidators.normalizeTurkishPhone(
+        businessPhone,
+      ),
+      'full_address': fullAddress.trim(),
+      'category': category.trim(),
+      'custom_category': BusinessCategories.isOther(category)
+          ? BusinessAccountValidators.normalizeCustomCategory(customCategory)
+          : null,
+      'website': _nullableTrim(website),
+      'description': _nullableTrim(description),
+    };
+  }
+}
+
+class BusinessApplicationApprovalCategory {
+  const BusinessApplicationApprovalCategory._();
+
+  static Map<String, String?> resolve({
+    required String businessName,
+    String? category,
+    String? customCategory,
+  }) {
+    final normalizedCategory = category?.trim();
+    final normalizedCustom = BusinessAccountValidators.normalizeCustomCategory(
+      customCategory,
+    );
+    if (normalizedCategory == null || normalizedCategory.isEmpty) {
+      return {
+        'category': BusinessCategories.other,
+        'custom_category':
+            BusinessAccountValidators.normalizeCustomCategory(businessName) ??
+            'İşletme',
+      };
+    }
+    if (BusinessCategories.isOther(normalizedCategory)) {
+      return {
+        'category': BusinessCategories.other,
+        'custom_category':
+            normalizedCustom ??
+            BusinessAccountValidators.normalizeCustomCategory(businessName) ??
+            'İşletme',
+      };
+    }
+    return {'category': normalizedCategory, 'custom_category': null};
   }
 }
 
@@ -503,6 +662,71 @@ class BusinessAccountValidators {
     final trimmed = value?.trim();
     if (trimmed == null || trimmed.isEmpty) return null;
     return trimmed.replaceAll(RegExp(r'\s+'), ' ');
+  }
+}
+
+class BusinessApplicationValidators {
+  const BusinessApplicationValidators._();
+
+  static String? name(String? value) {
+    if ((value ?? '').trim().isEmpty) return 'İşletme adı gerekli.';
+    return null;
+  }
+
+  static String? phone(String? value) {
+    if (normalizeTurkishPhone(value) != null) return null;
+    return 'Geçerli bir işletme telefon numarası gir.';
+  }
+
+  static String? fullAddress(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.length < 10) return 'Tam konum/adres en az 10 karakter olmalı.';
+    return null;
+  }
+
+  static String? category(String? value) {
+    return BusinessAccountValidators.category(value);
+  }
+
+  static String? customCategory({
+    required String? category,
+    required String? value,
+  }) {
+    return BusinessAccountValidators.customCategory(
+      category: category,
+      value: value,
+    );
+  }
+
+  static String? website(String? value) {
+    return BusinessAccountValidators.website(value);
+  }
+
+  static String? normalizeTurkishPhone(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) return null;
+    final compact = trimmed.replaceAll(RegExp(r'[\s\-\(\)]'), '');
+    final digits = trimmed.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) return null;
+
+    String national;
+    if (compact.startsWith('+90')) {
+      national = digits.substring(2);
+    } else if (compact.startsWith('0090')) {
+      national = digits.substring(4);
+    } else if (compact.startsWith('0')) {
+      national = digits.substring(1);
+    } else if (compact.startsWith('3') || compact.startsWith('5')) {
+      national = digits;
+    } else {
+      return null;
+    }
+
+    if (!RegExp(r'^(3[0-9]{9}|5[0-9]{9})$').hasMatch(national)) {
+      return null;
+    }
+    if (RegExp(r'^([0-9])\1{9}$').hasMatch(national)) return null;
+    return '+90$national';
   }
 }
 

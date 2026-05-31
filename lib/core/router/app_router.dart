@@ -9,6 +9,7 @@ import '../../features/auth/login_page.dart';
 import '../../features/auth/oauth_callback_page.dart';
 import '../../features/auth/register_page.dart';
 import '../../features/business/business_profile_page.dart';
+import '../../features/business/admin_business_applications_page.dart';
 import '../../features/business/create_business_account_page.dart';
 import '../../features/chat/event_chat_page.dart';
 import '../../features/events/create_event_page.dart';
@@ -210,6 +211,14 @@ GoRouter createAppRouter(AuthState authState) {
             child: BusinessProfilePage(businessId: businessId),
           );
         },
+      ),
+      GoRoute(
+        path: RoutePaths.admin,
+        name: RouteNames.admin,
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 4,
+          child: AdminBusinessApplicationsPage(),
+        ),
       ),
       GoRoute(
         path: RoutePaths.notifications,

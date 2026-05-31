@@ -14,6 +14,10 @@
 - Business conversion links the profile to the business account, saves previous
   personal display fields when missing, and writes the selected business display
   fields onto the same profile row.
+- Business upgrade now starts with a user application and requires admin
+  approval. Users cannot instantly switch themselves to business mode.
+- Admin panel foundation exists at `/admin` for reviewing pending business
+  applications.
 - Switching back to user mode is allowed. The business account stays stored,
   but the personal profile becomes the active public identity again. Future
   active business events are cancelled/hidden when switching back to user mode.

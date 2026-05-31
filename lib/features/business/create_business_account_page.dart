@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/constants/turkey_locations.dart';
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
@@ -26,18 +25,12 @@ class _CreateBusinessAccountPageState
     extends ConsumerState<CreateBusinessAccountPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _usernameController = TextEditingController();
-  final _customCategoryController = TextEditingController();
-  final _addressController = TextEditingController();
-  final _descriptionController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
+  final _customCategoryController = TextEditingController();
   final _websiteController = TextEditingController();
-  final _instagramController = TextEditingController();
-
-  String? _category;
-  String? _city;
-  String? _district;
-  String? _loadedAccountId;
+  final _descriptionController = TextEditingController();
+  String? _selectedCategory;
 
   @override
   void initState() {
@@ -50,13 +43,11 @@ class _CreateBusinessAccountPageState
   @override
   void dispose() {
     _nameController.dispose();
-    _usernameController.dispose();
-    _customCategoryController.dispose();
-    _addressController.dispose();
-    _descriptionController.dispose();
     _phoneController.dispose();
+    _addressController.dispose();
+    _customCategoryController.dispose();
     _websiteController.dispose();
-    _instagramController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -64,9 +55,8 @@ class _CreateBusinessAccountPageState
   Widget build(BuildContext context) {
     final state = ref.watch(myBusinessAccountProvider);
     final account = state.account;
-    if (account != null && _loadedAccountId != account.id) {
-      _loadAccount(account);
-    }
+    final application = state.application;
+    final isPending = application?.isPending == true;
 
     return Scaffold(
       appBar: AppBar(
@@ -78,224 +68,83 @@ class _CreateBusinessAccountPageState
         title: const AppLogo(size: 32, showText: true),
       ),
       body: SafeArea(
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            children: [
-              Text(
-                account == null
-                    ? 'Isletme Hesabi Olustur'
-                    : 'Isletmeyi Duzenle',
-                style: AppTextStyles.headline,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                'Mekanini veya isletmeni Match A Man’da ayri bir profille tanit.',
-                style: AppTextStyles.body,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              _FormCard(
-                child: Column(
-                  children: [
-                    AppTextField(
-                      label: 'Isletme adi',
-                      controller: _nameController,
-                      prefixIcon: const Icon(Icons.storefront_outlined),
-                      validator: BusinessAccountValidators.name,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppTextField(
-                      label: 'Kullanici adi',
-                      controller: _usernameController,
-                      prefixIcon: const Icon(Icons.alternate_email),
-                      helperText: 'Ornek: bozkiratciftligi',
-                      onChanged: (value) {
-                        final normalized =
-                            BusinessAccountValidators.normalizeUsername(value);
-                        if (normalized != value) {
-                          _usernameController.value = TextEditingValue(
-                            text: normalized,
-                            selection: TextSelection.collapsed(
-                              offset: normalized.length,
-                            ),
-                          );
-                        }
-                      },
-                      validator: BusinessAccountValidators.username,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    _DropdownField(
-                      label: 'Kategori',
-                      value: _category,
-                      values: BusinessCategories.values,
-                      icon: Icons.category_outlined,
-                      validator: BusinessAccountValidators.category,
-                      onChanged: (value) {
-                        setState(() {
-                          _category = value;
-                          if (!BusinessCategories.isOther(value)) {
-                            _customCategoryController.clear();
-                          }
-                        });
-                      },
-                    ),
-                    if (BusinessCategories.isOther(_category)) ...[
-                      const SizedBox(height: AppSpacing.md),
-                      AppTextField(
-                        label: 'İşletme türünü yaz',
-                        hintText: 'Örn. Okçuluk kulübü, kano merkezi...',
-                        controller: _customCategoryController,
-                        prefixIcon: const Icon(Icons.edit_outlined),
-                        validator: (value) =>
-                            BusinessAccountValidators.customCategory(
-                              category: _category,
-                              value: value,
-                            ),
-                      ),
-                    ],
-                    const SizedBox(height: AppSpacing.md),
-                    _DropdownField(
-                      label: 'Sehir',
-                      value: _city,
-                      values: TurkeyLocations.getCities(),
-                      icon: Icons.location_city_outlined,
-                      validator: (value) =>
-                          BusinessAccountValidators.cityDistrict(
-                            city: value,
-                            district: _district,
-                          ),
-                      onChanged: (value) {
-                        setState(() {
-                          _city = value;
-                          _district = null;
-                        });
-                      },
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    _DropdownField(
-                      label: 'Ilce',
-                      value: _district,
-                      values: _city == null
-                          ? const []
-                          : TurkeyLocations.getDistricts(_city!),
-                      icon: Icons.place_outlined,
-                      validator: (value) =>
-                          BusinessAccountValidators.cityDistrict(
-                            city: _city,
-                            district: value,
-                          ),
-                      onChanged: (value) => setState(() => _district = value),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              _FormCard(
-                child: Column(
-                  children: [
-                    AppTextField(
-                      label: 'Adres',
-                      controller: _addressController,
-                      prefixIcon: const Icon(Icons.map_outlined),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppTextField(
-                      label: 'Aciklama',
-                      controller: _descriptionController,
-                      prefixIcon: const Icon(Icons.notes_outlined),
-                      maxLines: 3,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppTextField(
-                      label: 'Telefon',
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      prefixIcon: const Icon(Icons.phone_outlined),
-                      helperText: 'Dogrulama bu surumde yok.',
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppTextField(
-                      label: 'Website',
-                      controller: _websiteController,
-                      keyboardType: TextInputType.url,
-                      prefixIcon: const Icon(Icons.language_outlined),
-                      validator: BusinessAccountValidators.website,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    AppTextField(
-                      label: 'Instagram',
-                      controller: _instagramController,
-                      prefixIcon: const Icon(Icons.photo_camera_outlined),
-                      validator: BusinessAccountValidators.instagram,
-                    ),
-                  ],
-                ),
-              ),
-              if (state.message != null) ...[
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  state.message!,
-                  style: const TextStyle(color: AppColors.error),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-              const SizedBox(height: AppSpacing.xl),
-              AppButton(
-                label: account == null ? 'Isletme hesabi olustur' : 'Kaydet',
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          children: [
+            Text(
+              account == null
+                  ? 'İşletme hesabı başvurusu'
+                  : 'İşletme hesabını düzenle',
+              style: AppTextStyles.headline,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              account == null
+                  ? 'Başvurun onaylanınca aynı profilin işletme moduna yükseltilir.'
+                  : 'İşletme hesabı aynı profil üzerinde yönetilir.',
+              style: AppTextStyles.body,
+            ),
+            const SizedBox(height: AppSpacing.lg),
+            if (isPending)
+              _PendingApplicationCard(application: application!)
+            else
+              _ApplicationForm(
+                formKey: _formKey,
+                nameController: _nameController,
+                phoneController: _phoneController,
+                addressController: _addressController,
+                customCategoryController: _customCategoryController,
+                websiteController: _websiteController,
+                descriptionController: _descriptionController,
+                selectedCategory: _selectedCategory,
+                onCategoryChanged: (value) {
+                  setState(() => _selectedCategory = value);
+                },
                 isLoading: state.isLoading,
-                onPressed: _submit,
+                errorMessage: state.message,
+                onSubmit: _submitApplication,
+              ),
+            if (account != null) ...[
+              const SizedBox(height: AppSpacing.lg),
+              AppButton(
+                label: 'İşletme hesabımı sil',
+                variant: AppButtonVariant.outlined,
+                onPressed: () {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('İşletme hesabı silme yakında eklenecek.'),
+                    ),
+                  );
+                },
               ),
             ],
-          ),
+          ],
         ),
       ),
     );
   }
 
-  void _loadAccount(BusinessAccount account) {
-    _loadedAccountId = account.id;
-    _nameController.text = account.name;
-    _usernameController.text = account.username;
-    _category = account.category;
-    _customCategoryController.text = account.customCategory ?? '';
-    _city = account.city;
-    _district = account.district;
-    _addressController.text = account.address ?? '';
-    _descriptionController.text = account.description ?? '';
-    _phoneController.text = account.phone ?? '';
-    _websiteController.text = account.website ?? '';
-    _instagramController.text = account.instagram ?? '';
-  }
-
-  Future<void> _submit() async {
+  Future<void> _submitApplication() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
-    final input = BusinessAccountInput(
-      name: _nameController.text,
-      username: _usernameController.text,
-      category: _category ?? '',
+    final input = BusinessApplicationInput(
+      businessName: _nameController.text,
+      businessPhone: _phoneController.text,
+      fullAddress: _addressController.text,
+      category: _selectedCategory!,
       customCategory: _customCategoryController.text,
-      city: _city ?? '',
-      district: _district ?? '',
-      address: _addressController.text,
-      description: _descriptionController.text,
-      phone: _phoneController.text,
       website: _websiteController.text,
-      instagram: _instagramController.text,
+      description: _descriptionController.text,
     );
+    final application = await ref
+        .read(myBusinessAccountProvider.notifier)
+        .submitApplication(input);
 
-    final controller = ref.read(myBusinessAccountProvider.notifier);
-    final existing = ref.read(myBusinessAccountProvider).account;
-    final account = existing == null
-        ? await controller.createBusinessAccount(input)
-        : await controller.updateBusinessAccount(id: existing.id, input: input);
-
-    if (!mounted || account == null) return;
-    context.goNamed(
-      RouteNames.businessProfile,
-      pathParameters: {'businessId': account.id},
-    );
+    if (!mounted || application == null) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('İşletme başvurun alındı.')));
+    context.goNamed(RouteNames.settings);
   }
 
   void _goBack(BuildContext context) {
@@ -304,6 +153,153 @@ class _CreateBusinessAccountPageState
       return;
     }
     context.goNamed(RouteNames.settings);
+  }
+}
+
+class _ApplicationForm extends StatelessWidget {
+  const _ApplicationForm({
+    required this.formKey,
+    required this.nameController,
+    required this.phoneController,
+    required this.addressController,
+    required this.customCategoryController,
+    required this.websiteController,
+    required this.descriptionController,
+    required this.selectedCategory,
+    required this.onCategoryChanged,
+    required this.isLoading,
+    required this.errorMessage,
+    required this.onSubmit,
+  });
+
+  final GlobalKey<FormState> formKey;
+  final TextEditingController nameController;
+  final TextEditingController phoneController;
+  final TextEditingController addressController;
+  final TextEditingController customCategoryController;
+  final TextEditingController websiteController;
+  final TextEditingController descriptionController;
+  final String? selectedCategory;
+  final ValueChanged<String?> onCategoryChanged;
+  final bool isLoading;
+  final String? errorMessage;
+  final VoidCallback onSubmit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Form(
+      key: formKey,
+      child: _FormCard(
+        child: Column(
+          children: [
+            AppTextField(
+              label: 'İşletme adı',
+              controller: nameController,
+              prefixIcon: const Icon(Icons.storefront_outlined),
+              validator: BusinessApplicationValidators.name,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              label: 'İşletme telefon numarası',
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              prefixIcon: const Icon(Icons.phone_outlined),
+              validator: BusinessApplicationValidators.phone,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            DropdownButtonFormField<String>(
+              initialValue: selectedCategory,
+              decoration: const InputDecoration(
+                labelText: 'Ä°ÅŸletme kategorisi',
+                prefixIcon: Icon(Icons.category_outlined),
+              ),
+              items: BusinessCategories.values
+                  .map(
+                    (category) => DropdownMenuItem<String>(
+                      value: category,
+                      child: Text(category),
+                    ),
+                  )
+                  .toList(growable: false),
+              onChanged: onCategoryChanged,
+              validator: BusinessApplicationValidators.category,
+            ),
+            if (BusinessCategories.isOther(selectedCategory)) ...[
+              const SizedBox(height: AppSpacing.md),
+              AppTextField(
+                label: 'Ä°ÅŸletme tÃ¼rÃ¼nÃ¼ yaz',
+                controller: customCategoryController,
+                prefixIcon: const Icon(Icons.edit_outlined),
+                validator: (value) =>
+                    BusinessApplicationValidators.customCategory(
+                      category: selectedCategory,
+                      value: value,
+                    ),
+              ),
+            ],
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              label: 'Tam konum/adres',
+              controller: addressController,
+              prefixIcon: const Icon(Icons.place_outlined),
+              maxLines: 3,
+              validator: BusinessApplicationValidators.fullAddress,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              label: 'Website',
+              controller: websiteController,
+              keyboardType: TextInputType.url,
+              prefixIcon: const Icon(Icons.language_outlined),
+              validator: BusinessApplicationValidators.website,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            AppTextField(
+              label: 'Açıklama',
+              controller: descriptionController,
+              prefixIcon: const Icon(Icons.notes_outlined),
+              maxLines: 3,
+            ),
+            if (errorMessage != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                errorMessage!,
+                style: const TextStyle(color: AppColors.error),
+                textAlign: TextAlign.center,
+              ),
+            ],
+            const SizedBox(height: AppSpacing.xl),
+            AppButton(
+              label: 'Başvur',
+              isLoading: isLoading,
+              onPressed: onSubmit,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PendingApplicationCard extends StatelessWidget {
+  const _PendingApplicationCard({required this.application});
+
+  final BusinessApplication application;
+
+  @override
+  Widget build(BuildContext context) {
+    return _FormCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('İşletme başvurun inceleniyor.', style: AppTextStyles.title),
+          const SizedBox(height: AppSpacing.sm),
+          Text(application.businessName, style: AppTextStyles.bodyStrong),
+          const SizedBox(height: AppSpacing.xs),
+          Text(application.fullAddress, style: AppTextStyles.bodySmall),
+        ],
+      ),
+    );
   }
 }
 
@@ -330,41 +326,6 @@ class _FormCard extends StatelessWidget {
         padding: const EdgeInsets.all(AppSpacing.md),
         child: child,
       ),
-    );
-  }
-}
-
-class _DropdownField extends StatelessWidget {
-  const _DropdownField({
-    required this.label,
-    required this.value,
-    required this.values,
-    required this.icon,
-    required this.onChanged,
-    required this.validator,
-  });
-
-  final String label;
-  final String? value;
-  final List<String> values;
-  final IconData icon;
-  final ValueChanged<String?> onChanged;
-  final String? Function(String?) validator;
-
-  @override
-  Widget build(BuildContext context) {
-    final effectiveValue = values.contains(value) ? value : null;
-
-    return DropdownButtonFormField<String>(
-      initialValue: effectiveValue,
-      isExpanded: true,
-      decoration: InputDecoration(labelText: label, prefixIcon: Icon(icon)),
-      items: [
-        for (final value in values)
-          DropdownMenuItem(value: value, child: Text(value)),
-      ],
-      onChanged: values.isEmpty ? null : onChanged,
-      validator: validator,
     );
   }
 }

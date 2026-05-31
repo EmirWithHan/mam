@@ -15,6 +15,7 @@ class RouteNames {
   static const blockedUsers = 'blockedUsers';
   static const businessCreate = 'businessCreate';
   static const businessProfile = 'businessProfile';
+  static const admin = 'admin';
   static const notifications = 'notifications';
   static const trustScoreHistory = 'trustScoreHistory';
   static const feed = 'feed';
@@ -46,6 +47,7 @@ class RoutePaths {
   static const blockedUsers = '/settings/blocked-users';
   static const businessCreate = '/business/create';
   static const businessProfile = '/business/:businessId';
+  static const admin = '/admin';
   static const notifications = '/notifications';
   static const trustScoreHistory = '/profile/trust-score';
   static const feed = '/feed';

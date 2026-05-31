@@ -58,12 +58,7 @@ class BusinessAccountService {
     try {
       final existing = await fetchMyBusinessAccount();
       if (existing != null) {
-        final account = await updateBusinessAccount(
-          id: existing.id,
-          input: input,
-        );
-        await _markProfileAsBusiness();
-        return account;
+        return updateBusinessAccount(id: existing.id, input: input);
       }
 
       final data = await SupabaseService.client
@@ -73,7 +68,6 @@ class BusinessAccountService {
           .single();
 
       final account = BusinessAccount.fromJson(data);
-      await _markProfileAsBusiness();
       return account;
     } catch (error) {
       throw BusinessAccountException(_friendlyBusinessError(error));
@@ -93,19 +87,128 @@ class BusinessAccountService {
           .single();
 
       final account = BusinessAccount.fromJson(data);
-      await _markProfileAsBusiness();
       return account;
     } catch (error) {
       throw BusinessAccountException(_friendlyBusinessError(error));
     }
   }
+
+  Future<BusinessApplication?> fetchMyLatestApplication() async {
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    if (userId == null) return null;
+
+    final data = await SupabaseService.client
+        .from('business_applications')
+        .select()
+        .eq('user_id', userId)
+        .order('created_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (data == null) return null;
+    return BusinessApplication.fromJson(data);
+  }
+
+  Future<BusinessApplication> submitApplication(
+    BusinessApplicationInput input,
+  ) async {
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    if (userId == null) {
+      throw const BusinessAccountException(
+        'İşletme başvurusu için giriş yapmalısın.',
+      );
+    }
+
+    try {
+      final data = await SupabaseService.client
+          .from('business_applications')
+          .insert(input.toCreateJson(userId: userId))
+          .select()
+          .single();
+      return BusinessApplication.fromJson(data);
+    } catch (error) {
+      throw BusinessAccountException(_friendlyBusinessApplicationError(error));
+    }
+  }
+
+  Future<bool> isCurrentUserAdmin() async {
+    final data = await SupabaseService.client.rpc('is_current_user_admin');
+    return data == true;
+  }
+
+  Future<List<BusinessApplication>> fetchPendingApplications() async {
+    final data = await SupabaseService.client.rpc(
+      'list_pending_business_applications',
+    );
+    return (data as List<dynamic>)
+        .whereType<Map>()
+        .map(
+          (row) => BusinessApplication.fromJson(Map<String, dynamic>.from(row)),
+        )
+        .toList(growable: false);
+  }
+
+  Future<void> approveApplication({
+    required String applicationId,
+    String? adminNote,
+  }) async {
+    try {
+      await SupabaseService.client.rpc(
+        'approve_business_application',
+        params: {'p_application_id': applicationId, 'p_admin_note': adminNote},
+      );
+    } catch (error) {
+      throw BusinessAccountException(
+        friendlyBusinessApplicationReviewErrorMessage(error),
+      );
+    }
+  }
+
+  Future<void> rejectApplication({
+    required String applicationId,
+    String? adminNote,
+  }) async {
+    try {
+      await SupabaseService.client.rpc(
+        'reject_business_application',
+        params: {'p_application_id': applicationId, 'p_admin_note': adminNote},
+      );
+    } catch (error) {
+      throw BusinessAccountException(
+        friendlyBusinessApplicationReviewErrorMessage(error),
+      );
+    }
+  }
 }
 
-Future<void> _markProfileAsBusiness() async {
-  await SupabaseService.client.rpc(
-    'switch_profile_account_type',
-    params: {'p_account_type': 'business'},
-  );
+String _friendlyBusinessApplicationError(Object error) {
+  return friendlyBusinessApplicationErrorMessage(error);
+}
+
+String friendlyBusinessApplicationErrorMessage(Object error) {
+  final message = error.toString().toLowerCase();
+  if (message.contains('business_applications_one_pending_per_user') ||
+      message.contains('duplicate') ||
+      message.contains('23505')) {
+    return 'Bekleyen bir işletme başvurun var.';
+  }
+  if (message.contains('42501') ||
+      message.contains('permission denied') ||
+      message.contains('row-level security') ||
+      message.contains('violates row-level security policy')) {
+    return 'Başvuru gönderilemedi. Yetki ayarları kontrol edilmeli.';
+  }
+  if (message.contains('not_admin')) {
+    return 'Bu işlem için admin yetkisi gerekli.';
+  }
+  if (message.contains('invalid_business_application_phone')) {
+    return 'Geçerli bir işletme telefon numarası gir.';
+  }
+  return 'Başvuru gönderilemedi. Tekrar dene.';
+}
+
+String friendlyBusinessApplicationReviewErrorMessage(Object error) {
+  return 'Başvuru onaylanamadı. Tekrar dene.';
 }
 
 String _friendlyBusinessError(Object error) {
