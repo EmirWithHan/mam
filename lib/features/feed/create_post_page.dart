@@ -1,7 +1,6 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
@@ -43,20 +42,34 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
   }
 
   Future<void> _pickImage() async {
-    final image = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 88,
-    );
-    if (image == null) return;
+    try {
+      final image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 88,
+      );
+      if (image == null) return;
 
-    final bytes = await image.readAsBytes();
-    if (!mounted) return;
+      final bytes = await image.readAsBytes();
+      if (!mounted) return;
 
-    setState(() {
-      _imageBytes = bytes;
-      _fileName = image.name;
-      _contentType = image.mimeType;
-    });
+      setState(() {
+        _imageBytes = bytes;
+        _fileName = image.name;
+        _contentType = image.mimeType;
+      });
+    } on PlatformException {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Fotoğraf seçilemedi. Galeri iznini kontrol et.'),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Fotoğraf seçilemedi. Tekrar dene.')),
+      );
+    }
   }
 
   Future<void> _createPost() async {

@@ -8,7 +8,7 @@ class LocationService {
     final enabled = await Geolocator.isLocationServiceEnabled();
     if (!enabled) {
       throw StateError(
-        'Konum servisleri kapalı. Lütfen konumu açıp tekrar dene.',
+        'Konum servisleri kapali. Lutfen konumu acip tekrar dene.',
       );
     }
 
@@ -23,7 +23,7 @@ class LocationService {
 
     if (permission == LocationPermission.deniedForever) {
       throw StateError(
-        'Konum izni kalıcı olarak reddedildi. Ayarlardan izin verebilirsin.',
+        'Konum izni kalici olarak reddedildi. Ayarlardan izin verebilirsin.',
       );
     }
 
@@ -60,6 +60,6 @@ class LocationService {
   }
 
   String formatCoordinates(double latitude, double longitude) {
-    return 'Konum seçildi: ${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}';
+    return 'Konum secildi: ${latitude.toStringAsFixed(4)}, ${longitude.toStringAsFixed(4)}';
   }
 }
