@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/sport_types.dart';
+import '../../../core/layout/responsive_layout.dart';
 import '../../../core/router/route_names.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
@@ -50,7 +51,7 @@ class EventCard extends StatelessWidget {
                   pathParameters: {'eventId': event.id},
                 ),
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: AppResponsive.cardPadding(context),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -126,12 +127,28 @@ class EventCard extends StatelessWidget {
                   label: event.locationLabel,
                 ),
                 const SizedBox(height: AppSpacing.md),
-                Row(
-                  children: [
-                    Expanded(child: _OrganizerTile(event: event)),
-                    const SizedBox(width: AppSpacing.sm),
-                    _OpenEventButton(eventId: event.id),
-                  ],
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final stackActions = constraints.maxWidth < 330;
+                    if (stackActions) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _OrganizerTile(event: event),
+                          const SizedBox(height: AppSpacing.sm),
+                          _OpenEventButton(eventId: event.id, fullWidth: true),
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(child: _OrganizerTile(event: event)),
+                        const SizedBox(width: AppSpacing.sm),
+                        _OpenEventButton(eventId: event.id),
+                      ],
+                    );
+                  },
                 ),
               ],
             ),
@@ -239,14 +256,18 @@ class _MetaLine extends StatelessWidget {
 }
 
 class _OpenEventButton extends StatelessWidget {
-  const _OpenEventButton({required this.eventId});
+  const _OpenEventButton({required this.eventId, this.fullWidth = false});
 
   final String eventId;
+  final bool fullWidth;
 
   @override
   Widget build(BuildContext context) {
     return ConstrainedBox(
-      constraints: const BoxConstraints(minHeight: 44, maxWidth: 96),
+      constraints: BoxConstraints(
+        minHeight: 44,
+        maxWidth: fullWidth ? double.infinity : 96,
+      ),
       child: FilledButton(
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.primary,

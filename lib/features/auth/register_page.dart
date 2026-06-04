@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/layout/responsive_layout.dart';
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
@@ -99,7 +100,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: AppResponsive.pagePadding(context),
             children: [
               Text('Aramıza katıl', style: AppTextStyles.headline),
               const SizedBox(height: AppSpacing.sm),
@@ -122,7 +123,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   ],
                 ),
                 child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  padding: AppResponsive.cardPadding(context),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
@@ -200,7 +201,7 @@ class _AuthErrorCard extends StatelessWidget {
         borderRadius: AppRadius.mdBorder,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: AppResponsive.cardPadding(context),
         child: Row(
           children: [
             const Icon(Icons.info_outline, color: AppColors.error, size: 20),

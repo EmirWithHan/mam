@@ -33,7 +33,10 @@ class SocialFutureMessagesCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Direct messages are coming', style: AppTextStyles.title),
+                  Text(
+                    'Direct messages are coming',
+                    style: AppTextStyles.title,
+                  ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     'For now, approved event chats live here.',

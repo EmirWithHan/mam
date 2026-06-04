@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../core/layout/responsive_layout.dart';
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
@@ -113,7 +114,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: AppResponsive.pagePadding(context),
             children: [
               Text('Bir an paylaş', style: AppTextStyles.headline),
               const SizedBox(height: AppSpacing.sm),

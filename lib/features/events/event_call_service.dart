@@ -12,10 +12,7 @@ class EventCallService {
   }) async {
     final data = await SupabaseService.client.rpc(
       'get_event_call_contact',
-      params: {
-        'p_event_id': eventId,
-        'p_target_user_id': targetUserId,
-      },
+      params: {'p_event_id': eventId, 'p_target_user_id': targetUserId},
     );
 
     if (data is List && data.isNotEmpty) {

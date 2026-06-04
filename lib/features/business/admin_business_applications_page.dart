@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/layout/responsive_layout.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
@@ -93,7 +94,7 @@ class _AdminFeedbackBody extends ConsumerWidget {
       onRefresh: () =>
           ref.read(adminFeedbackProvider.notifier).load(force: true),
       child: ListView.separated(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: AppResponsive.pagePadding(context),
         itemCount: state.feedback.length,
         separatorBuilder: (context, index) =>
             const SizedBox(height: AppSpacing.md),
@@ -119,7 +120,7 @@ class _FeedbackReviewCard extends StatelessWidget {
         borderRadius: AppRadius.lgBorder,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: AppResponsive.cardPadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -174,7 +175,7 @@ class _AdminApplicationsBody extends ConsumerWidget {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: AppResponsive.pagePadding(context),
       itemCount: state.applications.length + 1,
       separatorBuilder: (context, index) =>
           const SizedBox(height: AppSpacing.md),
@@ -239,7 +240,7 @@ class _ApplicationReviewCardState
         borderRadius: AppRadius.lgBorder,
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: AppResponsive.cardPadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -271,27 +272,42 @@ class _ApplicationReviewCardState
               maxLines: 3,
             ),
             const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: AppButton(
-                    label: 'Onayla',
-                    isLoading: _loading,
-                    onPressed: canReview ? () => _review(approved: true) : null,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: AppButton(
-                    label: 'Reddet',
-                    isLoading: _loading,
-                    variant: AppButtonVariant.outlined,
-                    onPressed: canReview
-                        ? () => _review(approved: false)
-                        : null,
-                  ),
-                ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final stackActions = constraints.maxWidth < 340;
+                final approveButton = AppButton(
+                  label: 'Onayla',
+                  isLoading: _loading,
+                  onPressed: canReview ? () => _review(approved: true) : null,
+                  fullWidth: true,
+                );
+                final rejectButton = AppButton(
+                  label: 'Reddet',
+                  isLoading: _loading,
+                  variant: AppButtonVariant.outlined,
+                  onPressed: canReview ? () => _review(approved: false) : null,
+                  fullWidth: true,
+                );
+
+                if (stackActions) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      approveButton,
+                      const SizedBox(height: AppSpacing.sm),
+                      rejectButton,
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(child: approveButton),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(child: rejectButton),
+                  ],
+                );
+              },
             ),
           ],
         ),

@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/sport_types.dart';
 import '../../core/constants/turkey_locations.dart';
+import '../../core/layout/responsive_layout.dart';
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
@@ -347,7 +348,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
         appBar: _CreateEventAppBar(onBack: () => _goBack(context)),
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: AppResponsive.pagePadding(context),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -401,7 +402,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: AppResponsive.pagePadding(context),
             children: [
               Text('Host an Event', style: AppTextStyles.headline),
               const SizedBox(height: AppSpacing.sm),

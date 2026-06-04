@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/router/route_names.dart';
+import '../../core/layout/responsive_layout.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
@@ -62,7 +63,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
       ),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: AppResponsive.pagePadding(context),
           children: [
             Text('Ayarlar', style: AppTextStyles.headline),
             const SizedBox(height: AppSpacing.sm),

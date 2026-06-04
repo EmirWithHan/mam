@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/layout/responsive_layout.dart';
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -46,7 +47,6 @@ class _EventsPageState extends ConsumerState<EventsPage> {
   Widget build(BuildContext context) {
     final eventsState = ref.watch(eventsControllerProvider);
     final compact = MediaQuery.sizeOf(context).height < 720;
-    final pagePadding = compact ? AppSpacing.md : AppSpacing.lg;
 
     return Scaffold(
       appBar: AppBar(
@@ -62,7 +62,11 @@ class _EventsPageState extends ConsumerState<EventsPage> {
       ),
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(pagePadding),
+          padding: AppResponsive.pagePadding(
+            context,
+            top: compact ? AppSpacing.md : AppSpacing.lg,
+            bottom: compact ? AppSpacing.md : AppSpacing.lg,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

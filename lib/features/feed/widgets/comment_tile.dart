@@ -70,7 +70,10 @@ class CommentTile extends StatelessWidget {
                   size: 14,
                 ),
                 const SizedBox(width: AppSpacing.xs),
-                Text(_formatDate(comment.createdAt), style: AppTextStyles.caption),
+                Text(
+                  _formatDate(comment.createdAt),
+                  style: AppTextStyles.caption,
+                ),
               ],
             ),
           ],
@@ -109,9 +112,7 @@ class _CommentOverflowButton extends StatelessWidget {
       context: context,
       backgroundColor: AppColors.background,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadius.xl),
-        ),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
       ),
       builder: (context) {
         return SafeArea(
@@ -160,10 +161,7 @@ class _CommentOverflowButton extends StatelessWidget {
                         menuItem: true,
                       ),
                       const Divider(height: 1, color: AppColors.border),
-                      BlockButton(
-                        targetUserId: comment.userId,
-                        menuItem: true,
-                      ),
+                      BlockButton(targetUserId: comment.userId, menuItem: true),
                     ],
                   ),
                 ),

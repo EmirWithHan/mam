@@ -6,11 +6,7 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text_styles.dart';
 
 class AppLogo extends StatelessWidget {
-  const AppLogo({
-    super.key,
-    this.size = 40,
-    this.showText = false,
-  });
+  const AppLogo({super.key, this.size = 40, this.showText = false});
 
   final double size;
   final bool showText;

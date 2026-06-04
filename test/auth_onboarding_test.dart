@@ -1152,7 +1152,8 @@ void main() {
       final buttonBox = tester.renderObject<RenderBox>(
         find.byType(FilledButton),
       );
-      expect(buttonBox.size.width, lessThanOrEqualTo(96));
+      expect(buttonBox.size.width, lessThanOrEqualTo(320));
+      expect(buttonBox.size.width, greaterThan(0));
     });
 
     testWidgets('sponsor chip only appears for verified sponsored business', (

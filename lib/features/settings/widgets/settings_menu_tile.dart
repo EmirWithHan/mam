@@ -50,7 +50,9 @@ class SettingsMenuTile extends StatelessWidget {
                 width: 42,
                 height: 42,
                 decoration: BoxDecoration(
-                  color: isEnabled ? AppColors.primarySoft : AppColors.background,
+                  color: isEnabled
+                      ? AppColors.primarySoft
+                      : AppColors.background,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(

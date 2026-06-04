@@ -8,11 +8,7 @@ import '../../profile/widgets/public_profile_name.dart';
 import '../event_chat_models.dart';
 
 class MessageBubble extends StatelessWidget {
-  const MessageBubble({
-    super.key,
-    required this.message,
-    required this.isMine,
-  });
+  const MessageBubble({super.key, required this.message, required this.isMine});
 
   final EventMessage message;
   final bool isMine;
@@ -33,11 +29,15 @@ class MessageBubble extends StatelessWidget {
               topLeft: Radius.circular(AppRadius.lg),
               topRight: Radius.circular(AppRadius.lg),
               bottomLeft: Radius.circular(isMine ? AppRadius.lg : AppRadius.sm),
-              bottomRight: Radius.circular(isMine ? AppRadius.sm : AppRadius.lg),
+              bottomRight: Radius.circular(
+                isMine ? AppRadius.sm : AppRadius.lg,
+              ),
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.textPrimary.withValues(alpha: isMine ? 0.08 : 0.05),
+                color: AppColors.textPrimary.withValues(
+                  alpha: isMine ? 0.08 : 0.05,
+                ),
                 blurRadius: isMine ? 16 : 18,
                 offset: const Offset(0, 8),
               ),
@@ -65,7 +65,9 @@ class MessageBubble extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Align(
-                  alignment: isMine ? Alignment.centerRight : Alignment.centerLeft,
+                  alignment: isMine
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
                   child: Text(
                     _formatTime(message.createdAt),
                     style: AppTextStyles.caption.copyWith(

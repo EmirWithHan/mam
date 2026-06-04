@@ -38,8 +38,9 @@ class PublicProfileName extends ConsumerWidget {
             children: [
               Text(
                 profile?.displayName ?? 'MaM User',
-                style:
-                    compact ? AppTextStyles.caption : AppTextStyles.bodyStrong,
+                style: compact
+                    ? AppTextStyles.caption
+                    : AppTextStyles.bodyStrong,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),

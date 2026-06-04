@@ -48,8 +48,8 @@ class EventChatAccess {
   });
 
   const EventChatAccess.denied({this.reason})
-      : canRead = false,
-        canWrite = false;
+    : canRead = false,
+      canWrite = false;
 
   final bool canRead;
   final bool canWrite;

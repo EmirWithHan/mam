@@ -1,9 +1,4 @@
-enum ReportTargetType {
-  user,
-  event,
-  post,
-  comment,
-}
+enum ReportTargetType { user, event, post, comment }
 
 enum ReportReason {
   spam,

@@ -104,8 +104,13 @@ class BusinessReviewController
       state = state.copyWith(isLoading: false);
       return true;
     } catch (error) {
-      state = state.copyWith(isLoading: false, message: error.toString());
+      state = state.copyWith(isLoading: false, message: _reviewMessage(error));
       return false;
     }
   }
+}
+
+String _reviewMessage(Object error) {
+  if (error is BusinessReviewException) return error.message;
+  return friendlyBusinessReviewErrorMessage(error);
 }

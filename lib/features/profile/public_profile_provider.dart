@@ -9,14 +9,17 @@ final publicProfileServiceProvider = Provider<PublicProfileService>((ref) {
 
 final publicProfilePreviewProvider =
     FutureProvider.family<PublicProfilePreview?, String>((ref, userId) {
-  return ref
-      .watch(publicProfileServiceProvider)
-      .fetchPublicProfilePreview(userId);
-});
+      return ref
+          .watch(publicProfileServiceProvider)
+          .fetchPublicProfilePreview(userId);
+    });
 
-final publicProfilePreviewsProvider = FutureProvider.family<
-    Map<String, PublicProfilePreview>, List<String>>((ref, userIds) {
-  return ref
-      .watch(publicProfileServiceProvider)
-      .fetchPublicProfilePreviews(userIds);
-});
+final publicProfilePreviewsProvider =
+    FutureProvider.family<Map<String, PublicProfilePreview>, List<String>>((
+      ref,
+      userIds,
+    ) {
+      return ref
+          .watch(publicProfileServiceProvider)
+          .fetchPublicProfilePreviews(userIds);
+    });

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/layout/responsive_layout.dart';
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
@@ -50,7 +51,7 @@ class _UserSearchPageState extends ConsumerState<UserSearchPage> {
       appBar: AppBar(title: const Text('Kullanıcı ara')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: AppResponsive.pagePadding(context),
           children: [
             AppTextField(
               label: 'Kullanıcı ara',
@@ -138,66 +139,104 @@ class _UserSearchResultTile extends StatelessWidget {
         borderRadius: AppRadius.mdBorder,
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              SafeAvatar(
-                radius: 24,
-                avatarUrl: result.avatarUrl,
-                fallbackText: result.initials,
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Flexible(
-                          child: Text(
-                            result.displayName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: AppTextStyles.title,
-                          ),
-                        ),
-                        if (result.isBusinessAccount) ...[
-                          const SizedBox(width: AppSpacing.xs),
-                          Icon(
-                            result.businessIsVerified
-                                ? Icons.verified_rounded
-                                : Icons.storefront_outlined,
-                            size: 16,
-                            color: AppColors.primary,
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      [
-                        result.handleLabel,
-                        if (result.businessCategory != null)
-                          result.businessCategory,
-                      ].whereType<String>().join(' · '),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.caption,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              _SearchActionButton(
+          padding: AppResponsive.cardPadding(context),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final stackAction = constraints.maxWidth < 330;
+              final identity = _SearchIdentity(result: result);
+              final action = _SearchActionButton(
                 label: result.actionLabel,
                 isLoading: isLoading,
                 enabled: result.canFollow,
+                fullWidth: stackAction,
                 onPressed: onFollow,
-              ),
-            ],
+              );
+
+              if (stackAction) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      children: [
+                        SafeAvatar(
+                          radius: 24,
+                          avatarUrl: result.avatarUrl,
+                          fallbackText: result.initials,
+                        ),
+                        const SizedBox(width: AppSpacing.md),
+                        Expanded(child: identity),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    action,
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  SafeAvatar(
+                    radius: 24,
+                    avatarUrl: result.avatarUrl,
+                    fallbackText: result.initials,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(child: identity),
+                  const SizedBox(width: AppSpacing.sm),
+                  Flexible(flex: 0, child: action),
+                ],
+              );
+            },
           ),
         ),
       ),
+    );
+  }
+}
+
+class _SearchIdentity extends StatelessWidget {
+  const _SearchIdentity({required this.result});
+
+  final UserSearchResult result;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Flexible(
+              child: Text(
+                result.displayName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.title,
+              ),
+            ),
+            if (result.isBusinessAccount) ...[
+              const SizedBox(width: AppSpacing.xs),
+              Icon(
+                result.businessIsVerified
+                    ? Icons.verified_rounded
+                    : Icons.storefront_outlined,
+                size: 16,
+                color: AppColors.primary,
+              ),
+            ],
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          [
+            result.handleLabel,
+            if (result.businessCategory != null) result.businessCategory,
+          ].whereType<String>().join(' · '),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: AppTextStyles.caption,
+        ),
+      ],
     );
   }
 }
@@ -207,17 +246,19 @@ class _SearchActionButton extends StatelessWidget {
     required this.label,
     required this.isLoading,
     required this.enabled,
+    required this.fullWidth,
     required this.onPressed,
   });
 
   final String label;
   final bool isLoading;
   final bool enabled;
+  final bool fullWidth;
   final VoidCallback onPressed;
 
   @override
   Widget build(BuildContext context) {
-    return FilledButton.icon(
+    final button = FilledButton.icon(
       onPressed: enabled && !isLoading ? onPressed : null,
       icon: isLoading
           ? const SizedBox.square(
@@ -232,5 +273,8 @@ class _SearchActionButton extends StatelessWidget {
         textStyle: AppTextStyles.label,
       ),
     );
+
+    if (!fullWidth) return button;
+    return SizedBox(width: double.infinity, child: button);
   }
 }

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../core/constants/turkey_locations.dart';
+import '../../core/layout/responsive_layout.dart';
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
@@ -201,7 +202,7 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
         child: Form(
           key: _formKey,
           child: ListView(
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: AppResponsive.pagePadding(context),
             children: [
               Text('Profilini tamamla', style: AppTextStyles.headline),
               const SizedBox(height: AppSpacing.sm),
@@ -669,10 +670,7 @@ class _FormCard extends StatelessWidget {
           ),
         ],
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: child,
-      ),
+      child: Padding(padding: AppResponsive.cardPadding(context), child: child),
     );
   }
 }

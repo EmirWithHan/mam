@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../layout/responsive_layout.dart';
 import '../router/route_names.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -18,13 +19,15 @@ class MainNavigationShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTiny = AppResponsive.isTiny(context);
+
     return Scaffold(
       body: child,
       bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.fromLTRB(
-          AppSpacing.md,
+        minimum: EdgeInsets.fromLTRB(
+          isTiny ? AppSpacing.sm : AppSpacing.md,
           AppSpacing.sm,
-          AppSpacing.md,
+          isTiny ? AppSpacing.sm : AppSpacing.md,
           AppSpacing.md,
         ),
         child: DecoratedBox(
@@ -43,7 +46,10 @@ class MainNavigationShell extends StatelessWidget {
           child: ClipRRect(
             borderRadius: AppRadius.xlBorder,
             child: NavigationBar(
-              height: 72,
+              height: isTiny ? 64 : 72,
+              labelBehavior: isTiny
+                  ? NavigationDestinationLabelBehavior.alwaysHide
+                  : NavigationDestinationLabelBehavior.alwaysShow,
               selectedIndex: currentIndex,
               onDestinationSelected: (index) => _goToTab(context, index),
               destinations: const [

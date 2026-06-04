@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/layout/responsive_layout.dart';
 import '../../core/router/route_names.dart';
 import '../../core/constants/sport_types.dart';
 import '../../core/theme/app_colors.dart';
@@ -181,7 +182,7 @@ class _EventDetailBody extends ConsumerWidget {
         );
 
     return ListView(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: AppResponsive.pagePadding(context),
       children: [
         _EventHeroCard(event: event, isHost: isHost),
         const SizedBox(height: AppSpacing.lg),
@@ -592,7 +593,7 @@ class _EventHeroCard extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: AppResponsive.cardPadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -984,7 +985,7 @@ class _DetailCard extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
+        padding: AppResponsive.cardPadding(context),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: children,

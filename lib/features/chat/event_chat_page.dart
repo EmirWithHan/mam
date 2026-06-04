@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/layout/responsive_layout.dart';
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
@@ -203,7 +204,7 @@ class _ChatBody extends StatelessWidget {
     }
 
     return ListView.separated(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: AppResponsive.pagePadding(context),
       itemCount: state.messages.length,
       separatorBuilder: (context, index) =>
           const SizedBox(height: AppSpacing.sm),
@@ -244,32 +245,48 @@ class _MessageComposer extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Expanded(
-              child: AppTextField(
-                label: 'Message',
-                hintText: 'Write to the group',
-                controller: controller,
-                maxLines: 4,
-                textInputAction: TextInputAction.send,
-                onFieldSubmitted: (_) {
-                  if (!isSending) onSend();
-                },
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            SizedBox(
-              width: 92,
-              child: AppButton(
-                label: 'Send',
-                isLoading: isSending,
-                onPressed: onSend,
-              ),
-            ),
-          ],
+        padding: AppResponsive.cardPadding(context),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final stackButton = constraints.maxWidth < 340;
+            final input = AppTextField(
+              label: 'Message',
+              hintText: 'Write to the group',
+              controller: controller,
+              maxLines: 4,
+              textInputAction: TextInputAction.send,
+              onFieldSubmitted: (_) {
+                if (!isSending) onSend();
+              },
+            );
+            final sendButton = AppButton(
+              label: 'Send',
+              isLoading: isSending,
+              onPressed: onSend,
+              fullWidth: stackButton,
+            );
+
+            if (stackButton) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  input,
+                  const SizedBox(height: AppSpacing.sm),
+                  sendButton,
+                ],
+              );
+            }
+
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(child: input),
+                const SizedBox(width: AppSpacing.sm),
+                SizedBox(width: 92, child: sendButton),
+              ],
+            );
+          },
         ),
       ),
     );

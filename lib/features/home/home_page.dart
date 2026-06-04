@@ -7,9 +7,6 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const FeedPage(
-      showCreatePrompt: false,
-      showNotificationBell: true,
-    );
+    return const FeedPage(showCreatePrompt: false, showNotificationBell: true);
   }
 }

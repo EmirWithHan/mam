@@ -7,7 +7,9 @@ class LocationService {
   Future<Position> getCurrentPosition() async {
     final enabled = await Geolocator.isLocationServiceEnabled();
     if (!enabled) {
-      throw StateError('Konum servisleri kapalı. Lütfen konumu açıp tekrar dene.');
+      throw StateError(
+        'Konum servisleri kapalı. Lütfen konumu açıp tekrar dene.',
+      );
     }
 
     var permission = await Geolocator.checkPermission();
@@ -37,17 +39,18 @@ class LocationService {
       if (placemarks.isEmpty) return null;
 
       final place = placemarks.first;
-      final parts = [
-        place.street,
-        place.subLocality,
-        place.locality,
-        place.administrativeArea,
-      ]
-          .whereType<String>()
-          .map((part) => part.trim())
-          .where((part) => part.isNotEmpty)
-          .toSet()
-          .toList();
+      final parts =
+          [
+                place.street,
+                place.subLocality,
+                place.locality,
+                place.administrativeArea,
+              ]
+              .whereType<String>()
+              .map((part) => part.trim())
+              .where((part) => part.isNotEmpty)
+              .toSet()
+              .toList();
 
       if (parts.isEmpty) return null;
       return parts.join(', ');

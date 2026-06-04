@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/layout/responsive_layout.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
@@ -47,7 +48,7 @@ class _FeedbackPageState extends ConsumerState<FeedbackPage> {
       appBar: AppBar(title: const Text('Geri Bildirim')),
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: AppResponsive.pagePadding(context),
           children: [
             Text('Geri Bildirim', style: AppTextStyles.headline),
             const SizedBox(height: AppSpacing.sm),

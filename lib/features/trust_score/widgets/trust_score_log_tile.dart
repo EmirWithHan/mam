@@ -7,10 +7,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../trust_score_models.dart';
 
 class TrustScoreLogTile extends StatelessWidget {
-  const TrustScoreLogTile({
-    super.key,
-    required this.log,
-  });
+  const TrustScoreLogTile({super.key, required this.log});
 
   final TrustScoreLog log;
 
@@ -74,7 +71,10 @@ class TrustScoreLogTile extends StatelessWidget {
                     ),
                   ],
                   const SizedBox(height: AppSpacing.xs),
-                  Text(_formatDate(log.createdAt), style: AppTextStyles.caption),
+                  Text(
+                    _formatDate(log.createdAt),
+                    style: AppTextStyles.caption,
+                  ),
                 ],
               ),
             ),

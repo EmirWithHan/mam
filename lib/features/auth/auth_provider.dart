@@ -123,9 +123,7 @@ class AuthController extends StateNotifier<AuthState> {
       final session = response.session;
 
       if (user == null) {
-        state = const AuthState.error(
-          message: 'Giriş işlemi tamamlanamadı.',
-        );
+        state = const AuthState.error(message: 'Giriş işlemi tamamlanamadı.');
         return;
       }
 

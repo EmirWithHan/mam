@@ -1,97 +1,171 @@
 # Manual QA Checklist
 
-Use this checklist for closed beta testers and internal manual regression passes. Record account, device/browser, exact steps, and screenshots/videos for any issue.
+Use this checklist for closed beta testers and internal regression passes. Record account, device, exact steps, and screenshots/videos for any issue.
 
-## A. Auth
+## Auth
 
 - [ ] Register with email.
 - [ ] Log in with email.
 - [ ] Log out.
-- [ ] Log in with Google.
-- [ ] Log in with Facebook.
-- [ ] Tap Apple login and confirm it is disabled/Yakında.
-- [ ] Confirm no raw Supabase/OAuth error is shown.
+- [ ] Restore an existing session after app restart.
+- [ ] Complete profile bootstrap after signup/OAuth.
+- [ ] Complete required profile fields.
+- [ ] Google/Facebook buttons do not crash.
+- [ ] Apple login remains disabled/coming soon unless developer setup exists.
+- [ ] No route loop, stuck auth loading, or raw Supabase/OAuth error.
 
-## B. Profile
-
-- [ ] username#0000 appears on profile surfaces.
-- [ ] Edit profile saves name/full_name.
-- [ ] Username input does not require #0000.
-- [ ] Uppercase username saves lowercase.
-- [ ] Optional fields can be skipped for general browsing.
-- [ ] City, district, and birth date can be added for event actions.
-- [ ] Missing avatar falls back safely.
-
-## C. Events
-
-- [ ] Browse events.
-- [ ] Filter events.
-- [ ] Open event detail.
-- [ ] Create event.
-- [ ] Join/request an event.
-- [ ] Host approves a request.
-- [ ] Host rejects a request.
-- [ ] Approved participant leaves.
-- [ ] Past event cannot be joined.
-- [ ] Full event shows full-capacity behavior.
-- [ ] Missing event-required profile fields show "Profili tamamla."
-
-## D. Social
+## Feed
 
 - [ ] Feed loads.
-- [ ] Home/Moments feed loads through `get_visible_feed_posts_with_stats` after DB migrations are pushed.
-- [ ] Create a post.
-- [ ] Create a photo post without an event link; confirm success is not shown as failed if feed refresh needs retry.
-- [ ] Create a photo post with an event link when one is available.
-- [ ] Like a post.
-- [ ] Comment on a post.
-- [ ] Follow a public account.
-- [ ] Unfollow an account.
-- [ ] Request to follow a private account.
-- [ ] Open "Kullanıcı ara" from Social.
-- [ ] Search by username and username#0000.
-- [ ] Tap a search result and confirm it opens the canonical public profile.
-- [ ] Add/follow a public account from search.
-- [ ] Send a private follow request from search.
-- [ ] Followers list opens.
-- [ ] Following list opens.
+- [ ] Empty feed state works.
+- [ ] Pull to refresh reloads from the first page.
+- [ ] Pagination appends without duplicates.
+- [ ] Text and photo post cards fit on small screens.
+- [ ] Username/business identity display is correct.
+- [ ] Follow/search interactions do not break feed state.
+- [ ] Tab switching does not cause a white screen.
+- [ ] Infinite scroll does not crash.
+- [ ] Errors use friendly copy, not `PostgrestException`.
 
-## E. Privacy
+## Post Creation
 
-- [ ] Public account content is visible as expected.
-- [ ] Private account Gallery is locked for non-followers.
-- [ ] Private account Geçmiş Events is locked for non-followers.
-- [ ] Approved follower can see allowed private content.
-- [ ] Owner can see own private content.
-- [ ] Archived gallery item is visible only to owner.
+- [ ] Create text/photo post.
+- [ ] Upload validation blocks invalid input.
+- [ ] Event-linked post works when supported.
+- [ ] Delete/report post works when available.
+- [ ] Local feed refreshes after create/delete.
+- [ ] Double submit does not create confusing duplicate loading states.
 
-## F. Notifications
+## Events
 
-- [ ] Event notification appears.
-- [ ] Follow notification appears.
-- [ ] Follow request notification appears.
-- [ ] Approve follow request from notification.
-- [ ] Reject follow request from notification.
+- [ ] Event list loads and paginates.
+- [ ] Event card fits at 320 px width.
+- [ ] Event detail opens.
+- [ ] Create normal event.
+- [ ] Create business event only from approved business account.
+- [ ] Join request works.
+- [ ] Host approve/reject works.
+- [ ] Participant leave works.
+- [ ] Past event behavior is correct.
+- [ ] Capacity display is correct.
+- [ ] Location button opens maps or shows a friendly error.
+- [ ] No infinite-width button or RenderFlex overflow.
+
+## Business Lifecycle
+
+- [ ] User sees "Isletme hesabi basvurusu yap".
+- [ ] Application submit works.
+- [ ] Duplicate pending application is blocked.
+- [ ] Admin approve works.
+- [ ] Admin reject works.
+- [ ] Approved application upgrades the same profile to business.
+- [ ] No second public business profile is created.
+- [ ] Business event creation works.
+- [ ] "Isletme hesabimi sil" works.
+- [ ] Business delete returns to user mode.
+- [ ] Future business events are hidden/cancelled after delete.
+- [ ] Sponsored flags are ignored after delete.
+- [ ] Deleted business is not public/sponsored.
+- [ ] Normal client cannot edit moderation fields directly.
+
+## Username Search And Add Friend
+
+- [ ] Search page opens from Social/Profile/Settings entry point.
+- [ ] Search does not run before 2 characters.
+- [ ] Debounce prevents a request on every rebuild/keystroke.
+- [ ] Search by username works.
+- [ ] Search by username#0000 works.
+- [ ] Self result shows "Sen" and disables action.
+- [ ] Public user follow/add friend works.
+- [ ] Private user request works.
+- [ ] Already following/pending labels are correct.
+- [ ] Tapping a result opens the canonical profile route.
+- [ ] Phone/email are not exposed in results.
+
+## Profile
+
+- [ ] Own profile loads.
+- [ ] Public profile loads.
+- [ ] Private profile locks gallery/events for non-followers.
+- [ ] Approved followers can see allowed private content.
+- [ ] Business profile mode displays correctly.
+- [ ] Followers/following lists open.
+- [ ] Gallery grid fits.
+- [ ] Settings navigation works.
+- [ ] Avatar/name/username layout fits with long text.
+
+## Social And Chat
+
+- [ ] Social page loads.
+- [ ] Event chat list loads if present.
+- [ ] Chat opens.
+- [ ] Message input stays visible above keyboard.
+- [ ] Long messages wrap cleanly.
+- [ ] Empty chat state works.
+
+## Notifications
+
+- [ ] Notifications list loads.
+- [ ] Empty state works.
+- [ ] Pagination/limit works.
 - [ ] Mark one notification as read.
 - [ ] Mark all notifications as read.
-- [ ] Empty state says "Henüz bildirimin yok."
+- [ ] Notification tap navigation does not crash.
+- [ ] Approve/reject follow request from notification.
 
-## G. Safety
+## Feedback
 
-- [ ] Report action is reachable.
-- [ ] Block action is reachable.
-- [ ] Trust score behavior is understandable if visible.
-- [ ] Blocking/reporting does not crash feed, profile, or event screens.
+- [ ] Settings > "Geri bildirim gonder" opens.
+- [ ] Rating 1-5 validation works.
+- [ ] Empty message is allowed when rating/category exists.
+- [ ] Message max length is enforced.
+- [ ] Feedback submit works.
+- [ ] Friendly error appears on failure.
+- [ ] No forced store review or manipulative gating.
 
-## H. UX And Responsiveness
+## Admin
 
-- [ ] Social login buttons wrap cleanly on narrow screens.
-- [ ] Feed like/comment actions do not overflow with long Turkish copy.
-- [ ] Repeated taps on like/share/create actions do not create confusing duplicate loading states.
-- [ ] Long names, username#0000 handles, captions, comments, and event titles stay readable.
-- [ ] Loading, empty, and error states use friendly Turkish copy.
+- [ ] Non-admin cannot access admin.
+- [ ] Admin can access admin.
+- [ ] Application list is limited/paginated.
+- [ ] Approve/reject buttons disable while loading.
+- [ ] Feedback list appears if available.
+- [ ] Admin layout fits on mobile width.
 
-## I. Bug Reporting Format
+## Responsive Devices
+
+Test each device/viewport:
+
+- [ ] 320x568 small phone.
+- [ ] 360x640 common Android.
+- [ ] 390x844 iPhone-like.
+- [ ] 412x915 large Android.
+- [ ] 600x960 small tablet.
+- [ ] Landscape mobile if supported.
+
+For each device:
+
+- [ ] No yellow/black overflow stripes.
+- [ ] No clipped primary button.
+- [ ] No hidden text input behind keyboard.
+- [ ] No infinite-width exception.
+- [ ] No white screen.
+- [ ] Long names, username#0000 handles, captions, comments, event titles, chips, and buttons stay readable or ellipsized.
+
+## Rate And Cost Guardrails
+
+- [ ] Refresh resets pagination.
+- [ ] Pagination does not duplicate items.
+- [ ] Spam actions show "Cok fazla islem yaptin. Biraz sonra tekrar dene." if rate limits are configured.
+- [ ] Obvious services do not use unlimited selects.
+- [ ] Profile/search/feed screens do not refetch repeatedly on every rebuild.
+
+## Test TODOs
+
+- [ ] Add deeper widget tests for search result cards once provider/router dependencies are easier to mock.
+- [ ] Add keyboard-overlay widget tests for forms once app-level test harness supports constrained viewInsets.
+
+## Bug Reporting Format
 
 - Device/browser:
 - Account used:

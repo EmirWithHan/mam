@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/layout/responsive_layout.dart';
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
@@ -75,12 +76,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
         physics: const ClampingScrollPhysics(),
         primary: false,
         keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg,
-          AppSpacing.md,
-          AppSpacing.lg,
-          96,
-        ),
+        padding: AppResponsive.listPadding(context, top: AppSpacing.md),
         itemCount: _itemCount(feedState),
         itemBuilder: (context, index) {
           if (index == 0) {
@@ -208,6 +204,8 @@ class _CreatePostPrompt extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isTiny = AppResponsive.isTiny(context);
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -221,30 +219,50 @@ class _CreatePostPrompt extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
-        child: Row(
-          children: [
-            const Icon(
-              Icons.add_photo_alternate_outlined,
-              color: AppColors.primary,
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Text(
-                'Gününden veya etkinliğinden bir fotoğraf paylaş.',
-                style: AppTextStyles.bodySmall,
+        padding: AppResponsive.cardPadding(context),
+        child: isTiny
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Icon(
+                    Icons.add_photo_alternate_outlined,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Gününden veya etkinliğinden bir fotoğraf paylaş.',
+                    style: AppTextStyles.bodySmall,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  AppButton(
+                    label: 'Paylaş',
+                    onPressed: () => context.pushNamed(RouteNames.createPost),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  const Icon(
+                    Icons.add_photo_alternate_outlined,
+                    color: AppColors.primary,
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      'Gününden veya etkinliğinden bir fotoğraf paylaş.',
+                      style: AppTextStyles.bodySmall,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.sm),
+                  SizedBox(
+                    width: 132,
+                    child: AppButton(
+                      label: 'Paylaş',
+                      onPressed: () => context.pushNamed(RouteNames.createPost),
+                    ),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            SizedBox(
-              width: 132,
-              child: AppButton(
-                label: 'Paylaş',
-                onPressed: () => context.pushNamed(RouteNames.createPost),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

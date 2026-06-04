@@ -4,12 +4,7 @@ import '../../core/utils/error_messages.dart';
 import 'profile_activity_models.dart';
 import 'profile_activity_service.dart';
 
-enum ProfileActivityStatus {
-  initial,
-  loading,
-  success,
-  error,
-}
+enum ProfileActivityStatus { initial, loading, success, error }
 
 class ProfileActivityState {
   const ProfileActivityState({
@@ -20,10 +15,10 @@ class ProfileActivityState {
   });
 
   const ProfileActivityState.initial()
-      : status = ProfileActivityStatus.initial,
-        galleryPosts = const [],
-        events = const [],
-        message = null;
+    : status = ProfileActivityStatus.initial,
+      galleryPosts = const [],
+      events = const [],
+      message = null;
 
   final ProfileActivityStatus status;
   final List<ProfileGalleryPost> galleryPosts;
@@ -53,12 +48,13 @@ final profileActivityServiceProvider = Provider<ProfileActivityService>((ref) {
 
 final profileActivityControllerProvider =
     StateNotifierProvider<ProfileActivityController, ProfileActivityState>(
-  (ref) => ProfileActivityController(ref.watch(profileActivityServiceProvider)),
-);
+      (ref) =>
+          ProfileActivityController(ref.watch(profileActivityServiceProvider)),
+    );
 
 class ProfileActivityController extends StateNotifier<ProfileActivityState> {
   ProfileActivityController(this._activityService)
-      : super(const ProfileActivityState.initial());
+    : super(const ProfileActivityState.initial());
 
   final ProfileActivityService _activityService;
 

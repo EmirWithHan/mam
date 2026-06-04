@@ -20,13 +20,16 @@ class StorageService {
       throw StateError('You must be signed in to upload post images.');
     }
 
-    final safeFileName = fileName
-        .trim()
-        .replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final safeFileName = fileName.trim().replaceAll(
+      RegExp(r'[^A-Za-z0-9._-]'),
+      '_',
+    );
     final path =
         '$userId/${DateTime.now().millisecondsSinceEpoch}_$safeFileName';
 
-    await SupabaseService.client.storage.from(postImagesBucket).uploadBinary(
+    await SupabaseService.client.storage
+        .from(postImagesBucket)
+        .uploadBinary(
           path,
           bytes,
           fileOptions: FileOptions(contentType: contentType),
@@ -47,13 +50,16 @@ class StorageService {
       throw StateError('You must be signed in to upload an avatar.');
     }
 
-    final safeFileName = fileName
-        .trim()
-        .replaceAll(RegExp(r'[^A-Za-z0-9._-]'), '_');
+    final safeFileName = fileName.trim().replaceAll(
+      RegExp(r'[^A-Za-z0-9._-]'),
+      '_',
+    );
     final path =
         '$userId/avatar_${DateTime.now().millisecondsSinceEpoch}_$safeFileName';
 
-    await SupabaseService.client.storage.from(avatarsBucket).uploadBinary(
+    await SupabaseService.client.storage
+        .from(avatarsBucket)
+        .uploadBinary(
           path,
           bytes,
           fileOptions: FileOptions(contentType: contentType),

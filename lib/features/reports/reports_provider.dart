@@ -35,8 +35,8 @@ final reportsServiceProvider = Provider<ReportsService>((ref) {
 
 final reportsControllerProvider =
     StateNotifierProvider<ReportsController, ReportsState>((ref) {
-  return ReportsController(ref.watch(reportsServiceProvider));
-});
+      return ReportsController(ref.watch(reportsServiceProvider));
+    });
 
 class ReportsController extends StateNotifier<ReportsState> {
   ReportsController(this._reportsService) : super(const ReportsState());
@@ -44,11 +44,7 @@ class ReportsController extends StateNotifier<ReportsState> {
   final ReportsService _reportsService;
 
   Future<bool> submitReport(ReportInput input) async {
-    state = state.copyWith(
-      loading: true,
-      success: false,
-      clearMessage: true,
-    );
+    state = state.copyWith(loading: true, success: false, clearMessage: true);
 
     try {
       await _reportsService.createReport(input);

@@ -48,7 +48,10 @@ class AppTheme {
         fillColor: AppColors.surface,
         labelStyle: AppTextStyles.bodySmall,
         hintStyle: AppTextStyles.bodySmall.copyWith(color: AppColors.textMuted),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: AppRadius.lgBorder,
           borderSide: const BorderSide(color: AppColors.border),

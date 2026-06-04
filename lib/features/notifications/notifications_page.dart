@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/layout/responsive_layout.dart';
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
@@ -54,7 +55,7 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
               .refreshNotifications(),
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(AppSpacing.lg),
+            padding: AppResponsive.pagePadding(context),
             children: [
               _NotificationsHeader(
                 unreadCount: state.unreadCount,
@@ -254,11 +255,13 @@ class _NotificationsHeader extends StatelessWidget {
           ),
         ),
         if (unreadCount > 0)
-          AppButton(
-            label: 'Tümünü okundu yap',
-            fullWidth: false,
-            isLoading: isUpdating,
-            onPressed: onMarkAllRead,
+          Flexible(
+            child: AppButton(
+              label: 'Tümünü okundu yap',
+              fullWidth: false,
+              isLoading: isUpdating,
+              onPressed: onMarkAllRead,
+            ),
           ),
       ],
     );

@@ -53,10 +53,7 @@ class EventChatGroup {
     return sportType;
   }
 
-  EventChatGroup copyWith({
-    String? lastMessage,
-    DateTime? lastMessageAt,
-  }) {
+  EventChatGroup copyWith({String? lastMessage, DateTime? lastMessageAt}) {
     return EventChatGroup(
       eventId: eventId,
       title: title,

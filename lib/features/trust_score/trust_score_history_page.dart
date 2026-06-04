@@ -43,9 +43,7 @@ class _TrustScoreHistoryPageState extends ConsumerState<TrustScoreHistoryPage> {
         ),
         title: const Text('Trust Score'),
       ),
-      body: SafeArea(
-        child: _TrustScoreHistoryBody(state: state),
-      ),
+      body: SafeArea(child: _TrustScoreHistoryBody(state: state)),
     );
   }
 
@@ -105,8 +103,10 @@ class _TrustScoreHistoryBody extends ConsumerWidget {
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Row(
                 children: [
-                  const Icon(Icons.verified_user_outlined,
-                      color: AppColors.primary),
+                  const Icon(
+                    Icons.verified_user_outlined,
+                    color: AppColors.primary,
+                  ),
                   const SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Text(

@@ -7,11 +7,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../trust_score_models.dart';
 
 class TrustScoreBadge extends StatelessWidget {
-  const TrustScoreBadge({
-    super.key,
-    required this.score,
-    this.compact = false,
-  });
+  const TrustScoreBadge({super.key, required this.score, this.compact = false});
 
   final int score;
   final bool compact;
@@ -24,7 +20,9 @@ class TrustScoreBadge extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: compact ? accentColor.withValues(alpha: 0.12) : AppColors.surface,
+        color: compact
+            ? accentColor.withValues(alpha: 0.12)
+            : AppColors.surface,
         border: Border.all(color: accentColor.withValues(alpha: 0.24)),
         borderRadius: compact ? AppRadius.pillBorder : AppRadius.lgBorder,
       ),

@@ -35,7 +35,9 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
   }
 
   Future<void> _submit() async {
-    final success = await ref.read(reportsControllerProvider.notifier).submitReport(
+    final success = await ref
+        .read(reportsControllerProvider.notifier)
+        .submitReport(
           ReportInput(
             targetType: widget.targetType,
             targetId: widget.targetId,

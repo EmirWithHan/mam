@@ -52,22 +52,20 @@ class MapsService {
     required double longitude,
     String? label,
   }) {
-    final coordinates = '${latitude.toStringAsFixed(6)},'
+    final coordinates =
+        '${latitude.toStringAsFixed(6)},'
         '${longitude.toStringAsFixed(6)}';
     final cleanLabel = label?.trim();
     final query = cleanLabel == null || cleanLabel.isEmpty
         ? coordinates
         : '$coordinates($cleanLabel)';
 
-    return Uri(
-      scheme: 'geo',
-      path: coordinates,
-      queryParameters: {'q': query},
-    );
+    return Uri(scheme: 'geo', path: coordinates, queryParameters: {'q': query});
   }
 
   Uri _googleMapsCoordinatesUrl(double latitude, double longitude) {
-    final query = '${latitude.toStringAsFixed(6)},'
+    final query =
+        '${latitude.toStringAsFixed(6)},'
         '${longitude.toStringAsFixed(6)}';
     return Uri.https('www.google.com', '/maps/search/', {
       'api': '1',

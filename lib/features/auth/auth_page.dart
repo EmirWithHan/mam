@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/layout/responsive_layout.dart';
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
@@ -17,7 +18,7 @@ class AuthPage extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: AppResponsive.pagePadding(context),
           children: [
             const SizedBox(height: AppSpacing.xl),
             const Center(child: AppLogo(size: 84, showText: true)),
@@ -36,7 +37,7 @@ class AuthPage extends StatelessWidget {
                 ],
               ),
               child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.xl),
+                padding: AppResponsive.cardPadding(context),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [

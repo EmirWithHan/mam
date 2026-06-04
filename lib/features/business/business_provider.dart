@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/error_messages.dart';
 import '../../core/utils/pagination.dart';
 import 'business_models.dart';
 import 'business_service.dart';
@@ -132,7 +133,7 @@ class PendingBusinessApplicationsController
         ),
       );
     } catch (error) {
-      state = state.copyWith(isLoading: false, message: error.toString());
+      state = state.copyWith(isLoading: false, message: _businessMessage(error));
     }
   }
 
@@ -159,7 +160,10 @@ class PendingBusinessApplicationsController
         isLoadingMore: false,
       );
     } catch (error) {
-      state = state.copyWith(isLoadingMore: false, message: error.toString());
+      state = state.copyWith(
+        isLoadingMore: false,
+        message: _businessMessage(error),
+      );
     }
   }
 }
@@ -192,7 +196,7 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
         account: state.account,
         application: state.application,
         isAdmin: state.isAdmin,
-        message: error.toString(),
+        message: _businessMessage(error),
       );
     }
   }
@@ -218,7 +222,7 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
         account: state.account,
         application: state.application,
         isAdmin: state.isAdmin,
-        message: error.toString(),
+        message: _businessMessage(error),
       );
       return null;
     }
@@ -245,7 +249,7 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
         account: state.account,
         application: state.application,
         isAdmin: state.isAdmin,
-        message: error.toString(),
+        message: _businessMessage(error),
       );
       return null;
     }
@@ -276,7 +280,7 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
         account: state.account,
         application: state.application,
         isAdmin: state.isAdmin,
-        message: error.toString(),
+        message: _businessMessage(error),
       );
       return null;
     }
@@ -302,9 +306,14 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
         account: state.account,
         application: state.application,
         isAdmin: state.isAdmin,
-        message: error.toString(),
+        message: _businessMessage(error),
       );
       return false;
     }
   }
+}
+
+String _businessMessage(Object error) {
+  if (error is BusinessAccountException) return error.message;
+  return friendlyErrorMessage(error);
 }
