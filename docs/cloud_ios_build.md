@@ -25,6 +25,10 @@ iOS No-Codesign Build
 The workflow can be started manually with `workflow_dispatch`. It also runs on
 pushes to `main` when Flutter/iOS/test/workflow files change.
 
+The iOS no-codesign build has passed in GitHub Actions. A later warning showed
+that `actions/checkout@v4` used the deprecated Node.js 20 runtime, so the
+workflow now uses `actions/checkout@v6`, which runs on Node.js 24.
+
 ## How To Run Manually
 
 1. Push this workflow file to GitHub.
@@ -65,12 +69,15 @@ iOS folder does not contain a Podfile.
 - iOS plugin integration is basically valid.
 - `Info.plist` is present and readable by the iOS build.
 
+This is a compile/build validation only.
+
 ## What It Does Not Validate
 
 - App Store or TestFlight signing.
 - Certificates, provisioning profiles, or Apple Developer team setup.
 - Real iPhone install.
 - Simulator runtime behavior.
+- Full manual device QA.
 - Push notifications.
 - Apple login setup.
 - Store privacy labels, screenshots, or review metadata.
