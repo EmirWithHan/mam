@@ -21,6 +21,7 @@ class EventsService {
     return data
         .map(Event.fromJson)
         .where((event) => !blockedUserIds.contains(event.hostId))
+        .where((event) => event.isVisibleInEventsList)
         .toList();
   }
 
@@ -211,7 +212,8 @@ business_accounts:organizer_business_id(
   name,
   username,
   business_tag,
-  is_verified
+  is_verified,
+  status
 )
 ''';
 

@@ -1070,6 +1070,37 @@ void main() {
       expect(unverifiedSponsored.isActiveSponsoredPlacement(now), isFalse);
     });
 
+    test('sponsored placement ignores deleted business after delete', () {
+      final now = DateTime(2026, 5, 28);
+      final normalEvents = List.generate(
+        4,
+        (index) => _event(id: 'normal-$index'),
+      );
+      final deletedSponsored = _event(
+        id: 'deleted-sponsored',
+        organizerType: EventOrganizerType.business,
+        businessIsVerified: true,
+        businessStatus: BusinessAccountStatus.deleted,
+        isSponsored: true,
+        sponsoredUntil: now.add(const Duration(days: 1)),
+      );
+
+      final placed = eventsWithSponsoredPlacement([
+        ...normalEvents,
+        deletedSponsored,
+      ], now: now);
+
+      expect(placed.map((event) => event.id), [
+        'normal-0',
+        'normal-1',
+        'normal-2',
+        'normal-3',
+        'deleted-sponsored',
+      ]);
+      expect(deletedSponsored.isActiveSponsoredPlacement(now), isFalse);
+      expect(deletedSponsored.isVisibleInEventsList, isFalse);
+    });
+
     test('normal event list remains unchanged without sponsored events', () {
       final normalEvents = List.generate(
         3,
@@ -2181,6 +2212,226 @@ void main() {
       );
     });
 
+    test('business delete sets account type to user', () {
+      expect(
+        BusinessAccountDeletionRules.profileAccountTypeAfterDelete(),
+        ProfileAccountType.user,
+      );
+    });
+
+    test('business delete sets business status deleted', () {
+      const account = BusinessAccount(
+        id: 'business-1',
+        ownerUserId: 'user-1',
+        name: 'Padel Club',
+        username: 'padelclub',
+        category: 'Padel Kortu',
+        city: 'Istanbul',
+        district: 'Kadikoy',
+      );
+
+      expect(
+        BusinessAccountDeletionRules.businessStatusAfterDelete(),
+        BusinessAccountStatus.deleted,
+      );
+      expect(
+        BusinessAccountDeletionRules.shouldDeactivateBusinessAccount(account),
+        isTrue,
+      );
+    });
+
+    test('deleted business account is not publicly visible', () {
+      const account = BusinessAccount(
+        id: 'business-1',
+        ownerUserId: 'user-1',
+        name: 'Padel Club',
+        username: 'padelclub',
+        category: 'Padel Kortu',
+        city: 'Istanbul',
+        district: 'Kadikoy',
+        status: BusinessAccountStatus.deleted,
+      );
+
+      expect(account.isPubliclyVisible, isFalse);
+    });
+
+    test('user mode cannot select business event fields', () {
+      const account = BusinessAccount(
+        id: 'business-1',
+        ownerUserId: 'user-1',
+        name: 'Padel Club',
+        username: 'padelclub',
+        category: 'Padel Kortu',
+        city: 'Istanbul',
+        district: 'Kadikoy',
+      );
+
+      expect(
+        CreateEventInput.canUseBusinessEventFields(
+          isBusinessAccount: false,
+          businessAccount: account,
+        ),
+        isFalse,
+      );
+      expect(
+        CreateEventInput.defaultOrganizerType(
+          isBusinessAccount: false,
+          businessAccount: account,
+        ),
+        EventOrganizerType.user,
+      );
+    });
+
+    test('business delete removes sponsored flags in RPC', () {
+      final migration = File(
+        'supabase/migrations/20260604123000_fix_business_delete_moderation_bypass.sql',
+      ).readAsStringSync();
+
+      expect(migration, contains("set status = 'deleted'"));
+      expect(migration, contains('is_sponsored = false'));
+      expect(migration, contains('sponsored_until = null'));
+      expect(migration, contains('sponsored_priority = 0'));
+    });
+
+    test('business delete RPC is idempotent', () {
+      final migration = File(
+        'supabase/migrations/20260604123000_fix_business_delete_moderation_bypass.sql',
+      ).readAsStringSync();
+
+      expect(
+        migration,
+        contains("and business.status in ('active', 'pending')"),
+      );
+      expect(migration, contains("profile.account_type = 'business'"));
+      expect(migration, contains('return query'));
+      expect(migration, isNot(contains('business_account_missing')));
+    });
+
+    test('normal client cannot set status or is_verified', () {
+      final migration = File(
+        'supabase/migrations/20260604123000_fix_business_delete_moderation_bypass.sql',
+      ).readAsStringSync();
+
+      expect(
+        migration,
+        contains("current_setting('app.bypass_business_moderation', true)"),
+      );
+      expect(
+        migration,
+        contains('new.is_verified is distinct from old.is_verified'),
+      );
+      expect(migration, contains('new.status is distinct from old.status'));
+      expect(
+        migration,
+        contains(
+          "raise exception 'Business moderation fields cannot be changed by clients.'",
+        ),
+      );
+    });
+
+    test(
+      'delete RPC can bypass moderation trigger for status and verification',
+      () {
+        final migration = File(
+          'supabase/migrations/20260604123000_fix_business_delete_moderation_bypass.sql',
+        ).readAsStringSync();
+
+        expect(
+          migration,
+          contains(
+            "perform set_config('app.bypass_business_moderation', 'on', true)",
+          ),
+        );
+        expect(migration, contains("set status = 'deleted'"));
+        expect(migration, contains('is_verified = false'));
+        expect(
+          migration.indexOf("where business.owner_user_id = v_user_id"),
+          lessThan(migration.indexOf("perform set_config(")),
+        );
+      },
+    );
+
+    test('business delete hides future business events', () {
+      final now = DateTime(2026, 5, 30);
+      final futureBusinessEvent = _event(
+        id: 'future-business',
+        organizerType: EventOrganizerType.business,
+        eventDate: DateTime(2026, 6, 1),
+      );
+      final pastBusinessEvent = _event(
+        id: 'past-business',
+        organizerType: EventOrganizerType.business,
+        eventDate: DateTime(2026, 5, 1),
+      );
+
+      expect(
+        BusinessAccountDeletionRules.shouldCancelBusinessEvent(
+          isBusinessEvent: futureBusinessEvent.isBusinessEvent,
+          status: futureBusinessEvent.status,
+          eventDate: futureBusinessEvent.eventDate,
+          now: now,
+        ),
+        isTrue,
+      );
+      expect(
+        BusinessAccountDeletionRules.shouldCancelBusinessEvent(
+          isBusinessEvent: pastBusinessEvent.isBusinessEvent,
+          status: pastBusinessEvent.status,
+          eventDate: pastBusinessEvent.eventDate,
+          now: now,
+        ),
+        isFalse,
+      );
+    });
+
+    test('normal user event creation still works after business delete', () {
+      final input = CreateEventInput(
+        title: 'User Padel',
+        sportType: 'Padel',
+        city: 'Istanbul',
+        eventDate: DateTime(2026, 6, 4),
+        capacityTotal: 8,
+        capacityMale: 0,
+        capacityFemale: 0,
+        capacityAny: 8,
+        organizerType: EventOrganizerType.user,
+        isPaid: true,
+        priceAmount: 300,
+      );
+
+      final payload = input.toCreateJson(hostId: 'user-1');
+
+      expect(payload['organizer_type'], EventOrganizerType.user);
+      expect(payload['host_id'], 'user-1');
+      expect(payload['is_paid'], isFalse);
+      expect(payload.containsKey('organizer_business_id'), isFalse);
+    });
+
+    test('non-owner cannot delete business account', () {
+      const account = BusinessAccount(
+        id: 'business-1',
+        ownerUserId: 'owner-1',
+        name: 'Padel Club',
+        username: 'padelclub',
+        category: 'Padel Kortu',
+        city: 'Istanbul',
+        district: 'Kadikoy',
+      );
+      final migration = File(
+        'supabase/migrations/20260604123000_fix_business_delete_moderation_bypass.sql',
+      ).readAsStringSync();
+
+      expect(
+        BusinessAccountDeletionRules.canDeleteBusinessAccount(
+          currentUserId: 'user-2',
+          account: account,
+        ),
+        isFalse,
+      );
+      expect(migration, contains('business.owner_user_id = v_user_id'));
+      expect(migration, contains('auth.uid()'));
+    });
+
     test('business upgrade keeps same profile id and followers', () {
       const personal = Profile(
         id: 'profile-1',
@@ -2542,6 +2793,7 @@ Event _event({
   int capacityTotal = 12,
   String organizerType = EventOrganizerType.user,
   bool businessIsVerified = false,
+  String businessStatus = BusinessAccountStatus.active,
   bool isSponsored = false,
   DateTime? sponsoredUntil,
   int sponsoredPriority = 0,
@@ -2566,6 +2818,7 @@ Event _event({
             name: 'Padel Club',
             username: 'padelclub',
             isVerified: businessIsVerified,
+            status: businessStatus,
           )
         : null,
     isSponsored: isSponsored,

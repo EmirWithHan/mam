@@ -15,11 +15,11 @@ class BusinessAccountState {
   });
 
   const BusinessAccountState.initial()
-      : status = BusinessAccountStatusState.initial,
-        account = null,
-        application = null,
-        isAdmin = false,
-        message = null;
+    : status = BusinessAccountStatusState.initial,
+      account = null,
+      application = null,
+      isAdmin = false,
+      message = null;
 
   final BusinessAccountStatusState status;
   final BusinessAccount? account;
@@ -53,26 +53,30 @@ final businessAccountServiceProvider = Provider<BusinessAccountService>((ref) {
 
 final myBusinessAccountProvider =
     StateNotifierProvider<BusinessAccountController, BusinessAccountState>((
-  ref,
-) {
-  return BusinessAccountController(ref.watch(businessAccountServiceProvider));
-});
+      ref,
+    ) {
+      return BusinessAccountController(
+        ref.watch(businessAccountServiceProvider),
+      );
+    });
 
 final publicBusinessAccountProvider =
     FutureProvider.family<BusinessAccount?, String>((ref, businessId) {
-  return ref
-      .watch(businessAccountServiceProvider)
-      .fetchBusinessAccountById(businessId);
-});
+      return ref
+          .watch(businessAccountServiceProvider)
+          .fetchBusinessAccountById(businessId);
+    });
 
 final pendingBusinessApplicationsProvider =
     FutureProvider<List<BusinessApplication>>((ref) {
-  return ref.watch(businessAccountServiceProvider).fetchPendingApplications();
-});
+      return ref
+          .watch(businessAccountServiceProvider)
+          .fetchPendingApplications();
+    });
 
 class BusinessAccountController extends StateNotifier<BusinessAccountState> {
   BusinessAccountController(this._service)
-      : super(const BusinessAccountState.initial());
+    : super(const BusinessAccountState.initial());
 
   final BusinessAccountService _service;
 
@@ -167,7 +171,10 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
     );
 
     try {
-      final account = await _service.updateBusinessAccount(id: id, input: input);
+      final account = await _service.updateBusinessAccount(
+        id: id,
+        input: input,
+      );
       state = state.copyWith(
         status: BusinessAccountStatusState.success,
         account: account,
@@ -182,6 +189,32 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
         message: error.toString(),
       );
       return null;
+    }
+  }
+
+  Future<bool> deleteMyBusinessAccount() async {
+    state = state.copyWith(
+      status: BusinessAccountStatusState.loading,
+      clearMessage: true,
+    );
+
+    try {
+      await _service.deleteMyBusinessAccount();
+      state = BusinessAccountState(
+        status: BusinessAccountStatusState.success,
+        application: state.application,
+        isAdmin: state.isAdmin,
+      );
+      return true;
+    } catch (error) {
+      state = BusinessAccountState(
+        status: BusinessAccountStatusState.error,
+        account: state.account,
+        application: state.application,
+        isAdmin: state.isAdmin,
+        message: error.toString(),
+      );
+      return false;
     }
   }
 }

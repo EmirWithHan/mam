@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import '../../core/utils/error_messages.dart';
 import '../../services/supabase_service.dart';
 import 'business_models.dart';
@@ -39,6 +42,7 @@ class BusinessAccountService {
         .from('business_accounts')
         .select()
         .eq('id', trimmedId)
+        .eq('status', BusinessAccountStatus.active)
         .maybeSingle();
 
     if (data == null) return null;
@@ -90,6 +94,17 @@ class BusinessAccountService {
       return account;
     } catch (error) {
       throw BusinessAccountException(_friendlyBusinessError(error));
+    }
+  }
+
+  Future<void> deleteMyBusinessAccount() async {
+    try {
+      await SupabaseService.client.rpc('delete_my_business_account');
+    } catch (error) {
+      _debugPrintSupabaseError('delete_my_business_account', error);
+      throw BusinessAccountException(
+        friendlyBusinessAccountDeleteErrorMessage(error),
+      );
     }
   }
 
@@ -231,4 +246,19 @@ String friendlyBusinessAccountErrorMessage(Object error) {
   final friendly = friendlyErrorMessage(error);
   if (friendly.trim().isNotEmpty) return friendly;
   return 'İşletme hesabı oluşturulamadı. Tekrar dene.';
+}
+
+String friendlyBusinessAccountDeleteErrorMessage(Object error) {
+  return 'İşletme hesabı silinemedi. Tekrar dene.';
+}
+
+void _debugPrintSupabaseError(String action, Object error) {
+  if (error is PostgrestException) {
+    debugPrint(
+      '[Business] $action failed code=${error.code} message=${error.message}',
+    );
+    return;
+  }
+
+  debugPrint('[Business] $action failed message=${error.runtimeType}');
 }

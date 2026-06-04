@@ -10,6 +10,9 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_text_field.dart';
+import '../auth/auth_provider.dart';
+import '../events/events_provider.dart';
+import '../profile/profile_provider.dart';
 import 'business_models.dart';
 import 'business_provider.dart';
 
@@ -108,14 +111,11 @@ class _CreateBusinessAccountPageState
               const SizedBox(height: AppSpacing.lg),
               AppButton(
                 label: 'İşletme hesabımı sil',
+                isLoading: state.isLoading,
                 variant: AppButtonVariant.outlined,
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('İşletme hesabı silme yakında eklenecek.'),
-                    ),
-                  );
-                },
+                onPressed: state.isLoading
+                    ? null
+                    : () => _confirmDeleteBusinessAccount(context),
               ),
             ],
           ],
@@ -152,6 +152,63 @@ class _CreateBusinessAccountPageState
       context.pop();
       return;
     }
+    context.goNamed(RouteNames.settings);
+  }
+
+  Future<void> _confirmDeleteBusinessAccount(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('İşletme hesabını sil?'),
+          content: const Text(
+            'İşletme bilgilerin pasifleştirilecek ve gelecekteki işletme '
+            'etkinliklerin yayından kaldırılacak. Hesabın kullanıcı hesabı '
+            'olarak devam edecek.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Vazgeç'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('İşletme hesabımı sil'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    final success = await ref
+        .read(myBusinessAccountProvider.notifier)
+        .deleteMyBusinessAccount();
+    if (!context.mounted) return;
+
+    if (!success) {
+      final message = ref.read(myBusinessAccountProvider).message;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message ?? 'İşletme hesabı silinemedi. Tekrar dene.'),
+        ),
+      );
+      return;
+    }
+
+    await ref.read(profileControllerProvider.notifier).loadMyProfile();
+    final profile = ref.read(profileControllerProvider).profile;
+    ref
+        .read(authControllerProvider.notifier)
+        .markProfileCompletion(isCompleted: profile?.hasCoreIdentity ?? false);
+    await ref.read(myBusinessAccountProvider.notifier).loadMyBusinessAccount();
+    await ref.read(eventsControllerProvider.notifier).refreshEvents();
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('İşletme hesabı silindi.')));
     context.goNamed(RouteNames.settings);
   }
 }

@@ -15,6 +15,7 @@ class EventBusinessOrganizer {
     required this.username,
     this.businessTag,
     this.isVerified = false,
+    this.status = BusinessAccountStatus.active,
   });
 
   final String id;
@@ -22,6 +23,9 @@ class EventBusinessOrganizer {
   final String username;
   final String? businessTag;
   final bool isVerified;
+  final String status;
+
+  bool get isActive => status == BusinessAccountStatus.active;
 
   String get displayName {
     final trimmed = name.trim();
@@ -38,6 +42,7 @@ class EventBusinessOrganizer {
       username: json['username']?.toString() ?? '',
       businessTag: json['business_tag']?.toString(),
       isVerified: json['is_verified'] as bool? ?? false,
+      status: json['status']?.toString() ?? BusinessAccountStatus.active,
     );
   }
 }
@@ -133,16 +138,26 @@ class Event {
   }
 
   bool shouldCancelWhenSwitchingBackToUser(DateTime now) {
-    return isBusinessEvent &&
-        status == 'active' &&
-        (eventDate.isAfter(now) || eventDate.isAtSameMomentAs(now));
+    return BusinessAccountDeletionRules.shouldCancelBusinessEvent(
+      isBusinessEvent: isBusinessEvent,
+      status: status,
+      eventDate: eventDate,
+      now: now,
+    );
+  }
+
+  bool get isVisibleInEventsList {
+    if (!isBusinessEvent) return true;
+    return businessOrganizer?.isActive == true;
   }
 
   bool isActiveSponsoredPlacement(DateTime now) {
     final verifiedBusiness = businessOrganizer?.isVerified == true;
+    final activeBusiness = businessOrganizer?.isActive == true;
     if (!isSponsored ||
         !isBusinessEvent ||
         !verifiedBusiness ||
+        !activeBusiness ||
         eventDate.isBefore(now)) {
       return false;
     }

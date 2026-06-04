@@ -257,6 +257,7 @@ class BusinessAccountStatus {
 
   static const pending = 'pending';
   static const active = 'active';
+  static const deleted = 'deleted';
   static const rejected = 'rejected';
   static const suspended = 'suspended';
 
@@ -266,6 +267,8 @@ class BusinessAccountStatus {
         return 'İncelemede';
       case active:
         return 'Aktif';
+      case deleted:
+        return 'Silindi';
       case rejected:
         return 'Reddedildi';
       case suspended:
@@ -273,6 +276,40 @@ class BusinessAccountStatus {
       default:
         return 'Aktif';
     }
+  }
+}
+
+class BusinessAccountDeletionRules {
+  const BusinessAccountDeletionRules._();
+
+  static String profileAccountTypeAfterDelete() => 'user';
+
+  static String businessStatusAfterDelete() => BusinessAccountStatus.deleted;
+
+  static bool shouldDeactivateBusinessAccount(BusinessAccount account) {
+    return account.status == BusinessAccountStatus.active ||
+        account.status == BusinessAccountStatus.pending;
+  }
+
+  static bool canDeleteBusinessAccount({
+    required String? currentUserId,
+    required BusinessAccount account,
+  }) {
+    return currentUserId != null &&
+        currentUserId.trim().isNotEmpty &&
+        currentUserId == account.ownerUserId &&
+        shouldDeactivateBusinessAccount(account);
+  }
+
+  static bool shouldCancelBusinessEvent({
+    required bool isBusinessEvent,
+    required String status,
+    required DateTime eventDate,
+    required DateTime now,
+  }) {
+    return isBusinessEvent &&
+        status == 'active' &&
+        (eventDate.isAfter(now) || eventDate.isAtSameMomentAs(now));
   }
 }
 

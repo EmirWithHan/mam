@@ -14,6 +14,7 @@ import '../auth/auth_provider.dart';
 import '../business/business_models.dart';
 import '../business/business_provider.dart';
 import '../business/widgets/business_badge.dart';
+import '../events/events_provider.dart';
 import '../profile/profile_models.dart';
 import '../profile/profile_provider.dart';
 import 'widgets/settings_menu_tile.dart';
@@ -135,50 +136,42 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               onTap: () => context.pushNamed(RouteNames.trustScoreHistory),
             ),
             const SizedBox(height: AppSpacing.md),
-            SettingsMenuTile(
-              icon: Icons.storefront_outlined,
-              title: BusinessSettingsCopy.actionTitle(
-                isBusinessAccount: isBusinessMode,
-                application: businessApplication,
-              ),
-              subtitle: BusinessSettingsCopy.actionSubtitle(
-                isBusinessAccount: isBusinessMode,
-                account: businessAccount,
-                application: businessApplication,
-              ),
-              trailing: businessAccount == null
-                  ? null
-                  : BusinessBadge(isVerified: businessAccount.isVerified),
-              onTap: () {
-                if (businessApplication?.isPending == true &&
-                    !isBusinessMode) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('İşletme başvurun inceleniyor.'),
-                    ),
-                  );
-                  return;
-                }
-                if (!isBusinessMode) {
+            if (!isBusinessMode)
+              SettingsMenuTile(
+                icon: Icons.storefront_outlined,
+                title: BusinessSettingsCopy.actionTitle(
+                  isBusinessAccount: isBusinessMode,
+                  application: businessApplication,
+                ),
+                subtitle: BusinessSettingsCopy.actionSubtitle(
+                  isBusinessAccount: isBusinessMode,
+                  account: businessAccount,
+                  application: businessApplication,
+                ),
+                trailing: businessAccount == null
+                    ? null
+                    : BusinessBadge(isVerified: businessAccount.isVerified),
+                onTap: () {
+                  if (businessApplication?.isPending == true) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('İşletme başvurun inceleniyor.'),
+                      ),
+                    );
+                    return;
+                  }
                   context.pushNamed(RouteNames.businessCreate);
-                  return;
-                }
-                context.pushNamed(RouteNames.businessCreate);
-              },
-            ),
+                },
+              ),
             if (isBusinessMode) ...[
               const SizedBox(height: AppSpacing.md),
               SettingsMenuTile(
                 icon: Icons.delete_outline,
                 title: 'İşletme hesabımı sil',
-                subtitle: 'Bu işlem yakında eklenecek.',
-                onTap: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('İşletme hesabı silme yakında eklenecek.'),
-                    ),
-                  );
-                },
+                subtitle: 'İşletme modunu pasifleştir',
+                onTap: businessState.isLoading
+                    ? null
+                    : () => _confirmDeleteBusinessAccount(context),
               ),
             ],
             if (businessState.isAdmin) ...[
@@ -211,6 +204,62 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmDeleteBusinessAccount(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('İşletme hesabını sil?'),
+          content: const Text(
+            'İşletme bilgilerin pasifleştirilecek ve gelecekteki işletme '
+            'etkinliklerin yayından kaldırılacak. Hesabın kullanıcı hesabı '
+            'olarak devam edecek.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Vazgeç'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('İşletme hesabımı sil'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    final success = await ref
+        .read(myBusinessAccountProvider.notifier)
+        .deleteMyBusinessAccount();
+    if (!context.mounted) return;
+
+    if (!success) {
+      final message = ref.read(myBusinessAccountProvider).message;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message ?? 'İşletme hesabı silinemedi. Tekrar dene.'),
+        ),
+      );
+      return;
+    }
+
+    await ref.read(profileControllerProvider.notifier).loadMyProfile();
+    final profile = ref.read(profileControllerProvider).profile;
+    ref
+        .read(authControllerProvider.notifier)
+        .markProfileCompletion(isCompleted: profile?.hasCoreIdentity ?? false);
+    await ref.read(myBusinessAccountProvider.notifier).loadMyBusinessAccount();
+    await ref.read(eventsControllerProvider.notifier).refreshEvents();
+    if (!context.mounted) return;
+
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('İşletme hesabı silindi.')));
   }
 }
 

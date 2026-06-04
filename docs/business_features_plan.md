@@ -18,9 +18,14 @@
   approval. Users cannot instantly switch themselves to business mode.
 - Admin panel foundation exists at `/admin` for reviewing pending business
   applications.
-- Switching back to user mode is allowed. The business account stays stored,
-  but the personal profile becomes the active public identity again. Future
-  active business events are cancelled/hidden when switching back to user mode.
+- Business account deletion/deactivation returns the same profile to normal
+  user mode. The business account row stays stored as `deleted`, personal
+  identity fields are restored when available, and the user keeps the same auth
+  account.
+- Future active business events owned by the deleted/deactivated business are
+  cancelled/hidden, and sponsored flags are cleared so deleted businesses do
+  not receive sponsored placement.
+- Re-applying for business mode after deletion requires a new admin approval.
 - Business profiles show a business badge.
 - Business verification is admin/manual DB only through `is_verified`; users and
   business owners cannot mark themselves verified.
@@ -34,7 +39,7 @@
   paid in TRY.
 - Business events are not sponsored by default. Sponsorship appears only for
   verified businesses when the database/admin marks `is_sponsored=true` and the
-  sponsorship is still active.
+  sponsorship is still active. Deleted businesses cannot be sponsored.
 - Business events now use double confirmation: owner approval moves the
   requester to pending confirmation, the user confirms from event detail, and
   only confirmed users count as final participants.
@@ -71,9 +76,9 @@ can be tested without moderation tooling. `is_verified` defaults to `false`.
 
 Normal user events remain personal/community events. Business identities now
 replace the public personal profile for converted accounts, sponsored placement
-is manual-admin and verified-business only for now, and switching back to user
-mode disables/hides future active business events. Business events use a
-double-confirmation join lifecycle. Check-in, no-show handling, and business
-ratings now have a safe foundation; phone OTP, QR check-in, payments/ad
-dashboards, advanced analytics/statistics, and push notifications are still
-later steps.
+is manual-admin and verified-business only for now, and deleting/deactivating a
+business account returns the profile to user mode while disabling/hiding future
+active business events. Business events use a double-confirmation join
+lifecycle. Check-in, no-show handling, and business ratings now have a safe
+foundation; phone OTP, QR check-in, payments/ad dashboards, advanced
+analytics/statistics, and push notifications are still later steps.
