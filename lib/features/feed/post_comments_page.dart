@@ -82,7 +82,12 @@ class _PostCommentsPageState extends ConsumerState<PostCommentsPage> {
                 comments: comments,
                 currentUserId: authState.userId,
                 isLoading: feedState.commentsLoading,
+                hasMore:
+                    feedState.commentsHasMoreByPostId[widget.postId] ?? false,
                 message: feedState.commentsMessage,
+                onLoadMore: () => ref
+                    .read(feedControllerProvider.notifier)
+                    .loadMoreComments(widget.postId),
               ),
             ),
             if (!commentsHidden)
@@ -111,13 +116,17 @@ class _CommentsBody extends StatelessWidget {
     required this.comments,
     required this.currentUserId,
     required this.isLoading,
+    required this.hasMore,
     required this.message,
+    required this.onLoadMore,
   });
 
   final List<PostComment> comments;
   final String? currentUserId;
   final bool isLoading;
+  final bool hasMore;
   final String? message;
+  final VoidCallback onLoadMore;
 
   @override
   Widget build(BuildContext context) {
@@ -148,10 +157,26 @@ class _CommentsBody extends StatelessWidget {
 
     return ListView.separated(
       padding: const EdgeInsets.all(AppSpacing.lg),
-      itemCount: comments.length,
+      itemCount: comments.length + 1,
       separatorBuilder: (context, index) =>
           const SizedBox(height: AppSpacing.sm),
       itemBuilder: (context, index) {
+        if (index == comments.length) {
+          if (!hasMore) {
+            return const Padding(
+              padding: EdgeInsets.only(top: AppSpacing.sm),
+              child: Text(
+                'Daha fazla içerik yok.',
+                textAlign: TextAlign.center,
+              ),
+            );
+          }
+          return AppButton(
+            label: 'Daha fazla yükle',
+            isLoading: isLoading,
+            onPressed: isLoading ? null : onLoadMore,
+          );
+        }
         return CommentTile(
           comment: comments[index],
           currentUserId: currentUserId,

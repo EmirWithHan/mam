@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/utils/pagination.dart';
 import 'business_models.dart';
 import 'business_service.dart';
 
@@ -68,11 +69,100 @@ final publicBusinessAccountProvider =
     });
 
 final pendingBusinessApplicationsProvider =
-    FutureProvider<List<BusinessApplication>>((ref) {
-      return ref
-          .watch(businessAccountServiceProvider)
-          .fetchPendingApplications();
+    StateNotifierProvider<
+      PendingBusinessApplicationsController,
+      PendingBusinessApplicationsState
+    >((ref) {
+      return PendingBusinessApplicationsController(
+        ref.watch(businessAccountServiceProvider),
+      );
     });
+
+class PendingBusinessApplicationsState {
+  const PendingBusinessApplicationsState({
+    this.applications = const [],
+    this.isLoading = false,
+    this.isLoadingMore = false,
+    this.hasMore = true,
+    this.message,
+  });
+
+  final List<BusinessApplication> applications;
+  final bool isLoading;
+  final bool isLoadingMore;
+  final bool hasMore;
+  final String? message;
+
+  PendingBusinessApplicationsState copyWith({
+    List<BusinessApplication>? applications,
+    bool? isLoading,
+    bool? isLoadingMore,
+    bool? hasMore,
+    String? message,
+    bool clearMessage = false,
+  }) {
+    return PendingBusinessApplicationsState(
+      applications: applications ?? this.applications,
+      isLoading: isLoading ?? this.isLoading,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      hasMore: hasMore ?? this.hasMore,
+      message: clearMessage ? null : message ?? this.message,
+    );
+  }
+}
+
+class PendingBusinessApplicationsController
+    extends StateNotifier<PendingBusinessApplicationsState> {
+  PendingBusinessApplicationsController(this._service)
+    : super(const PendingBusinessApplicationsState());
+
+  final BusinessAccountService _service;
+
+  Future<void> loadInitial({bool force = false}) async {
+    if (!force && state.applications.isNotEmpty) return;
+    state = state.copyWith(isLoading: true, clearMessage: true);
+
+    try {
+      final applications = await _service.fetchPendingApplications();
+      state = PendingBusinessApplicationsState(
+        applications: applications,
+        hasMore: pageHasMore(
+          applications.length,
+          SupabasePageSizes.adminApplications,
+        ),
+      );
+    } catch (error) {
+      state = state.copyWith(isLoading: false, message: error.toString());
+    }
+  }
+
+  Future<void> refresh() => loadInitial(force: true);
+
+  Future<void> loadMore() async {
+    if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+    state = state.copyWith(isLoadingMore: true, clearMessage: true);
+
+    try {
+      final nextApplications = await _service.fetchPendingApplications(
+        offset: state.applications.length,
+      );
+      state = state.copyWith(
+        applications: appendUniqueByKey(
+          state.applications,
+          nextApplications,
+          (application) => application.id,
+        ),
+        hasMore: pageHasMore(
+          nextApplications.length,
+          SupabasePageSizes.adminApplications,
+        ),
+        isLoadingMore: false,
+      );
+    } catch (error) {
+      state = state.copyWith(isLoadingMore: false, message: error.toString());
+    }
+  }
+}
 
 class BusinessAccountController extends StateNotifier<BusinessAccountState> {
   BusinessAccountController(this._service)

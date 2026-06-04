@@ -1,11 +1,16 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../services/rate_limit_service.dart';
 import '../../services/supabase_service.dart';
 import 'join_requests_models.dart';
 
 class JoinRequestsService {
-  const JoinRequestsService();
+  const JoinRequestsService({
+    RateLimitService rateLimitService = const RateLimitService(),
+  }) : _rateLimitService = rateLimitService;
+
+  final RateLimitService _rateLimitService;
 
   Future<EventJoinRequest?> getMyJoinRequestForEvent(String eventId) async {
     final userId = SupabaseService.client.auth.currentUser?.id;
@@ -27,6 +32,8 @@ class JoinRequestsService {
     if (userId == null) {
       throw StateError('You must be signed in to request to join an event.');
     }
+
+    await _rateLimitService.eventJoinRequest(eventId: eventId);
 
     final data = await SupabaseService.client
         .from('event_join_requests')
@@ -58,6 +65,7 @@ class JoinRequestsService {
 
   Future<void> approveJoinRequest(String requestId) async {
     try {
+      await _rateLimitService.eventJoinReview(requestId: requestId);
       await SupabaseService.client.rpc(
         'approve_event_join_request',
         params: {'request_id': requestId},
@@ -70,6 +78,8 @@ class JoinRequestsService {
   }
 
   Future<void> rejectJoinRequest(String requestId) async {
+    await _rateLimitService.eventJoinReview(requestId: requestId);
+
     await SupabaseService.client.rpc(
       'reject_event_join_request',
       params: {'request_id': requestId},

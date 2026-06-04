@@ -13,43 +13,86 @@ import 'business_models.dart';
 import 'business_provider.dart';
 import 'business_service.dart';
 
-class AdminBusinessApplicationsPage extends ConsumerWidget {
+class AdminBusinessApplicationsPage extends ConsumerStatefulWidget {
   const AdminBusinessApplicationsPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminBusinessApplicationsPage> createState() =>
+      _AdminBusinessApplicationsPageState();
+}
+
+class _AdminBusinessApplicationsPageState
+    extends ConsumerState<AdminBusinessApplicationsPage> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      ref.read(pendingBusinessApplicationsProvider.notifier).loadInitial();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final businessState = ref.watch(myBusinessAccountProvider);
-    final applicationsAsync = ref.watch(pendingBusinessApplicationsProvider);
+    final applicationsState = ref.watch(pendingBusinessApplicationsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const AppLogo(size: 32, showText: true)),
       body: SafeArea(
         child: businessState.isAdmin
-            ? applicationsAsync.when(
-                loading: () => const AppLoader(),
-                error: (error, _) =>
-                    const ErrorView(message: 'Başvurular yüklenemedi.'),
-                data: (applications) {
-                  if (applications.isEmpty) {
-                    return const Center(
-                      child: Text('Bekleyen işletme başvurusu yok.'),
-                    );
-                  }
-                  return ListView.separated(
-                    padding: const EdgeInsets.all(AppSpacing.lg),
-                    itemCount: applications.length,
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(height: AppSpacing.md),
-                    itemBuilder: (context, index) {
-                      return _ApplicationReviewCard(
-                        application: applications[index],
-                      );
-                    },
-                  );
-                },
-              )
-            : const ErrorView(message: 'Bu alan için admin yetkisi gerekli.'),
+            ? _AdminApplicationsBody(state: applicationsState)
+            : const ErrorView(message: 'Bu alan icin admin yetkisi gerekli.'),
       ),
+    );
+  }
+}
+
+class _AdminApplicationsBody extends ConsumerWidget {
+  const _AdminApplicationsBody({required this.state});
+
+  final PendingBusinessApplicationsState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (state.isLoading && state.applications.isEmpty) {
+      return const AppLoader();
+    }
+
+    if (state.message != null && state.applications.isEmpty) {
+      return const ErrorView(message: 'Basvurular yuklenemedi.');
+    }
+
+    if (state.applications.isEmpty) {
+      return const Center(child: Text('Bekleyen isletme basvurusu yok.'));
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      itemCount: state.applications.length + 1,
+      separatorBuilder: (context, index) =>
+          const SizedBox(height: AppSpacing.md),
+      itemBuilder: (context, index) {
+        if (index == state.applications.length) {
+          if (!state.hasMore) {
+            return Text(
+              'Daha fazla içerik yok.',
+              style: AppTextStyles.caption,
+              textAlign: TextAlign.center,
+            );
+          }
+          return AppButton(
+            label: 'Daha fazla yükle',
+            isLoading: state.isLoadingMore,
+            onPressed: state.isLoadingMore
+                ? null
+                : () => ref
+                      .read(pendingBusinessApplicationsProvider.notifier)
+                      .loadMore(),
+          );
+        }
+
+        return _ApplicationReviewCard(application: state.applications[index]);
+      },
     );
   }
 }
@@ -170,7 +213,7 @@ class _ApplicationReviewCardState
           adminNote: _noteController.text.trim(),
         );
       }
-      ref.invalidate(pendingBusinessApplicationsProvider);
+      ref.read(pendingBusinessApplicationsProvider.notifier).refresh();
     } on BusinessAccountException catch (error) {
       if (!mounted) return;
       ScaffoldMessenger.of(

@@ -4,7 +4,28 @@ import 'public_profile_models.dart';
 class PublicProfileService {
   const PublicProfileService();
 
+  static final Map<String, Future<PublicProfilePreview?>>
+  _previewRequestsInFlight = {};
+
   Future<PublicProfilePreview?> fetchPublicProfilePreview(String userId) async {
+    final trimmedUserId = userId.trim();
+    if (trimmedUserId.isEmpty) return null;
+
+    final inFlight = _previewRequestsInFlight[trimmedUserId];
+    if (inFlight != null) return inFlight;
+
+    final request = _fetchPublicProfilePreview(trimmedUserId);
+    _previewRequestsInFlight[trimmedUserId] = request;
+    try {
+      return await request;
+    } finally {
+      _previewRequestsInFlight.remove(trimmedUserId);
+    }
+  }
+
+  Future<PublicProfilePreview?> _fetchPublicProfilePreview(
+    String userId,
+  ) async {
     final data = await SupabaseService.client.rpc(
       'get_public_profile_preview',
       params: {'p_user_id': userId},
@@ -41,12 +62,10 @@ class PublicProfileService {
 
     if (data is! List) return const {};
 
-    final previews = data
-        .whereType<Map>()
-        .map((item) => PublicProfilePreview.fromJson(Map<String, dynamic>.from(item)));
+    final previews = data.whereType<Map>().map(
+      (item) => PublicProfilePreview.fromJson(Map<String, dynamic>.from(item)),
+    );
 
-    return {
-      for (final preview in previews) preview.userId: preview,
-    };
+    return {for (final preview in previews) preview.userId: preview};
   }
 }

@@ -9,6 +9,7 @@ import 'package:match_a_man/core/router/route_names.dart';
 import 'package:match_a_man/core/widgets/event_cover_image.dart';
 import 'package:match_a_man/core/widgets/main_navigation_shell.dart';
 import 'package:match_a_man/core/utils/error_messages.dart';
+import 'package:match_a_man/core/utils/pagination.dart';
 import 'package:match_a_man/core/utils/phone_verification.dart';
 import 'package:match_a_man/core/utils/trust_score_rules.dart';
 import 'package:match_a_man/core/utils/user_handle.dart';
@@ -2781,7 +2782,10 @@ class _CreateSucceedsRefreshFailsFeedService extends FeedService {
   }
 
   @override
-  Future<List<PostWithStats>> fetchPostsWithStats() async {
+  Future<List<PostWithStats>> fetchPostsWithStats({
+    int limit = SupabasePageSizes.feed,
+    int offset = 0,
+  }) async {
     throw StateError('PGRST202 schema cache');
   }
 }

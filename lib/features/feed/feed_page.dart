@@ -105,7 +105,7 @@ class _FeedPageState extends ConsumerState<FeedPage> {
 
   int _itemCount(FeedState state) {
     if (state.posts.isEmpty) return 2;
-    return 1 + (state.posts.length * 2 - 1);
+    return 1 + (state.posts.length * 2 - 1) + 1;
   }
 }
 
@@ -270,6 +270,11 @@ class _FeedItem extends ConsumerWidget {
       );
     }
 
+    final loadMoreIndex = feedState.posts.length * 2 - 1;
+    if (index == loadMoreIndex) {
+      return _FeedLoadMore(feedState: feedState);
+    }
+
     if (index.isOdd) {
       return const SizedBox(height: AppSpacing.md);
     }
@@ -285,6 +290,37 @@ class _FeedItem extends ConsumerWidget {
       onOpenComments: () => context.pushNamed(
         RouteNames.postComments,
         pathParameters: {'postId': item.post.id},
+      ),
+    );
+  }
+}
+
+class _FeedLoadMore extends ConsumerWidget {
+  const _FeedLoadMore({required this.feedState});
+
+  final FeedState feedState;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (!feedState.hasMorePosts) {
+      return Padding(
+        padding: const EdgeInsets.only(top: AppSpacing.md),
+        child: Text(
+          'Daha fazla içerik yok.',
+          style: AppTextStyles.caption,
+          textAlign: TextAlign.center,
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: AppButton(
+        label: 'Daha fazla yükle',
+        isLoading: feedState.isLoadingMorePosts,
+        onPressed: feedState.isLoadingMorePosts
+            ? null
+            : () => ref.read(feedControllerProvider.notifier).loadMorePosts(),
       ),
     );
   }

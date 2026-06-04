@@ -1,11 +1,15 @@
 import '../../core/utils/error_messages.dart';
+import '../../core/utils/pagination.dart';
 import '../../services/supabase_service.dart';
 import 'notifications_models.dart';
 
 class NotificationsService {
   const NotificationsService();
 
-  Future<List<AppNotification>> fetchNotifications() async {
+  Future<List<AppNotification>> fetchNotifications({
+    int limit = SupabasePageSizes.notifications,
+    int offset = 0,
+  }) async {
     try {
       final userId = _currentUserId();
       final rows = await SupabaseService.client
@@ -15,7 +19,7 @@ class NotificationsService {
           )
           .eq('recipient_id', userId)
           .order('created_at', ascending: false)
-          .limit(50);
+          .range(offset, offset + limit - 1);
 
       return rows
           .map(
@@ -34,7 +38,8 @@ class NotificationsService {
           .from('notifications')
           .select('id')
           .eq('recipient_id', userId)
-          .eq('is_read', false);
+          .eq('is_read', false)
+          .limit(100);
       return rows.length;
     } catch (error) {
       throw Exception(_notificationError(error, 'Bildirimler yüklenemedi.'));

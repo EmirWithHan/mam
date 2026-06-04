@@ -97,6 +97,23 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                     ),
                   ),
                 ),
+              if (state.notifications.isNotEmpty)
+                if (state.hasMore)
+                  AppButton(
+                    label: 'Daha fazla yükle',
+                    isLoading: state.isLoadingMore,
+                    onPressed: state.isLoadingMore
+                        ? null
+                        : () => ref
+                              .read(notificationsControllerProvider.notifier)
+                              .loadMoreNotifications(),
+                  )
+                else
+                  Text(
+                    'Daha fazla içerik yok.',
+                    style: AppTextStyles.caption,
+                    textAlign: TextAlign.center,
+                  ),
             ],
           ),
         ),

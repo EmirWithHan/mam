@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/utils/error_messages.dart';
+import '../../core/utils/pagination.dart';
 import 'events_models.dart';
 import 'events_service.dart';
 
@@ -11,16 +12,22 @@ class EventsState {
     required this.status,
     this.events = const [],
     this.message,
+    this.hasMore = true,
+    this.isLoadingMore = false,
   });
 
   const EventsState.initial()
     : status = EventsStatus.initial,
       events = const [],
-      message = null;
+      message = null,
+      hasMore = true,
+      isLoadingMore = false;
 
   final EventsStatus status;
   final List<Event> events;
   final String? message;
+  final bool hasMore;
+  final bool isLoadingMore;
 
   bool get isLoading => status == EventsStatus.loading;
 
@@ -28,12 +35,16 @@ class EventsState {
     required EventsStatus status,
     List<Event>? events,
     String? message,
+    bool? hasMore,
+    bool? isLoadingMore,
     bool clearMessage = false,
   }) {
     return EventsState(
       status: status,
       events: events ?? this.events,
       message: clearMessage ? null : message ?? this.message,
+      hasMore: hasMore ?? this.hasMore,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
     );
   }
 }
@@ -182,12 +193,17 @@ class EventsController extends StateNotifier<EventsState> {
 
   final EventsService _eventsService;
 
-  Future<void> loadEvents() async {
+  Future<void> loadEvents({bool force = false}) async {
+    if (!force && state.status == EventsStatus.success) return;
     state = state.copyWith(status: EventsStatus.loading, clearMessage: true);
 
     try {
       final events = await _eventsService.fetchEvents();
-      state = EventsState(status: EventsStatus.success, events: events);
+      state = EventsState(
+        status: EventsStatus.success,
+        events: events,
+        hasMore: pageHasMore(events.length, SupabasePageSizes.events),
+      );
     } catch (error) {
       state = EventsState(
         status: EventsStatus.error,
@@ -196,7 +212,39 @@ class EventsController extends StateNotifier<EventsState> {
     }
   }
 
-  Future<void> refreshEvents() => loadEvents();
+  Future<void> refreshEvents() => loadEvents(force: true);
+
+  Future<void> loadMoreEvents() async {
+    if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+
+    state = state.copyWith(
+      status: state.status,
+      isLoadingMore: true,
+      clearMessage: true,
+    );
+
+    try {
+      final nextEvents = await _eventsService.fetchEvents(
+        offset: state.events.length,
+      );
+      state = state.copyWith(
+        status: EventsStatus.success,
+        events: appendUniqueByKey(
+          state.events,
+          nextEvents,
+          (event) => event.id,
+        ),
+        hasMore: pageHasMore(nextEvents.length, SupabasePageSizes.events),
+        isLoadingMore: false,
+      );
+    } catch (error) {
+      state = state.copyWith(
+        status: state.status,
+        isLoadingMore: false,
+        message: friendlyErrorMessage(error),
+      );
+    }
+  }
 
   Future<Event?> createEvent(CreateEventInput input) async {
     state = state.copyWith(status: EventsStatus.loading);
@@ -204,7 +252,11 @@ class EventsController extends StateNotifier<EventsState> {
     try {
       final event = await _eventsService.createEvent(input);
       final events = await _eventsService.fetchEvents();
-      state = EventsState(status: EventsStatus.success, events: events);
+      state = EventsState(
+        status: EventsStatus.success,
+        events: events,
+        hasMore: pageHasMore(events.length, SupabasePageSizes.events),
+      );
       return event;
     } catch (error) {
       state = EventsState(

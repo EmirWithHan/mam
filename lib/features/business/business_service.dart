@@ -1,7 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../core/utils/pagination.dart';
 import '../../core/utils/error_messages.dart';
+import '../../core/utils/rate_limits.dart';
+import '../../services/rate_limit_service.dart';
 import '../../services/supabase_service.dart';
 import 'business_models.dart';
 
@@ -15,7 +18,11 @@ class BusinessAccountException implements Exception {
 }
 
 class BusinessAccountService {
-  const BusinessAccountService();
+  const BusinessAccountService({
+    RateLimitService rateLimitService = const RateLimitService(),
+  }) : _rateLimitService = rateLimitService;
+
+  final RateLimitService _rateLimitService;
 
   Future<BusinessAccount?> fetchMyBusinessAccount() async {
     final userId = SupabaseService.client.auth.currentUser?.id;
@@ -135,6 +142,7 @@ class BusinessAccountService {
     }
 
     try {
+      await _rateLimitService.submitBusinessApplication();
       final data = await SupabaseService.client
           .from('business_applications')
           .insert(input.toCreateJson(userId: userId))
@@ -151,9 +159,13 @@ class BusinessAccountService {
     return data == true;
   }
 
-  Future<List<BusinessApplication>> fetchPendingApplications() async {
+  Future<List<BusinessApplication>> fetchPendingApplications({
+    int limit = SupabasePageSizes.adminApplications,
+    int offset = 0,
+  }) async {
     final data = await SupabaseService.client.rpc(
       'list_pending_business_applications',
+      params: {'p_limit': limit, 'p_offset': offset},
     );
     return (data as List<dynamic>)
         .whereType<Map>()
@@ -168,6 +180,12 @@ class BusinessAccountService {
     String? adminNote,
   }) async {
     try {
+      await _rateLimitService.checkAndRecord(
+        action: RateLimitActions.businessApplicationReview,
+        limitCount: RateLimitRules.businessApplicationReviewsPerHour,
+        windowSeconds: RateLimitRules.hourWindowSeconds,
+        targetId: applicationId,
+      );
       await SupabaseService.client.rpc(
         'approve_business_application',
         params: {'p_application_id': applicationId, 'p_admin_note': adminNote},
@@ -184,6 +202,12 @@ class BusinessAccountService {
     String? adminNote,
   }) async {
     try {
+      await _rateLimitService.checkAndRecord(
+        action: RateLimitActions.businessApplicationReview,
+        limitCount: RateLimitRules.businessApplicationReviewsPerHour,
+        windowSeconds: RateLimitRules.hourWindowSeconds,
+        targetId: applicationId,
+      );
       await SupabaseService.client.rpc(
         'reject_business_application',
         params: {'p_application_id': applicationId, 'p_admin_note': adminNote},
@@ -202,6 +226,9 @@ String _friendlyBusinessApplicationError(Object error) {
 
 String friendlyBusinessApplicationErrorMessage(Object error) {
   final message = error.toString().toLowerCase();
+  if (isRateLimitError(error)) {
+    return friendlyRateLimitMessage;
+  }
   if (message.contains('business_applications_one_pending_per_user') ||
       message.contains('duplicate') ||
       message.contains('23505')) {
@@ -223,6 +250,9 @@ String friendlyBusinessApplicationErrorMessage(Object error) {
 }
 
 String friendlyBusinessApplicationReviewErrorMessage(Object error) {
+  if (isRateLimitError(error)) {
+    return friendlyRateLimitMessage;
+  }
   return 'Başvuru onaylanamadı. Tekrar dene.';
 }
 

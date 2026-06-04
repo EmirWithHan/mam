@@ -1,21 +1,31 @@
 import 'package:flutter/foundation.dart';
 
+import '../../core/utils/pagination.dart';
+import '../../services/rate_limit_service.dart';
 import '../../services/supabase_service.dart';
 import '../reports/blocks_service.dart';
 import 'events_models.dart';
 
 class EventsService {
-  const EventsService({BlocksService blocksService = const BlocksService()})
-    : _blocksService = blocksService;
+  const EventsService({
+    BlocksService blocksService = const BlocksService(),
+    RateLimitService rateLimitService = const RateLimitService(),
+  }) : _blocksService = blocksService,
+       _rateLimitService = rateLimitService;
 
   final BlocksService _blocksService;
+  final RateLimitService _rateLimitService;
 
-  Future<List<Event>> fetchEvents() async {
+  Future<List<Event>> fetchEvents({
+    int limit = SupabasePageSizes.events,
+    int offset = 0,
+  }) async {
     final data = await SupabaseService.client
         .from('events')
         .select(_eventSelect)
         .inFilter('status', ['active', 'completed'])
-        .order('event_date');
+        .order('event_date')
+        .range(offset, offset + limit - 1);
     final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
 
     return data
@@ -41,10 +51,12 @@ class EventsService {
       throw StateError('You must be signed in to create an event.');
     }
 
+    await _rateLimitService.createEvent(isBusinessEvent: input.isBusinessEvent);
+
     final data = await SupabaseService.client
         .from('events')
         .insert(input.toCreateJson(hostId: userId))
-        .select()
+        .select(_eventSelect)
         .single();
 
     return Event.fromJson(data);
@@ -63,6 +75,8 @@ class EventsService {
     if (event.isFull) {
       throw StateError('Bu etkinlik şu anda dolu.');
     }
+
+    await _rateLimitService.eventJoinRequest(eventId: eventId);
 
     await SupabaseService.client.rpc(
       'request_event_join',
@@ -166,6 +180,10 @@ class EventsService {
     required String participantUserId,
     required String attendanceStatus,
   }) async {
+    await _rateLimitService.markBusinessAttendance(
+      participantUserId: participantUserId,
+    );
+
     await SupabaseService.client.rpc(
       'mark_business_event_attendance',
       params: {
@@ -206,7 +224,34 @@ class EventsService {
 }
 
 const _eventSelect = '''
-*,
+id,
+host_id,
+title,
+description,
+sport_type,
+city,
+district,
+location_text,
+location_lat,
+location_lng,
+event_date,
+capacity_total,
+capacity_male,
+capacity_female,
+capacity_any,
+approved_count,
+status,
+is_sponsored,
+sponsored_until,
+sponsored_priority,
+organizer_type,
+organizer_user_id,
+organizer_business_id,
+is_paid,
+price_amount,
+price_currency,
+created_at,
+updated_at,
 business_accounts:organizer_business_id(
   id,
   name,

@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
 import '../../core/utils/user_handle.dart';
+import '../../core/utils/pagination.dart';
 import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
 import 'profile_badges.dart';
@@ -199,11 +200,13 @@ class ProfileService {
   }
 
   Future<List<PublicProfileGalleryItem>> fetchPublicProfileGallery(
-    String userId,
-  ) async {
+    String userId, {
+    int limit = SupabasePageSizes.gallery,
+    int offset = 0,
+  }) async {
     final data = await SupabaseService.client.rpc(
       'get_public_profile_gallery',
-      params: {'p_user_id': userId},
+      params: {'p_user_id': userId, 'p_limit': limit, 'p_offset': offset},
     );
     return _rows(
       data,
@@ -236,7 +239,7 @@ class ProfileService {
 
   Future<List<PublicProfileFollowListItem>> fetchFollowers(
     String userId, {
-    int limit = 50,
+    int limit = SupabasePageSizes.followList,
     int offset = 0,
   }) async {
     try {
@@ -260,7 +263,7 @@ class ProfileService {
 
   Future<List<PublicProfileFollowListItem>> fetchFollowing(
     String userId, {
-    int limit = 50,
+    int limit = SupabasePageSizes.followList,
     int offset = 0,
   }) async {
     try {

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/utils/error_messages.dart';
+import '../../core/utils/pagination.dart';
 import 'notifications_models.dart';
 import 'notifications_service.dart';
 
@@ -12,18 +13,24 @@ class NotificationsState {
     this.notifications = const [],
     this.message,
     this.isUpdating = false,
+    this.hasMore = true,
+    this.isLoadingMore = false,
   });
 
   const NotificationsState.initial()
     : status = NotificationsStatus.initial,
       notifications = const [],
       message = null,
-      isUpdating = false;
+      isUpdating = false,
+      hasMore = true,
+      isLoadingMore = false;
 
   final NotificationsStatus status;
   final List<AppNotification> notifications;
   final String? message;
   final bool isUpdating;
+  final bool hasMore;
+  final bool isLoadingMore;
 
   bool get isLoading => status == NotificationsStatus.loading;
   int get unreadCount =>
@@ -35,6 +42,8 @@ class NotificationsState {
     List<AppNotification>? notifications,
     String? message,
     bool? isUpdating,
+    bool? hasMore,
+    bool? isLoadingMore,
     bool clearMessage = false,
   }) {
     return NotificationsState(
@@ -42,6 +51,8 @@ class NotificationsState {
       notifications: notifications ?? this.notifications,
       message: clearMessage ? null : message ?? this.message,
       isUpdating: isUpdating ?? this.isUpdating,
+      hasMore: hasMore ?? this.hasMore,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
     );
   }
 }
@@ -73,7 +84,8 @@ class NotificationsController extends StateNotifier<NotificationsState> {
   final NotificationsService _service;
   final Ref _ref;
 
-  Future<void> loadNotifications() async {
+  Future<void> loadNotifications({bool force = false}) async {
+    if (!force && state.status == NotificationsStatus.success) return;
     state = state.copyWith(
       status: NotificationsStatus.loading,
       clearMessage: true,
@@ -84,6 +96,10 @@ class NotificationsController extends StateNotifier<NotificationsState> {
       state = NotificationsState(
         status: NotificationsStatus.success,
         notifications: notifications,
+        hasMore: pageHasMore(
+          notifications.length,
+          SupabasePageSizes.notifications,
+        ),
       );
       _ref.invalidate(notificationsUnreadCountProvider);
     } catch (error) {
@@ -94,7 +110,37 @@ class NotificationsController extends StateNotifier<NotificationsState> {
     }
   }
 
-  Future<void> refreshNotifications() => loadNotifications();
+  Future<void> refreshNotifications() => loadNotifications(force: true);
+
+  Future<void> loadMoreNotifications() async {
+    if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+
+    state = state.copyWith(isLoadingMore: true, clearMessage: true);
+
+    try {
+      final nextNotifications = await _service.fetchNotifications(
+        offset: state.notifications.length,
+      );
+      state = state.copyWith(
+        status: NotificationsStatus.success,
+        notifications: appendUniqueByKey(
+          state.notifications,
+          nextNotifications,
+          (notification) => notification.id,
+        ),
+        hasMore: pageHasMore(
+          nextNotifications.length,
+          SupabasePageSizes.notifications,
+        ),
+        isLoadingMore: false,
+      );
+    } catch (error) {
+      state = state.copyWith(
+        isLoadingMore: false,
+        message: _readableMessage(error),
+      );
+    }
+  }
 
   Future<bool> markNotificationRead(String notificationId) async {
     if (state.isUpdating) return false;

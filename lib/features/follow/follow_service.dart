@@ -1,8 +1,13 @@
+import '../../services/rate_limit_service.dart';
 import '../../services/supabase_service.dart';
 import 'follow_models.dart';
 
 class FollowService {
-  const FollowService();
+  const FollowService({
+    RateLimitService rateLimitService = const RateLimitService(),
+  }) : _rateLimitService = rateLimitService;
+
+  final RateLimitService _rateLimitService;
 
   String? get currentUserId => SupabaseService.client.auth.currentUser?.id;
 
@@ -65,6 +70,8 @@ class FollowService {
       throw StateError('You cannot follow yourself.');
     }
 
+    await _rateLimitService.followRequest(targetUserId: targetUserId);
+
     final data = await SupabaseService.client.rpc(
       'follow_or_request_user',
       params: {'p_target_user_id': targetUserId},
@@ -93,6 +100,8 @@ class FollowService {
     if (userId == null) {
       throw StateError('You must be signed in to unfollow members.');
     }
+
+    await _rateLimitService.followRequest(targetUserId: targetUserId);
 
     await SupabaseService.client
         .from('follows')

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/utils/error_messages.dart';
+import '../../core/utils/pagination.dart';
 import 'feed_models.dart';
 import 'feed_service.dart';
 
@@ -15,7 +16,10 @@ class FeedState {
     this.commentsLoading = false,
     this.commentsMessage,
     this.commentsByPostId = const {},
+    this.commentsHasMoreByPostId = const {},
     this.likeLoadingPostIds = const {},
+    this.hasMorePosts = true,
+    this.isLoadingMorePosts = false,
   });
 
   const FeedState.initial()
@@ -26,7 +30,10 @@ class FeedState {
       commentsLoading = false,
       commentsMessage = null,
       commentsByPostId = const {},
-      likeLoadingPostIds = const {};
+      commentsHasMoreByPostId = const {},
+      likeLoadingPostIds = const {},
+      hasMorePosts = true,
+      isLoadingMorePosts = false;
 
   final FeedStatus status;
   final List<PostWithStats> posts;
@@ -35,7 +42,10 @@ class FeedState {
   final bool commentsLoading;
   final String? commentsMessage;
   final Map<String, List<PostComment>> commentsByPostId;
+  final Map<String, bool> commentsHasMoreByPostId;
   final Set<String> likeLoadingPostIds;
+  final bool hasMorePosts;
+  final bool isLoadingMorePosts;
 
   bool get isLoading => status == FeedStatus.loading;
   bool get isEmptySuccess => status == FeedStatus.success && posts.isEmpty;
@@ -48,7 +58,10 @@ class FeedState {
     bool? commentsLoading,
     String? commentsMessage,
     Map<String, List<PostComment>>? commentsByPostId,
+    Map<String, bool>? commentsHasMoreByPostId,
     Set<String>? likeLoadingPostIds,
+    bool? hasMorePosts,
+    bool? isLoadingMorePosts,
     bool clearMessage = false,
     bool clearCommentsMessage = false,
   }) {
@@ -62,7 +75,11 @@ class FeedState {
           ? null
           : commentsMessage ?? this.commentsMessage,
       commentsByPostId: commentsByPostId ?? this.commentsByPostId,
+      commentsHasMoreByPostId:
+          commentsHasMoreByPostId ?? this.commentsHasMoreByPostId,
       likeLoadingPostIds: likeLoadingPostIds ?? this.likeLoadingPostIds,
+      hasMorePosts: hasMorePosts ?? this.hasMorePosts,
+      isLoadingMorePosts: isLoadingMorePosts ?? this.isLoadingMorePosts,
     );
   }
 
@@ -90,12 +107,17 @@ class FeedController extends StateNotifier<FeedState> {
 
   final FeedService _feedService;
 
-  Future<void> loadPosts() async {
+  Future<void> loadPosts({bool force = false}) async {
+    if (!force && state.status == FeedStatus.success) return;
     state = state.copyWith(status: FeedStatus.loading, clearMessage: true);
 
     try {
       final posts = await _feedService.fetchPostsWithStats();
-      state = FeedState(status: FeedStatus.success, posts: posts);
+      state = FeedState(
+        status: FeedStatus.success,
+        posts: posts,
+        hasMorePosts: pageHasMore(posts.length, SupabasePageSizes.feed),
+      );
     } catch (error) {
       state = state.copyWith(
         status: FeedStatus.error,
@@ -104,7 +126,35 @@ class FeedController extends StateNotifier<FeedState> {
     }
   }
 
-  Future<void> refreshPosts() => loadPosts();
+  Future<void> refreshPosts() => loadPosts(force: true);
+
+  Future<void> loadMorePosts() async {
+    if (state.isLoadingMorePosts || state.isLoading || !state.hasMorePosts) {
+      return;
+    }
+
+    state = state.copyWith(isLoadingMorePosts: true, clearMessage: true);
+    try {
+      final nextPosts = await _feedService.fetchPostsWithStats(
+        offset: state.posts.length,
+      );
+      state = state.copyWith(
+        status: FeedStatus.success,
+        posts: appendUniqueByKey(
+          state.posts,
+          nextPosts,
+          (item) => item.post.id,
+        ),
+        hasMorePosts: pageHasMore(nextPosts.length, SupabasePageSizes.feed),
+        isLoadingMorePosts: false,
+      );
+    } catch (error) {
+      state = state.copyWith(
+        isLoadingMorePosts: false,
+        message: friendlyFeedLoadErrorMessage(error),
+      );
+    }
+  }
 
   Future<Post?> createPost(CreatePostInput input) async {
     state = state.copyWith(isCreating: true, clearMessage: true);
@@ -113,7 +163,11 @@ class FeedController extends StateNotifier<FeedState> {
       final post = await _feedService.createPost(input);
       try {
         final posts = await _feedService.fetchPostsWithStats();
-        state = FeedState(status: FeedStatus.success, posts: posts);
+        state = FeedState(
+          status: FeedStatus.success,
+          posts: posts,
+          hasMorePosts: pageHasMore(posts.length, SupabasePageSizes.feed),
+        );
       } catch (refreshError) {
         state = state.copyWith(
           isCreating: false,
@@ -144,7 +198,18 @@ class FeedController extends StateNotifier<FeedState> {
         postId: postId,
         currentlyLiked: item.isLikedByMe,
       );
-      final posts = await _feedService.fetchPostsWithStats();
+      final likeDelta = item.isLikedByMe ? -1 : 1;
+      final posts = state.posts
+          .map((postItem) {
+            if (postItem.post.id != postId) return postItem;
+            return postItem.copyWith(
+              isLikedByMe: !item.isLikedByMe,
+              likeCount: (postItem.likeCount + likeDelta)
+                  .clamp(0, 1 << 31)
+                  .toInt(),
+            );
+          })
+          .toList(growable: false);
       state = state.copyWith(
         status: FeedStatus.success,
         posts: posts,
@@ -183,10 +248,58 @@ class FeedController extends StateNotifier<FeedState> {
       final commentsByPostId = Map<String, List<PostComment>>.from(
         state.commentsByPostId,
       );
+      final commentsHasMoreByPostId = Map<String, bool>.from(
+        state.commentsHasMoreByPostId,
+      );
       commentsByPostId[postId] = comments;
+      commentsHasMoreByPostId[postId] = pageHasMore(
+        comments.length,
+        SupabasePageSizes.comments,
+      );
       state = state.copyWith(
         commentsLoading: false,
         commentsByPostId: commentsByPostId,
+        commentsHasMoreByPostId: commentsHasMoreByPostId,
+      );
+    } catch (error) {
+      state = state.copyWith(
+        commentsLoading: false,
+        commentsMessage: friendlyErrorMessage(error),
+      );
+    }
+  }
+
+  Future<void> loadMoreComments(String postId) async {
+    final currentComments = state.commentsByPostId[postId] ?? const [];
+    final hasMore = state.commentsHasMoreByPostId[postId] ?? true;
+    if (state.commentsLoading || !hasMore) return;
+
+    state = state.copyWith(commentsLoading: true, clearCommentsMessage: true);
+
+    try {
+      final nextComments = await _feedService.fetchComments(
+        postId,
+        offset: currentComments.length,
+      );
+      final commentsByPostId = Map<String, List<PostComment>>.from(
+        state.commentsByPostId,
+      );
+      final commentsHasMoreByPostId = Map<String, bool>.from(
+        state.commentsHasMoreByPostId,
+      );
+      commentsByPostId[postId] = appendUniqueByKey(
+        currentComments,
+        nextComments,
+        (comment) => comment.id,
+      );
+      commentsHasMoreByPostId[postId] = pageHasMore(
+        nextComments.length,
+        SupabasePageSizes.comments,
+      );
+      state = state.copyWith(
+        commentsLoading: false,
+        commentsByPostId: commentsByPostId,
+        commentsHasMoreByPostId: commentsHasMoreByPostId,
       );
     } catch (error) {
       state = state.copyWith(
@@ -207,12 +320,19 @@ class FeedController extends StateNotifier<FeedState> {
         postId: postId,
         comment: comment,
       );
-      final comments = await _feedService.fetchComments(postId);
-      final posts = await _feedService.fetchPostsWithStats();
       final commentsByPostId = Map<String, List<PostComment>>.from(
         state.commentsByPostId,
       );
-      commentsByPostId[postId] = comments;
+      commentsByPostId[postId] = [
+        ...(commentsByPostId[postId] ?? const []),
+        newComment,
+      ];
+      final posts = state.posts
+          .map((item) {
+            if (item.post.id != postId) return item;
+            return item.copyWith(commentCount: item.commentCount + 1);
+          })
+          .toList(growable: false);
       state = state.copyWith(
         status: FeedStatus.success,
         posts: posts,

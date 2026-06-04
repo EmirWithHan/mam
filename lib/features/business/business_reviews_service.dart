@@ -1,8 +1,14 @@
+import '../../core/utils/rate_limits.dart';
+import '../../services/rate_limit_service.dart';
 import '../../services/supabase_service.dart';
 import 'business_reviews_models.dart';
 
 class BusinessReviewsService {
-  const BusinessReviewsService();
+  const BusinessReviewsService({
+    RateLimitService rateLimitService = const RateLimitService(),
+  }) : _rateLimitService = rateLimitService;
+
+  final RateLimitService _rateLimitService;
 
   Future<BusinessRatingSummary> fetchRatingSummary(String businessId) async {
     final rows = await SupabaseService.client.rpc(
@@ -46,6 +52,10 @@ class BusinessReviewsService {
     }
 
     try {
+      await _rateLimitService.submitBusinessReview(
+        eventId: input.eventId,
+        businessId: input.businessId,
+      );
       await SupabaseService.client.rpc(
         'submit_business_review',
         params: {
@@ -72,6 +82,9 @@ class BusinessReviewException implements Exception {
 
 String friendlyBusinessReviewErrorMessage(Object error) {
   final normalized = error.toString().toLowerCase();
+  if (isRateLimitError(error)) {
+    return friendlyRateLimitMessage;
+  }
   if (normalized.contains('invalid_rating') ||
       normalized.contains('business_reviews_rating_check')) {
     return 'Puan 1 ile 5 arasında olmalı.';

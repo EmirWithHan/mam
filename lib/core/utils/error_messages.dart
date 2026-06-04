@@ -1,6 +1,12 @@
+import 'rate_limits.dart';
+
 String friendlyErrorMessage(Object error) {
   final message = error.toString();
   final normalized = message.toLowerCase();
+
+  if (isRateLimitError(error)) {
+    return friendlyRateLimitMessage;
+  }
 
   if (normalized.contains('notifications') ||
       normalized.contains('notification') ||
@@ -216,6 +222,9 @@ String friendlyFeedRefreshErrorMessage(Object error) {
 
 String friendlyCreatePostErrorMessage(Object error) {
   final normalized = error.toString().toLowerCase();
+  if (isRateLimitError(error)) {
+    return friendlyRateLimitMessage;
+  }
   if (normalized.contains('storage') ||
       normalized.contains('bucket') ||
       normalized.contains('upload')) {

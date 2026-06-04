@@ -1,4 +1,5 @@
 import '../../services/supabase_service.dart';
+import '../../core/utils/pagination.dart';
 import 'profile_activity_models.dart';
 
 class ProfileActivityService {
@@ -8,10 +9,12 @@ class ProfileActivityService {
     final userId = _currentUserId();
     final data = await SupabaseService.client
         .from('posts')
-        .select()
+        .select(
+          'id,user_id,event_id,image_url,caption,comments_hidden,is_archived,created_at,updated_at',
+        )
         .eq('user_id', userId)
         .order('created_at', ascending: false)
-        .limit(30);
+        .limit(SupabasePageSizes.gallery);
 
     return data.map(ProfileGalleryPost.fromJson).toList();
   }
@@ -21,7 +24,8 @@ class ProfileActivityService {
     final participantRows = await SupabaseService.client
         .from('event_participants')
         .select('event_id,role,attendance_status')
-        .eq('user_id', userId);
+        .eq('user_id', userId)
+        .limit(SupabasePageSizes.events);
 
     final rolesByEventId = <String, String>{};
     final statusesByEventId = <String, String>{};
@@ -54,7 +58,8 @@ class ProfileActivityService {
     final hostedEventRows = await SupabaseService.client
         .from('events')
         .select(_eventSelect)
-        .eq('host_id', userId);
+        .eq('host_id', userId)
+        .limit(SupabasePageSizes.events);
 
     for (final row in hostedEventRows) {
       final event = Map<String, dynamic>.from(row);

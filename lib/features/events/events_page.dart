@@ -98,6 +98,9 @@ class _EventsPageState extends ConsumerState<EventsPage> {
                   searchQuery: _searchController.text,
                   filters: _filters,
                   onClearFilters: _clearSearchAndFilters,
+                  onLoadMore: () => ref
+                      .read(eventsControllerProvider.notifier)
+                      .loadMoreEvents(),
                 ),
               ),
             ],
@@ -168,12 +171,14 @@ class _EventsBody extends StatelessWidget {
     required this.searchQuery,
     required this.filters,
     required this.onClearFilters,
+    required this.onLoadMore,
   });
 
   final EventsState eventsState;
   final String searchQuery;
   final EventFilters filters;
   final VoidCallback onClearFilters;
+  final VoidCallback onLoadMore;
 
   @override
   Widget build(BuildContext context) {
@@ -215,10 +220,24 @@ class _EventsBody extends StatelessWidget {
     final placedEvents = eventsWithSponsoredPlacement(filteredEvents);
 
     return ListView.separated(
-      itemCount: placedEvents.length,
+      itemCount: placedEvents.length + 1,
       separatorBuilder: (context, index) =>
           const SizedBox(height: AppSpacing.md),
       itemBuilder: (context, index) {
+        if (index == placedEvents.length) {
+          if (!eventsState.hasMore) {
+            return Text(
+              'Daha fazla içerik yok.',
+              style: AppTextStyles.caption,
+              textAlign: TextAlign.center,
+            );
+          }
+          return AppButton(
+            label: 'Daha fazla yükle',
+            isLoading: eventsState.isLoadingMore,
+            onPressed: eventsState.isLoadingMore ? null : onLoadMore,
+          );
+        }
         return EventCard(event: placedEvents[index]);
       },
     );

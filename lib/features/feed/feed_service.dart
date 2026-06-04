@@ -3,6 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
+import '../../services/rate_limit_service.dart';
+import '../../core/utils/pagination.dart';
 import '../reports/blocks_service.dart';
 import 'feed_models.dart';
 
@@ -10,14 +12,23 @@ class FeedService {
   const FeedService({
     StorageService storageService = const StorageService(),
     BlocksService blocksService = const BlocksService(),
+    RateLimitService rateLimitService = const RateLimitService(),
   }) : _storageService = storageService,
-       _blocksService = blocksService;
+       _blocksService = blocksService,
+       _rateLimitService = rateLimitService;
 
   final StorageService _storageService;
   final BlocksService _blocksService;
+  final RateLimitService _rateLimitService;
 
-  Future<List<Post>> fetchPosts() async {
-    final data = await SupabaseService.client.rpc('get_visible_feed_posts');
+  Future<List<Post>> fetchPosts({
+    int limit = SupabasePageSizes.feed,
+    int offset = 0,
+  }) async {
+    final data = await SupabaseService.client.rpc(
+      'get_visible_feed_posts',
+      params: {'p_limit': limit, 'p_offset': offset},
+    );
     final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
 
     return (data as List<dynamic>)
@@ -29,10 +40,14 @@ class FeedService {
         .toList();
   }
 
-  Future<List<PostWithStats>> fetchPostsWithStats() async {
+  Future<List<PostWithStats>> fetchPostsWithStats({
+    int limit = SupabasePageSizes.feed,
+    int offset = 0,
+  }) async {
     try {
       final data = await SupabaseService.client.rpc(
         'get_visible_feed_posts_with_stats',
+        params: {'p_limit': limit, 'p_offset': offset},
       );
       final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
 
@@ -172,14 +187,19 @@ class FeedService {
     );
   }
 
-  Future<List<PostComment>> fetchComments(String postId) async {
+  Future<List<PostComment>> fetchComments(
+    String postId, {
+    int limit = SupabasePageSizes.comments,
+    int offset = 0,
+  }) async {
     await _ensureCommentsVisible(postId);
 
     final data = await SupabaseService.client
         .from('post_comments')
-        .select()
+        .select('id,post_id,user_id,comment,created_at,updated_at')
         .eq('post_id', postId)
-        .order('created_at');
+        .order('created_at')
+        .range(offset, offset + limit - 1);
     final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
 
     return data
@@ -202,11 +222,12 @@ class FeedService {
       throw StateError('Comment cannot be empty.');
     }
     await _ensureCommentsVisible(postId);
+    await _rateLimitService.createComment(postId: postId);
 
     final data = await SupabaseService.client
         .from('post_comments')
         .insert({'post_id': postId, 'user_id': userId, 'comment': trimmed})
-        .select()
+        .select('id,post_id,user_id,comment,created_at,updated_at')
         .single();
 
     return PostComment.fromJson(data);
@@ -217,6 +238,8 @@ class FeedService {
     if (userId == null) {
       throw StateError('You must be signed in to create a post.');
     }
+
+    await _rateLimitService.createPost(targetId: input.eventId);
 
     final imageUrl = await _storageService.uploadPostImage(
       bytes: input.imageBytes,
@@ -229,7 +252,9 @@ class FeedService {
     final created = await SupabaseService.client
         .from('posts')
         .insert(data)
-        .select()
+        .select(
+          'id,user_id,event_id,image_url,caption,comments_hidden,is_archived,created_at,updated_at',
+        )
         .single()
         .catchError((Object error) {
           _logFeedError('post insert failed', error);
@@ -251,7 +276,7 @@ class FeedService {
     final userId = SupabaseService.client.auth.currentUser?.id;
     final post = await SupabaseService.client
         .from('posts')
-        .select()
+        .select('user_id,comments_hidden')
         .eq('id', postId)
         .maybeSingle();
 
