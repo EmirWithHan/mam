@@ -657,13 +657,11 @@ Map<String, dynamic> _profileToJson(Profile profile) {
 void _logProfileError(String label, Object error) {
   final text = error.toString();
   final codeMatch = RegExp(r'code:\s*([^,\)]+)').firstMatch(text);
-  final messageMatch = RegExp(r'message:\s*([^,\)]+)').firstMatch(text);
   final code = codeMatch?.group(1)?.trim();
-  final message = messageMatch?.group(1)?.trim();
   debugPrint(
     '[Profile] $label'
     '${code == null ? '' : ' code=$code'}'
-    '${message == null ? '' : ' message=$message'}',
+    ' type=${error.runtimeType}',
   );
 }
 

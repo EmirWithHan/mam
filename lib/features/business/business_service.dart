@@ -285,10 +285,10 @@ String friendlyBusinessAccountDeleteErrorMessage(Object error) {
 void _debugPrintSupabaseError(String action, Object error) {
   if (error is PostgrestException) {
     debugPrint(
-      '[Business] $action failed code=${error.code} message=${error.message}',
+      '[Business] $action failed code=${error.code}',
     );
     return;
   }
 
-  debugPrint('[Business] $action failed message=${error.runtimeType}');
+  debugPrint('[Business] $action failed type=${error.runtimeType}');
 }

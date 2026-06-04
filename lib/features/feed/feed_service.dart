@@ -319,12 +319,9 @@ Future<bool> _hasMyLike({
 
 void _logFeedError(String label, Object error) {
   final code = error is PostgrestException ? error.code : null;
-  final message = error is PostgrestException
-      ? error.message
-      : error.toString();
   debugPrint(
     '[Feed] $label'
     '${code == null ? '' : ' code=$code'}'
-    ' message=$message',
+    ' type=${error.runtimeType}',
   );
 }
