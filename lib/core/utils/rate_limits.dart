@@ -12,6 +12,7 @@ class RateLimitActions {
   static const reportCreate = 'report_create';
   static const businessReviewSubmit = 'business_review_submit';
   static const businessAttendanceMark = 'business_attendance_mark';
+  static const feedbackSubmit = 'feedback_submit';
 }
 
 class RateLimitRules {
@@ -29,6 +30,7 @@ class RateLimitRules {
   static const businessApplicationReviewsPerHour = 60;
   static const businessAttendanceMarksPerHour = 120;
   static const businessReviewPerTarget = 1;
+  static const feedbackSubmitsPerDay = 5;
 
   static const hourWindowSeconds = 60 * 60;
   static const dayWindowSeconds = 24 * 60 * 60;

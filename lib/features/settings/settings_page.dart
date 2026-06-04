@@ -136,6 +136,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               onTap: () => context.pushNamed(RouteNames.trustScoreHistory),
             ),
             const SizedBox(height: AppSpacing.md),
+            SettingsMenuTile(
+              icon: Icons.rate_review_outlined,
+              title: 'Geri bildirim gönder',
+              subtitle: 'Deneyimini ve önerilerini paylaş',
+              onTap: () => context.pushNamed(RouteNames.feedback),
+            ),
+            const SizedBox(height: AppSpacing.md),
             if (!isBusinessMode)
               SettingsMenuTile(
                 icon: Icons.storefront_outlined,

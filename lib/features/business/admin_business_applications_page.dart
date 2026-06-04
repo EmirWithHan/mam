@@ -9,6 +9,8 @@ import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/error_view.dart';
+import '../feedback/feedback_models.dart';
+import '../feedback/feedback_provider.dart';
 import 'business_models.dart';
 import 'business_provider.dart';
 import 'business_service.dart';
@@ -28,6 +30,7 @@ class _AdminBusinessApplicationsPageState
     super.initState();
     Future.microtask(() {
       ref.read(pendingBusinessApplicationsProvider.notifier).loadInitial();
+      ref.read(adminFeedbackProvider.notifier).load();
     });
   }
 
@@ -40,10 +43,114 @@ class _AdminBusinessApplicationsPageState
       appBar: AppBar(title: const AppLogo(size: 32, showText: true)),
       body: SafeArea(
         child: businessState.isAdmin
-            ? _AdminApplicationsBody(state: applicationsState)
+            ? DefaultTabController(
+                length: 2,
+                child: Column(
+                  children: [
+                    const TabBar(
+                      tabs: [
+                        Tab(text: 'Başvurular'),
+                        Tab(text: 'Feedback'),
+                      ],
+                    ),
+                    Expanded(
+                      child: TabBarView(
+                        children: [
+                          _AdminApplicationsBody(state: applicationsState),
+                          const _AdminFeedbackBody(),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              )
             : const ErrorView(message: 'Bu alan icin admin yetkisi gerekli.'),
       ),
     );
+  }
+}
+
+class _AdminFeedbackBody extends ConsumerWidget {
+  const _AdminFeedbackBody();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final state = ref.watch(adminFeedbackProvider);
+
+    if (state.isLoading && state.feedback.isEmpty) {
+      return const AppLoader();
+    }
+
+    if (state.message != null && state.feedback.isEmpty) {
+      return const ErrorView(message: 'Geri bildirimler yüklenemedi.');
+    }
+
+    if (state.feedback.isEmpty) {
+      return const Center(child: Text('Henüz geri bildirim yok.'));
+    }
+
+    return RefreshIndicator(
+      onRefresh: () =>
+          ref.read(adminFeedbackProvider.notifier).load(force: true),
+      child: ListView.separated(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        itemCount: state.feedback.length,
+        separatorBuilder: (context, index) =>
+            const SizedBox(height: AppSpacing.md),
+        itemBuilder: (context, index) {
+          return _FeedbackReviewCard(feedback: state.feedback[index]);
+        },
+      ),
+    );
+  }
+}
+
+class _FeedbackReviewCard extends StatelessWidget {
+  const _FeedbackReviewCard({required this.feedback});
+
+  final UserFeedback feedback;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
+        borderRadius: AppRadius.lgBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(_title, style: AppTextStyles.title),
+            const SizedBox(height: AppSpacing.xs),
+            Text('User: ${feedback.userId}', style: AppTextStyles.caption),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              feedback.createdAt.toLocal().toString().split('.').first,
+              style: AppTextStyles.caption,
+            ),
+            if (feedback.source != null) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text('Source: ${feedback.source}', style: AppTextStyles.caption),
+            ],
+            if (feedback.message != null) ...[
+              const SizedBox(height: AppSpacing.md),
+              Text(feedback.message!, style: AppTextStyles.body),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String get _title {
+    final rating = feedback.rating == null
+        ? 'Puan yok'
+        : '${feedback.rating}/5';
+    final category = feedback.category ?? 'Kategori yok';
+    return '$rating · $category';
   }
 }
 

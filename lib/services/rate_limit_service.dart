@@ -114,4 +114,12 @@ class RateLimitService {
       targetId: participantUserId,
     );
   }
+
+  Future<void> submitFeedback() {
+    return checkAndRecord(
+      action: RateLimitActions.feedbackSubmit,
+      limitCount: RateLimitRules.feedbackSubmitsPerDay,
+      windowSeconds: RateLimitRules.dayWindowSeconds,
+    );
+  }
 }

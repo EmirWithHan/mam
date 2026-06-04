@@ -17,6 +17,7 @@ import '../../features/events/event_detail_page.dart';
 import '../../features/events/events_page.dart';
 import '../../features/feed/create_post_page.dart';
 import '../../features/feed/post_comments_page.dart';
+import '../../features/feedback/feedback_page.dart';
 import '../../features/home/create_hub_page.dart';
 import '../../features/home/home_page.dart';
 import '../../features/notifications/notifications_page.dart';
@@ -185,6 +186,12 @@ GoRouter createAppRouter(AuthState authState) {
         name: RouteNames.settings,
         builder: (context, state) =>
             const MainNavigationShell(currentIndex: 4, child: SettingsPage()),
+      ),
+      GoRoute(
+        path: RoutePaths.feedback,
+        name: RouteNames.feedback,
+        builder: (context, state) =>
+            const MainNavigationShell(currentIndex: 4, child: FeedbackPage()),
       ),
       GoRoute(
         path: RoutePaths.blockedUsers,

@@ -12,6 +12,7 @@ class RouteNames {
   static const profileGalleryViewer = 'profileGalleryViewer';
   static const profileComplete = 'profileComplete';
   static const settings = 'settings';
+  static const feedback = 'feedback';
   static const blockedUsers = 'blockedUsers';
   static const businessCreate = 'businessCreate';
   static const businessProfile = 'businessProfile';
@@ -45,6 +46,7 @@ class RoutePaths {
   static const profileGalleryViewer = '/profile-gallery-viewer';
   static const profileComplete = '/profile/complete';
   static const settings = '/settings';
+  static const feedback = '/settings/feedback';
   static const blockedUsers = '/settings/blocked-users';
   static const businessCreate = '/business/create';
   static const businessProfile = '/business/:businessId';
