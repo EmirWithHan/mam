@@ -580,7 +580,7 @@ String _displayName(Profile profile) {
   ].where((part) => part != null && part.isNotEmpty).join(' ');
 
   if (name.isNotEmpty) return name;
-  return 'MaM player';
+  return 'Match A Man kullanıcısı';
 }
 
 String _compactCount(int value) {

@@ -28,6 +28,7 @@ import '../../features/profile/profile_page.dart';
 import '../../features/profile/public_profile_page.dart';
 import '../../features/profile/widgets/profile_gallery_viewer_page.dart';
 import '../../features/reports/blocked_users_page.dart';
+import '../../features/settings/legal_info_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/social/social_page.dart';
 import '../../features/trust_score/trust_score_history_page.dart';
@@ -192,6 +193,38 @@ GoRouter createAppRouter(AuthState authState) {
         name: RouteNames.feedback,
         builder: (context, state) =>
             const MainNavigationShell(currentIndex: 4, child: FeedbackPage()),
+      ),
+      GoRoute(
+        path: RoutePaths.privacyPolicy,
+        name: RouteNames.privacyPolicy,
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 4,
+          child: LegalInfoPage(type: LegalInfoType.privacyPolicy),
+        ),
+      ),
+      GoRoute(
+        path: RoutePaths.termsOfUse,
+        name: RouteNames.termsOfUse,
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 4,
+          child: LegalInfoPage(type: LegalInfoType.termsOfUse),
+        ),
+      ),
+      GoRoute(
+        path: RoutePaths.communityGuidelines,
+        name: RouteNames.communityGuidelines,
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 4,
+          child: LegalInfoPage(type: LegalInfoType.communityGuidelines),
+        ),
+      ),
+      GoRoute(
+        path: RoutePaths.support,
+        name: RouteNames.support,
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 4,
+          child: LegalInfoPage(type: LegalInfoType.support),
+        ),
       ),
       GoRoute(
         path: RoutePaths.blockedUsers,

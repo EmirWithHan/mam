@@ -144,6 +144,34 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               onTap: () => context.pushNamed(RouteNames.feedback),
             ),
             const SizedBox(height: AppSpacing.md),
+            SettingsMenuTile(
+              icon: Icons.privacy_tip_outlined,
+              title: 'Gizlilik Politikası',
+              subtitle: 'MVP gizlilik özeti ve veri kullanımı',
+              onTap: () => context.pushNamed(RouteNames.privacyPolicy),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SettingsMenuTile(
+              icon: Icons.description_outlined,
+              title: 'Kullanım Şartları',
+              subtitle: 'Uygulama kuralları ve kullanıcı sorumlulukları',
+              onTap: () => context.pushNamed(RouteNames.termsOfUse),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SettingsMenuTile(
+              icon: Icons.groups_outlined,
+              title: 'Topluluk Kuralları',
+              subtitle: 'Güvenli ve saygılı etkinlik topluluğu',
+              onTap: () => context.pushNamed(RouteNames.communityGuidelines),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SettingsMenuTile(
+              icon: Icons.support_agent_outlined,
+              title: 'Bize Ulaş / Destek',
+              subtitle: 'Geri bildirim, güvenlik ve hesap talepleri',
+              onTap: () => context.pushNamed(RouteNames.support),
+            ),
+            const SizedBox(height: AppSpacing.md),
             if (!isBusinessMode)
               SettingsMenuTile(
                 icon: Icons.storefront_outlined,
@@ -389,7 +417,7 @@ class _SettingsUserCard extends StatelessWidget {
     final name = [
       firstName,
     ].where((part) => part != null && part.isNotEmpty).join(' ');
-    return name.isNotEmpty ? name : 'MaM Kullanıcısı';
+    return name.isNotEmpty ? name : 'Match A Man kullanıcısı';
   }
 
   String _displayHandle() {

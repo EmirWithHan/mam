@@ -13,6 +13,10 @@ class RouteNames {
   static const profileComplete = 'profileComplete';
   static const settings = 'settings';
   static const feedback = 'feedback';
+  static const privacyPolicy = 'privacyPolicy';
+  static const termsOfUse = 'termsOfUse';
+  static const communityGuidelines = 'communityGuidelines';
+  static const support = 'support';
   static const blockedUsers = 'blockedUsers';
   static const businessCreate = 'businessCreate';
   static const businessProfile = 'businessProfile';
@@ -47,6 +51,10 @@ class RoutePaths {
   static const profileComplete = '/profile/complete';
   static const settings = '/settings';
   static const feedback = '/settings/feedback';
+  static const privacyPolicy = '/settings/privacy-policy';
+  static const termsOfUse = '/settings/terms-of-use';
+  static const communityGuidelines = '/settings/community-guidelines';
+  static const support = '/settings/support';
   static const blockedUsers = '/settings/blocked-users';
   static const businessCreate = '/business/create';
   static const businessProfile = '/business/:businessId';

@@ -37,7 +37,7 @@ class PublicProfileName extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                profile?.displayName ?? 'MaM User',
+                profile?.displayName ?? 'Match A Man kullanıcısı',
                 style: compact
                     ? AppTextStyles.caption
                     : AppTextStyles.bodyStrong,
@@ -60,11 +60,11 @@ class PublicProfileName extends ConsumerWidget {
         );
       },
       loading: () => Text(
-        'MaM User',
+        'Match A Man kullanıcısı',
         style: compact ? AppTextStyles.caption : AppTextStyles.bodyStrong,
       ),
       orElse: () => Text(
-        'MaM User',
+        'Match A Man kullanıcısı',
         style: compact ? AppTextStyles.caption : AppTextStyles.bodyStrong,
       ),
     );

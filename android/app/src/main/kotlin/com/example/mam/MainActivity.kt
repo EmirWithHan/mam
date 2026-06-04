@@ -1,4 +1,4 @@
-package com.example.mam
+package com.matchaman.app
 
 import io.flutter.embedding.android.FlutterActivity
 
