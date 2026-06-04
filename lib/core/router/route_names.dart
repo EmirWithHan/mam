@@ -24,6 +24,7 @@ class RouteNames {
   static const postComments = 'postComments';
   static const events = 'events';
   static const social = 'social';
+  static const userSearch = 'userSearch';
   static const eventDetail = 'eventDetail';
   static const eventChat = 'eventChat';
   static const createEvent = 'createEvent';
@@ -56,6 +57,7 @@ class RoutePaths {
   static const postComments = '/feed/:postId/comments';
   static const events = '/events';
   static const social = '/social';
+  static const userSearch = '/social/search';
   static const eventDetail = '/events/:eventId';
   static const eventChat = '/events/:eventId/chat';
   static const createEvent = '/events/create';

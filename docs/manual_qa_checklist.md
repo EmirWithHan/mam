@@ -48,6 +48,11 @@ Use this checklist for closed beta testers and internal manual regression passes
 - [ ] Follow a public account.
 - [ ] Unfollow an account.
 - [ ] Request to follow a private account.
+- [ ] Open "Kullanıcı ara" from Social.
+- [ ] Search by username and username#0000.
+- [ ] Tap a search result and confirm it opens the canonical public profile.
+- [ ] Add/follow a public account from search.
+- [ ] Send a private follow request from search.
 - [ ] Followers list opens.
 - [ ] Following list opens.
 

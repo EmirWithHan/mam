@@ -89,6 +89,12 @@ class _SocialPageState extends ConsumerState<SocialPage> {
                 controller: _searchController,
                 prefixIcon: const Icon(Icons.search),
               ),
+              const SizedBox(height: AppSpacing.md),
+              FilledButton.icon(
+                onPressed: () => context.pushNamed(RouteNames.userSearch),
+                icon: const Icon(Icons.person_search_rounded),
+                label: const Text('Kullanıcı ara'),
+              ),
               const SizedBox(height: AppSpacing.lg),
               const SocialFutureMessagesCard(),
               const SizedBox(height: AppSpacing.xl),
@@ -115,7 +121,8 @@ class _SocialPageState extends ConsumerState<SocialPage> {
                   actionLabel: 'Etkinlikleri keşfet',
                   onAction: () => context.goNamed(RouteNames.events),
                   secondaryActionLabel: 'Etkinlik oluştur',
-                  onSecondaryAction: () => context.pushNamed(RouteNames.createEvent),
+                  onSecondaryAction: () =>
+                      context.pushNamed(RouteNames.createEvent),
                 )
               else
                 ...groups.map(

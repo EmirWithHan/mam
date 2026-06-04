@@ -30,6 +30,7 @@ import '../../features/reports/blocked_users_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/social/social_page.dart';
 import '../../features/trust_score/trust_score_history_page.dart';
+import '../../features/user_search/user_search_page.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../widgets/app_logo.dart';
@@ -272,6 +273,12 @@ GoRouter createAppRouter(AuthState authState) {
         name: RouteNames.social,
         builder: (context, state) =>
             const MainNavigationShell(currentIndex: 3, child: SocialPage()),
+      ),
+      GoRoute(
+        path: RoutePaths.userSearch,
+        name: RouteNames.userSearch,
+        builder: (context, state) =>
+            const MainNavigationShell(currentIndex: 3, child: UserSearchPage()),
       ),
       GoRoute(
         path: RoutePaths.createEvent,
