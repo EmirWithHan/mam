@@ -1,0 +1,54 @@
+name: iOS No-Codesign Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/ios_no_codesign_build.yml"
+      - "ios/**"
+      - "lib/**"
+      - "test/**"
+      - "pubspec.yaml"
+      - "pubspec.lock"
+
+jobs:
+  ios-no-codesign-build:
+    name: Build iOS Without Codesign
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter stable
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Flutter version
+        run: flutter --version
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Install iOS pods
+        run: cd ios && pod install && cd ..
+
+      - name: Build iOS debug without codesign
+        run: flutter build ios --debug --no-codesign
+
+      - name: Failure diagnosis
+        if: failure()
+        run: |
+          echo "iOS no-codesign build failed. Check the failed step above first."
+          echo "Common causes: CocoaPods install failure, iOS plugin build issue, Xcode project setting issue, missing Info.plist permission key, or Flutter stable/Xcode compatibility."
+          echo "This workflow does not use secrets, certificates, provisioning profiles, Firebase, push, or TestFlight."
