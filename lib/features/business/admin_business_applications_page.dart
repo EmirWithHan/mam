@@ -29,9 +29,16 @@ class _AdminBusinessApplicationsPageState
   @override
   void initState() {
     super.initState();
-    Future.microtask(() {
-      ref.read(pendingBusinessApplicationsProvider.notifier).loadInitial();
-      ref.read(adminFeedbackProvider.notifier).load();
+    Future.microtask(() async {
+      await ref
+          .read(myBusinessAccountProvider.notifier)
+          .loadMyBusinessAccount();
+      if (!mounted || !ref.read(myBusinessAccountProvider).isAdmin) return;
+
+      await Future.wait([
+        ref.read(pendingBusinessApplicationsProvider.notifier).loadInitial(),
+        ref.read(adminFeedbackProvider.notifier).load(),
+      ]);
     });
   }
 
@@ -43,7 +50,11 @@ class _AdminBusinessApplicationsPageState
     return Scaffold(
       appBar: AppBar(title: const AppLogo(size: 32, showText: true)),
       body: SafeArea(
-        child: businessState.isAdmin
+        child:
+            businessState.isLoading ||
+                businessState.status == BusinessAccountStatusState.initial
+            ? const AppLoader()
+            : businessState.isAdmin
             ? DefaultTabController(
                 length: 2,
                 child: Column(
