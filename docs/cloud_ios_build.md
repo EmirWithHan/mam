@@ -42,9 +42,20 @@ flutter --version
 flutter pub get
 flutter analyze
 flutter test
-cd ios && pod install && cd ..
+ls -la ios
+# If ios/Podfile exists: cd ios && pod install && cd ..
 flutter build ios --debug --no-codesign
 ```
+
+The manual CocoaPods step is conditional. The workflow first lists the `ios`
+directory. If `ios/Podfile` exists, it runs `pod install`; otherwise it prints:
+
+```text
+No ios/Podfile found; skipping manual pod install and letting flutter build handle iOS project generation/build.
+```
+
+This avoids failing before the actual Flutter iOS build step when the checked-out
+iOS folder does not contain a Podfile.
 
 ## What No-Codesign Build Validates
 
@@ -81,9 +92,22 @@ Use the first failed step as the main diagnosis:
 - `flutter pub get`: dependency or SDK resolution problem.
 - `flutter analyze`: Dart analyzer issue.
 - `flutter test`: failing unit/widget test.
-- `pod install`: CocoaPods/plugin/iOS pod issue.
+- Conditional `pod install`: CocoaPods/plugin/iOS pod issue if a Podfile exists.
 - `flutter build ios --debug --no-codesign`: Xcode project, plugin compile, or
   iOS build setting issue.
+
+The first cloud failure was caused by the workflow's manual `pod install` step
+running when no `ios/Podfile` was present. That step is now conditional, so the
+next GitHub Actions run should reach `flutter build ios --debug --no-codesign`.
+If the build then proves that an iOS Podfile/project regeneration is required,
+the next fix to consider is:
+
+```bash
+flutter create --platforms=ios .
+```
+
+Do not run that automatically in CI. It should be reviewed locally as a project
+file regeneration change.
 
 The failure diagnosis step prints a short reminder that the workflow uses no
 secrets, no signing, no Firebase/push setup, and no TestFlight deployment.

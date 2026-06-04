@@ -40,8 +40,16 @@ jobs:
       - name: Test
         run: flutter test
 
-      - name: Install iOS pods
-        run: cd ios && pod install && cd ..
+      - name: Inspect iOS project and install pods if present
+        run: |
+          ls -la ios
+          if [ -f ios/Podfile ]; then
+            cd ios
+            pod install
+            cd ..
+          else
+            echo "No ios/Podfile found; skipping manual pod install and letting flutter build handle iOS project generation/build."
+          fi
 
       - name: Build iOS debug without codesign
         run: flutter build ios --debug --no-codesign
