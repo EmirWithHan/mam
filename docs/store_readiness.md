@@ -42,6 +42,10 @@ running, meetup, group events, activity friends
 
 ## Privacy And Legal TODO
 
+- Play Store Data Safety developer draft created:
+  `docs/play_store_data_safety_draft.md`.
+- Permissions audit created: `docs/permissions_audit.md`.
+
 - In-app MVP legal drafts now exist for Kullanım Şartları, Gizlilik
   Politikası, Topluluk Kuralları, and Etkinlik Güvenliği ve Sorumluluk Reddi.
 - Replace MVP legal draft text with professionally reviewed privacy policy,
@@ -51,6 +55,8 @@ running, meetup, group events, activity friends
 - Prepare data deletion request URL or support process.
 - Confirm store data safety/privacy nutrition answers for auth, profile,
   location, photos, user content, reports, feedback, and analytics if added.
+- Public launch should not proceed until privacy review, Data Safety answers,
+  permission declarations, and account/data deletion requirements are clear.
 - See `docs/legal_todo.md`.
 
 ## Known Blockers Before Real Store Submission
@@ -66,6 +72,7 @@ running, meetup, group events, activity friends
 - Review Apple Sign in requirement if third-party social login remains enabled
   on iOS.
 - Confirm production support contact and account deletion process.
+- Finalize user account deletion/data deletion process before public launch.
 - Verify in-app notification/feed refresh behavior on real devices while the
   app is open. Firebase/push remains intentionally unimplemented.
 

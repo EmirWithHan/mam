@@ -16,3 +16,13 @@ Before Play Store, App Store, TestFlight, or production launch:
 - Confirm privacy/data safety disclosures for Supabase Auth, profile data,
   location use, photo uploads, user-generated content, feedback, reports,
   blocks, business applications, and any future analytics.
+- Treat all legal/privacy text as MVP draft text until reviewed by a lawyer or
+  legal/privacy advisor.
+- Confirm Play Store Data Safety answers match the privacy policy and actual
+  app behavior in the submitted build.
+- Confirm the event liability disclaimer is legally reviewed; it does not remove
+  every legal obligation or platform responsibility.
+- Finalize full account deletion, data deletion, and data request paths before
+  public release.
+- Re-review legal/privacy text if Firebase/push, OTP, payments, analytics,
+  crash reporting, or new SDKs are added later.
