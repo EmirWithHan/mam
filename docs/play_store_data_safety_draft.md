@@ -16,9 +16,9 @@ flow changes, review this document again.
 
 | Data category | Exact examples | Why collected | Required or optional | User-visible purpose | Shared with third parties | Encrypted in transit | Deletion status |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| Account identifiers | Supabase Auth user id, profile `user_id` | Auth/session, ownership, RLS, profile linkage | Required for signed-in use | Account login and app identity | Processed by Supabase as backend provider | Yes, HTTPS/TLS | Full account deletion path TODO |
-| Email address | Auth email | Login/register, account recovery through Supabase Auth | Required for email auth | Sign in and account access | Processed by Supabase as auth provider | Yes, HTTPS/TLS | Full account deletion path TODO |
-| Display/profile info | Username, tag, display name/first name, bio, avatar URL, account type, trust score | Public profile, search, events, feed, social identity | Username/name required; bio/avatar optional | Public identity and profile | Processed by Supabase; visible to other users based on app rules | Yes, HTTPS/TLS | Profile edit exists; full deletion TODO |
+| Account identifiers | Supabase Auth user id, profile `user_id` | Auth/session, ownership, RLS, profile linkage | Required for signed-in use | Account login and app identity | Processed by Supabase as backend provider | Yes, HTTPS/TLS | In-app deletion request/deactivation exists; final Auth deletion TODO |
+| Email address | Auth email | Login/register, account recovery through Supabase Auth | Required for email auth | Sign in and account access | Processed by Supabase as auth provider | Yes, HTTPS/TLS | In-app deletion request/deactivation exists; final Auth deletion TODO |
+| Display/profile info | Username, tag, display name/first name, bio, avatar URL, account type, trust score | Public profile, search, events, feed, social identity | Username/name required; bio/avatar optional | Public identity and profile | Processed by Supabase; visible to other users based on app rules | Yes, HTTPS/TLS | Profile edit and in-app deletion request/deactivation exist; final deletion TODO |
 | Profile details | Birth date, gender, city, district, phone/phone number, phone verification state, privacy status | Event readiness, local matching, profile controls, future verification | Some fields required only for event actions; phone optional/postponed verification | Event eligibility, location context, privacy settings | Processed by Supabase; phone/email should not be public | Yes, HTTPS/TLS | Profile edit exists; full deletion TODO |
 | User-generated content | Posts, captions, comments, event titles/descriptions, business descriptions, feedback messages, reports | Core feed/events/social/moderation/support flows | Optional except where user chooses to submit | Sharing activity, event planning, support and safety | Processed by Supabase; visible to users/admins depending context | Yes, HTTPS/TLS | Delete/edit partial; full deletion TODO |
 | Social graph/activity | Follows, follow requests, event join requests, participants, approvals/rejections, blocks, notifications | Social/event participation, privacy, safety, in-app state | Created by user actions | Follow/private profile/event workflows | Processed by Supabase; visibility controlled by RLS/RPCs | Yes, HTTPS/TLS | Flow-specific cancel/delete exists in places; full deletion TODO |
@@ -117,11 +117,16 @@ Current status:
 - Logout exists.
 - Profile editing and privacy controls exist.
 - Business account delete/passivation exists.
+- Account deletion request/deactivation exists for closed beta. It creates an
+  `account_deletion_requests` row, anonymizes/deactivates the public profile,
+  cancels future events, archives posts, and blocks new user activity through
+  app routing/RLS.
 - Some content/action-specific deletion or cancellation flows exist.
 
 Public launch blocker:
 
-- Full user account deletion and data deletion/request process must be finalized
-  before public Play Store submission if required by policy/law.
+- Final Supabase Auth deletion, storage/content retention rules, and public web
+  deletion request URL must be finalized before public Play Store submission if
+  required by policy/law.
 - The privacy policy and Play Console Data Safety answers must match the final
   deletion process.

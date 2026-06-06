@@ -23,6 +23,9 @@ class Profile {
     this.trustScore,
     this.isPrivate = false,
     this.isProfileCompleted = false,
+    this.accountStatus = ProfileAccountStatus.active,
+    this.deletionRequestedAt,
+    this.deletedAt,
     this.createdAt,
     this.updatedAt,
   });
@@ -47,12 +50,21 @@ class Profile {
   final int? trustScore;
   final bool isPrivate;
   final bool isProfileCompleted;
+  final String accountStatus;
+  final DateTime? deletionRequestedAt;
+  final DateTime? deletedAt;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
   int get trustScoreValue => trustScore ?? 50;
 
   bool get isBusinessAccount => accountType == ProfileAccountType.business;
+
+  bool get isAccountActive => accountStatus == ProfileAccountStatus.active;
+
+  bool get hasDeletionRequested =>
+      accountStatus == ProfileAccountStatus.deletionRequested ||
+      accountStatus == ProfileAccountStatus.deleted;
 
   bool get hasCoreIdentity {
     return username?.trim().isNotEmpty == true &&
@@ -108,6 +120,10 @@ class Profile {
       trustScore: (json['trust_score'] as num?)?.toInt(),
       isPrivate: json['is_private'] as bool? ?? false,
       isProfileCompleted: json['is_profile_completed'] as bool? ?? false,
+      accountStatus:
+          json['account_status']?.toString() ?? ProfileAccountStatus.active,
+      deletionRequestedAt: _dateTimeFromJson(json['deletion_requested_at']),
+      deletedAt: _dateTimeFromJson(json['deleted_at']),
       createdAt: _dateTimeFromJson(json['created_at']),
       updatedAt: _dateTimeFromJson(json['updated_at']),
     );
@@ -134,6 +150,9 @@ class Profile {
     int? trustScore,
     bool? isPrivate,
     bool? isProfileCompleted,
+    String? accountStatus,
+    DateTime? deletionRequestedAt,
+    DateTime? deletedAt,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -158,10 +177,22 @@ class Profile {
       trustScore: trustScore ?? this.trustScore,
       isPrivate: isPrivate ?? this.isPrivate,
       isProfileCompleted: isProfileCompleted ?? this.isProfileCompleted,
+      accountStatus: accountStatus ?? this.accountStatus,
+      deletionRequestedAt: deletionRequestedAt ?? this.deletionRequestedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+}
+
+class ProfileAccountStatus {
+  const ProfileAccountStatus._();
+
+  static const active = 'active';
+  static const deletionRequested = 'deletion_requested';
+  static const deleted = 'deleted';
+  static const suspended = 'suspended';
 }
 
 class ProfileAccountType {

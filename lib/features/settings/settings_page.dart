@@ -238,6 +238,15 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               subtitle: 'Engellediğin kullanıcıları yönet',
               onTap: () => context.pushNamed(RouteNames.blockedUsers),
             ),
+            const SizedBox(height: AppSpacing.md),
+            SettingsMenuTile(
+              icon: Icons.delete_forever_outlined,
+              title: 'Hesabımı sil',
+              subtitle: 'Profilini pasifleştir ve silme talebi oluştur',
+              onTap: profileState.isLoading
+                  ? null
+                  : () => _confirmDeleteAccount(context),
+            ),
             const SizedBox(height: AppSpacing.xl),
             AppButton(
               label: 'Çıkış Yap',
@@ -308,6 +317,108 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('İşletme hesabı silindi.')));
+  }
+
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => const _AccountDeletionConfirmationDialog(),
+    );
+
+    if (confirmed != true) return;
+
+    final success = await ref
+        .read(profileControllerProvider.notifier)
+        .requestAccountDeletion();
+    if (!context.mounted) return;
+
+    if (!success) {
+      final message = ref.read(profileControllerProvider).message;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            message ?? 'Hesap silme talebi alınamadı. Tekrar dene.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Hesap silme talebin alındı.')),
+    );
+    await ref.read(authControllerProvider.notifier).signOut();
+    if (context.mounted) context.goNamed(RouteNames.auth);
+  }
+}
+
+class AccountDeletionConfirmation {
+  const AccountDeletionConfirmation._();
+
+  static const confirmationText = 'SİL';
+
+  static bool isConfirmed(String value) {
+    return value.trim().toUpperCase() == confirmationText;
+  }
+}
+
+class _AccountDeletionConfirmationDialog extends StatefulWidget {
+  const _AccountDeletionConfirmationDialog();
+
+  @override
+  State<_AccountDeletionConfirmationDialog> createState() =>
+      _AccountDeletionConfirmationDialogState();
+}
+
+class _AccountDeletionConfirmationDialogState
+    extends State<_AccountDeletionConfirmationDialog> {
+  final TextEditingController _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isConfirmed = AccountDeletionConfirmation.isConfirmed(
+      _controller.text,
+    );
+
+    return AlertDialog(
+      title: const Text('Hesabını sil?'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Profilin pasifleştirilecek, herkese açık kimliğin gizlenecek ve '
+            'gelecekteki etkinliklerin yayından kaldırılacak. Nihai veri silme '
+            'işlemi beta sürecinde manuel olarak tamamlanır.',
+          ),
+          const SizedBox(height: AppSpacing.md),
+          const Text('Devam etmek için SİL yaz.'),
+          const SizedBox(height: AppSpacing.sm),
+          TextField(
+            controller: _controller,
+            textInputAction: TextInputAction.done,
+            decoration: const InputDecoration(hintText: 'SİL'),
+            onChanged: (_) => setState(() {}),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(false),
+          child: const Text('Vazgeç'),
+        ),
+        TextButton(
+          onPressed: isConfirmed ? () => Navigator.of(context).pop(true) : null,
+          child: const Text('Hesabımı sil'),
+        ),
+      ],
+    );
   }
 }
 

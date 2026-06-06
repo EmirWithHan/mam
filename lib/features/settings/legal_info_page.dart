@@ -107,7 +107,7 @@ _LegalContent _content(LegalInfoType type) {
         _LegalSection(
           title: 'Kullanıcı kontrolü',
           body:
-              'Kullanıcılar profil bilgilerini güncelleyebilir, gizli hesap ayarını değiştirebilir, kullanıcıları engelleyebilir, içerikleri bildirebilir ve işletme hesabı durumunu yönetebilir. Tam hesap silme ve veri talepleri yayın öncesi yasal süreçle netleştirilmelidir.',
+              'Kullanıcılar profil bilgilerini güncelleyebilir, gizli hesap ayarını değiştirebilir, kullanıcıları engelleyebilir, içerikleri bildirebilir, işletme hesabı durumunu yönetebilir ve hesap silme talebi oluşturabilir. Hesap silme talebi sonrasında herkese açık profil kimliği pasifleştirilir. Nihai veri silme, saklama ve yasal kayıt süreçleri yayın öncesi yasal değerlendirmeyle netleştirilmelidir.',
         ),
         _LegalSection(
           title: 'Gelecek özellikler',
@@ -250,7 +250,7 @@ _LegalContent _content(LegalInfoType type) {
         _LegalSection(
           title: 'Hesap talepleri',
           body:
-              'MVP içinde işletme hesabını pasifleştirme akışı bulunur. Tam kullanıcı hesabı silme ve veri talep süreci yayın öncesi yasal metinlerle tamamlanmalıdır.',
+              'MVP içinde işletme hesabını pasifleştirme ve kullanıcı hesabı silme talebi oluşturma akışları bulunur. Tam veri silme, saklama, erişim talebi ve yayın öncesi web destek süreci yasal metinlerle tamamlanmalıdır.',
         ),
       ],
     ),

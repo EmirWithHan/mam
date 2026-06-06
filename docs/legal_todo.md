@@ -11,7 +11,8 @@ Before Play Store, App Store, TestFlight, or production launch:
 - Finalize Community Guidelines and moderation policy.
 - Finalize Event Safety and Liability Disclaimer.
 - Finalize support contact details and expected response process.
-- Finalize full user account deletion and data request process.
+- Review the MVP in-app account deletion request/deactivation path and finalize
+  the production user account deletion and data request process.
 - Publish public legal URLs required by store review.
 - Confirm privacy/data safety disclosures for Supabase Auth, profile data,
   location use, photo uploads, user-generated content, feedback, reports,
@@ -22,7 +23,7 @@ Before Play Store, App Store, TestFlight, or production launch:
   app behavior in the submitted build.
 - Confirm the event liability disclaimer is legally reviewed; it does not remove
   every legal obligation or platform responsibility.
-- Finalize full account deletion, data deletion, and data request paths before
-  public release.
+- Finalize backend/Auth deletion, data retention rules, public web deletion URL,
+  and data request paths before public release.
 - Re-review legal/privacy text if Firebase/push, OTP, payments, analytics,
   crash reporting, or new SDKs are added later.

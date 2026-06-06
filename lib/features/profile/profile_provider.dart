@@ -172,6 +172,24 @@ class ProfileController extends StateNotifier<ProfileState> {
     }
   }
 
+  Future<bool> requestAccountDeletion() async {
+    state = state.copyWith(status: ProfileStatus.loading);
+
+    try {
+      await _profileService.requestMyAccountDeletion();
+      final profile = await _profileService.getMyProfile();
+      state = ProfileState(status: ProfileStatus.success, profile: profile);
+      return true;
+    } catch (error) {
+      state = ProfileState(
+        status: ProfileStatus.error,
+        profile: state.profile,
+        message: friendlyErrorMessage(error),
+      );
+      return false;
+    }
+  }
+
   Future<String?> uploadAvatar({
     required Uint8List bytes,
     required String fileName,

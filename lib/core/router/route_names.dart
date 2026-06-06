@@ -3,6 +3,7 @@ class RouteNames {
 
   static const splash = 'splash';
   static const auth = 'auth';
+  static const accountDeletionPending = 'accountDeletionPending';
   static const login = 'login';
   static const register = 'register';
   static const authCallback = 'authCallback';
@@ -42,6 +43,7 @@ class RoutePaths {
 
   static const splash = '/';
   static const auth = '/auth';
+  static const accountDeletionPending = '/account-deletion-pending';
   static const login = '/auth/login';
   static const register = '/auth/register';
   static const authCallback = '/auth/callback';

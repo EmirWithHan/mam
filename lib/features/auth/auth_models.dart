@@ -1,4 +1,11 @@
-enum AuthStatus { initial, loading, authenticated, unauthenticated, error }
+enum AuthStatus {
+  initial,
+  loading,
+  authenticated,
+  accountDeletionRequested,
+  unauthenticated,
+  error,
+}
 
 class AuthState {
   const AuthState({
@@ -30,6 +37,12 @@ class AuthState {
     required this.isProfileCompleted,
     this.message,
   }) : status = AuthStatus.authenticated;
+
+  const AuthState.accountDeletionRequested({
+    required this.userId,
+    this.message = 'Hesap silme talebin işleme alındı.',
+  }) : status = AuthStatus.accountDeletionRequested,
+       isProfileCompleted = false;
 
   const AuthState.error({required this.message})
     : status = AuthStatus.error,

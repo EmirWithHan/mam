@@ -4,6 +4,7 @@ import 'package:flutter_web_plugins/url_strategy.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/auth_page.dart';
+import '../../features/auth/account_deletion_pending_page.dart';
 import '../../features/auth/auth_models.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/auth/oauth_callback_page.dart';
@@ -52,6 +53,8 @@ GoRouter createAppRouter(AuthState authState) {
           authState.status == AuthStatus.initial ||
           authState.status == AuthStatus.loading;
       final isAuthenticated = authState.status == AuthStatus.authenticated;
+      final isAccountDeletionPending =
+          authState.status == AuthStatus.accountDeletionRequested;
       final needsProfileCompletion =
           isAuthenticated && !authState.isProfileCompleted;
       final isAuthRoute =
@@ -61,6 +64,8 @@ GoRouter createAppRouter(AuthState authState) {
           location == RoutePaths.authCallback;
       final isSplashRoute = location == RoutePaths.splash;
       final isProfileCompletionRoute = location == RoutePaths.profileComplete;
+      final isAccountDeletionPendingRoute =
+          location == RoutePaths.accountDeletionPending;
 
       debugPrint(
         '[Router] location=$location path=${uri.path} '
@@ -76,6 +81,14 @@ GoRouter createAppRouter(AuthState authState) {
 
       if (isInitializing) {
         return null;
+      }
+
+      if (isAccountDeletionPending && !isAccountDeletionPendingRoute) {
+        return RoutePaths.accountDeletionPending;
+      }
+
+      if (!isAccountDeletionPending && isAccountDeletionPendingRoute) {
+        return isAuthenticated ? RoutePaths.events : RoutePaths.auth;
       }
 
       if (isAuthenticated && (isAuthRoute || isSplashRoute)) {
@@ -104,6 +117,11 @@ GoRouter createAppRouter(AuthState authState) {
         path: RoutePaths.auth,
         name: RouteNames.auth,
         builder: (context, state) => const AuthPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.accountDeletionPending,
+        name: RouteNames.accountDeletionPending,
+        builder: (context, state) => const AccountDeletionPendingPage(),
       ),
       GoRoute(
         path: RoutePaths.login,

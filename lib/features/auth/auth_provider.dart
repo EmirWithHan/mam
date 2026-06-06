@@ -60,6 +60,11 @@ class AuthController extends StateNotifier<AuthState> {
       debugPrint('[Auth] loading profile for authenticated user');
       final profile = await _profileService.createEmptyProfileIfMissing();
       if (!mounted) return;
+      if (profile.hasDeletionRequested) {
+        debugPrint('[Auth] authenticated account is restricted');
+        state = AuthState.accountDeletionRequested(userId: userId);
+        return;
+      }
       debugPrint(
         '[Auth] authenticated profileCompleted=${profile.hasCoreIdentity}',
       );

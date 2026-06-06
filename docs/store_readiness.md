@@ -48,11 +48,13 @@ running, meetup, group events, activity friends
 
 - In-app MVP legal drafts now exist for Kullanım Şartları, Gizlilik
   Politikası, Topluluk Kuralları, and Etkinlik Güvenliği ve Sorumluluk Reddi.
+- In-app account deletion request/deactivation path exists for closed beta.
 - Replace MVP legal draft text with professionally reviewed privacy policy,
   terms, community rules, event safety/disclaimer, and support/account deletion
   copy before production release.
 - Prepare public privacy policy URL for Play Console and App Store Connect.
-- Prepare data deletion request URL or support process.
+- Prepare public data deletion request URL or support process; see
+  `docs/account_deletion_web_resource.md`.
 - Confirm store data safety/privacy nutrition answers for auth, profile,
   location, photos, user content, reports, feedback, and analytics if added.
 - Public launch should not proceed until privacy review, Data Safety answers,
@@ -72,7 +74,8 @@ running, meetup, group events, activity friends
 - Review Apple Sign in requirement if third-party social login remains enabled
   on iOS.
 - Confirm production support contact and account deletion process.
-- Finalize user account deletion/data deletion process before public launch.
+- Finalize backend/Auth deletion, retention rules, and public web deletion URL
+  before public launch.
 - Verify in-app notification/feed refresh behavior on real devices while the
   app is open. Firebase/push remains intentionally unimplemented.
 

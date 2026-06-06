@@ -153,6 +153,16 @@ class ProfileService {
     return Profile.fromJson(row);
   }
 
+  Future<void> requestMyAccountDeletion() async {
+    _currentUserId();
+    try {
+      await SupabaseService.client.rpc('request_my_account_deletion');
+    } catch (error) {
+      _logProfileError('account deletion request failed', error);
+      rethrow;
+    }
+  }
+
   Future<void> updateGalleryPostControls({
     required String postId,
     bool? commentsHidden,
