@@ -8,6 +8,9 @@ Match A Man
 
 Find and join local sports and social events with people nearby.
 
+Turkish Play Store listing draft exists:
+`docs/play_store_listing_draft_tr.md`.
+
 ## Long Description Draft
 
 Match A Man is an event-centered social sports app. Discover local football,
@@ -39,6 +42,19 @@ running, meetup, group events, activity friends
 - Profile with trust score and activity.
 - Social/search screen.
 - Settings with privacy, report/block, feedback, and legal links.
+
+Detailed screenshot plan exists: `docs/play_store_screenshot_plan.md`.
+Screenshot capture checklist exists: `docs/screenshot_capture_checklist.md`.
+Feature graphic plan exists: `docs/play_store_feature_graphic_plan.md`.
+Store claim safety checklist exists: `docs/store_claim_safety_checklist.md`.
+Android store asset folders are prepared under `store_assets/android/`.
+
+Remaining store visual TODOs:
+
+- Capture final Android phone screenshots.
+- Export final Play Store feature graphic.
+- Export final Play Store icon assets.
+- Upload final listing and assets to Play Console.
 
 ## Privacy And Legal TODO
 
@@ -72,7 +88,8 @@ running, meetup, group events, activity friends
 - Apply and verify Supabase migrations in staging/production.
 - Run manual QA for auth/session restore, event creation, feed, profile,
   report/block, business approval/delete, feedback, and legal links.
-- Prepare final app screenshots and store listing copy.
+- Prepare final app screenshots and review store listing copy.
+- Final feature graphic and Play Console upload remain TODO.
 - Prepare reviewer test account instructions without exposing secrets.
 - Review Apple Sign in requirement if third-party social login remains enabled
   on iOS.
