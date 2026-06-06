@@ -178,12 +178,9 @@ For each device:
 - [ ] Add deeper widget tests for search result cards once provider/router dependencies are easier to mock.
 - [ ] Add keyboard-overlay widget tests for forms once app-level test harness supports constrained viewInsets.
 
-## Bug Reporting Format
+## Closed Beta Feedback
 
-- Device/browser:
-- Account used:
-- Exact steps:
-- Expected result:
-- Actual result:
-- Screenshot/video:
-- Time of issue:
+- [ ] Share `docs/closed_beta_feedback_loop.md` with internal testers.
+- [ ] Ask testers to use the bug report template from the feedback loop doc.
+- [ ] Ask testers to include screenshots/videos for blocker, high, overflow,
+      white screen, auth, and crash issues.
