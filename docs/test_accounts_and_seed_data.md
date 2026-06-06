@@ -1,16 +1,18 @@
 # Closed Beta Test Accounts And Seed Data
 
-Date: 2026-06-04
+Date: 2026-06-06
 
 ## Safety Rules
 
 - Use a closed beta/staging Supabase project, not production.
 - Do not commit real passwords, service keys, OAuth secrets, database passwords,
   auth tokens, or real personal data.
-- Create passwords manually in Supabase Auth or through the app.
-- Do not run seed SQL until every placeholder is replaced and the target
-  Supabase project is confirmed.
-- Prefer creating user-owned content through the app when testing RLS/user flows.
+- Create passwords manually in Supabase Auth.
+- Do not hardcode test account credentials in Flutter code.
+- Do not add public admin shortcuts or fake seeded data to the app.
+- Do not run seed SQL automatically.
+- Prefer creating user-owned content through the app when testing RLS, RPC
+  validation, media upload, and realtime refresh behavior.
 
 ## Required Test Accounts
 
@@ -19,33 +21,33 @@ Date: 2026-06-04
 - Email: `tester_a@example.com`
 - Password: set manually in Supabase Auth.
 - Purpose: baseline public user, event host, feed author, search/follow source.
-- Needed profile state: completed profile with username, name, city, district,
-  birth date, and optional avatar.
-- Needed privacy state: public.
-- Needed business state: normal user, no active business account.
-- Flows to test: login, session restore, profile completion, feed, create post,
-  create normal event, event detail, approve/reject participant, username
-  search, follow public user, feedback, logout.
+- Needed profile state: completed profile with username `tester_a`, display
+  name, city, district, birth date, and optional avatar.
+- Privacy state: public.
+- Business state: normal user, no active business account.
+- Flows to test: login, session restore, profile completion, Home/feed, create
+  post, create normal event, event detail, approve/reject participant, username
+  search, follow public user, feedback, logout/login again.
 
 ### normal_user_b
 
 - Email: `tester_b@example.com`
 - Password: set manually in Supabase Auth.
 - Purpose: participant account and public follow target.
-- Needed profile state: completed profile.
-- Needed privacy state: public.
-- Needed business state: normal user, no active business account.
-- Flows to test: login, join event, leave event, follow user A, public profile
-  view, notifications, feedback.
+- Needed profile state: completed profile with username `tester_b`.
+- Privacy state: public.
+- Business state: normal user, no active business account.
+- Flows to test: login, Events list, join request, leave event, follow user A,
+  public profile view, notifications, comments, feedback.
 
 ### private_user
 
 - Email: `private_user@example.com`
 - Password: set manually in Supabase Auth.
 - Purpose: private profile and private follow request testing.
-- Needed profile state: completed profile.
-- Needed privacy state: private.
-- Needed business state: normal user, no active business account.
+- Needed profile state: completed profile with username `private_user`.
+- Privacy state: private.
+- Business state: normal user, no active business account.
 - Flows to test: private profile visibility, username search result safety,
   follow request receive/approve/reject, private gallery/event visibility.
 
@@ -55,8 +57,8 @@ Date: 2026-06-04
 - Password: set manually in Supabase Auth.
 - Purpose: pending business application path.
 - Needed profile state: completed normal profile.
-- Needed privacy state: public.
-- Needed business state: no active business; one pending application.
+- Privacy state: public.
+- Business state: no active business account; one pending business application.
 - Flows to test: submit business application, duplicate pending application
   prevention, pending application messaging, admin review visibility.
 
@@ -65,11 +67,12 @@ Date: 2026-06-04
 - Email: `business_owner@example.com`
 - Password: set manually in Supabase Auth.
 - Purpose: active business mode and business event testing.
-- Needed profile state: completed profile upgraded to business mode.
-- Needed privacy state: public.
-- Needed business state: active approved business account.
+- Needed profile state: completed profile upgraded to business account mode.
+- Privacy state: public.
+- Business state: active approved business account tied to the same profile.
 - Flows to test: business profile mode, create business event, business event
-  join/approve/reject, business delete, sponsored/deleted visibility safeguards.
+  join/approve/reject/confirmation if enabled, business delete, hidden/deleted
+  business event visibility safeguards.
 
 ### admin_user
 
@@ -77,25 +80,27 @@ Date: 2026-06-04
 - Password: set manually in Supabase Auth.
 - Purpose: admin-only business application and feedback review.
 - Needed profile state: completed profile.
-- Needed privacy state: public.
-- Needed business state: normal user is fine.
+- Privacy state: public.
+- Business state: normal user is fine.
 - Required database state: user ID exists in `public.admin_users`.
-- Flows to test: admin route access, non-admin denial comparison, approve/reject
-  business applications, review feedback list if available.
+- Flows to test: admin route access, non-admin denial comparison,
+  approve/reject business applications, feedback review list if available.
 
 ## Seed Data Plan
 
-- Sample normal event: created by `normal_user_a`; joined by `normal_user_b`.
-- Sample business event: created by `approved_business_user` after business
-  approval.
-- Sample post: created by `normal_user_a`, optionally linked to the normal
-  event.
-- Sample private profile: `private_user` with `is_private = true`.
+- Sample normal event: create in app as `normal_user_a`; `normal_user_b` sends a
+  join request and host approves/rejects in separate passes.
+- Sample business event: create in app as `approved_business_user` after the
+  business account is active.
+- Sample post: create in app as `normal_user_a`; optionally link it to the
+  normal event.
+- Sample private profile: set `private_user` to private in Settings.
 - Sample follow request: `normal_user_a` requests to follow `private_user`.
-- Sample business application: pending application for `business_applicant`.
-- Sample feedback: submitted by `normal_user_b` or `business_applicant`.
-- Sample report if supported: one report created by a normal user against a
-  test post/event/profile, only in staging.
+- Sample business application: submit as `business_applicant`; keep one pending
+  application for admin list testing.
+- Sample feedback: submit as `normal_user_b` or `business_applicant`.
+- Sample report if supported: create one staging-only report against a test
+  post/event/profile; do not use real personal data.
 
 ## Manual Setup Checklist
 
@@ -112,26 +117,32 @@ Date: 2026-06-04
 - [ ] Create one sample post as `normal_user_a`.
 - [ ] Create one pending follow request to `private_user`.
 - [ ] Submit one feedback record.
-- [ ] Create one report only if report flow is supported in the current build.
+- [ ] Create one report only if the report flow is supported in the current
+      build.
 - [ ] Verify search, follow, private request, event join, approve/reject, leave,
-  business delete, feedback, and logout/session restore flows.
+      business application, business delete, feedback, notifications, and
+      logout/session restore flows on a real Android device.
 
 ## App Safety Check
 
-- No test account credentials should be present in Flutter code.
-- No public admin shortcut should be visible to normal users.
-- No seeded fake data should be hardcoded in Flutter.
-- Admin access must depend on the server-side `admin_users`/RPC checks.
-- Seed data should be created in Supabase staging or through the app, not baked
-  into client code.
+- No test account credentials in Flutter code.
+- No public admin shortcut visible to normal users.
+- No fake seeded data hardcoded in the app.
+- Admin access depends on server-side `admin_users`/RPC checks.
+- Supabase Auth remains the source of users; one account remains one profile
+  and one public identity.
+- iOS cloud no-codesign build has passed; closed beta account setup is still
+  Android-first for real-device QA unless a Mac/Xcode device pass is available.
+- Firebase/push remains untouched.
 
 ## SQL Template
 
-Optional template:
+Optional review-only template:
 
 ```text
 docs/seed_templates/closed_beta_seed_template.sql
 ```
 
-This template is not run automatically. Replace every placeholder, review the
-target project, and run only in a staging/closed beta Supabase database.
+The template contains placeholders only. Replace every placeholder, review the
+target staging project, and run manually only if the team decides SQL seeding is
+safer than creating that data through the app.

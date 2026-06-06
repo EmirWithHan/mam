@@ -2,23 +2,27 @@
 --
 -- SAFETY:
 -- - Do not run this against production.
+-- - Do not run this automatically from scripts or app code.
 -- - Do not commit real auth user IDs, passwords, tokens, service keys, or
 --   personal data.
--- - Replace every <PLACEHOLDER_ID> with a real auth.users.id from the staging
---   Supabase project before running.
--- - Prefer creating user-owned rows through the app when validating RLS.
+-- - Replace every placeholder with a real auth.users.id from the staging
+--   Supabase project before manual execution.
+-- - Prefer creating user-owned rows through the app when validating RLS,
+--   RPC validation, media upload, notifications, and realtime refresh.
 -- - This template intentionally contains placeholders so it fails if run
 --   without review.
 
 begin;
 
 -- Required auth user placeholders:
--- <USER_A_ID>             normal_user_a
--- <USER_B_ID>             normal_user_b
--- <PRIVATE_USER_ID>       private_user
--- <BUSINESS_APPLICANT_ID> business_applicant
--- <BUSINESS_USER_ID>      approved_business_user
--- <ADMIN_USER_ID>         admin_user
+-- <USER_A_ID> normal_user_a / tester_a@example.com
+-- <USER_B_ID> normal_user_b / tester_b@example.com
+-- <PRIVATE_USER_ID> private_user / private_user@example.com
+-- <BUSINESS_APPLICANT_ID> business_applicant / business_applicant@example.com
+-- <BUSINESS_USER_ID> approved_business_user / business_owner@example.com
+-- <ADMIN_USER_ID> admin_user / admin_user@example.com
+--
+-- Passwords are set manually in Supabase Auth and are never stored here.
 
 -- 1. Admin marker.
 insert into public.admin_users (user_id)
@@ -26,8 +30,8 @@ values ('<ADMIN_USER_ID>')
 on conflict (user_id) do nothing;
 
 -- 2. Profile states.
--- Run after the users have been created in Supabase Auth. Adjust column names
--- if your live schema differs from the current migrations.
+-- Run after the users have been created in Supabase Auth and profile rows have
+-- been created by logging into the app at least once.
 update public.profiles
 set
   username = 'tester_a',
@@ -64,6 +68,18 @@ set
   account_type = 'user'
 where user_id = '<PRIVATE_USER_ID>';
 
+update public.profiles
+set
+  username = 'business_applicant',
+  first_name = 'Business Applicant',
+  city = 'Istanbul',
+  district = 'Sisli',
+  birth_date = date '1993-04-04',
+  is_private = false,
+  is_profile_completed = true,
+  account_type = 'user'
+where user_id = '<BUSINESS_APPLICANT_ID>';
+
 -- 3. Pending private follow request.
 insert into public.follow_requests (
   requester_id,
@@ -81,6 +97,7 @@ on conflict do nothing;
 insert into public.business_applications (
   user_id,
   business_name,
+  category,
   business_phone,
   full_address,
   website,
@@ -90,6 +107,7 @@ insert into public.business_applications (
 values (
   '<BUSINESS_APPLICANT_ID>',
   'Closed Beta Spor Salonu',
+  'Spor Salonu',
   '+905551112233',
   'Kapali beta test adresi, Istanbul',
   'https://example.com',
@@ -99,7 +117,8 @@ values (
 on conflict do nothing;
 
 -- 5. Approved business user state.
--- If possible, prefer approving through the app/admin RPC instead of direct SQL.
+-- Prefer approving through the app/admin RPC. Use direct SQL only when the
+-- manual admin flow is blocked and the staging schema has been reviewed.
 insert into public.business_accounts (
   owner_user_id,
   name,
@@ -138,7 +157,7 @@ set
   first_name = 'Closed Beta Arena',
   city = 'Istanbul',
   district = 'Kadikoy',
-  birth_date = date '1990-04-04',
+  birth_date = date '1990-05-05',
   is_private = false,
   is_profile_completed = true,
   account_type = 'business'
@@ -160,7 +179,114 @@ values (
   'seed_template'
 );
 
--- 7. Optional report sample.
+-- 7. Sample normal event.
+-- Prefer creating this through the app as normal_user_a. Uncomment only after
+-- reviewing the live events schema, constraints, and trigger behavior.
+-- insert into public.events (
+--   host_id,
+--   title,
+--   description,
+--   sport_type,
+--   city,
+--   district,
+--   location_text,
+--   event_date,
+--   capacity_total,
+--   capacity_male,
+--   capacity_female,
+--   capacity_any,
+--   approved_count,
+--   status,
+--   organizer_type,
+--   organizer_user_id
+-- )
+-- values (
+--   '<USER_A_ID>',
+--   'Closed Beta Normal Etkinlik',
+--   'Closed beta normal event seed sample.',
+--   'Futbol',
+--   'Istanbul',
+--   'Kadikoy',
+--   'Closed beta saha',
+--   now() + interval '7 days',
+--   10,
+--   0,
+--   0,
+--   10,
+--   0,
+--   'active',
+--   'user',
+--   '<USER_A_ID>'
+-- );
+
+-- 8. Sample business event.
+-- Prefer creating this through the app as approved_business_user after the
+-- business account is active. The organizer_business_id must be the real
+-- business_accounts.id for <BUSINESS_USER_ID>.
+-- insert into public.events (
+--   host_id,
+--   title,
+--   description,
+--   sport_type,
+--   city,
+--   district,
+--   location_text,
+--   event_date,
+--   capacity_total,
+--   capacity_male,
+--   capacity_female,
+--   capacity_any,
+--   approved_count,
+--   status,
+--   organizer_type,
+--   organizer_user_id,
+--   organizer_business_id,
+--   is_paid,
+--   price_amount,
+--   price_currency
+-- )
+-- values (
+--   '<BUSINESS_USER_ID>',
+--   'Closed Beta Business Etkinlik',
+--   'Closed beta business event seed sample.',
+--   'Futbol',
+--   'Istanbul',
+--   'Kadikoy',
+--   'Closed Beta Arena',
+--   now() + interval '10 days',
+--   20,
+--   0,
+--   0,
+--   20,
+--   0,
+--   'active',
+--   'business',
+--   '<BUSINESS_USER_ID>',
+--   '<BUSINESS_ACCOUNT_ID>',
+--   false,
+--   null,
+--   'TRY'
+-- );
+
+-- 9. Sample post.
+-- Prefer creating this through the app so storage/media behavior is tested.
+-- If direct SQL is required, replace image_url with a staging-safe test image.
+-- insert into public.posts (
+--   user_id,
+--   image_url,
+--   caption,
+--   comments_hidden,
+--   is_archived
+-- )
+-- values (
+--   '<USER_A_ID>',
+--   'https://example.com/closed-beta-placeholder.jpg',
+--   'Closed beta post seed sample.',
+--   false,
+--   false
+-- );
+
+-- 10. Optional report sample.
 -- Uncomment only after confirming the current reports schema and target entity.
 -- insert into public.reports (
 --   reporter_id,
@@ -176,8 +302,5 @@ values (
 --   'closed_beta_test',
 --   'Closed beta report seed sample.'
 -- );
-
--- 8. Normal/business events and posts are safest to create through the app so
--- RLS, RPC validation, media upload, and UI refresh behavior are tested.
 
 commit;
