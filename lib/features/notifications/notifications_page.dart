@@ -13,6 +13,7 @@ import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
+import '../auth/auth_provider.dart';
 import 'notifications_models.dart';
 import 'notifications_provider.dart';
 import 'widgets/notification_tile.dart';
@@ -29,7 +30,11 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       ref.read(notificationsControllerProvider.notifier).loadNotifications();
+      ref
+          .read(notificationsControllerProvider.notifier)
+          .startRealtime(ref.read(authControllerProvider).userId);
     });
   }
 

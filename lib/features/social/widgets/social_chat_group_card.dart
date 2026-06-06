@@ -74,8 +74,11 @@ class SocialChatGroupCard extends StatelessWidget {
                         runSpacing: AppSpacing.xs,
                         children: [
                           _Chip(label: group.sportType),
-                          _Chip(label: group.isHost ? 'Host' : 'Participant'),
-                          if (group.isArchived) const _Chip(label: 'Archived'),
+                          _Chip(
+                            label: group.isHost ? 'Ev sahibi' : 'Katılımcı',
+                          ),
+                          if (group.isArchived)
+                            const _Chip(label: 'Arşivlendi'),
                         ],
                       ),
                     ],

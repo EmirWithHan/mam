@@ -17,6 +17,9 @@ after approval, and share moments from events on your profile.
 The app is designed for sports, activities, trust, and real-life social plans.
 It is not a dating app.
 
+Current in-app user-facing copy is locked to Turkish for MVP screens. Store
+listing copy may still be localized separately before submission.
+
 MVP safety tools include profile privacy, follow requests, report actions,
 blocking, admin business review, feedback, and trust-score signals for event
 behavior.
@@ -39,8 +42,11 @@ running, meetup, group events, activity friends
 
 ## Privacy And Legal TODO
 
-- Replace MVP legal placeholder text with professionally reviewed privacy
-  policy, terms, community rules, and support/account deletion copy.
+- In-app MVP legal drafts now exist for Kullanım Şartları, Gizlilik
+  Politikası, Topluluk Kuralları, and Etkinlik Güvenliği ve Sorumluluk Reddi.
+- Replace MVP legal draft text with professionally reviewed privacy policy,
+  terms, community rules, event safety/disclaimer, and support/account deletion
+  copy before production release.
 - Prepare public privacy policy URL for Play Console and App Store Connect.
 - Prepare data deletion request URL or support process.
 - Confirm store data safety/privacy nutrition answers for auth, profile,
@@ -60,4 +66,19 @@ running, meetup, group events, activity friends
 - Review Apple Sign in requirement if third-party social login remains enabled
   on iOS.
 - Confirm production support contact and account deletion process.
+- Verify in-app notification/feed refresh behavior on real devices while the
+  app is open. Firebase/push remains intentionally unimplemented.
 
+## Android Release Build
+
+Play Store upload uses the release AAB. Build it with dart-defines and
+placeholder-only docs/scripts:
+
+```powershell
+flutter build appbundle --release `
+  --dart-define=SUPABASE_URL="YOUR_SUPABASE_URL" `
+  --dart-define=SUPABASE_ANON_KEY="YOUR_SUPABASE_ANON_KEY"
+```
+
+Signing config and keystore setup will be handled separately. Do not commit
+keystores, real Supabase values, service-role keys, or other secrets.

@@ -69,7 +69,7 @@ class ProfileActivityEvent {
 
   String get displayDate => DateFormatter.turkishEventDateTime(eventDate);
 
-  String get roleLabel => isHost ? 'Host' : 'Katılımcı';
+  String get roleLabel => isHost ? 'Ev sahibi' : 'Katılımcı';
 
   factory ProfileActivityEvent.fromJson(
     Map<String, dynamic> json, {

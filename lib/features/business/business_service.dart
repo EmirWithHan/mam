@@ -1,6 +1,3 @@
-import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-
 import '../../core/utils/pagination.dart';
 import '../../core/utils/error_messages.dart';
 import '../../core/utils/rate_limits.dart';
@@ -35,7 +32,11 @@ class BusinessAccountService {
         .inFilter('status', ['active', 'pending'])
         .order('created_at', ascending: false)
         .limit(1)
-        .maybeSingle();
+        .maybeSingle()
+        .catchError((Object error) {
+          logSupabaseDebug('Business', 'fetchMyBusinessAccount', error);
+          throw error;
+        });
 
     if (data == null) return null;
     return BusinessAccount.fromJson(data);
@@ -50,7 +51,11 @@ class BusinessAccountService {
         .select()
         .eq('id', trimmedId)
         .eq('status', BusinessAccountStatus.active)
-        .maybeSingle();
+        .maybeSingle()
+        .catchError((Object error) {
+          logSupabaseDebug('Business', 'fetchBusinessAccountById', error);
+          throw error;
+        });
 
     if (data == null) return null;
     return BusinessAccount.fromJson(data);
@@ -125,7 +130,11 @@ class BusinessAccountService {
         .eq('user_id', userId)
         .order('created_at', ascending: false)
         .limit(1)
-        .maybeSingle();
+        .maybeSingle()
+        .catchError((Object error) {
+          logSupabaseDebug('Business', 'fetchMyLatestApplication', error);
+          throw error;
+        });
 
     if (data == null) return null;
     return BusinessApplication.fromJson(data);
@@ -155,7 +164,12 @@ class BusinessAccountService {
   }
 
   Future<bool> isCurrentUserAdmin() async {
-    final data = await SupabaseService.client.rpc('is_current_user_admin');
+    final data = await SupabaseService.client
+        .rpc('is_current_user_admin')
+        .catchError((Object error) {
+          logSupabaseDebug('Business', 'is_current_user_admin', error);
+          throw error;
+        });
     return data == true;
   }
 
@@ -163,10 +177,19 @@ class BusinessAccountService {
     int limit = SupabasePageSizes.adminApplications,
     int offset = 0,
   }) async {
-    final data = await SupabaseService.client.rpc(
-      'list_pending_business_applications',
-      params: {'p_limit': limit, 'p_offset': offset},
-    );
+    final data = await SupabaseService.client
+        .rpc(
+          'list_pending_business_applications',
+          params: {'p_limit': limit, 'p_offset': offset},
+        )
+        .catchError((Object error) {
+          logSupabaseDebug(
+            'Business',
+            'list_pending_business_applications',
+            error,
+          );
+          throw error;
+        });
     return (data as List<dynamic>)
         .whereType<Map>()
         .map(
@@ -283,12 +306,5 @@ String friendlyBusinessAccountDeleteErrorMessage(Object error) {
 }
 
 void _debugPrintSupabaseError(String action, Object error) {
-  if (error is PostgrestException) {
-    debugPrint(
-      '[Business] $action failed code=${error.code}',
-    );
-    return;
-  }
-
-  debugPrint('[Business] $action failed type=${error.runtimeType}');
+  logSupabaseDebug('Business', action, error);
 }

@@ -32,8 +32,12 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       ref.read(profileControllerProvider.notifier).loadMyProfile();
       ref.read(myBusinessAccountProvider.notifier).loadMyBusinessAccount();
+      ref
+          .read(myBusinessAccountProvider.notifier)
+          .startApplicationRealtime(ref.read(authControllerProvider).userId);
     });
   }
 
@@ -132,7 +136,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const SizedBox(height: AppSpacing.md),
             SettingsMenuTile(
               icon: Icons.verified_user_outlined,
-              title: 'Trust Score',
+              title: 'Güven puanı',
               subtitle: 'Güven puanı geçmişini görüntüle',
               onTap: () => context.pushNamed(RouteNames.trustScoreHistory),
             ),
@@ -163,6 +167,14 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               title: 'Topluluk Kuralları',
               subtitle: 'Güvenli ve saygılı etkinlik topluluğu',
               onTap: () => context.pushNamed(RouteNames.communityGuidelines),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            SettingsMenuTile(
+              icon: Icons.health_and_safety_outlined,
+              title: 'Etkinlik Güvenliği ve Sorumluluk Reddi',
+              subtitle:
+                  'Etkinliklere katılım riskleri ve kullanıcı sorumlulukları',
+              onTap: () => context.pushNamed(RouteNames.eventSafetyDisclaimer),
             ),
             const SizedBox(height: AppSpacing.md),
             SettingsMenuTile(
@@ -214,7 +226,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
               const SizedBox(height: AppSpacing.md),
               SettingsMenuTile(
                 icon: Icons.admin_panel_settings_outlined,
-                title: 'Admin',
+                title: 'Yönetici',
                 subtitle: 'İşletme başvurularını incele',
                 onTap: () => context.pushNamed(RouteNames.admin),
               ),
@@ -364,7 +376,7 @@ class _PrivacySection extends StatelessWidget {
         secondary: const Icon(Icons.lock_outline, color: AppColors.primary),
         title: Text('Gizli hesap', style: AppTextStyles.bodyStrong),
         subtitle: const Text(
-          'Gizli hesapta galeri ve Geçmiş Events sadece takipçilerine görünür.',
+          'Gizli hesapta galeri ve geçmiş etkinlikler sadece takipçilerine görünür.',
         ),
       ),
     );

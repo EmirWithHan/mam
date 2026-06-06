@@ -29,6 +29,7 @@ class _BlockButtonState extends ConsumerState<BlockButton> {
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       ref
           .read(blockControllerProvider(widget.targetUserId).notifier)
           .loadBlockState();

@@ -261,7 +261,7 @@ class _PostOverflowButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return IconButton(
       visualDensity: VisualDensity.compact,
-      tooltip: 'Post actions',
+      tooltip: 'Gönderi işlemleri',
       icon: const Icon(Icons.more_horiz, color: AppColors.textMuted),
       onPressed: () => _showPostActions(context, ref),
     );

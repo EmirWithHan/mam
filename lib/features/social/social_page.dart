@@ -35,6 +35,7 @@ class _SocialPageState extends ConsumerState<SocialPage> {
       setState(() => _query = _searchController.text.trim().toLowerCase());
     });
     Future.microtask(() {
+      if (!mounted) return;
       ref.read(eventChatListControllerProvider.notifier).loadChatGroups();
     });
   }
@@ -76,16 +77,16 @@ class _SocialPageState extends ConsumerState<SocialPage> {
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
-              Text('Chats', style: AppTextStyles.headline),
+              Text('Sohbetler', style: AppTextStyles.headline),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                'Your event conversations and community activity.',
+                'Etkinlik sohbetlerin ve topluluk hareketlerin.',
                 style: AppTextStyles.body,
               ),
               const SizedBox(height: AppSpacing.lg),
               AppTextField(
-                label: 'Search',
-                hintText: 'Find event chats...',
+                label: 'Ara',
+                hintText: 'Etkinlik sohbeti ara...',
                 controller: _searchController,
                 prefixIcon: const Icon(Icons.search),
               ),
@@ -98,7 +99,7 @@ class _SocialPageState extends ConsumerState<SocialPage> {
               const SizedBox(height: AppSpacing.lg),
               const SocialFutureMessagesCard(),
               const SizedBox(height: AppSpacing.xl),
-              Text('Event Chats', style: AppTextStyles.title),
+              Text('Etkinlik sohbetleri', style: AppTextStyles.title),
               const SizedBox(height: AppSpacing.md),
               if (state.isLoading && state.groups.isEmpty)
                 const Padding(

@@ -1,3 +1,4 @@
+import '../../core/utils/error_messages.dart';
 import '../../services/rate_limit_service.dart';
 import '../../services/supabase_service.dart';
 import 'feedback_models.dart';
@@ -26,6 +27,7 @@ class FeedbackService {
           .from('user_feedback')
           .insert(input.toInsertJson(userId: userId));
     } catch (error) {
+      logSupabaseDebug('Feedback', 'submitFeedback', error);
       throw FeedbackException(friendlyFeedbackErrorMessage(error));
     }
   }
@@ -35,7 +37,11 @@ class FeedbackService {
         .from('user_feedback')
         .select('id,user_id,rating,category,message,source,created_at')
         .order('created_at', ascending: false)
-        .limit(limit.clamp(1, 50).toInt());
+        .limit(limit.clamp(1, 50).toInt())
+        .catchError((Object error) {
+          logSupabaseDebug('Feedback', 'fetchLatestFeedback', error);
+          throw error;
+        });
 
     return rows
         .map((row) => UserFeedback.fromJson(Map<String, dynamic>.from(row)))

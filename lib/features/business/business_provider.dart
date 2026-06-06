@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/utils/error_messages.dart';
 import '../../core/utils/pagination.dart';
+import '../../services/supabase_service.dart';
 import 'business_models.dart';
 import 'business_service.dart';
 
@@ -118,6 +122,8 @@ class PendingBusinessApplicationsController
     : super(const PendingBusinessApplicationsState());
 
   final BusinessAccountService _service;
+  RealtimeChannel? _realtimeChannel;
+  Timer? _realtimeDebounce;
 
   Future<void> loadInitial({bool force = false}) async {
     if (!force && state.applications.isNotEmpty) return;
@@ -133,11 +139,49 @@ class PendingBusinessApplicationsController
         ),
       );
     } catch (error) {
-      state = state.copyWith(isLoading: false, message: _businessMessage(error));
+      state = state.copyWith(
+        isLoading: false,
+        message: _businessMessage(error),
+      );
     }
   }
 
   Future<void> refresh() => loadInitial(force: true);
+
+  void startRealtime() {
+    if (_realtimeChannel != null) return;
+    try {
+      _realtimeChannel = SupabaseService.client
+          .channel('business_applications:admin')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'business_applications',
+            callback: (_) => _scheduleRealtimeRefresh(),
+          )
+          .subscribe();
+    } catch (error) {
+      logSupabaseDebug('Business', 'admin realtime subscribe', error);
+      stopRealtime();
+    }
+  }
+
+  void stopRealtime() {
+    _realtimeDebounce?.cancel();
+    _realtimeDebounce = null;
+    final channel = _realtimeChannel;
+    _realtimeChannel = null;
+    if (channel != null) {
+      unawaited(SupabaseService.client.removeChannel(channel));
+    }
+  }
+
+  void _scheduleRealtimeRefresh() {
+    _realtimeDebounce?.cancel();
+    _realtimeDebounce = Timer(const Duration(milliseconds: 700), () {
+      unawaited(loadInitial(force: true));
+    });
+  }
 
   Future<void> loadMore() async {
     if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
@@ -166,6 +210,12 @@ class PendingBusinessApplicationsController
       );
     }
   }
+
+  @override
+  void dispose() {
+    stopRealtime();
+    super.dispose();
+  }
 }
 
 class BusinessAccountController extends StateNotifier<BusinessAccountState> {
@@ -173,6 +223,9 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
     : super(const BusinessAccountState.initial());
 
   final BusinessAccountService _service;
+  RealtimeChannel? _applicationRealtimeChannel;
+  Timer? _applicationRealtimeDebounce;
+  String? _applicationRealtimeUserId;
 
   Future<void> loadMyBusinessAccount() async {
     state = state.copyWith(
@@ -199,6 +252,58 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
         message: _businessMessage(error),
       );
     }
+  }
+
+  void startApplicationRealtime(String? userId) {
+    final trimmedUserId = userId?.trim();
+    if (trimmedUserId == null || trimmedUserId.isEmpty) {
+      stopApplicationRealtime();
+      return;
+    }
+    if (_applicationRealtimeUserId == trimmedUserId &&
+        _applicationRealtimeChannel != null) {
+      return;
+    }
+
+    stopApplicationRealtime();
+    try {
+      _applicationRealtimeUserId = trimmedUserId;
+      _applicationRealtimeChannel = SupabaseService.client
+          .channel('business_applications:$trimmedUserId')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'business_applications',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'user_id',
+              value: trimmedUserId,
+            ),
+            callback: (_) => _scheduleApplicationRefresh(),
+          )
+          .subscribe();
+    } catch (error) {
+      logSupabaseDebug('Business', 'application realtime subscribe', error);
+      stopApplicationRealtime();
+    }
+  }
+
+  void stopApplicationRealtime() {
+    _applicationRealtimeDebounce?.cancel();
+    _applicationRealtimeDebounce = null;
+    final channel = _applicationRealtimeChannel;
+    _applicationRealtimeChannel = null;
+    _applicationRealtimeUserId = null;
+    if (channel != null) {
+      unawaited(SupabaseService.client.removeChannel(channel));
+    }
+  }
+
+  void _scheduleApplicationRefresh() {
+    _applicationRealtimeDebounce?.cancel();
+    _applicationRealtimeDebounce = Timer(const Duration(milliseconds: 700), () {
+      unawaited(loadMyBusinessAccount());
+    });
   }
 
   Future<BusinessAccount?> createBusinessAccount(
@@ -310,6 +415,12 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
       );
       return false;
     }
+  }
+
+  @override
+  void dispose() {
+    stopApplicationRealtime();
+    super.dispose();
   }
 }
 

@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../services/storage_service.dart';
 import '../../services/supabase_service.dart';
 import '../../services/rate_limit_service.dart';
+import '../../core/utils/error_messages.dart';
 import '../../core/utils/pagination.dart';
 import '../reports/blocks_service.dart';
 import 'feed_models.dart';
@@ -318,10 +318,5 @@ Future<bool> _hasMyLike({
 }
 
 void _logFeedError(String label, Object error) {
-  final code = error is PostgrestException ? error.code : null;
-  debugPrint(
-    '[Feed] $label'
-    '${code == null ? '' : ' code=$code'}'
-    ' type=${error.runtimeType}',
-  );
+  logSupabaseDebug('Feed', label, error);
 }

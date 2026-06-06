@@ -12,6 +12,7 @@ import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
+import '../auth/auth_provider.dart';
 import '../notifications/notifications_provider.dart';
 import 'events_models.dart';
 import 'events_provider.dart';
@@ -33,7 +34,11 @@ class _EventsPageState extends ConsumerState<EventsPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       ref.read(eventsControllerProvider.notifier).loadEvents();
+      ref
+          .read(notificationsControllerProvider.notifier)
+          .startRealtime(ref.read(authControllerProvider).userId);
     });
   }
 
@@ -61,54 +66,18 @@ class _EventsPageState extends ConsumerState<EventsPage> {
         ],
       ),
       body: SafeArea(
-        child: Padding(
-          padding: AppResponsive.pagePadding(
-            context,
-            top: compact ? AppSpacing.md : AppSpacing.lg,
-            bottom: compact ? AppSpacing.md : AppSpacing.lg,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text('Find a Game!', style: AppTextStyles.headline),
-                  ),
-                  if (!compact) const AppLogo(size: 44),
-                ],
-              ),
-              SizedBox(height: compact ? AppSpacing.xs : AppSpacing.sm),
-              Text(
-                'Discover friendly matches nearby.',
-                style: AppTextStyles.body,
-              ),
-              SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
-              _SearchFilterRow(
-                controller: _searchController,
-                filtersActive: _filters.isActive,
-                onSearchChanged: (_) => setState(() {}),
-                onFilterPressed: _openFilterSheet,
-              ),
-              SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
-              AppButton(
-                label: 'Host an Event',
-                onPressed: () => context.pushNamed(RouteNames.createEvent),
-              ),
-              SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
-              Expanded(
-                child: _EventsBody(
-                  eventsState: eventsState,
-                  searchQuery: _searchController.text,
-                  filters: _filters,
-                  onClearFilters: _clearSearchAndFilters,
-                  onLoadMore: () => ref
-                      .read(eventsControllerProvider.notifier)
-                      .loadMoreEvents(),
-                ),
-              ),
-            ],
-          ),
+        child: _EventsBody(
+          eventsState: eventsState,
+          searchQuery: _searchController.text,
+          filters: _filters,
+          compact: compact,
+          searchController: _searchController,
+          filtersActive: _filters.isActive,
+          onSearchChanged: (_) => setState(() {}),
+          onFilterPressed: _openFilterSheet,
+          onClearFilters: _clearSearchAndFilters,
+          onLoadMore: () =>
+              ref.read(eventsControllerProvider.notifier).loadMoreEvents(),
         ),
       ),
     );
@@ -174,6 +143,11 @@ class _EventsBody extends StatelessWidget {
     required this.eventsState,
     required this.searchQuery,
     required this.filters,
+    required this.compact,
+    required this.searchController,
+    required this.filtersActive,
+    required this.onSearchChanged,
+    required this.onFilterPressed,
     required this.onClearFilters,
     required this.onLoadMore,
   });
@@ -181,16 +155,48 @@ class _EventsBody extends StatelessWidget {
   final EventsState eventsState;
   final String searchQuery;
   final EventFilters filters;
+  final bool compact;
+  final TextEditingController searchController;
+  final bool filtersActive;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onFilterPressed;
   final VoidCallback onClearFilters;
   final VoidCallback onLoadMore;
 
   @override
   Widget build(BuildContext context) {
-    if (eventsState.isLoading) return const AppLoader();
+    final padding = AppResponsive.pagePadding(
+      context,
+      top: compact ? AppSpacing.sm : AppSpacing.md,
+      bottom: compact ? AppSpacing.md : AppSpacing.lg,
+    );
+    final header = _EventsHeader(
+      compact: compact,
+      controller: searchController,
+      filtersActive: filtersActive,
+      onSearchChanged: onSearchChanged,
+      onFilterPressed: onFilterPressed,
+    );
+
+    if (eventsState.isLoading) {
+      return ListView(
+        padding: padding,
+        children: [
+          header,
+          SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
+          const SizedBox(height: 280, child: AppLoader()),
+        ],
+      );
+    }
 
     if (eventsState.status == EventsStatus.error) {
-      return ErrorView(
-        message: eventsState.message ?? 'Etkinlikler yüklenemedi.',
+      return ListView(
+        padding: padding,
+        children: [
+          header,
+          SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
+          ErrorView(message: eventsState.message ?? 'Etkinlikler yüklenemedi.'),
+        ],
       );
     }
 
@@ -200,35 +206,54 @@ class _EventsBody extends StatelessWidget {
         .toList();
 
     if (eventsState.events.isEmpty) {
-      return EmptyState(
-        title: 'Henüz etkinlik yok',
-        message:
-            'İlk etkinliği sen oluşturabilir ya da daha sonra tekrar keşfe çıkabilirsin.',
-        icon: Icons.event_available_outlined,
-        actionLabel: 'Etkinlik oluştur',
-        onAction: () => context.pushNamed(RouteNames.createEvent),
-        secondaryActionLabel: 'Profilini tamamla',
-        onSecondaryAction: () => context.pushNamed(RouteNames.profileComplete),
+      return ListView(
+        padding: padding,
+        children: [
+          header,
+          SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
+          EmptyState(
+            title: 'Henüz etkinlik yok',
+            message:
+                'İlk etkinliği sen oluşturabilir ya da daha sonra tekrar keşfe çıkabilirsin.',
+            icon: Icons.event_available_outlined,
+            actionLabel: 'Etkinlik oluştur',
+            onAction: () => context.pushNamed(RouteNames.createEvent),
+            secondaryActionLabel: 'Profilini tamamla',
+            onSecondaryAction: () =>
+                context.pushNamed(RouteNames.profileComplete),
+          ),
+        ],
       );
     }
 
     if (filteredEvents.isEmpty) {
-      return EmptyState(
-        title: 'Etkinlik bulunamadı',
-        message: 'Arama veya filtreleri değiştirerek tekrar dene.',
-        actionLabel: 'Filtreleri temizle',
-        onAction: onClearFilters,
+      return ListView(
+        padding: padding,
+        children: [
+          header,
+          SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
+          EmptyState(
+            title: 'Etkinlik bulunamadı',
+            message: 'Arama veya filtreleri değiştirerek tekrar dene.',
+            actionLabel: 'Filtreleri temizle',
+            onAction: onClearFilters,
+          ),
+        ],
       );
     }
 
     final placedEvents = eventsWithSponsoredPlacement(filteredEvents);
 
     return ListView.separated(
-      itemCount: placedEvents.length + 1,
+      padding: padding,
+      itemCount: placedEvents.length + 2,
       separatorBuilder: (context, index) =>
           const SizedBox(height: AppSpacing.md),
       itemBuilder: (context, index) {
-        if (index == placedEvents.length) {
+        if (index == 0) return header;
+
+        final eventIndex = index - 1;
+        if (eventIndex == placedEvents.length) {
           if (!eventsState.hasMore) {
             return Text(
               'Daha fazla içerik yok.',
@@ -242,7 +267,7 @@ class _EventsBody extends StatelessWidget {
             onPressed: eventsState.isLoadingMore ? null : onLoadMore,
           );
         }
-        return EventCard(event: placedEvents[index]);
+        return EventCard(event: placedEvents[eventIndex]);
       },
     );
   }
@@ -308,7 +333,63 @@ class _EventsBody extends StatelessWidget {
         .replaceAll('Ä±', 'i')
         .replaceAll('Ã¶', 'o')
         .replaceAll('ÅŸ', 's')
-        .replaceAll('Ã¼', 'u');
+        .replaceAll('Ã¼', 'u')
+        .replaceAll('ÃƒÂ§', 'c')
+        .replaceAll('Ã„Å¸', 'g')
+        .replaceAll('Ã„Â±', 'i')
+        .replaceAll('ÃƒÂ¶', 'o')
+        .replaceAll('Ã…Å¸', 's')
+        .replaceAll('ÃƒÂ¼', 'u');
+  }
+}
+
+class _EventsHeader extends StatelessWidget {
+  const _EventsHeader({
+    required this.compact,
+    required this.controller,
+    required this.onSearchChanged,
+    required this.onFilterPressed,
+    required this.filtersActive,
+  });
+
+  final bool compact;
+  final TextEditingController controller;
+  final ValueChanged<String> onSearchChanged;
+  final VoidCallback onFilterPressed;
+  final bool filtersActive;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: Text('Etkinlik Bul', style: AppTextStyles.headline),
+            ),
+            if (!compact) const AppLogo(size: 40),
+          ],
+        ),
+        SizedBox(height: compact ? AppSpacing.xs : AppSpacing.sm),
+        Text(
+          'Yakındaki sosyal spor etkinliklerini keşfet.',
+          style: AppTextStyles.body,
+        ),
+        SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
+        _SearchFilterRow(
+          controller: controller,
+          filtersActive: filtersActive,
+          onSearchChanged: onSearchChanged,
+          onFilterPressed: onFilterPressed,
+        ),
+        SizedBox(height: compact ? AppSpacing.sm : AppSpacing.md),
+        AppButton(
+          label: 'Etkinlik oluştur',
+          onPressed: () => context.pushNamed(RouteNames.createEvent),
+        ),
+      ],
+    );
   }
 }
 
@@ -334,7 +415,7 @@ class _SearchFilterRow extends StatelessWidget {
             controller: controller,
             onChanged: onSearchChanged,
             decoration: const InputDecoration(
-              hintText: 'Search sport, area, or event',
+              hintText: 'Spor, bölge veya etkinlik ara',
               prefixIcon: Icon(Icons.search),
             ),
           ),

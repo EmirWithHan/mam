@@ -63,6 +63,7 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
   }
 
   Future<void> _loadProfile() async {
+    if (!mounted) return;
     final profile = await ref
         .read(profileControllerProvider.notifier)
         .createEmptyProfileIfMissing();
@@ -236,7 +237,7 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     AppTextField(
-                      label: 'Username',
+                      label: 'Kullanıcı adı',
                       controller: _usernameController,
                       prefixIcon: const Icon(Icons.alternate_email),
                       validator: ProfileUsername.validate,

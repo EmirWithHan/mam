@@ -59,19 +59,19 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
     return AlertDialog(
       backgroundColor: AppColors.surface,
       shape: RoundedRectangleBorder(borderRadius: AppRadius.lgBorder),
-      title: Text('Report', style: AppTextStyles.title),
+      title: Text('Şikayet et', style: AppTextStyles.title),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'Help keep MaM safe and trustworthy.',
+            'MaM topluluğunu güvenli ve güvenilir tutmaya yardımcı ol.',
             style: AppTextStyles.caption,
           ),
           const SizedBox(height: AppSpacing.md),
           DropdownButtonFormField<ReportReason>(
             initialValue: _reason,
-            decoration: const InputDecoration(labelText: 'Reason'),
+            decoration: const InputDecoration(labelText: 'Sebep'),
             items: ReportReason.values
                 .map(
                   (reason) => DropdownMenuItem(
@@ -89,7 +89,7 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
           ),
           const SizedBox(height: AppSpacing.md),
           AppTextField(
-            label: 'Description optional',
+            label: 'Açıklama (isteğe bağlı)',
             controller: _descriptionController,
             maxLines: 4,
           ),
@@ -105,12 +105,12 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
       actions: [
         TextButton(
           onPressed: state.loading ? null : () => Navigator.of(context).pop(),
-          child: Text('Cancel', style: AppTextStyles.bodySmall),
+          child: Text('Vazgeç', style: AppTextStyles.bodySmall),
         ),
         SizedBox(
           width: 120,
           child: AppButton(
-            label: 'Submit',
+            label: 'Gönder',
             isLoading: state.loading,
             onPressed: _submit,
           ),

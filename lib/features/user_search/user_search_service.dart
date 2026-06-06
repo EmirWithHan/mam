@@ -1,3 +1,4 @@
+import '../../core/utils/error_messages.dart';
 import '../../services/supabase_service.dart';
 import '../follow/follow_models.dart';
 import '../follow/follow_service.dart';
@@ -13,10 +14,18 @@ class UserSearchService {
     final normalized = UserSearchRules.normalizeQuery(query);
     if (!UserSearchRules.canSearch(normalized)) return const [];
 
-    final data = await SupabaseService.client.rpc(
-      'search_profiles_by_username',
-      params: {'p_query': normalized, 'p_limit': UserSearchRules.maxResults},
-    );
+    final data = await SupabaseService.client
+        .rpc(
+          'search_profiles_by_username',
+          params: {
+            'p_query': normalized,
+            'p_limit': UserSearchRules.maxResults,
+          },
+        )
+        .catchError((Object error) {
+          logSupabaseDebug('UserSearch', 'search_profiles_by_username', error);
+          throw error;
+        });
 
     return (data as List<dynamic>)
         .whereType<Map>()

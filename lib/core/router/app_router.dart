@@ -219,6 +219,14 @@ GoRouter createAppRouter(AuthState authState) {
         ),
       ),
       GoRoute(
+        path: RoutePaths.eventSafetyDisclaimer,
+        name: RouteNames.eventSafetyDisclaimer,
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 4,
+          child: LegalInfoPage(type: LegalInfoType.eventSafetyDisclaimer),
+        ),
+      ),
+      GoRoute(
         path: RoutePaths.support,
         name: RouteNames.support,
         builder: (context, state) => const MainNavigationShell(

@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 import 'rate_limits.dart';
 
 String friendlyErrorMessage(Object error) {
@@ -189,6 +192,26 @@ String friendlyErrorMessage(Object error) {
     return message;
   }
   return 'Bir şeyler ters gitti. Tekrar dene.';
+}
+
+void logSupabaseDebug(String area, String action, Object error) {
+  if (error is PostgrestException) {
+    debugPrint(
+      '[$area] $action failed code=${error.code ?? 'unknown'} '
+      'message=${_safeDebugMessage(error.message)}',
+    );
+    return;
+  }
+
+  debugPrint('[$area] $action failed type=${error.runtimeType}');
+}
+
+String _safeDebugMessage(String message) {
+  final collapsed = message.replaceAll(RegExp(r'\s+'), ' ').trim();
+  if (collapsed.isEmpty) return 'empty';
+  return collapsed.length <= 180
+      ? collapsed
+      : '${collapsed.substring(0, 180)}...';
 }
 
 String friendlyFeedLoadErrorMessage(Object error) {

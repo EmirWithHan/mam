@@ -40,6 +40,7 @@ class _CreateBusinessAccountPageState
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       ref.read(myBusinessAccountProvider.notifier).loadMyBusinessAccount();
     });
   }

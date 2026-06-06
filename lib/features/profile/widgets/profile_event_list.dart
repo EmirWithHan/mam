@@ -25,7 +25,7 @@ class ProfileEventList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _SectionTitle('Aktif Events'),
+        const _SectionTitle('Aktif Etkinlikler'),
         const SizedBox(height: AppSpacing.md),
         _EventSectionList(
           events: activeEvents,
@@ -33,11 +33,11 @@ class ProfileEventList extends StatelessWidget {
           emptyMessage: 'Yaklaşan veya devam eden etkinlikler burada görünür.',
         ),
         const SizedBox(height: AppSpacing.xl),
-        const _SectionTitle('Geçmiş Events'),
+        const _SectionTitle('Geçmiş Etkinlikler'),
         const SizedBox(height: AppSpacing.md),
         _EventSectionList(
           events: pastEvents,
-          emptyTitle: 'Geçmiş event yok.',
+          emptyTitle: 'Geçmiş etkinlik yok.',
           emptyMessage: 'Tamamlanan etkinlikler burada görünür.',
         ),
       ],

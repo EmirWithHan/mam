@@ -76,8 +76,8 @@ class Profile {
   String get trustDescription {
     final score = trustScoreValue;
     if (score <= 39) return 'Build reliability through positive participation.';
-    if (score <= 59) return 'A fresh reliability profile with room to grow.';
-    if (score <= 79) return 'Shows consistent event participation.';
+    if (score <= 59) return 'Gelişmeye açık yeni bir güven profili.';
+    if (score <= 79) return 'Etkinlik katılımında tutarlı görünüyor.';
     return 'Strong reliability signal in the community.';
   }
 
@@ -645,7 +645,7 @@ class PublicProfileEventHistoryItem {
     return '$city / $districtValue';
   }
 
-  String get roleLabel => role == 'host' ? 'Host' : 'Katılımcı';
+  String get roleLabel => role == 'host' ? 'Ev sahibi' : 'Katılımcı';
 
   bool get isPast => eventDate.isBefore(DateTime.now());
 

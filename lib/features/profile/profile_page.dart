@@ -37,6 +37,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       ref.read(profileControllerProvider.notifier).loadMyProfile();
       ref.read(profileActivityControllerProvider.notifier).loadActivity();
       ref.read(myBusinessAccountProvider.notifier).loadMyBusinessAccount();
@@ -166,7 +167,7 @@ class _ProfileActivityTabs extends StatelessWidget {
               onPressed: () => onTabSelected(_ProfileActivityTab.gallery),
             ),
             _ProfileActivityTabButton(
-              label: 'Geçmiş Events',
+              label: 'Geçmiş Etkinlikler',
               selected: selectedTab == _ProfileActivityTab.events,
               onPressed: () => onTabSelected(_ProfileActivityTab.events),
             ),
@@ -537,13 +538,13 @@ class _ProfileEmptyState extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'No profile yet.',
+            'Henüz profil yok.',
             style: AppTextStyles.title,
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.md),
           AppButton(
-            label: 'Complete profile',
+            label: 'Profili tamamla',
             onPressed: () => context.pushNamed(RouteNames.profileComplete),
           ),
         ],

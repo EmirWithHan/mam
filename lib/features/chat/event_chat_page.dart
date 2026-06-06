@@ -35,6 +35,7 @@ class _EventChatPageState extends ConsumerState<EventChatPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       ref
           .read(eventChatControllerProvider(widget.eventId).notifier)
           .loadMessages();
@@ -72,11 +73,11 @@ class _EventChatPageState extends ConsumerState<EventChatPage> {
       appBar: AppBar(
         centerTitle: true,
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: 'Geri',
           onPressed: () => _goBack(context),
           icon: const Icon(Icons.arrow_back),
         ),
-        title: const Text('Event Chat'),
+        title: const Text('Etkinlik Sohbeti'),
         actions: [
           IconButton(
             onPressed: chatState.loading
@@ -250,8 +251,8 @@ class _MessageComposer extends StatelessWidget {
           builder: (context, constraints) {
             final stackButton = constraints.maxWidth < 340;
             final input = AppTextField(
-              label: 'Message',
-              hintText: 'Write to the group',
+              label: 'Mesaj',
+              hintText: 'Gruba yaz',
               controller: controller,
               maxLines: 4,
               textInputAction: TextInputAction.send,
@@ -260,7 +261,7 @@ class _MessageComposer extends StatelessWidget {
               },
             );
             final sendButton = AppButton(
-              label: 'Send',
+              label: 'Gönder',
               isLoading: isSending,
               onPressed: onSend,
               fullWidth: stackButton,

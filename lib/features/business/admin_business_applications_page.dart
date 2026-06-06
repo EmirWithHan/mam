@@ -30,11 +30,16 @@ class _AdminBusinessApplicationsPageState
   void initState() {
     super.initState();
     Future.microtask(() async {
+      if (!mounted) return;
       await ref
           .read(myBusinessAccountProvider.notifier)
           .loadMyBusinessAccount();
-      if (!mounted || !ref.read(myBusinessAccountProvider).isAdmin) return;
+      if (!mounted) return;
 
+      final isAdmin = ref.read(myBusinessAccountProvider).isAdmin;
+      if (!isAdmin) return;
+
+      ref.read(pendingBusinessApplicationsProvider.notifier).startRealtime();
       await Future.wait([
         ref.read(pendingBusinessApplicationsProvider.notifier).loadInitial(),
         ref.read(adminFeedbackProvider.notifier).load(),
@@ -62,7 +67,7 @@ class _AdminBusinessApplicationsPageState
                     const TabBar(
                       tabs: [
                         Tab(text: 'Başvurular'),
-                        Tab(text: 'Feedback'),
+                        Tab(text: 'Geri bildirim'),
                       ],
                     ),
                     Expanded(
@@ -135,9 +140,19 @@ class _FeedbackReviewCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_title, style: AppTextStyles.title),
+            Text(
+              _title,
+              style: AppTextStyles.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: AppSpacing.xs),
-            Text('User: ${feedback.userId}', style: AppTextStyles.caption),
+            Text(
+              'Kullanıcı: ${feedback.userId}',
+              style: AppTextStyles.caption,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: AppSpacing.xs),
             Text(
               feedback.createdAt.toLocal().toString().split('.').first,
@@ -145,7 +160,12 @@ class _FeedbackReviewCard extends StatelessWidget {
             ),
             if (feedback.source != null) ...[
               const SizedBox(height: AppSpacing.xs),
-              Text('Source: ${feedback.source}', style: AppTextStyles.caption),
+              Text(
+                'Kaynak: ${feedback.source}',
+                style: AppTextStyles.caption,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
             if (feedback.message != null) ...[
               const SizedBox(height: AppSpacing.md),
@@ -255,21 +275,43 @@ class _ApplicationReviewCardState
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(application.businessName, style: AppTextStyles.title),
+            Text(
+              application.businessName,
+              style: AppTextStyles.title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: AppSpacing.xs),
-            Text(application.businessPhone, style: AppTextStyles.bodySmall),
+            Text(
+              application.businessPhone,
+              style: AppTextStyles.bodySmall,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: AppSpacing.xs),
-            Text(application.fullAddress, style: AppTextStyles.bodySmall),
+            Text(
+              application.fullAddress,
+              style: AppTextStyles.bodySmall,
+              maxLines: 3,
+              overflow: TextOverflow.ellipsis,
+            ),
             const SizedBox(height: AppSpacing.xs),
             Text(
               application.category == null
                   ? 'Kategori eksik'
                   : application.customCategory ?? application.category!,
               style: AppTextStyles.bodySmall,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
             if (application.website != null) ...[
               const SizedBox(height: AppSpacing.xs),
-              Text(application.website!, style: AppTextStyles.bodySmall),
+              Text(
+                application.website!,
+                style: AppTextStyles.bodySmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
             if (application.description != null) ...[
               const SizedBox(height: AppSpacing.sm),
@@ -278,7 +320,7 @@ class _ApplicationReviewCardState
             const SizedBox(height: AppSpacing.md),
             TextField(
               controller: _noteController,
-              decoration: const InputDecoration(labelText: 'Admin notu'),
+              decoration: const InputDecoration(labelText: 'Yönetici notu'),
               minLines: 1,
               maxLines: 3,
             ),

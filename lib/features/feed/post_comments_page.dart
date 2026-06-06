@@ -25,17 +25,22 @@ class PostCommentsPage extends ConsumerStatefulWidget {
 
 class _PostCommentsPageState extends ConsumerState<PostCommentsPage> {
   final _commentController = TextEditingController();
+  late final FeedController _feedController;
 
   @override
   void initState() {
     super.initState();
+    _feedController = ref.read(feedControllerProvider.notifier);
     Future.microtask(() {
-      ref.read(feedControllerProvider.notifier).fetchComments(widget.postId);
+      if (!mounted) return;
+      _feedController.fetchComments(widget.postId);
+      _feedController.startCommentsRealtime(widget.postId);
     });
   }
 
   @override
   void dispose() {
+    _feedController.stopCommentsRealtime();
     _commentController.dispose();
     super.dispose();
   }

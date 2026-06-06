@@ -13,6 +13,7 @@ import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
+import '../auth/auth_provider.dart';
 import '../notifications/notifications_provider.dart';
 import 'feed_provider.dart';
 import 'widgets/post_card.dart';
@@ -41,6 +42,9 @@ class _FeedPageState extends ConsumerState<FeedPage> {
     _scrollController = ScrollController(keepScrollOffset: false);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _ensureFeedLoaded();
+      ref
+          .read(notificationsControllerProvider.notifier)
+          .startRealtime(ref.read(authControllerProvider).userId);
       _resetScrollOffset();
     });
   }
@@ -134,7 +138,7 @@ class _FeedHeader extends ConsumerWidget {
         const SizedBox(height: AppSpacing.lg),
         Row(
           children: [
-            Expanded(child: Text('Moments', style: AppTextStyles.headline)),
+            Expanded(child: Text('Akış', style: AppTextStyles.headline)),
             Container(
               width: 44,
               height: 44,

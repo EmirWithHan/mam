@@ -43,3 +43,8 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local build config scripts and machine-specific env overrides
+scripts/*.local.ps1
+.env.local
+.env.*.local

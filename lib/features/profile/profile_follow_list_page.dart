@@ -43,6 +43,7 @@ class _ProfileFollowListPageState extends ConsumerState<ProfileFollowListPage> {
     _scrollController = ScrollController()..addListener(_onScroll);
     if (widget.userId.trim().isEmpty) return;
     Future.microtask(() {
+      if (!mounted) return;
       ref
           .read(profileFollowListControllerProvider(_args).notifier)
           .loadInitial();
@@ -58,6 +59,7 @@ class _ProfileFollowListPageState extends ConsumerState<ProfileFollowListPage> {
     if (widget.userId.trim().isEmpty) return;
 
     Future.microtask(() {
+      if (!mounted) return;
       ref
           .read(profileFollowListControllerProvider(_args).notifier)
           .loadInitial();

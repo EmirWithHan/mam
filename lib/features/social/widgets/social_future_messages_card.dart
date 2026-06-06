@@ -33,13 +33,10 @@ class SocialFutureMessagesCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Direct messages are coming',
-                    style: AppTextStyles.title,
-                  ),
+                  Text('Direkt mesajlar yakında', style: AppTextStyles.title),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    'For now, approved event chats live here.',
+                    'Şimdilik onaylı etkinlik sohbetleri burada.',
                     style: AppTextStyles.bodySmall,
                   ),
                 ],
@@ -57,7 +54,7 @@ class SocialFutureMessagesCard extends StatelessWidget {
                   vertical: AppSpacing.xs,
                 ),
                 child: Text(
-                  'Coming soon',
+                  'Yakında',
                   style: AppTextStyles.label.copyWith(color: AppColors.primary),
                 ),
               ),

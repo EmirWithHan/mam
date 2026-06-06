@@ -16,6 +16,7 @@ class RouteNames {
   static const privacyPolicy = 'privacyPolicy';
   static const termsOfUse = 'termsOfUse';
   static const communityGuidelines = 'communityGuidelines';
+  static const eventSafetyDisclaimer = 'eventSafetyDisclaimer';
   static const support = 'support';
   static const blockedUsers = 'blockedUsers';
   static const businessCreate = 'businessCreate';
@@ -54,6 +55,7 @@ class RoutePaths {
   static const privacyPolicy = '/settings/privacy-policy';
   static const termsOfUse = '/settings/terms-of-use';
   static const communityGuidelines = '/settings/community-guidelines';
+  static const eventSafetyDisclaimer = '/settings/event-safety-disclaimer';
   static const support = '/settings/support';
   static const blockedUsers = '/settings/blocked-users';
   static const businessCreate = '/business/create';

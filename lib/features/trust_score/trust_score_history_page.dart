@@ -26,6 +26,7 @@ class _TrustScoreHistoryPageState extends ConsumerState<TrustScoreHistoryPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       ref.read(trustScoreControllerProvider.notifier).loadTrustScoreLogs();
     });
   }
@@ -37,11 +38,11 @@ class _TrustScoreHistoryPageState extends ConsumerState<TrustScoreHistoryPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: 'Geri',
           onPressed: () => _goBack(context),
           icon: const Icon(Icons.arrow_back),
         ),
-        title: const Text('Trust Score'),
+        title: const Text('Güven Puanı'),
       ),
       body: SafeArea(child: _TrustScoreHistoryBody(state: state)),
     );
@@ -87,7 +88,7 @@ class _TrustScoreHistoryBody extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
-          Text('Trust Score', style: AppTextStyles.headline),
+          Text('Güven Puanı', style: AppTextStyles.headline),
           const SizedBox(height: AppSpacing.sm),
           Text(
             'Trust score geçmişin zamanla etkinlik davranışların ve güvenlik sinyalleriyle oluşur.',

@@ -470,6 +470,7 @@ class _PublicProfileFollowActionState
     super.initState();
     if (!widget.isMe) {
       Future.microtask(() {
+        if (!mounted) return;
         ref
             .read(followControllerProvider(widget.targetUserId).notifier)
             .loadStats();
@@ -487,6 +488,7 @@ class _PublicProfileFollowActionState
     }
 
     Future.microtask(() {
+      if (!mounted) return;
       ref
           .read(followControllerProvider(widget.targetUserId).notifier)
           .loadStats();
@@ -567,7 +569,7 @@ class _ProfileTabs extends StatelessWidget {
               onPressed: () => onChanged(_PublicProfileTab.gallery),
             ),
             _TabButton(
-              label: 'Geçmiş Events',
+              label: 'Geçmiş Etkinlikler',
               icon: Icons.event_available_outlined,
               selected: selectedTab == _PublicProfileTab.events,
               onPressed: () => onChanged(_PublicProfileTab.events),
@@ -750,7 +752,7 @@ class _PastEventsSection extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Aktif Events', style: AppTextStyles.title),
+            Text('Aktif Etkinlikler', style: AppTextStyles.title),
             const SizedBox(height: AppSpacing.md),
             _PublicEventSectionList(
               events: activeEvents,
@@ -759,11 +761,11 @@ class _PastEventsSection extends ConsumerWidget {
                   'Yaklaşan veya devam eden etkinlikler burada görünür.',
             ),
             const SizedBox(height: AppSpacing.xl),
-            Text('Geçmiş Events', style: AppTextStyles.title),
+            Text('Geçmiş Etkinlikler', style: AppTextStyles.title),
             const SizedBox(height: AppSpacing.md),
             _PublicEventSectionList(
               events: pastEvents,
-              emptyTitle: 'Geçmiş event yok.',
+              emptyTitle: 'Geçmiş etkinlik yok.',
               emptyMessage: 'Tamamlanan etkinlikler burada görünür.',
             ),
           ],
@@ -898,7 +900,7 @@ class _RoleBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final label = role == 'host' ? 'Host' : 'Katılımcı';
+    final label = role == 'host' ? 'Ev sahibi' : 'Katılımcı';
 
     return DecoratedBox(
       decoration: BoxDecoration(

@@ -27,6 +27,7 @@ class NotificationsService {
           )
           .toList(growable: false);
     } catch (error) {
+      logSupabaseDebug('Notifications', 'fetchNotifications', error);
       throw Exception(_notificationError(error, 'Bildirimler yüklenemedi.'));
     }
   }
@@ -42,6 +43,7 @@ class NotificationsService {
           .limit(100);
       return rows.length;
     } catch (error) {
+      logSupabaseDebug('Notifications', 'fetchUnreadCount', error);
       throw Exception(_notificationError(error, 'Bildirimler yüklenemedi.'));
     }
   }
@@ -53,6 +55,7 @@ class NotificationsService {
         params: {'p_notification_id': notificationId},
       );
     } catch (error) {
+      logSupabaseDebug('Notifications', 'markNotificationRead', error);
       throw Exception(_notificationError(error, 'Bildirim güncellenemedi.'));
     }
   }
@@ -61,6 +64,7 @@ class NotificationsService {
     try {
       await SupabaseService.client.rpc('mark_all_notifications_read');
     } catch (error) {
+      logSupabaseDebug('Notifications', 'markAllNotificationsRead', error);
       throw Exception(_notificationError(error, 'Bildirim güncellenemedi.'));
     }
   }
@@ -72,6 +76,7 @@ class NotificationsService {
         params: {'p_request_id': requestId},
       );
     } catch (error) {
+      logSupabaseDebug('Notifications', 'approveFollowRequest', error);
       throw Exception(_notificationError(error, 'İstek işlenemedi.'));
     }
   }
@@ -83,6 +88,7 @@ class NotificationsService {
         params: {'p_request_id': requestId},
       );
     } catch (error) {
+      logSupabaseDebug('Notifications', 'rejectFollowRequest', error);
       throw Exception(_notificationError(error, 'İstek işlenemedi.'));
     }
   }

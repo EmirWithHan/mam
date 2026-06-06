@@ -40,6 +40,7 @@ class _FollowButtonState extends ConsumerState<FollowButton> {
   }
 
   void _loadStats() {
+    if (!mounted) return;
     ref
         .read(followControllerProvider(widget.targetUserId).notifier)
         .loadStats();

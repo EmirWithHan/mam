@@ -109,15 +109,15 @@ extension ReportReasonValue on ReportReason {
       case ReportReason.spam:
         return 'Spam';
       case ReportReason.harassment:
-        return 'Harassment';
+        return 'Taciz';
       case ReportReason.fakeEvent:
-        return 'Fake event';
+        return 'Sahte etkinlik';
       case ReportReason.inappropriateContent:
-        return 'Inappropriate content';
+        return 'Uygunsuz içerik';
       case ReportReason.safetyConcern:
-        return 'Safety concern';
+        return 'Güvenlik endişesi';
       case ReportReason.other:
-        return 'Other';
+        return 'Diğer';
     }
   }
 }

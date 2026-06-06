@@ -54,6 +54,7 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       ref.read(profileControllerProvider.notifier).loadMyProfile();
     });
   }
@@ -64,6 +65,7 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
     _loadedEventId = event.id;
     _loadedForHost = isHost;
     Future.microtask(() {
+      if (!mounted) return;
       final controller = ref.read(
         joinRequestControllerProvider(event.id).notifier,
       );
@@ -140,9 +142,9 @@ class _EventDetailBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final profileState = ref.watch(profileControllerProvider);
     final requestState = ref.watch(joinRequestControllerProvider(event.id));
-    final participantStatusesAsync = ref.watch(
-      eventParticipantAttendanceStatusesProvider(event.id),
-    );
+    final participantStatusesAsync = isHost
+        ? ref.watch(eventParticipantAttendanceStatusesProvider(event.id))
+        : null;
     final publicParticipantsAsync = ref.watch(
       eventPublicParticipantsProvider(event.id),
     );
@@ -186,16 +188,16 @@ class _EventDetailBody extends ConsumerWidget {
       children: [
         _EventHeroCard(event: event, isHost: isHost),
         const SizedBox(height: AppSpacing.lg),
-        const _SectionTitle(title: 'Host'),
+        const _SectionTitle(title: 'Ev sahibi'),
         const SizedBox(height: AppSpacing.sm),
         _HostPreviewCard(hostId: event.hostId),
         const SizedBox(height: AppSpacing.lg),
-        const _SectionTitle(title: 'Event info'),
+        const _SectionTitle(title: 'Etkinlik bilgileri'),
         const SizedBox(height: AppSpacing.sm),
         _DetailCard(
           children: [
             _InfoBlock(
-              label: 'Description',
+              label: 'Açıklama',
               value: event.descriptionLabel,
               muted: !event.hasDescription,
             ),
@@ -205,13 +207,13 @@ class _EventDetailBody extends ConsumerWidget {
             _LocationCard(event: event),
             const SizedBox(height: AppSpacing.md),
             _InfoTile(
-              label: 'Date',
+              label: 'Tarih',
               value: DateFormatter.turkishEventDateTime(event.eventDate),
               icon: Icons.calendar_today_outlined,
             ),
             const SizedBox(height: AppSpacing.md),
             _InfoTile(
-              label: 'Capacity',
+              label: 'Kontenjan',
               value: event.formattedCapacityLabel,
               icon: Icons.groups_outlined,
             ),
@@ -230,7 +232,7 @@ class _EventDetailBody extends ConsumerWidget {
           ),
         ],
         const SizedBox(height: AppSpacing.lg),
-        const _SectionTitle(title: 'Actions'),
+        const _SectionTitle(title: 'İşlemler'),
         const SizedBox(height: AppSpacing.sm),
         if (!isHost && event.isBusinessEvent)
           _BusinessAttendanceNotice(status: myParticipation?.attendanceStatus),
@@ -253,13 +255,13 @@ class _EventDetailBody extends ConsumerWidget {
               ),
             ),
             icon: const Icon(Icons.fact_check_outlined),
-            label: const Text('Check-in / Katılımcı kontrolü'),
+            label: const Text('Katılımcı kontrolü'),
           ),
           const SizedBox(height: AppSpacing.md),
         ],
         if (!event.isPast && (isHost || isFinalParticipant)) ...[
           AppButton(
-            label: 'Open chat',
+            label: 'Sohbeti aç',
             onPressed: () => context.pushNamed(
               RouteNames.eventChat,
               pathParameters: {'eventId': event.id},
@@ -271,7 +273,7 @@ class _EventDetailBody extends ConsumerWidget {
           EventCallButton(
             eventId: event.id,
             targetUserId: event.hostId,
-            label: 'Call host',
+            label: 'Ev sahibini ara',
           ),
           if (canLeaveApprovedEvent) ...[
             const SizedBox(height: AppSpacing.sm),
@@ -289,7 +291,7 @@ class _EventDetailBody extends ConsumerWidget {
             isPastEvent: event.isPast,
             isBusinessEvent: event.isBusinessEvent,
             participantStatuses:
-                participantStatusesAsync.valueOrNull ?? const {},
+                participantStatusesAsync?.valueOrNull ?? const {},
             onApprove: (requestId) async {
               await requestController.approveRequest(requestId);
               ref.invalidate(
@@ -652,10 +654,13 @@ class _EventHeroCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: AppSpacing.md),
-            _DetailLine(label: 'Where', value: event.locationLabel),
-            _DetailLine(label: 'When', value: _formatDateTime(event.eventDate)),
+            _DetailLine(label: 'Nerede', value: event.locationLabel),
+            _DetailLine(
+              label: 'Ne zaman',
+              value: _formatDateTime(event.eventDate),
+            ),
             if (event.isBusinessEvent)
-              _DetailLine(label: 'Organizer', value: 'İşletme etkinliği'),
+              _DetailLine(label: 'Düzenleyen', value: 'İşletme etkinliği'),
           ],
         ),
       ),
@@ -837,7 +842,8 @@ class _HostPreviewCard extends ConsumerWidget {
 
     return asyncProfile.maybeWhen(
       data: (profile) {
-        final secondaryText = profile?.usernameTag ?? profile?.city ?? 'Host';
+        final secondaryText =
+            profile?.usernameTag ?? profile?.city ?? 'Ev sahibi';
         final trustScore = profile?.trustScore;
 
         return InkWell(
@@ -1128,10 +1134,7 @@ class _LocationCard extends StatelessWidget {
     if (!event.hasLocation) {
       return const Padding(
         padding: EdgeInsets.only(bottom: AppSpacing.sm),
-        child: _DetailLine(
-          label: 'Location',
-          value: 'Konum bilgisi eklenmemiş.',
-        ),
+        child: _DetailLine(label: 'Konum', value: 'Konum bilgisi eklenmemiş.'),
       );
     }
 
@@ -1164,7 +1167,7 @@ class _LocationCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const _InfoLabel('Location'),
+                      const _InfoLabel('Konum'),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         event.locationDisplayLabel,
@@ -1224,25 +1227,35 @@ class _MiniChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: AppRadius.pillBorder,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xs,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 180),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: AppRadius.pillBorder,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 15, color: textColor),
-              const SizedBox(width: AppSpacing.xs),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 15, color: textColor),
+                const SizedBox(width: AppSpacing.xs),
+              ],
+              Flexible(
+                child: Text(
+                  label,
+                  style: AppTextStyles.label.copyWith(color: textColor),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
-            Text(label, style: AppTextStyles.label.copyWith(color: textColor)),
-          ],
+          ),
         ),
       ),
     );

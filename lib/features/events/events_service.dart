@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 
+import '../../core/utils/error_messages.dart';
 import '../../core/utils/pagination.dart';
 import '../../services/rate_limit_service.dart';
 import '../../services/supabase_service.dart';
@@ -20,29 +21,39 @@ class EventsService {
     int limit = SupabasePageSizes.events,
     int offset = 0,
   }) async {
-    final data = await SupabaseService.client
-        .from('events')
-        .select(_eventSelect)
-        .inFilter('status', ['active', 'completed'])
-        .order('event_date')
-        .range(offset, offset + limit - 1);
-    final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
+    try {
+      final data = await SupabaseService.client
+          .from('events')
+          .select(_eventSelect)
+          .inFilter('status', ['active', 'completed'])
+          .order('event_date')
+          .range(offset, offset + limit - 1);
+      final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
 
-    return data
-        .map(Event.fromJson)
-        .where((event) => !blockedUserIds.contains(event.hostId))
-        .where((event) => event.isVisibleInEventsList)
-        .toList();
+      return data
+          .map(Event.fromJson)
+          .where((event) => !blockedUserIds.contains(event.hostId))
+          .where((event) => event.isVisibleInEventsList)
+          .toList();
+    } catch (error) {
+      logSupabaseDebug('Events', 'fetchEvents', error);
+      rethrow;
+    }
   }
 
   Future<Event> fetchEventById(String eventId) async {
-    final data = await SupabaseService.client
-        .from('events')
-        .select(_eventSelect)
-        .eq('id', eventId)
-        .single();
+    try {
+      final data = await SupabaseService.client
+          .from('events')
+          .select(_eventSelect)
+          .eq('id', eventId)
+          .single();
 
-    return Event.fromJson(data);
+      return Event.fromJson(data);
+    } catch (error) {
+      logSupabaseDebug('Events', 'fetchEventById', error);
+      rethrow;
+    }
   }
 
   Future<Event> createEvent(CreateEventInput input) async {
@@ -53,13 +64,18 @@ class EventsService {
 
     await _rateLimitService.createEvent(isBusinessEvent: input.isBusinessEvent);
 
-    final data = await SupabaseService.client
-        .from('events')
-        .insert(input.toCreateJson(hostId: userId))
-        .select(_eventSelect)
-        .single();
+    try {
+      final data = await SupabaseService.client
+          .from('events')
+          .insert(input.toCreateJson(hostId: userId))
+          .select(_eventSelect)
+          .single();
 
-    return Event.fromJson(data);
+      return Event.fromJson(data);
+    } catch (error) {
+      logSupabaseDebug('Events', 'createEvent', error);
+      rethrow;
+    }
   }
 
   Future<void> requestToJoinEvent(String eventId) async {
@@ -110,7 +126,11 @@ class EventsService {
         .select('role,attendance_status')
         .eq('event_id', eventId)
         .eq('user_id', userId)
-        .maybeSingle();
+        .maybeSingle()
+        .catchError((Object error) {
+          logSupabaseDebug('Events', 'fetchMyParticipation', error);
+          throw error;
+        });
 
     if (data == null) return null;
     return EventParticipation.fromJson(data);
@@ -123,7 +143,15 @@ class EventsService {
         .from('event_participants')
         .select('user_id,role,attendance_status')
         .eq('event_id', eventId)
-        .eq('role', 'participant');
+        .eq('role', 'participant')
+        .catchError((Object error) {
+          logSupabaseDebug(
+            'Events',
+            'fetchParticipantAttendanceStatuses',
+            error,
+          );
+          throw error;
+        });
 
     final statuses = <String, String>{};
     for (final row in rows) {
@@ -139,10 +167,12 @@ class EventsService {
   Future<List<EventPublicParticipant>> fetchEventPublicParticipants(
     String eventId,
   ) async {
-    final rows = await SupabaseService.client.rpc(
-      'get_event_public_participants',
-      params: {'p_event_id': eventId},
-    );
+    final rows = await SupabaseService.client
+        .rpc('get_event_public_participants', params: {'p_event_id': eventId})
+        .catchError((Object error) {
+          logSupabaseDebug('Events', 'get_event_public_participants', error);
+          throw error;
+        });
 
     return (rows as List<dynamic>)
         .map(

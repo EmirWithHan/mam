@@ -77,7 +77,7 @@ class _BusinessStatsBody extends StatelessWidget {
               label: 'Onaylı Katılımcı',
               value: '${stats.confirmedParticipants}',
             ),
-            _StatTile(label: 'Check-in', value: '${stats.checkedInCount}'),
+            _StatTile(label: 'Katılım onayı', value: '${stats.checkedInCount}'),
             _StatTile(label: 'Gelmedi', value: '${stats.noShowCount}'),
             _StatTile(label: 'Ortalama Puan', value: stats.averageRatingLabel),
             _StatTile(

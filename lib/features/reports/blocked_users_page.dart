@@ -26,6 +26,7 @@ class _BlockedUsersPageState extends ConsumerState<BlockedUsersPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       ref.read(myBlocksControllerProvider.notifier).loadBlocks();
     });
   }

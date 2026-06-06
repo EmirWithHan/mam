@@ -66,7 +66,7 @@ class TrustScoreLogTile extends StatelessWidget {
                   if (log.sourceType != null) ...[
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      'Source: ${_sourceLabel(log.sourceType!)}',
+                      'Kaynak: ${_sourceLabel(log.sourceType!)}',
                       style: AppTextStyles.caption,
                     ),
                   ],
@@ -95,19 +95,19 @@ class TrustScoreLogTile extends StatelessWidget {
 
   String _reasonLabel(String reason, String? sourceType) {
     if (sourceType == 'event_leave' && reason == 'event_leave') {
-      return 'Approved event left: trust score penalty applied.';
+      return 'Onaylı etkinlikten ayrılma: güven puanı etkisi uygulandı.';
     }
 
     return switch (reason) {
       'event_leave' || 'leave_approved_event' =>
-        'Approved event left: trust score penalty applied.',
+        'Onaylı etkinlikten ayrılma: güven puanı etkisi uygulandı.',
       _ => reason,
     };
   }
 
   String _sourceLabel(String sourceType) {
     return switch (sourceType) {
-      'event_leave' => 'Event leave',
+      'event_leave' => 'Etkinlikten ayrılma',
       _ => sourceType,
     };
   }

@@ -92,14 +92,16 @@ void main() {
       expect(RoutePaths.createEvent, '/events/create');
     });
 
-    testWidgets('main navigation keeps Events tab visible', (tester) async {
+    testWidgets('main navigation keeps Etkinlikler tab visible', (
+      tester,
+    ) async {
       await tester.pumpWidget(
         const MaterialApp(
           home: MainNavigationShell(currentIndex: 1, child: SizedBox.shrink()),
         ),
       );
 
-      expect(find.text('Events'), findsOneWidget);
+      expect(find.text('Etkinlikler'), findsOneWidget);
       expect(find.byIcon(Icons.event), findsOneWidget);
     });
   });

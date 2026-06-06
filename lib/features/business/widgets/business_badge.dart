@@ -13,32 +13,39 @@ class BusinessBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: isVerified ? AppColors.primary : AppColors.primarySoft,
-        borderRadius: AppRadius.pillBorder,
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm,
-          vertical: AppSpacing.xs,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 168),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: isVerified ? AppColors.primary : AppColors.primarySoft,
+          borderRadius: AppRadius.pillBorder,
         ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isVerified ? Icons.verified_rounded : Icons.storefront_outlined,
-              size: 15,
-              color: isVerified ? Colors.white : AppColors.primary,
-            ),
-            const SizedBox(width: AppSpacing.xs),
-            Text(
-              BusinessBadgeLabels.forVerified(isVerified),
-              style: AppTextStyles.label.copyWith(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.sm,
+            vertical: AppSpacing.xs,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isVerified ? Icons.verified_rounded : Icons.storefront_outlined,
+                size: 15,
                 color: isVerified ? Colors.white : AppColors.primary,
               ),
-            ),
-          ],
+              const SizedBox(width: AppSpacing.xs),
+              Flexible(
+                child: Text(
+                  BusinessBadgeLabels.forVerified(isVerified),
+                  style: AppTextStyles.label.copyWith(
+                    color: isVerified ? Colors.white : AppColors.primary,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

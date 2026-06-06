@@ -61,6 +61,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   void initState() {
     super.initState();
     Future.microtask(() {
+      if (!mounted) return;
       ref.read(profileControllerProvider.notifier).loadMyProfile();
       ref.read(myBusinessAccountProvider.notifier).loadMyBusinessAccount();
     });
@@ -404,22 +405,22 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
           child: ListView(
             padding: AppResponsive.pagePadding(context),
             children: [
-              Text('Host an Event', style: AppTextStyles.headline),
+              Text('Etkinlik Oluştur', style: AppTextStyles.headline),
               const SizedBox(height: AppSpacing.sm),
-              Text('Gather your squad, let’s play.', style: AppTextStyles.body),
+              Text('Ekibini topla, sahaya çık.', style: AppTextStyles.body),
               const SizedBox(height: AppSpacing.lg),
               _FormCard(
                 child: Column(
                   children: [
                     AppTextField(
-                      label: 'Title',
+                      label: 'Başlık',
                       controller: _titleController,
                       prefixIcon: const Icon(Icons.event_available_outlined),
                       validator: Validators.eventTitle,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Description',
+                      label: 'Açıklama',
                       controller: _descriptionController,
                       prefixIcon: const Icon(Icons.notes_outlined),
                       maxLines: 3,
@@ -427,7 +428,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Sport type',
+                      label: 'Spor türü',
                       controller: _sportTypeController,
                       readOnly: true,
                       onTap: _selectSport,
@@ -455,7 +456,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                     ],
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'City',
+                      label: 'Şehir',
                       controller: _cityController,
                       readOnly: true,
                       onTap: _selectCity,
@@ -465,7 +466,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'District',
+                      label: 'İlçe',
                       controller: _districtController,
                       readOnly: true,
                       onTap: districts.isEmpty ? null : _selectDistrict,
@@ -480,7 +481,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Event date',
+                      label: 'Etkinlik tarihi',
                       hintText: 'Tarih ve saat seç',
                       controller: _eventDateController,
                       readOnly: true,
@@ -492,7 +493,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Location',
+                      label: 'Konum',
                       controller: _locationTextController,
                       prefixIcon: const Icon(Icons.map_outlined),
                       hintText: 'Adres, saha adı veya buluşma noktası',
@@ -608,7 +609,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                 child: Column(
                   children: [
                     AppTextField(
-                      label: 'Capacity total',
+                      label: 'Toplam kontenjan',
                       controller: _capacityTotalController,
                       keyboardType: TextInputType.number,
                       prefixIcon: const Icon(Icons.groups_outlined),
@@ -616,7 +617,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Capacity male',
+                      label: 'Erkek kontenjanı',
                       controller: _capacityMaleController,
                       keyboardType: TextInputType.number,
                       prefixIcon: const Icon(Icons.person_outline),
@@ -624,7 +625,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Capacity female',
+                      label: 'Kadın kontenjanı',
                       controller: _capacityFemaleController,
                       keyboardType: TextInputType.number,
                       prefixIcon: const Icon(Icons.person_outline),
@@ -632,7 +633,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Capacity any',
+                      label: 'Karma kontenjan',
                       controller: _capacityAnyController,
                       keyboardType: TextInputType.number,
                       prefixIcon: const Icon(Icons.diversity_3_outlined),
@@ -643,7 +644,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
               ),
               const SizedBox(height: AppSpacing.xl),
               AppButton(
-                label: 'Create event',
+                label: 'Etkinlik oluştur',
                 isLoading: eventsState.isLoading,
                 onPressed: _submit,
               ),

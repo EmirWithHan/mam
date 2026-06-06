@@ -139,7 +139,7 @@ class _ParticipantTile extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.sm),
-            _RoleChip(label: participant.isHost ? 'Host' : 'Katılımcı'),
+            _RoleChip(label: participant.isHost ? 'Ev sahibi' : 'Katılımcı'),
             if (userId.isNotEmpty) ...[
               const SizedBox(width: AppSpacing.xs),
               const Icon(Icons.chevron_right, color: AppColors.textMuted),
@@ -183,7 +183,7 @@ class _RoleChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: label == 'Host' ? AppColors.primary : AppColors.primarySoft,
+        color: label == 'Ev sahibi' ? AppColors.primary : AppColors.primarySoft,
         borderRadius: AppRadius.pillBorder,
       ),
       child: Padding(
@@ -194,7 +194,7 @@ class _RoleChip extends StatelessWidget {
         child: Text(
           label,
           style: AppTextStyles.label.copyWith(
-            color: label == 'Host' ? AppColors.surface : AppColors.primary,
+            color: label == 'Ev sahibi' ? AppColors.surface : AppColors.primary,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,

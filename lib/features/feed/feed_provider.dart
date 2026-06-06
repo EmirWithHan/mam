@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/utils/error_messages.dart';
 import '../../core/utils/pagination.dart';
+import '../../services/supabase_service.dart';
 import 'feed_models.dart';
 import 'feed_service.dart';
 
@@ -106,6 +110,9 @@ class FeedController extends StateNotifier<FeedState> {
   FeedController(this._feedService) : super(const FeedState.initial());
 
   final FeedService _feedService;
+  RealtimeChannel? _commentsRealtimeChannel;
+  Timer? _commentsRealtimeDebounce;
+  String? _commentsRealtimePostId;
 
   Future<void> loadPosts({bool force = false}) async {
     if (!force && state.status == FeedStatus.success) return;
@@ -127,6 +134,59 @@ class FeedController extends StateNotifier<FeedState> {
   }
 
   Future<void> refreshPosts() => loadPosts(force: true);
+
+  void startCommentsRealtime(String postId) {
+    final trimmedPostId = postId.trim();
+    if (trimmedPostId.isEmpty) {
+      stopCommentsRealtime();
+      return;
+    }
+    if (_commentsRealtimePostId == trimmedPostId &&
+        _commentsRealtimeChannel != null) {
+      return;
+    }
+
+    stopCommentsRealtime();
+    try {
+      _commentsRealtimePostId = trimmedPostId;
+      _commentsRealtimeChannel = SupabaseService.client
+          .channel('post_comments:$trimmedPostId')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'post_comments',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'post_id',
+              value: trimmedPostId,
+            ),
+            callback: (_) => _scheduleCommentsRefresh(trimmedPostId),
+          )
+          .subscribe();
+    } catch (error) {
+      logSupabaseDebug('Feed', 'comments realtime subscribe', error);
+      stopCommentsRealtime();
+    }
+  }
+
+  void stopCommentsRealtime() {
+    _commentsRealtimeDebounce?.cancel();
+    _commentsRealtimeDebounce = null;
+    final channel = _commentsRealtimeChannel;
+    _commentsRealtimeChannel = null;
+    _commentsRealtimePostId = null;
+    if (channel != null) {
+      unawaited(SupabaseService.client.removeChannel(channel));
+    }
+  }
+
+  void _scheduleCommentsRefresh(String postId) {
+    _commentsRealtimeDebounce?.cancel();
+    _commentsRealtimeDebounce = Timer(const Duration(milliseconds: 600), () {
+      unawaited(fetchComments(postId));
+      unawaited(refreshPosts());
+    });
+  }
 
   Future<void> loadMorePosts() async {
     if (state.isLoadingMorePosts || state.isLoading || !state.hasMorePosts) {
@@ -353,5 +413,11 @@ class FeedController extends StateNotifier<FeedState> {
     return state.likeLoadingPostIds
         .where((loadingPostId) => loadingPostId != postId)
         .toSet();
+  }
+
+  @override
+  void dispose() {
+    stopCommentsRealtime();
+    super.dispose();
   }
 }

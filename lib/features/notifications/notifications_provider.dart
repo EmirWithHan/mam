@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/utils/error_messages.dart';
 import '../../core/utils/pagination.dart';
+import '../../services/supabase_service.dart';
 import 'notifications_models.dart';
 import 'notifications_service.dart';
 
@@ -83,6 +87,9 @@ class NotificationsController extends StateNotifier<NotificationsState> {
 
   final NotificationsService _service;
   final Ref _ref;
+  RealtimeChannel? _realtimeChannel;
+  Timer? _realtimeDebounce;
+  String? _realtimeUserId;
 
   Future<void> loadNotifications({bool force = false}) async {
     if (!force && state.status == NotificationsStatus.success) return;
@@ -111,6 +118,56 @@ class NotificationsController extends StateNotifier<NotificationsState> {
   }
 
   Future<void> refreshNotifications() => loadNotifications(force: true);
+
+  void startRealtime(String? userId) {
+    final trimmedUserId = userId?.trim();
+    if (trimmedUserId == null || trimmedUserId.isEmpty) {
+      stopRealtime();
+      return;
+    }
+    if (_realtimeUserId == trimmedUserId && _realtimeChannel != null) return;
+
+    stopRealtime();
+    try {
+      _realtimeUserId = trimmedUserId;
+      _realtimeChannel = SupabaseService.client
+          .channel('notifications:$trimmedUserId')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.all,
+            schema: 'public',
+            table: 'notifications',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'recipient_id',
+              value: trimmedUserId,
+            ),
+            callback: (_) => _scheduleRealtimeRefresh(),
+          )
+          .subscribe();
+    } catch (error) {
+      logSupabaseDebug('Notifications', 'realtime subscribe', error);
+      stopRealtime();
+    }
+  }
+
+  void stopRealtime() {
+    _realtimeDebounce?.cancel();
+    _realtimeDebounce = null;
+    final channel = _realtimeChannel;
+    _realtimeChannel = null;
+    _realtimeUserId = null;
+    if (channel != null) {
+      unawaited(SupabaseService.client.removeChannel(channel));
+    }
+  }
+
+  void _scheduleRealtimeRefresh() {
+    _realtimeDebounce?.cancel();
+    _realtimeDebounce = Timer(const Duration(milliseconds: 500), () {
+      _ref.invalidate(notificationsUnreadCountProvider);
+      unawaited(loadNotifications(force: true));
+    });
+  }
 
   Future<void> loadMoreNotifications() async {
     if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
@@ -266,5 +323,11 @@ class NotificationsController extends StateNotifier<NotificationsState> {
       return message;
     }
     return friendlyErrorMessage(error);
+  }
+
+  @override
+  void dispose() {
+    stopRealtime();
+    super.dispose();
   }
 }

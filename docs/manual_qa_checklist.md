@@ -108,6 +108,8 @@ Use this checklist for closed beta testers and internal regression passes. Recor
 - [ ] Notifications list loads.
 - [ ] Empty state works.
 - [ ] Pagination/limit works.
+- [ ] Notification badge/count updates while the app is open.
+- [ ] Notifications list refreshes while the page is open after a new notification.
 - [ ] Mark one notification as read.
 - [ ] Mark all notifications as read.
 - [ ] Notification tap navigation does not crash.
@@ -122,6 +124,15 @@ Use this checklist for closed beta testers and internal regression passes. Recor
 - [ ] Feedback submit works.
 - [ ] Friendly error appears on failure.
 - [ ] No forced store review or manipulative gating.
+
+## Legal And Language
+
+- [ ] Main visible UI copy is Turkish; no user-facing "event/feed/post/comment/profile/settings/business/admin" wording remains.
+- [ ] Kullanım Şartları page opens and has detailed MVP draft text.
+- [ ] Gizlilik Politikası page opens.
+- [ ] Topluluk Kuralları page opens.
+- [ ] Etkinlik Güvenliği ve Sorumluluk Reddi page opens.
+- [ ] `docs/legal_todo.md` legal-review warning is still present.
 
 ## Admin
 
@@ -156,6 +167,8 @@ For each device:
 
 - [ ] Refresh resets pagination.
 - [ ] Pagination does not duplicate items.
+- [ ] In-app realtime refresh does not repeatedly reload on every rebuild.
+- [ ] Leaving notification/comment/admin pages does not leave duplicate subscriptions.
 - [ ] Spam actions show "Cok fazla islem yaptin. Biraz sonra tekrar dene." if rate limits are configured.
 - [ ] Obvious services do not use unlimited selects.
 - [ ] Profile/search/feed screens do not refetch repeatedly on every rebuild.

@@ -56,27 +56,27 @@ class MainNavigationShell extends StatelessWidget {
                 NavigationDestination(
                   icon: Icon(Icons.home_outlined),
                   selectedIcon: Icon(Icons.home),
-                  label: 'Home',
+                  label: 'Ana sayfa',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.event_outlined),
                   selectedIcon: Icon(Icons.event),
-                  label: 'Events',
+                  label: 'Etkinlikler',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.add_circle, color: AppColors.primary),
                   selectedIcon: Icon(Icons.add_circle),
-                  label: 'Create',
+                  label: 'Oluştur',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.groups_outlined),
                   selectedIcon: Icon(Icons.groups),
-                  label: 'Social',
+                  label: 'Sosyal',
                 ),
                 NavigationDestination(
                   icon: Icon(Icons.person_outline),
                   selectedIcon: Icon(Icons.person),
-                  label: 'Profile',
+                  label: 'Profil',
                 ),
               ],
             ),

@@ -101,7 +101,7 @@ class _CommentOverflowButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return IconButton(
       visualDensity: VisualDensity.compact,
-      tooltip: 'Comment actions',
+      tooltip: 'Yorum işlemleri',
       icon: const Icon(Icons.more_horiz, color: AppColors.textMuted),
       onPressed: () => _showCommentActions(context),
     );
@@ -138,7 +138,7 @@ class _CommentOverflowButton extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: AppSpacing.md),
-                Text('Comment actions', style: AppTextStyles.title),
+                Text('Yorum işlemleri', style: AppTextStyles.title),
                 const SizedBox(height: AppSpacing.sm),
                 DecoratedBox(
                   decoration: BoxDecoration(

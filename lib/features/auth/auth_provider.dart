@@ -30,9 +30,13 @@ class AuthController extends StateNotifier<AuthState> {
     debugPrint('[Auth] controller init hasCurrentUser=${initialUser != null}');
     if (initialUser != null) {
       unawaited(_setAuthenticatedState(initialUser.id));
+    } else {
+      state = const AuthState.unauthenticated();
     }
 
     _authSubscription = _authService.authStateChanges.listen((authState) {
+      if (!mounted) return;
+
       final user = authState.session?.user;
       debugPrint(
         '[Auth] auth state event=${authState.event.name} '
