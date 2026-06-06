@@ -8,6 +8,13 @@ Use this document to record real-device Android QA for the internal MVP build.
 iOS no-codesign cloud build has already passed; iOS simulator/device QA still
 needs a Mac later.
 
+Related closed beta QA docs:
+
+- `docs/bug_triage_system.md`
+- `docs/real_device_test_matrix.md`
+- `docs/beta_tester_message_tr.md`
+- `docs/closed_beta_feedback_loop.md`
+
 ## 2026-06-05 Real Device Blocker Pass
 
 The APK now opens on a real Android phone when built with the required

@@ -2,6 +2,13 @@
 
 Use this script for the final MVP pass before closed beta or store pre-launch review. Record device, build, account, exact steps, screenshots/videos, and Supabase project used for every run.
 
+Closed beta tracking references:
+
+- `docs/bug_triage_system.md`
+- `docs/real_device_test_matrix.md`
+- `docs/beta_tester_message_tr.md`
+- `docs/closed_beta_feedback_loop.md`
+
 ## Global Checks
 
 Run every flow with these failure signs in mind:
@@ -656,4 +663,3 @@ Common failure signs:
 - Failed flows:
 - Screenshots/videos attached:
 - Go/no-go recommendation:
-

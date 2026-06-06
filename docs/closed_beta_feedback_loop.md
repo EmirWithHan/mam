@@ -10,6 +10,12 @@ steps, screenshot/video, and approximate time.
 
 No Firebase or push notifications are part of this feedback loop.
 
+Related docs:
+
+- `docs/bug_triage_system.md`
+- `docs/real_device_test_matrix.md`
+- `docs/beta_tester_message_tr.md`
+
 ## Tester Instructions
 
 ### Install APK
