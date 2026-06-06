@@ -11,6 +11,12 @@ Current MVP state:
 - The request records `account_deletion_requests`.
 - The public profile identity is deactivated/anonymized.
 - Future events are cancelled and posts are archived.
+- Public web deletion page plan exists:
+  `docs/account_deletion_web_page_plan.md`.
+- Static page template exists:
+  `docs/web_templates/account_deletion_request.html`.
+- Support email templates exist:
+  `docs/account_deletion_support_templates.md`.
 - Supabase Auth user deletion and final data retention/removal remain a manual
   backend/admin process for closed beta.
 
@@ -35,8 +41,13 @@ The public page should include:
 ## Release TODO
 
 - Publish the deletion web page.
+- Replace `SUPPORT_EMAIL`, `PRIVACY_POLICY_URL`, and
+  `FORM_ACTION_OR_EDGE_FUNCTION_URL` placeholders before hosting.
 - Add the public URL to store listings and privacy policy where required.
+- Enter the real hosted URL in Play Console Data Safety / Data deletion.
 - Define the admin/backend final deletion runbook for Supabase Auth, Storage,
   profile data, user-generated content, reports, and moderation records.
+- If using manual email review, do not describe the process as automatic or
+  instant in Play Console or legal copy.
 - Have the deletion language reviewed by a lawyer or privacy advisor before
   public release.

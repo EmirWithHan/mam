@@ -121,6 +121,9 @@ Current status:
   `account_deletion_requests` row, anonymizes/deactivates the public profile,
   cancels future events, archives posts, and blocks new user activity through
   app routing/RLS.
+- Static public deletion page template and support email templates exist:
+  `docs/web_templates/account_deletion_request.html` and
+  `docs/account_deletion_support_templates.md`.
 - Some content/action-specific deletion or cancellation flows exist.
 
 Public launch blocker:
@@ -130,3 +133,5 @@ Public launch blocker:
   required by policy/law.
 - The privacy policy and Play Console Data Safety answers must match the final
   deletion process.
+- If the first public flow uses manual email review, the Play Console wording
+  must not imply automatic or instant deletion.

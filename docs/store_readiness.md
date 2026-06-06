@@ -49,6 +49,9 @@ running, meetup, group events, activity friends
 - In-app MVP legal drafts now exist for Kullanım Şartları, Gizlilik
   Politikası, Topluluk Kuralları, and Etkinlik Güvenliği ve Sorumluluk Reddi.
 - In-app account deletion request/deactivation path exists for closed beta.
+- Public web deletion page plan/template exists:
+  `docs/account_deletion_web_page_plan.md` and
+  `docs/web_templates/account_deletion_request.html`.
 - Replace MVP legal draft text with professionally reviewed privacy policy,
   terms, community rules, event safety/disclaimer, and support/account deletion
   copy before production release.
@@ -76,6 +79,9 @@ running, meetup, group events, activity friends
 - Confirm production support contact and account deletion process.
 - Finalize backend/Auth deletion, retention rules, and public web deletion URL
   before public launch.
+- Real hosted account/data deletion URL must exist before Play Store
+  submission. If using manual email review, Play Console wording must not
+  overclaim automated deletion.
 - Verify in-app notification/feed refresh behavior on real devices while the
   app is open. Firebase/push remains intentionally unimplemented.
 

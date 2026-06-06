@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Match A Man Hesap ve Veri Silme Talebi</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --primary: #ff7e79;
+        --text: #1f2933;
+        --muted: #52606d;
+        --border: #d9e2ec;
+        --surface: #ffffff;
+        --background: #f7f9fb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: var(--background);
+        color: var(--text);
+        line-height: 1.5;
+      }
+
+      main {
+        width: min(100%, 760px);
+        margin: 0 auto;
+        padding: 32px 16px;
+      }
+
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 24px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+      }
+
+      h2 {
+        margin: 28px 0 8px;
+        font-size: 18px;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+      }
+
+      label {
+        display: block;
+        margin: 16px 0 6px;
+        font-weight: 700;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        padding: 12px;
+        font: inherit;
+      }
+
+      textarea {
+        min-height: 120px;
+        resize: vertical;
+      }
+
+      .checkbox {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        margin-top: 18px;
+      }
+
+      .checkbox input {
+        width: auto;
+        margin-top: 5px;
+      }
+
+      button {
+        width: 100%;
+        margin-top: 20px;
+        border: 0;
+        border-radius: 6px;
+        background: var(--primary);
+        color: #ffffff;
+        padding: 14px 18px;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .note {
+        border-left: 4px solid var(--primary);
+        padding-left: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel" aria-labelledby="page-title">
+        <h1 id="page-title">Match A Man hesap ve veri silme talebi</h1>
+        <p class="note">
+          Bu form bir silme talebi oluşturmak içindir. Talebiniz
+          doğrulandıktan sonra işleme alınır.
+        </p>
+
+        <p>
+          Uygulamaya erişemiyorsanız Match A Man hesabınızın ve ilişkili
+          verilerinizin silinmesini veya belirli verilerinizin silinmesini bu
+          sayfa üzerinden talep edebilirsiniz.
+        </p>
+
+        <!-- TODO: Replace SUPPORT_EMAIL -->
+        <!-- TODO: Replace FORM_ACTION_OR_EDGE_FUNCTION_URL -->
+        <form
+          action="mailto:SUPPORT_EMAIL?subject=Match%20A%20Man%20hesap%20silme%20talebi"
+          method="post"
+          enctype="text/plain"
+        >
+          <label for="email">E-posta adresi</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            required
+          />
+
+          <label for="username">Kullanıcı adı</label>
+          <input
+            id="username"
+            name="username"
+            type="text"
+            autocomplete="username"
+            placeholder="Varsa"
+          />
+
+          <label for="request-type">Talep türü</label>
+          <select id="request-type" name="request_type" required>
+            <option value="">Seçiniz</option>
+            <option value="delete_account">
+              Hesabımı ve ilişkili verilerimi sil
+            </option>
+            <option value="delete_specific_data">
+              Yalnızca belirli verilerimi sil
+            </option>
+          </select>
+
+          <label for="message">Açıklama</label>
+          <textarea
+            id="message"
+            name="message"
+            placeholder="Varsa kullanıcı ID, hesap bilgisi veya silinmesini istediğiniz belirli veri türünü yazabilirsiniz."
+          ></textarea>
+
+          <label class="checkbox" for="confirmation">
+            <input id="confirmation" name="confirmation" type="checkbox" required />
+            <span>
+              Bu talebin hesabım ve verilerim üzerinde geri alınamaz sonuçları
+              olabileceğini anlıyorum.
+            </span>
+          </label>
+
+          <button type="submit">Silme talebi gönder</button>
+        </form>
+
+        <h2>İşlem süresi</h2>
+        <p>
+          TODO: Beklenen işlem süresini buraya yazın. Talep, hesap sahipliği
+          doğrulandıktan sonra değerlendirilir.
+        </p>
+
+        <h2>Saklanabilecek veriler</h2>
+        <p>
+          Güvenlik, yasal yükümlülük, kötüye kullanımın önlenmesi, uyuşmazlık,
+          moderasyon veya denetim nedenleriyle bazı kayıtlar sınırlı süreyle
+          saklanabilir.
+        </p>
+
+        <h2>Gizlilik Politikası</h2>
+        <!-- TODO: Replace PRIVACY_POLICY_URL -->
+        <p>
+          Gizlilik Politikası bağlantısı:
+          <a href="PRIVACY_POLICY_URL">PRIVACY_POLICY_URL</a>
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
