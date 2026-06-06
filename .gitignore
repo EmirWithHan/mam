@@ -46,5 +46,16 @@ app.*.map.json
 
 # Local build config scripts and machine-specific env overrides
 scripts/*.local.ps1
+.env
 .env.local
 .env.*.local
+
+# Local Android signing artifacts
+key.properties
+android/key.properties
+upload-keystore.jks
+android/app/upload-keystore.jks
+android/app/*.jks
+android/app/*.keystore
+*.jks
+*.keystore

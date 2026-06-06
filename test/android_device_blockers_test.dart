@@ -146,6 +146,56 @@ void main() {
       expect(doc, contains('No Firebase or push notifications were added'));
       expect(doc, contains('No product features were added'));
     });
+
+    test('notification mark-read RPCs are owner scoped', () {
+      final migration = File(
+        'supabase/migrations/20260606120000_notification_mark_read_rpcs.sql',
+      ).readAsStringSync();
+
+      expect(
+        migration,
+        contains('create or replace function public.mark_notification_read'),
+      );
+      expect(
+        migration,
+        contains('drop function if exists public.mark_notification_read(uuid)'),
+      );
+      expect(
+        migration,
+        contains(
+          'create or replace function public.mark_all_notifications_read',
+        ),
+      );
+      expect(
+        migration,
+        contains(
+          'drop function if exists public.mark_all_notifications_read()',
+        ),
+      );
+      expect(migration, contains('security definer'));
+      expect(migration, contains("set search_path = ''"));
+      expect(migration, contains('notification.recipient_id = v_user_id'));
+      expect(
+        migration,
+        contains(
+          'grant execute on function public.mark_notification_read(uuid)',
+        ),
+      );
+      expect(
+        migration,
+        contains(
+          'grant execute on function public.mark_all_notifications_read()',
+        ),
+      );
+      expect(
+        migration,
+        isNot(
+          contains(
+            'grant execute on function public.mark_notification_read(uuid)\n  to anon',
+          ),
+        ),
+      );
+    });
   });
 
   group('Android small width layout', () {
