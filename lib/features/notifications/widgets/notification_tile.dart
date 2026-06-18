@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../profile/widgets/public_profile_avatar.dart';
 import '../notifications_models.dart';
 
 class NotificationTile extends StatelessWidget {
@@ -29,206 +30,208 @@ class NotificationTile extends StatelessWidget {
     final highlighted = notification.isUnread;
     final body = notification.displayBody;
     final accentColor = _accentColor(notification.type);
+    final hasActor =
+        notification.actorId != null && notification.actorId!.isNotEmpty;
 
-    return Material(
-      color: Colors.transparent,
-      borderRadius: AppRadius.lgBorder,
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: isBusy ? null : onTap,
-        child: Ink(
-          decoration: BoxDecoration(
-            color: highlighted ? AppColors.surface : AppColors.surfaceSoft,
-            borderRadius: AppRadius.lgBorder,
-            border: Border.all(
-              color: highlighted
-                  ? AppColors.primary.withValues(alpha: 0.7)
-                  : AppColors.border,
-            ),
-            boxShadow: highlighted
-                ? [
-                    BoxShadow(
-                      color: AppColors.textPrimary.withValues(alpha: 0.05),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
+    return InkWell(
+      onTap: isBusy ? null : onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md, // 16px
+          vertical: AppSpacing.sm, // 12px
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // Avatar Section
+            if (hasActor)
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  PublicProfileAvatar(
+                    userId: notification.actorId,
+                    radius: 22, // 44px diameter
+                    enableNavigation: false,
+                  ),
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                      child: CircleAvatar(
+                        radius: 8,
+                        backgroundColor: accentColor,
+                        child: Icon(
+                          _iconForType(notification.type),
+                          color: Colors.white,
+                          size: 9,
+                        ),
+                      ),
                     ),
-                  ]
-                : null,
-          ),
-          child: IntrinsicHeight(
-            child: Row(
-              children: [
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  width: highlighted ? 5 : 0,
-                  color: AppColors.primary,
+                  ),
+                ],
+              )
+            else
+              CircleAvatar(
+                radius: 22,
+                backgroundColor: accentColor.withValues(alpha: 0.1),
+                child: Icon(
+                  _iconForType(notification.type),
+                  color: accentColor,
+                  size: 20,
                 ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+            const SizedBox(width: AppSpacing.md),
+
+            // Content Area
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RichText(
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    text: TextSpan(
+                      style: AppTextStyles.body.copyWith(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                      ),
                       children: [
-                        _NotificationIcon(
-                          type: notification.type,
-                          accentColor: accentColor,
-                          highlighted: highlighted,
+                        TextSpan(
+                          text: notification.displayTitle,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(width: AppSpacing.md),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      notification.typeLabel,
-                                      style: AppTextStyles.label.copyWith(
-                                        color: highlighted
-                                            ? accentColor
-                                            : AppColors.textMuted,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  if (highlighted) ...[
-                                    const SizedBox(width: AppSpacing.sm),
-                                    const _UnreadDot(),
-                                  ],
-                                ],
-                              ),
-                              const SizedBox(height: AppSpacing.xs),
-                              Text(
-                                notification.displayTitle,
-                                style: AppTextStyles.bodyStrong.copyWith(
-                                  color: highlighted
-                                      ? AppColors.textPrimary
-                                      : AppColors.textSecondary,
-                                ),
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (body.isNotEmpty) ...[
-                                const SizedBox(height: AppSpacing.xs),
-                                Text(
-                                  body,
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: highlighted
-                                        ? AppColors.textSecondary
-                                        : AppColors.textMuted,
-                                  ),
-                                  maxLines: 3,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ],
-                              const SizedBox(height: AppSpacing.sm),
-                              Text(
-                                timeLabel,
-                                style: AppTextStyles.caption.copyWith(
-                                  color: highlighted
-                                      ? AppColors.primary
-                                      : AppColors.textMuted,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              if (notification.canRespondToFollowRequest) ...[
-                                const SizedBox(height: AppSpacing.md),
-                                Wrap(
-                                  spacing: AppSpacing.sm,
-                                  runSpacing: AppSpacing.sm,
-                                  children: [
-                                    FilledButton(
-                                      onPressed: isBusy ? null : onApprove,
-                                      style: FilledButton.styleFrom(
-                                        backgroundColor: AppColors.primary,
-                                        foregroundColor: Colors.white,
-                                      ),
-                                      child: isBusy
-                                          ? const SizedBox.square(
-                                              dimension: 16,
-                                              child: CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                              ),
-                                            )
-                                          : const Text('Onayla'),
-                                    ),
-                                    OutlinedButton(
-                                      onPressed: isBusy ? null : onReject,
-                                      child: const Text('Reddet'),
-                                    ),
-                                  ],
-                                ),
-                              ],
-                              if (notification
-                                  .isBusinessEventConfirmRequired) ...[
-                                const SizedBox(height: AppSpacing.md),
-                                FilledButton(
-                                  onPressed: isBusy ? null : onTap,
-                                  style: FilledButton.styleFrom(
-                                    backgroundColor: AppColors.primary,
-                                    foregroundColor: Colors.white,
-                                  ),
-                                  child: const Text('Katılımı doğrula'),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
-                        if (notification.canOpenEntity) ...[
-                          const SizedBox(width: AppSpacing.sm),
-                          const Icon(
-                            Icons.chevron_right,
-                            color: AppColors.textMuted,
+                        if (body.isNotEmpty) ...[
+                          const TextSpan(text: ' '),
+                          TextSpan(
+                            text: body,
+                            style: TextStyle(
+                              color: highlighted
+                                  ? AppColors.textSecondary
+                                  : AppColors.textMuted,
+                            ),
                           ),
                         ],
+                        const TextSpan(text: '  '),
+                        TextSpan(
+                          text: timeLabel,
+                          style: AppTextStyles.caption.copyWith(
+                            color: highlighted
+                                ? AppColors.primary
+                                : AppColors.textMuted,
+                            fontSize: 12,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                ),
-              ],
+
+                  // Actions if pending follow request
+                  if (notification.canRespondToFollowRequest) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    Row(
+                      children: [
+                        SizedBox(
+                          height: 32,
+                          child: ElevatedButton(
+                            onPressed: isBusy ? null : onApprove,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.md,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppRadius.mdBorder,
+                              ),
+                            ),
+                            child: isBusy
+                                ? const SizedBox.square(
+                                    dimension: 12,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text(
+                                    'Onayla',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        SizedBox(
+                          height: 32,
+                          child: OutlinedButton(
+                            onPressed: isBusy ? null : onReject,
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.textSecondary,
+                              side: const BorderSide(color: AppColors.border),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.md,
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: AppRadius.mdBorder,
+                              ),
+                            ),
+                            child: const Text(
+                              'Reddet',
+                              style: TextStyle(fontSize: 13),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
+                  // Actions if business confirmation is required
+                  if (notification.isBusinessEventConfirmRequired) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    SizedBox(
+                      height: 32,
+                      child: ElevatedButton(
+                        onPressed: isBusy ? null : onTap,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.md,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: AppRadius.mdBorder,
+                          ),
+                        ),
+                        child: const Text(
+                          'Katılımı Doğrula',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
+
+            if (highlighted) ...[
+              const SizedBox(width: AppSpacing.sm),
+              const CircleAvatar(radius: 4, backgroundColor: AppColors.primary),
+            ],
+          ],
         ),
       ),
-    );
-  }
-}
-
-class _NotificationIcon extends StatelessWidget {
-  const _NotificationIcon({
-    required this.type,
-    required this.accentColor,
-    required this.highlighted,
-  });
-
-  final String type;
-  final Color accentColor;
-  final bool highlighted;
-
-  @override
-  Widget build(BuildContext context) {
-    return CircleAvatar(
-      radius: 22,
-      backgroundColor: highlighted ? AppColors.primarySoft : AppColors.surface,
-      child: Icon(_iconForType(type), color: accentColor, size: 22),
-    );
-  }
-}
-
-class _UnreadDot extends StatelessWidget {
-  const _UnreadDot();
-
-  @override
-  Widget build(BuildContext context) {
-    return const DecoratedBox(
-      decoration: BoxDecoration(
-        color: AppColors.primary,
-        shape: BoxShape.circle,
-      ),
-      child: SizedBox.square(dimension: 8),
     );
   }
 }

@@ -14,7 +14,7 @@ class Validators {
     final emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
     final trimmed = value?.trim() ?? '';
     if (trimmed.isEmpty || !emailPattern.hasMatch(trimmed)) {
-      return 'Geçerli bir e-posta adresi girin.';
+      return 'Geçerli bir e-posta adresi gir.';
     }
     return null;
   }
@@ -103,9 +103,19 @@ class Validators {
     return null;
   }
 
+  static String? eventLocation(String? value) {
+    final trimmed = value?.trim() ?? '';
+    if (trimmed.isEmpty) return 'Etkinlik konumunu yazmalısın.';
+    if (trimmed.length < 4) return 'Etkinlik konumunu yazmalısın.';
+    if (trimmed.length > 180) {
+      return 'Konum açıklaması en fazla 180 karakter olabilir.';
+    }
+    return null;
+  }
+
   static String? sportType(String? value) {
     if (value == null || value.trim().isEmpty) {
-      return 'Spor türü seçmelisin.';
+      return 'Etkinlik türü seçmelisin.';
     }
     return null;
   }

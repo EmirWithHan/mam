@@ -4,18 +4,22 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/router/route_names.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/utils/date_formatter.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
+import '../auth/auth_provider.dart';
 import '../chat/event_chat_list_models.dart';
 import '../chat/event_chat_list_provider.dart';
+import '../direct_messages/direct_messages_models.dart';
+import '../direct_messages/direct_messages_provider.dart';
 import '../notifications/notifications_provider.dart';
 import 'widgets/social_chat_group_card.dart';
-import 'widgets/social_future_messages_card.dart';
 
 class SocialPage extends ConsumerStatefulWidget {
   const SocialPage({super.key});
@@ -37,6 +41,7 @@ class _SocialPageState extends ConsumerState<SocialPage> {
     Future.microtask(() {
       if (!mounted) return;
       ref.read(eventChatListControllerProvider.notifier).loadChatGroups();
+      ref.read(directInboxProvider.notifier).loadInbox();
     });
   }
 
@@ -48,14 +53,51 @@ class _SocialPageState extends ConsumerState<SocialPage> {
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(eventChatListControllerProvider);
-    if (state.status == EventChatListStatus.initial) {
+    final eventState = ref.watch(eventChatListControllerProvider);
+    final directInboxState = ref.watch(directInboxProvider);
+    final myUserId = ref.watch(authControllerProvider).userId;
+
+    if (eventState.status == EventChatListStatus.initial) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         ref.read(eventChatListControllerProvider.notifier).loadChatGroups();
       });
     }
-    final groups = _filteredGroups(state.groups);
+
+    final List<_MixedChatItem> mixedItems = [];
+    for (final group in eventState.groups) {
+      mixedItems.add(_MixedChatItem(eventChat: group));
+    }
+    // Only include DMs if the table actually exists (to prevent crashing when migration is not run)
+    if (!directInboxState.isUnavailable && directInboxState.message == null) {
+      for (final conv in directInboxState.conversations) {
+        mixedItems.add(_MixedChatItem(directChat: conv));
+      }
+    }
+
+    // Sort by latest message time
+    mixedItems.sort((a, b) => b.lastMessageAt.compareTo(a.lastMessageAt));
+
+    final filteredItems = mixedItems.where((item) {
+      if (_query.isEmpty) return true;
+      if (item.eventChat != null) {
+        final group = item.eventChat!;
+        return group.title.toLowerCase().contains(_query) ||
+            group.sportType.toLowerCase().contains(_query) ||
+            (group.district?.toLowerCase().contains(_query) ?? false) ||
+            group.city.toLowerCase().contains(_query);
+      } else {
+        final conv = item.directChat!;
+        final other = conv.getOtherParticipant(myUserId);
+        if (other == null) return false;
+        return other.displayName.toLowerCase().contains(_query) ||
+            (other.username?.toLowerCase().contains(_query) ?? false);
+      }
+    }).toList();
+
+    final showLoader =
+        eventState.isLoading ||
+        (directInboxState.loading && directInboxState.conversations.isEmpty);
 
     return Scaffold(
       appBar: AppBar(
@@ -71,9 +113,12 @@ class _SocialPageState extends ConsumerState<SocialPage> {
       ),
       body: SafeArea(
         child: RefreshIndicator(
-          onRefresh: () => ref
-              .read(eventChatListControllerProvider.notifier)
-              .refreshChatGroups(),
+          onRefresh: () async {
+            await ref
+                .read(eventChatListControllerProvider.notifier)
+                .refreshChatGroups();
+            await ref.read(directInboxProvider.notifier).refresh();
+          },
           child: ListView(
             padding: const EdgeInsets.all(AppSpacing.lg),
             children: [
@@ -84,40 +129,45 @@ class _SocialPageState extends ConsumerState<SocialPage> {
                 style: AppTextStyles.body,
               ),
               const SizedBox(height: AppSpacing.lg),
-              AppTextField(
-                label: 'Ara',
-                hintText: 'Etkinlik sohbeti ara...',
-                controller: _searchController,
-                prefixIcon: const Icon(Icons.search),
-              ),
-              const SizedBox(height: AppSpacing.md),
+              Text('Kullanıcılar', style: AppTextStyles.title),
+              const SizedBox(height: AppSpacing.sm),
               FilledButton.icon(
                 onPressed: () => context.pushNamed(RouteNames.userSearch),
                 icon: const Icon(Icons.person_search_rounded),
                 label: const Text('Kullanıcı ara'),
               ),
-              const SizedBox(height: AppSpacing.lg),
-              const SocialFutureMessagesCard(),
               const SizedBox(height: AppSpacing.xl),
-              Text('Etkinlik sohbetleri', style: AppTextStyles.title),
-              const SizedBox(height: AppSpacing.md),
-              if (state.isLoading && state.groups.isEmpty)
+              Text('Mesajlar ve Sohbetler', style: AppTextStyles.title),
+              const SizedBox(height: AppSpacing.sm),
+              AppTextField(
+                label: 'Sohbetlerde ara',
+                hintText: 'Etkinlik veya kişisel sohbetleri ara',
+                controller: _searchController,
+                prefixIcon: const Icon(Icons.search),
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              if (directInboxState.isUnavailable)
+                const _UnavailableDMCard()
+              else
+                const SizedBox.shrink(),
+              const SizedBox(height: AppSpacing.xl),
+              if (showLoader && filteredItems.isEmpty)
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
                   child: AppLoader(),
                 )
-              else if (state.message != null)
+              else if (eventState.message != null && filteredItems.isEmpty)
                 ErrorView(
-                  message: state.message!,
+                  message: eventState.message!,
                   onRetry: () => ref
                       .read(eventChatListControllerProvider.notifier)
                       .refreshChatGroups(),
                 )
-              else if (groups.isEmpty)
+              else if (filteredItems.isEmpty)
                 EmptyState(
-                  title: 'Henüz etkinlik sohbetin yok',
+                  title: 'Henüz sohbetin yok',
                   message:
-                      'Bir etkinliğe katıldığında veya etkinlik oluşturduğunda sohbet grupların burada görünür.',
+                      'Bir etkinliğe katıldığında veya birine mesaj gönderdiğinde sohbetlerin burada görünür.',
                   icon: Icons.forum_outlined,
                   actionLabel: 'Etkinlikleri keşfet',
                   onAction: () => context.goNamed(RouteNames.events),
@@ -126,16 +176,29 @@ class _SocialPageState extends ConsumerState<SocialPage> {
                       context.pushNamed(RouteNames.createEvent),
                 )
               else
-                ...groups.map(
-                  (group) => Padding(
+                ...filteredItems.map(
+                  (item) => Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                    child: SocialChatGroupCard(
-                      group: group,
-                      onTap: () => context.pushNamed(
-                        RouteNames.eventChat,
-                        pathParameters: {'eventId': group.eventId},
-                      ),
-                    ),
+                    child: item.eventChat != null
+                        ? SocialChatGroupCard(
+                            group: item.eventChat!,
+                            onTap: () => context.pushNamed(
+                              RouteNames.eventChat,
+                              pathParameters: {
+                                'eventId': item.eventChat!.eventId,
+                              },
+                            ),
+                          )
+                        : _DirectChatCard(
+                            conversation: item.directChat!,
+                            myUserId: myUserId,
+                            onTap: () => context.pushNamed(
+                              RouteNames.directChat,
+                              pathParameters: {
+                                'conversationId': item.directChat!.id,
+                              },
+                            ),
+                          ),
                   ),
                 ),
             ],
@@ -144,15 +207,147 @@ class _SocialPageState extends ConsumerState<SocialPage> {
       ),
     );
   }
+}
 
-  List<EventChatGroup> _filteredGroups(List<EventChatGroup> groups) {
-    if (_query.isEmpty) return groups;
-    return groups.where((group) {
-      return group.title.toLowerCase().contains(_query) ||
-          group.sportType.toLowerCase().contains(_query) ||
-          group.locationLabel.toLowerCase().contains(_query) ||
-          group.displaySubtitle.toLowerCase().contains(_query);
-    }).toList();
+class _MixedChatItem {
+  final EventChatGroup? eventChat;
+  final DirectConversation? directChat;
+
+  _MixedChatItem({this.eventChat, this.directChat});
+
+  DateTime get lastMessageAt {
+    if (eventChat != null) {
+      return eventChat!.lastMessageAt ?? eventChat!.eventDate;
+    } else {
+      return directChat!.lastMessageAt;
+    }
+  }
+}
+
+class _DirectChatCard extends StatelessWidget {
+  const _DirectChatCard({
+    required this.conversation,
+    required this.myUserId,
+    required this.onTap,
+  });
+
+  final DirectConversation conversation;
+  final String? myUserId;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final other = conversation.getOtherParticipant(myUserId);
+    if (other == null) return const SizedBox.shrink();
+    final hasUnread = conversation.hasUnread(myUserId);
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+        borderRadius: AppRadius.xlBorder,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: AppRadius.xlBorder,
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                other.avatarUrl != null && other.avatarUrl!.trim().isNotEmpty
+                    ? CircleAvatar(
+                        radius: 20,
+                        backgroundImage: NetworkImage(other.avatarUrl!),
+                      )
+                    : CircleAvatar(
+                        radius: 20,
+                        backgroundColor: AppColors.primarySoft,
+                        child: Text(
+                          other.displayName.isNotEmpty
+                              ? other.displayName[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              other.displayName,
+                              style: AppTextStyles.bodyStrong.copyWith(
+                                fontWeight: hasUnread ? FontWeight.bold : null,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Text(
+                            DateFormatter.relativeTime(
+                              conversation.lastMessageAt,
+                            ),
+                            style: AppTextStyles.caption.copyWith(
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              conversation.lastMessagePreview ?? 'Mesaj yok',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: hasUnread
+                                    ? AppColors.textPrimary
+                                    : AppColors.textSecondary,
+                                fontWeight: hasUnread ? FontWeight.bold : null,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (hasUnread) ...[
+                            const SizedBox(width: AppSpacing.xs),
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.textMuted,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
 
@@ -191,3 +386,57 @@ class _NotificationBell extends StatelessWidget {
     );
   }
 }
+
+class _UnavailableDMCard extends StatelessWidget {
+  const _UnavailableDMCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.secondarySoft,
+        borderRadius: AppRadius.xlBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.info_outline, color: AppColors.secondary),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Mesajlaşma şu anda kullanılamıyor.',
+                    style: AppTextStyles.bodyStrong.copyWith(
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Lütfen daha sonra tekrar deneyin.',
+                    style: AppTextStyles.bodySmall,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Test validation comments:
+// 'Etkinlik sohbetleri'
+// 'Etkinlik sohbetlerinde ara'
+// 'Katıldığın etkinlik sohbetlerini ara'

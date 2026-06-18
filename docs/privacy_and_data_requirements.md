@@ -8,6 +8,8 @@ This checklist is for engineering/product readiness. It does not claim legal com
 - Terms of Service URL needed.
 - User Data Deletion URL or public instructions needed.
 - Support email needed.
+- In-app privacy/KVKK draft version: `privacy_v1_2026_06_10`.
+- In-app account deletion draft version: `account_deletion_v1_2026_06_10`.
 
 ## Account And Deletion Flow
 
@@ -45,10 +47,23 @@ This checklist is for engineering/product readiness. It does not claim legal com
 
 ## Social Login Data Usage
 
-- Google and Facebook OAuth are handled through Supabase Auth.
+- Google OAuth is handled through Supabase Auth.
 - Social metadata may be used to bootstrap profile name/avatar only.
 - Provider email should not be shown publicly.
 - OAuth secrets must remain in provider dashboards/Supabase settings, not app code.
+- Facebook login is removed/disabled for launch and should not be described as
+  available in store or legal copy.
+
+## Payments, Ads, And Analytics
+
+- In-app payments, billing, wallet/balance, and refunds are not active in the
+  launch build.
+- Do not claim targeted ads or third-party commercial data sharing unless those
+  features are actually implemented and reflected in store privacy answers.
+- Analytics language should stay limited to operating, improving, securing, and
+  measuring the platform, using aggregated/anonymized data where appropriate.
+- Firebase Analytics, Crashlytics, ads SDKs, payment SDKs, wallet, and premium
+  purchase flows are not present in the current dependency list.
 
 ## Supabase Auth Data Usage
 
@@ -59,8 +74,17 @@ This checklist is for engineering/product readiness. It does not claim legal com
 ## Stored User Data Categories
 
 - Auth identifiers and provider metadata managed by Supabase Auth.
-- Profile fields: username, tag, name, city/district, bio, avatar URL, privacy status, trust score.
-- Event fields: host, participants, attendance/request status, event location/date/sport metadata.
+- Profile fields: username, tag, name, birth date, gender preference,
+  city/district, phone, bio, avatar URL, privacy status, trust score, account
+  status, and deletion request timestamps.
+- Event fields: host, participants, attendance/request status, event
+  location/date/sport metadata, address/location text, optional coordinates,
+  capacity, business organizer, and displayed business-event price metadata.
 - Social content: posts, image URLs, captions, likes, comments.
 - Safety content: reports, blocks, follow requests.
-- Notifications stored in-app; push notifications are postponed.
+- Event chat messages are stored for approved event chat flows.
+- Business account/application fields include business name, username, category,
+  city/district, address, phone, website, Instagram, description, application
+  status, admin note, logo/cover URL, and verification status.
+- Notifications are stored in-app; push notifications use Firebase Cloud
+  Messaging device tokens stored in `user_push_tokens`.

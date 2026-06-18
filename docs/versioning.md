@@ -1,6 +1,6 @@
 # Versioning
 
-Date: 2026-06-06
+Date: 2026-06-07
 
 Flutter uses this format in `pubspec.yaml`:
 
@@ -8,30 +8,40 @@ Flutter uses this format in `pubspec.yaml`:
 version: versionName+versionCode
 ```
 
-Example:
+`versionName` is the human-readable version shown to users. `versionCode` is
+the integer Play Store uses to decide whether a build is newer.
+
+Current repo value:
 
 ```text
 version: 1.0.0+1
+versionName: 1.0.0
+versionCode: 1
 ```
 
-`versionName` is the human-readable version shown to users. `versionCode` is the
-integer Play Store uses to decide whether a build is newer.
+For the first Play Console closed testing upload, `1.0.0+1` is acceptable if
+`versionCode` `1` has not already been uploaded. If Play Console has already
+seen `versionCode` `1`, increase the number after `+` before uploading again.
 
-Every Play Store upload must increase `versionCode`. For example:
+Every Play Store upload must increase `versionCode`.
+
+Examples:
 
 ```text
-0.1.0+1
-0.1.0+2
-0.1.1+3
-1.0.0+4
+1.0.0+1
+1.0.0+2
+1.0.1+3
+1.1.0+4
 ```
 
-Closed beta can use `0.1.0+1` or a similar pre-release value if the project has
-not already settled on `1.0.0+1`. The current repo value is:
+Safe bump process:
 
-```text
-version: 1.0.0+1
-```
+1. Edit `pubspec.yaml`.
+2. Increase only the number after `+` for a rebuild of the same user-facing
+   version.
+3. Increase the semantic version before `+` only when the user-facing release
+   version should change.
+4. Run `flutter analyze` and `flutter test`.
+5. Build the signed AAB again.
 
-Do not change the version automatically during signing setup. Increase
-`versionCode` only when preparing a new Play Console upload.
+Do not bump the version unless preparing a new Play upload.

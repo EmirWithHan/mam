@@ -26,6 +26,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _obscurePassword = true;
 
   @override
   void dispose() {
@@ -47,6 +48,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (!mounted) return;
     final authState = ref.read(authControllerProvider);
 
+    if (authState.needsEmailVerification) {
+      final email = authState.pendingEmail ?? _emailController.text.trim();
+      context.goNamed(
+        RouteNames.emailVerification,
+        queryParameters: {'email': email},
+      );
+      if (authState.message != null && mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(authState.message!)));
+      }
+      return;
+    }
+
     if (authState.message != null) {
       ScaffoldMessenger.of(
         context,
@@ -60,9 +75,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     );
   }
 
-  Future<void> _signInWithFacebook() async {
+  Future<void> _signInWithApple() async {
     await _startSocialSignIn(
-      ref.read(authControllerProvider.notifier).signInWithFacebook,
+      ref.read(authControllerProvider.notifier).signInWithApple,
     );
   }
 
@@ -77,12 +92,6 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         context,
       ).showSnackBar(SnackBar(content: Text(authState.message!)));
     }
-  }
-
-  void _showAppleComingSoon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Apple ile giriş yakında eklenecek.')),
-    );
   }
 
   @override
@@ -109,16 +118,23 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               const SizedBox(height: AppSpacing.lg),
               DecoratedBox(
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  border: Border.all(color: AppColors.border),
                   borderRadius: AppRadius.xlBorder,
+                  gradient: const LinearGradient(
+                    colors: [Colors.white, Color(0xFFFFF9F6)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.textPrimary.withValues(alpha: 0.05),
-                      blurRadius: 24,
-                      offset: const Offset(0, 10),
+                      color: AppColors.textPrimary.withValues(alpha: 0.09),
+                      blurRadius: 26,
+                      offset: const Offset(0, 12),
                     ),
                   ],
+                  border: Border.all(
+                    color: const Color(0xFFFFF0EA),
+                    width: 0.8,
+                  ),
                 ),
                 child: Padding(
                   padding: AppResponsive.cardPadding(context),
@@ -140,8 +156,20 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       AppTextField(
                         label: 'Şifre',
                         controller: _passwordController,
-                        obscureText: true,
+                        obscureText: _obscurePassword,
                         prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off_outlined
+                                : Icons.visibility_outlined,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
                         validator: Validators.loginPassword,
                       ),
                       const SizedBox(height: AppSpacing.xl),
@@ -150,12 +178,22 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                         isLoading: authState.isLoading,
                         onPressed: _submit,
                       ),
+                      const SizedBox(height: AppSpacing.sm),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: authState.isLoading
+                              ? null
+                              : () =>
+                                    context.goNamed(RouteNames.forgotPassword),
+                          child: const Text('Şifremi unuttum'),
+                        ),
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       SocialAuthButtons(
                         isLoading: authState.isLoading,
                         onGooglePressed: _signInWithGoogle,
-                        onFacebookPressed: _signInWithFacebook,
-                        onApplePressed: _showAppleComingSoon,
+                        onApplePressed: _signInWithApple,
                       ),
                     ],
                   ),

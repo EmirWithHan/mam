@@ -246,39 +246,51 @@ class FeedController extends StateNotifier<FeedState> {
 
   Future<void> toggleLike(PostWithStats item) async {
     final postId = item.post.id;
-    if (state.isLikeLoading(postId)) return;
 
-    state = state.copyWith(
-      clearMessage: true,
-      likeLoadingPostIds: {...state.likeLoadingPostIds, postId},
+    final index = state.posts.indexWhere((p) => p.post.id == postId);
+    final wasLiked = index != -1
+        ? state.posts[index].isLikedByMe
+        : item.isLikedByMe;
+    final originalLikeCount = index != -1
+        ? state.posts[index].likeCount
+        : item.likeCount;
+    final likeDelta = wasLiked ? -1 : 1;
+
+    final updatedItem = (index != -1 ? state.posts[index] : item).copyWith(
+      isLikedByMe: !wasLiked,
+      likeCount: (originalLikeCount + likeDelta).clamp(0, 1 << 31).toInt(),
     );
 
+    final List<PostWithStats> updatedPosts;
+    if (index != -1) {
+      updatedPosts = state.posts
+          .map((postItem) {
+            if (postItem.post.id != postId) return postItem;
+            return updatedItem;
+          })
+          .toList(growable: false);
+    } else {
+      updatedPosts = [...state.posts, updatedItem];
+    }
+
+    state = state.copyWith(clearMessage: true, posts: updatedPosts);
+
     try {
-      await _feedService.toggleLike(
-        postId: postId,
-        currentlyLiked: item.isLikedByMe,
-      );
-      final likeDelta = item.isLikedByMe ? -1 : 1;
-      final posts = state.posts
+      await _feedService.toggleLike(postId: postId, currentlyLiked: wasLiked);
+    } catch (error) {
+      final revertedPosts = state.posts
           .map((postItem) {
             if (postItem.post.id != postId) return postItem;
             return postItem.copyWith(
-              isLikedByMe: !item.isLikedByMe,
-              likeCount: (postItem.likeCount + likeDelta)
-                  .clamp(0, 1 << 31)
-                  .toInt(),
+              isLikedByMe: wasLiked,
+              likeCount: originalLikeCount,
             );
           })
           .toList(growable: false);
+
       state = state.copyWith(
-        status: FeedStatus.success,
-        posts: posts,
-        likeLoadingPostIds: _withoutLikeLoading(postId),
-      );
-    } catch (error) {
-      state = state.copyWith(
-        message: friendlyErrorMessage(error),
-        likeLoadingPostIds: _withoutLikeLoading(postId),
+        message: 'Beğeni güncellenemedi. Lütfen tekrar dene.',
+        posts: revertedPosts,
       );
     }
   }
@@ -409,11 +421,6 @@ class FeedController extends StateNotifier<FeedState> {
     }
   }
 
-  Set<String> _withoutLikeLoading(String postId) {
-    return state.likeLoadingPostIds
-        .where((loadingPostId) => loadingPostId != postId)
-        .toSet();
-  }
 
   @override
   void dispose() {

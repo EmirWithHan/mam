@@ -12,22 +12,28 @@ class EventsState {
     required this.status,
     this.events = const [],
     this.message,
+    this.mutationMessage,
     this.hasMore = true,
     this.isLoadingMore = false,
+    this.isMutating = false,
   });
 
   const EventsState.initial()
     : status = EventsStatus.initial,
       events = const [],
       message = null,
+      mutationMessage = null,
       hasMore = true,
-      isLoadingMore = false;
+      isLoadingMore = false,
+      isMutating = false;
 
   final EventsStatus status;
   final List<Event> events;
   final String? message;
+  final String? mutationMessage;
   final bool hasMore;
   final bool isLoadingMore;
+  final bool isMutating;
 
   bool get isLoading => status == EventsStatus.loading;
 
@@ -35,16 +41,23 @@ class EventsState {
     required EventsStatus status,
     List<Event>? events,
     String? message,
+    String? mutationMessage,
     bool? hasMore,
     bool? isLoadingMore,
+    bool? isMutating,
     bool clearMessage = false,
+    bool clearMutationMessage = false,
   }) {
     return EventsState(
       status: status,
       events: events ?? this.events,
       message: clearMessage ? null : message ?? this.message,
+      mutationMessage: clearMutationMessage
+          ? null
+          : mutationMessage ?? this.mutationMessage,
       hasMore: hasMore ?? this.hasMore,
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      isMutating: isMutating ?? this.isMutating,
     );
   }
 }
@@ -53,9 +66,14 @@ final eventsServiceProvider = Provider<EventsService>((ref) {
   return const EventsService();
 });
 
+final myEventsProvider = FutureProvider<List<MyEventItem>>((ref) async {
+  final service = ref.watch(eventsServiceProvider);
+  return service.fetchMyEvents();
+});
+
 final eventsControllerProvider =
     StateNotifierProvider<EventsController, EventsState>((ref) {
-      return EventsController(ref.watch(eventsServiceProvider));
+      return EventsController(ref.watch(eventsServiceProvider), ref);
     });
 
 final eventDetailProvider = FutureProvider.family<Event, String>((
@@ -91,6 +109,13 @@ final eventPublicParticipantsProvider =
           .fetchEventPublicParticipants(eventId);
     });
 
+final eventCapacityBucketCountsProvider =
+    FutureProvider.family<Map<String, int>, String>((ref, eventId) {
+      return ref
+          .watch(eventsServiceProvider)
+          .fetchCapacityBucketCounts(eventId);
+    });
+
 final businessEventCheckInParticipantsProvider =
     FutureProvider.family<List<BusinessEventCheckInParticipant>, String>((
       ref,
@@ -99,6 +124,14 @@ final businessEventCheckInParticipantsProvider =
       return ref
           .watch(eventsServiceProvider)
           .fetchBusinessEventCheckInParticipants(eventId);
+    });
+
+final hostEventAnalyticsProvider =
+    FutureProvider.family<List<EventParticipantAnalytics>, String>((
+      ref,
+      eventId,
+    ) {
+      return ref.watch(eventsServiceProvider).fetchHostEventAnalytics(eventId);
     });
 
 final businessEventCheckInControllerProvider =
@@ -186,12 +219,50 @@ class BusinessEventCheckInController
       return false;
     }
   }
+
+  Future<String?> verifyAndCheckIn({
+    required String participantUserId,
+    required String token,
+  }) async {
+    state = state.copyWith(
+      loadingUserIds: {...state.loadingUserIds, participantUserId},
+      clearMessage: true,
+    );
+
+    try {
+      final result = await _eventsService.verifyAndCheckInParticipant(
+        eventId: eventId,
+        participantUserId: participantUserId,
+        token: token,
+      );
+      _ref.invalidate(businessEventCheckInParticipantsProvider(eventId));
+      _ref.invalidate(eventParticipantAttendanceStatusesProvider(eventId));
+      _ref.invalidate(eventPublicParticipantsProvider(eventId));
+      _ref.invalidate(eventMyParticipationProvider(eventId));
+      state = state.copyWith(
+        loadingUserIds: {
+          ...state.loadingUserIds.where((id) => id != participantUserId),
+        },
+      );
+      return result;
+    } catch (error) {
+      state = state.copyWith(
+        loadingUserIds: {
+          ...state.loadingUserIds.where((id) => id != participantUserId),
+        },
+        message: friendlyErrorMessage(error),
+      );
+      return null;
+    }
+  }
 }
 
 class EventsController extends StateNotifier<EventsState> {
-  EventsController(this._eventsService) : super(const EventsState.initial());
+  EventsController(this._eventsService, this._ref)
+    : super(const EventsState.initial());
 
   final EventsService _eventsService;
+  final Ref _ref;
 
   Future<void> loadEvents({bool force = false}) async {
     if (!force && state.status == EventsStatus.success) return;
@@ -212,7 +283,11 @@ class EventsController extends StateNotifier<EventsState> {
     }
   }
 
-  Future<void> refreshEvents() => loadEvents(force: true);
+  Future<void> refreshEvents() {
+    _ref.read(featuredEventsProvider.notifier).refreshEvents();
+    _ref.read(followingEventsProvider.notifier).refreshEvents();
+    return loadEvents(force: true);
+  }
 
   Future<void> loadMoreEvents() async {
     if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
@@ -247,21 +322,92 @@ class EventsController extends StateNotifier<EventsState> {
   }
 
   Future<Event?> createEvent(CreateEventInput input) async {
-    state = state.copyWith(status: EventsStatus.loading);
+    if (state.isMutating) return null;
+    state = state.copyWith(
+      status: state.status,
+      isMutating: true,
+      clearMutationMessage: true,
+    );
 
     try {
       final event = await _eventsService.createEvent(input);
-      final events = await _eventsService.fetchEvents();
-      state = EventsState(
-        status: EventsStatus.success,
-        events: events,
-        hasMore: pageHasMore(events.length, SupabasePageSizes.events),
-      );
+      try {
+        final events = await _eventsService.fetchEvents();
+        state = EventsState(
+          status: EventsStatus.success,
+          events: events,
+          hasMore: pageHasMore(events.length, SupabasePageSizes.events),
+        );
+      } catch (refreshError) {
+        final events = appendUniqueByKey(
+          [event, ...state.events],
+          const <Event>[],
+          (event) => event.id,
+        );
+        state = EventsState(
+          status: EventsStatus.success,
+          events: events,
+          hasMore: state.hasMore,
+          message: friendlyErrorMessage(refreshError),
+        );
+      }
+      _ref.read(featuredEventsProvider.notifier).refreshEvents();
+      _ref.read(followingEventsProvider.notifier).refreshEvents();
       return event;
     } catch (error) {
-      state = EventsState(
-        status: EventsStatus.error,
-        message: friendlyErrorMessage(error),
+      state = state.copyWith(
+        status: state.status,
+        isMutating: false,
+        mutationMessage: friendlyErrorMessage(error),
+      );
+      return null;
+    }
+  }
+
+  Future<Event?> updateEvent({
+    required String eventId,
+    required UpdateEventInput input,
+  }) async {
+    if (state.isMutating) return null;
+    state = state.copyWith(
+      status: state.status,
+      isMutating: true,
+      clearMutationMessage: true,
+    );
+
+    try {
+      final event = await _eventsService.updateEvent(
+        eventId: eventId,
+        input: input,
+      );
+      try {
+        final events = await _eventsService.fetchEvents();
+        state = EventsState(
+          status: EventsStatus.success,
+          events: events,
+          message: 'Etkinlik gÃ¼ncellendi.',
+          hasMore: pageHasMore(events.length, SupabasePageSizes.events),
+        );
+      } catch (refreshError) {
+        final events = appendUniqueByKey(
+          [event, ...state.events.where((existing) => existing.id != event.id)],
+          const <Event>[],
+          (event) => event.id,
+        );
+        state = EventsState(
+          status: EventsStatus.success,
+          events: events,
+          message: friendlyErrorMessage(refreshError),
+        );
+      }
+      _ref.read(featuredEventsProvider.notifier).refreshEvents();
+      _ref.read(followingEventsProvider.notifier).refreshEvents();
+      return event;
+    } catch (error) {
+      state = state.copyWith(
+        status: state.status,
+        isMutating: false,
+        mutationMessage: friendlyErrorMessage(error),
       );
       return null;
     }
@@ -317,6 +463,87 @@ class EventsController extends StateNotifier<EventsState> {
     }
   }
 
+  Future<bool> submitExcuse({
+    required String eventId,
+    required String excuseText,
+  }) async {
+    state = state.copyWith(status: state.status, clearMessage: true);
+
+    try {
+      await _eventsService.submitExcuse(
+        eventId: eventId,
+        excuseText: excuseText,
+      );
+      _ref.invalidate(eventMyParticipationProvider(eventId));
+      _ref.invalidate(eventAttendanceStatusProvider(eventId));
+      _ref.invalidate(eventParticipantAttendanceStatusesProvider(eventId));
+      _ref.invalidate(eventPublicParticipantsProvider(eventId));
+      _ref.invalidate(eventDetailProvider(eventId));
+      await refreshEvents();
+      return true;
+    } catch (error) {
+      state = state.copyWith(
+        status: state.status,
+        message: friendlyErrorMessage(error),
+      );
+      return false;
+    }
+  }
+
+  Future<bool> cancelParticipation({
+    required String eventId,
+    String? excuseText,
+  }) async {
+    state = state.copyWith(status: state.status, clearMessage: true);
+
+    try {
+      await _eventsService.cancelParticipation(
+        eventId: eventId,
+        excuseText: excuseText,
+      );
+      _ref.invalidate(eventMyParticipationProvider(eventId));
+      _ref.invalidate(eventAttendanceStatusProvider(eventId));
+      _ref.invalidate(eventParticipantAttendanceStatusesProvider(eventId));
+      _ref.invalidate(eventPublicParticipantsProvider(eventId));
+      _ref.invalidate(eventDetailProvider(eventId));
+      await refreshEvents();
+      return true;
+    } catch (error) {
+      state = state.copyWith(
+        status: state.status,
+        message: friendlyErrorMessage(error),
+      );
+      return false;
+    }
+  }
+
+  Future<bool> resolveParticipantExcuse({
+    required String eventId,
+    required String participantUserId,
+    required String excuseStatus,
+  }) async {
+    state = state.copyWith(status: state.status, clearMessage: true);
+
+    try {
+      await _eventsService.resolveParticipantExcuse(
+        eventId: eventId,
+        participantUserId: participantUserId,
+        excuseStatus: excuseStatus,
+      );
+      _ref.invalidate(businessEventCheckInParticipantsProvider(eventId));
+      _ref.invalidate(eventParticipantAttendanceStatusesProvider(eventId));
+      _ref.invalidate(eventPublicParticipantsProvider(eventId));
+      _ref.invalidate(eventDetailProvider(eventId));
+      return true;
+    } catch (error) {
+      state = state.copyWith(
+        status: state.status,
+        message: friendlyErrorMessage(error),
+      );
+      return false;
+    }
+  }
+
   Future<bool> confirmBusinessParticipation(String eventId) async {
     state = state.copyWith(status: state.status, clearMessage: true);
 
@@ -333,3 +560,136 @@ class EventsController extends StateNotifier<EventsState> {
     }
   }
 }
+
+class FeaturedEventsController extends StateNotifier<EventsState> {
+  FeaturedEventsController(this._eventsService)
+    : super(const EventsState.initial()) {
+    loadEvents();
+  }
+
+  final EventsService _eventsService;
+
+  Future<void> loadEvents({bool force = false}) async {
+    if (!force && state.status == EventsStatus.success) return;
+    state = state.copyWith(status: EventsStatus.loading, clearMessage: true);
+
+    try {
+      final events = await _eventsService.fetchFeaturedEvents();
+      state = EventsState(
+        status: EventsStatus.success,
+        events: events,
+        hasMore: pageHasMore(events.length, SupabasePageSizes.events),
+      );
+    } catch (error) {
+      state = EventsState(
+        status: EventsStatus.error,
+        message: friendlyErrorMessage(error),
+      );
+    }
+  }
+
+  Future<void> refreshEvents() => loadEvents(force: true);
+
+  Future<void> loadMoreEvents() async {
+    if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+
+    state = state.copyWith(
+      status: state.status,
+      isLoadingMore: true,
+      clearMessage: true,
+    );
+
+    try {
+      final nextEvents = await _eventsService.fetchFeaturedEvents(
+        offset: state.events.length,
+      );
+      state = state.copyWith(
+        status: EventsStatus.success,
+        events: [...state.events, ...nextEvents],
+        hasMore: pageHasMore(nextEvents.length, SupabasePageSizes.events),
+        isLoadingMore: false,
+      );
+    } catch (error) {
+      state = state.copyWith(
+        status: state.status,
+        message: friendlyErrorMessage(error),
+        isLoadingMore: false,
+      );
+    }
+  }
+}
+
+final featuredEventsProvider =
+    StateNotifierProvider<FeaturedEventsController, EventsState>((ref) {
+      return FeaturedEventsController(ref.watch(eventsServiceProvider));
+    });
+
+class FollowingEventsController extends StateNotifier<EventsState> {
+  FollowingEventsController(this._eventsService)
+    : super(const EventsState.initial()) {
+    loadEvents();
+  }
+
+  final EventsService _eventsService;
+
+  Future<void> loadEvents({bool force = false}) async {
+    if (!force && state.status == EventsStatus.success) return;
+    state = state.copyWith(status: EventsStatus.loading, clearMessage: true);
+
+    try {
+      final events = await _eventsService.fetchFollowingEvents();
+      state = EventsState(
+        status: EventsStatus.success,
+        events: events,
+        hasMore: pageHasMore(events.length, SupabasePageSizes.events),
+      );
+    } catch (error) {
+      state = EventsState(
+        status: EventsStatus.error,
+        message: friendlyErrorMessage(error),
+      );
+    }
+  }
+
+  Future<void> refreshEvents() => loadEvents(force: true);
+
+  Future<void> loadMoreEvents() async {
+    if (state.isLoading || state.isLoadingMore || !state.hasMore) return;
+
+    state = state.copyWith(
+      status: state.status,
+      isLoadingMore: true,
+      clearMessage: true,
+    );
+
+    try {
+      final nextEvents = await _eventsService.fetchFollowingEvents(
+        offset: state.events.length,
+      );
+      state = state.copyWith(
+        status: EventsStatus.success,
+        events: [...state.events, ...nextEvents],
+        hasMore: pageHasMore(nextEvents.length, SupabasePageSizes.events),
+        isLoadingMore: false,
+      );
+    } catch (error) {
+      state = state.copyWith(
+        status: state.status,
+        message: friendlyErrorMessage(error),
+        isLoadingMore: false,
+      );
+    }
+  }
+}
+
+final followingEventsProvider =
+    StateNotifierProvider<FollowingEventsController, EventsState>((ref) {
+      return FollowingEventsController(ref.watch(eventsServiceProvider));
+    });
+
+final businessRecommendationsProvider =
+    FutureProvider<List<Map<String, dynamic>>>((ref) {
+      return ref
+          .watch(eventsServiceProvider)
+          .fetchBusinessRecommendationsData();
+    });

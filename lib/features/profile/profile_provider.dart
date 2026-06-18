@@ -22,11 +22,11 @@ class ProfileState {
   final String? message;
 
   bool get isLoading => status == ProfileStatus.loading;
-  bool get isProfileCompleted => profile?.hasCoreIdentity ?? false;
-  bool get canCreateEvent =>
-      EventProfileRequirements.hasRequiredFields(profile);
+  bool get hasMinimumProfile => profile?.hasMinimumProfile ?? false;
+  bool get isProfileCompleted => hasMinimumProfile;
   bool get canRequestToJoinEvent =>
-      EventProfileRequirements.hasRequiredFields(profile);
+      hasMinimumProfile && (profile?.hasEventRequiredFields ?? false);
+  bool get canCreateEvent => canRequestToJoinEvent;
 
   ProfileState copyWith({
     required ProfileStatus status,
@@ -128,6 +128,23 @@ class ProfileController extends StateNotifier<ProfileState> {
     } catch (error) {
       state = ProfileState(
         status: ProfileStatus.error,
+        message: friendlyErrorMessage(error),
+      );
+      return null;
+    }
+  }
+
+  Future<Profile?> updateUsername(String username) async {
+    state = state.copyWith(status: ProfileStatus.loading);
+
+    try {
+      final profile = await _profileService.updateMyUsername(username);
+      state = ProfileState(status: ProfileStatus.success, profile: profile);
+      return profile;
+    } catch (error) {
+      state = ProfileState(
+        status: ProfileStatus.error,
+        profile: state.profile,
         message: friendlyErrorMessage(error),
       );
       return null;

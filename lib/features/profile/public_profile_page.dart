@@ -19,7 +19,10 @@ import '../../core/widgets/error_view.dart';
 import '../../core/widgets/sport_icon.dart';
 import '../auth/auth_provider.dart';
 import '../business/widgets/business_badge.dart';
+import '../direct_messages/direct_messages_provider.dart';
+import '../direct_messages/direct_messages_service.dart';
 import '../follow/follow_provider.dart';
+import '../reports/blocks_provider.dart';
 import 'profile_models.dart';
 import 'profile_provider.dart';
 import 'widgets/profile_badges_section.dart';
@@ -71,82 +74,120 @@ class _PublicProfilePageState extends ConsumerState<PublicProfilePage> {
     final detailAsync = ref.watch(publicProfileDetailProvider(widget.userId));
     final currentUserId = ref.watch(authControllerProvider).userId;
 
-    return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          tooltip: 'Geri',
-          onPressed: () {
-            if (context.canPop()) {
-              context.pop();
-              return;
-            }
-            context.goNamed(RouteNames.profile);
-          },
-          icon: const Icon(Icons.arrow_back),
+    return detailAsync.when(
+      loading: () => const Scaffold(body: Center(child: AppLoader())),
+      error: (error, _) => Scaffold(
+        body: ErrorView(
+          message: 'Profil yüklenemedi.',
+          onRetry: () =>
+              ref.invalidate(publicProfileDetailProvider(widget.userId)),
         ),
-        title: const AppLogo(size: 32, showText: true),
       ),
-      body: SafeArea(
-        child: detailAsync.when(
-          loading: () => const AppLoader(),
-          error: (error, _) => ErrorView(
-            message: 'Profil yüklenemedi.',
-            onRetry: () =>
-                ref.invalidate(publicProfileDetailProvider(widget.userId)),
-          ),
-          data: (detail) {
-            if (detail == null) {
-              return const EmptyState(
-                title: 'Kullanıcı bulunamadı.',
-                message: 'Bu kullanıcı profili şu anda görüntülenemiyor.',
-                icon: Icons.person_off_outlined,
-              );
-            }
+      data: (detail) {
+        if (detail == null) {
+          return const Scaffold(
+            body: EmptyState(
+              title: 'Kullanıcı bulunamadı.',
+              message: 'Bu kullanıcı profili şu anda görüntülenemiyor.',
+              icon: Icons.person_off_outlined,
+            ),
+          );
+        }
 
-            final isMe =
-                currentUserId != null && currentUserId == detail.userId;
-            final badgesAsync = ref.watch(profileBadgesProvider(widget.userId));
+        final isMe = currentUserId != null && currentUserId == detail.userId;
+        final badgesAsync = ref.watch(profileBadgesProvider(widget.userId));
 
-            return RefreshIndicator(
-              onRefresh: () async {
-                ref.invalidate(publicProfileDetailProvider(widget.userId));
-                ref.invalidate(publicProfileGalleryProvider(widget.userId));
-                ref.invalidate(
-                  publicProfileEventHistoryProvider(widget.userId),
-                );
-              },
-              child: ListView(
-                padding: const EdgeInsets.all(AppSpacing.lg),
-                children: [
-                  _PublicProfileHeader(
-                    detail: detail,
-                    isMe: isMe,
-                    onFollowChanged: _refreshPublicProfile,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                  if (detail.canViewExtendedProfile) ...[
-                    ProfileBadgesSection.fromAsync(badgesAsync),
-                    const SizedBox(height: AppSpacing.lg),
-                  ],
-                  _ProfileTabs(
-                    selectedTab: _selectedTab,
-                    onChanged: (tab) => setState(() => _selectedTab = tab),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                  if (!detail.canViewExtendedProfile)
-                    const _LockedExtendedProfileCard(),
-                  if (detail.canViewExtendedProfile &&
-                      _selectedTab == _PublicProfileTab.gallery)
-                    _GallerySection(userId: widget.userId),
-                  if (detail.canViewExtendedProfile &&
-                      _selectedTab == _PublicProfileTab.events)
-                    _PastEventsSection(userId: widget.userId),
-                ],
+        ThemeData pageTheme = Theme.of(context);
+        if (detail.businessCustomThemeColor != null &&
+            detail.businessCustomThemeColor!.isNotEmpty) {
+          try {
+            final hexColor = detail.businessCustomThemeColor!;
+            final buffer = StringBuffer();
+            if (hexColor.length == 6 || hexColor.length == 7)
+              buffer.write('ff');
+            buffer.write(hexColor.replaceFirst('#', ''));
+            final color = Color(int.parse(buffer.toString(), radix: 16));
+            pageTheme = pageTheme.copyWith(
+              primaryColor: color,
+              colorScheme: pageTheme.colorScheme.copyWith(
+                primary: color,
+                secondary: color.withValues(alpha: 0.8),
+              ),
+              appBarTheme: pageTheme.appBarTheme.copyWith(
+                iconTheme: IconThemeData(color: color),
               ),
             );
-          },
-        ),
-      ),
+          } catch (_) {}
+        }
+
+        return Theme(
+          data: pageTheme,
+          child: Scaffold(
+            appBar: AppBar(
+              leading: IconButton(
+                tooltip: 'Geri',
+                onPressed: () {
+                  if (context.canPop()) {
+                    context.pop();
+                    return;
+                  }
+                  context.goNamed(RouteNames.profile);
+                },
+                icon: const Icon(Icons.arrow_back),
+              ),
+              title: const AppLogo(size: 32, showText: true),
+            ),
+            body: SafeArea(
+              child: RefreshIndicator(
+                onRefresh: () async {
+                  ref.invalidate(publicProfileDetailProvider(widget.userId));
+                  ref.invalidate(publicProfileGalleryProvider(widget.userId));
+                  ref.invalidate(
+                    publicProfileEventHistoryProvider(widget.userId),
+                  );
+                },
+                child: ListView(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  children: [
+                    _PublicProfileHeader(
+                      detail: detail,
+                      isMe: isMe,
+                      onFollowChanged: _refreshPublicProfile,
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                    if (detail.canViewExtendedProfile) ...[
+                      ProfileBadgesSection.fromAsync(
+                        badgesAsync,
+                        trustScore: detail.trustScore,
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                    ],
+                    _ProfileTabs(
+                      selectedTab: _selectedTab,
+                      onChanged: (tab) => setState(() => _selectedTab = tab),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    if (!detail.canViewExtendedProfile)
+                      const _LockedExtendedProfileCard(),
+                    if (detail.canViewExtendedProfile &&
+                        _selectedTab == _PublicProfileTab.gallery)
+                      _GallerySection(
+                        userId: widget.userId,
+                        businessGalleryUrls: detail.businessGalleryUrls,
+                      ),
+                    if (detail.canViewExtendedProfile &&
+                        _selectedTab == _PublicProfileTab.events)
+                      _PastEventsSection(
+                        userId: widget.userId,
+                        pinnedEventId: detail.businessPinnedEventId,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -248,11 +289,43 @@ class _PublicProfileHeader extends StatelessWidget {
             const SizedBox(height: AppSpacing.lg),
             _ProfileStats(detail: detail),
             const SizedBox(height: AppSpacing.lg),
-            _PublicProfileFollowAction(
-              targetUserId: detail.userId,
-              isMe: isMe,
-              onChanged: onFollowChanged,
-            ),
+            if (isMe)
+              _PublicProfileFollowAction(
+                targetUserId: detail.userId,
+                isMe: isMe,
+                onChanged: onFollowChanged,
+              )
+            else
+              Consumer(
+                builder: (context, ref, child) {
+                  final blockedIds =
+                      ref.watch(myBlockedUserIdsProvider).valueOrNull ??
+                      const [];
+                  final isBlocked = blockedIds.contains(detail.userId);
+                  if (isBlocked) {
+                    return _PublicProfileFollowAction(
+                      targetUserId: detail.userId,
+                      isMe: isMe,
+                      onChanged: onFollowChanged,
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: _PublicProfileFollowAction(
+                          targetUserId: detail.userId,
+                          isMe: isMe,
+                          onChanged: onFollowChanged,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: _MessageButton(targetUserId: detail.userId),
+                      ),
+                    ],
+                  );
+                },
+              ),
           ],
         ),
       ),
@@ -618,12 +691,43 @@ class _TabButton extends StatelessWidget {
 }
 
 class _GallerySection extends ConsumerWidget {
-  const _GallerySection({required this.userId});
+  const _GallerySection({required this.userId, this.businessGalleryUrls});
 
   final String userId;
+  final List<String>? businessGalleryUrls;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    if (businessGalleryUrls != null && businessGalleryUrls!.isNotEmpty) {
+      final urls = businessGalleryUrls!;
+      return GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: urls.length,
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: AppSpacing.sm,
+          mainAxisSpacing: AppSpacing.sm,
+        ),
+        itemBuilder: (context, index) {
+          final url = urls[index];
+          return ClipRRect(
+            borderRadius: AppRadius.mdBorder,
+            child: Image.network(
+              url,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return const ColoredBox(
+                  color: AppColors.border,
+                  child: Icon(Icons.image_not_supported_outlined),
+                );
+              },
+            ),
+          );
+        },
+      );
+    }
+
     final galleryAsync = ref.watch(publicProfileGalleryProvider(userId));
     final currentUserId = ref.watch(authControllerProvider).userId;
     final isOwner = currentUserId != null && currentUserId == userId;
@@ -731,9 +835,10 @@ class _GallerySection extends ConsumerWidget {
 }
 
 class _PastEventsSection extends ConsumerWidget {
-  const _PastEventsSection({required this.userId});
+  const _PastEventsSection({required this.userId, this.pinnedEventId});
 
   final String userId;
+  final String? pinnedEventId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -746,12 +851,58 @@ class _PastEventsSection extends ConsumerWidget {
             ref.invalidate(publicProfileEventHistoryProvider(userId)),
       ),
       data: (events) {
-        final activeEvents = events.where((event) => !event.isPast).toList();
-        final pastEvents = events.where((event) => event.isPast).toList();
+        PublicProfileEventHistoryItem? pinnedEvent;
+        if (pinnedEventId != null) {
+          pinnedEvent = events
+              .cast<PublicProfileEventHistoryItem?>()
+              .firstWhere(
+                (e) => e?.eventId == pinnedEventId,
+                orElse: () => null,
+              );
+        }
+
+        final activeEvents = events
+            .where((event) => !event.isPast && event.eventId != pinnedEventId)
+            .toList();
+        final pastEvents = events
+            .where((event) => event.isPast && event.eventId != pinnedEventId)
+            .toList();
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (pinnedEvent != null) ...[
+              Row(
+                children: [
+                  const Icon(
+                    Icons.push_pin,
+                    color: AppColors.primary,
+                    size: 20,
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text('Sabitlenmiş Etkinlik', style: AppTextStyles.title),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Card(
+                elevation: 0,
+                color: Theme.of(context).primaryColor.withValues(alpha: 0.08),
+                shape: RoundedRectangleBorder(
+                  borderRadius: AppRadius.lgBorder,
+                  side: BorderSide(
+                    color: Theme.of(
+                      context,
+                    ).primaryColor.withValues(alpha: 0.5),
+                    width: 1.5,
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.xs),
+                  child: _PastEventTile(item: pinnedEvent),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+            ],
             Text('Aktif Etkinlikler', style: AppTextStyles.title),
             const SizedBox(height: AppSpacing.md),
             _PublicEventSectionList(
@@ -1025,4 +1176,63 @@ String _compactCount(int value) {
   }
   final count = value / 1000000;
   return '${count.toStringAsFixed(count >= 10 ? 0 : 1)}M';
+}
+
+class _MessageButton extends ConsumerStatefulWidget {
+  const _MessageButton({required this.targetUserId});
+
+  final String targetUserId;
+
+  @override
+  ConsumerState<_MessageButton> createState() => _MessageButtonState();
+}
+
+class _MessageButtonState extends ConsumerState<_MessageButton> {
+  bool _isLoading = false;
+
+  Future<void> _handleSendMessage() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final service = ref.read(directMessagingServiceProvider);
+      final conversationId = await service.getOrCreateConversation(
+        widget.targetUserId,
+      );
+      if (!mounted) return;
+
+      context.pushNamed(
+        RouteNames.directChat,
+        pathParameters: {'conversationId': conversationId},
+      );
+    } catch (error) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            error is DirectMessagingUnavailableException
+                ? error.message
+                : 'Mesajlaşma özelliği şu anda kullanılamıyor.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppButton(
+      label: 'Mesaj Gönder',
+      variant: AppButtonVariant.secondary,
+      isLoading: _isLoading,
+      onPressed: _isLoading ? null : _handleSendMessage,
+    );
+  }
 }

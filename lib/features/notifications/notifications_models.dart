@@ -153,3 +153,25 @@ class AppNotification {
     );
   }
 }
+
+class PushTokenRegistration {
+  const PushTokenRegistration({required this.token, required this.platform});
+
+  final String token;
+  final String platform;
+
+  bool get isValid {
+    return token.trim().length > 20 &&
+        (platform == 'android' || platform == 'ios' || platform == 'web');
+  }
+
+  Map<String, dynamic> toUpsertJson({required String userId}) {
+    return {
+      'user_id': userId,
+      'token': token.trim(),
+      'platform': platform,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+      'last_seen_at': DateTime.now().toUtc().toIso8601String(),
+    };
+  }
+}

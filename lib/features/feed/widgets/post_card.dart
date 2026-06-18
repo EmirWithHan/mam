@@ -7,6 +7,8 @@ import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/constants/sport_types.dart';
+import '../../../core/utils/date_formatter.dart';
+import '../../../core/widgets/adaptive_dialog.dart';
 import '../../auth/auth_provider.dart';
 import '../../follow/widgets/follow_button.dart';
 import '../../profile/widgets/public_profile_preview_tile.dart';
@@ -40,15 +42,20 @@ class PostCard extends ConsumerWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.surface,
         borderRadius: AppRadius.xlBorder,
+        gradient: const LinearGradient(
+          colors: [Colors.white, Color(0xFFFFF9F6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textPrimary.withValues(alpha: 0.06),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            color: AppColors.textPrimary.withValues(alpha: 0.09),
+            blurRadius: 26,
+            offset: const Offset(0, 12),
           ),
         ],
+        border: Border.all(color: const Color(0xFFFFF0EA), width: 0.8),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -92,17 +99,25 @@ class PostCard extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.md),
                 ClipRRect(
                   borderRadius: AppRadius.lgBorder,
-                  child: AspectRatio(
-                    aspectRatio: 4 / 3,
-                    child: Image.network(
-                      post.imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const ColoredBox(
-                          color: AppColors.border,
-                          child: Center(child: Icon(Icons.image_not_supported)),
-                        );
-                      },
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 520),
+                    child: AspectRatio(
+                      aspectRatio: 4 / 3,
+                      child: ColoredBox(
+                        color: AppColors.background,
+                        child: Image.network(
+                          post.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return const ColoredBox(
+                              color: AppColors.border,
+                              child: Center(
+                                child: Icon(Icons.image_not_supported),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -130,7 +145,10 @@ class PostCard extends ConsumerWidget {
                   Text(caption, style: AppTextStyles.body),
                   const SizedBox(height: AppSpacing.sm),
                 ],
-                Text(_formatDate(post.createdAt), style: AppTextStyles.caption),
+                Text(
+                  DateFormatter.dateTime(post.createdAt),
+                  style: AppTextStyles.caption,
+                ),
                 const SizedBox(height: AppSpacing.md),
                 DecoratedBox(
                   decoration: BoxDecoration(
@@ -191,15 +209,6 @@ class PostCard extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  String _formatDate(DateTime value) {
-    final year = value.year.toString().padLeft(4, '0');
-    final month = value.month.toString().padLeft(2, '0');
-    final day = value.day.toString().padLeft(2, '0');
-    final hour = value.hour.toString().padLeft(2, '0');
-    final minute = value.minute.toString().padLeft(2, '0');
-    return '$year-$month-$day $hour:$minute';
   }
 }
 
@@ -345,25 +354,13 @@ class _PostOverflowButton extends ConsumerWidget {
   }
 
   Future<void> _confirmDeletePost(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Paylaşım silinsin mi?'),
-          content: const Text('Bu paylaşım kalıcı olarak kaldırılacak.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Vazgeç'),
-            ),
-            TextButton(
-              style: TextButton.styleFrom(foregroundColor: AppColors.error),
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Sil'),
-            ),
-          ],
-        );
-      },
+    final confirmed = await showAdaptiveConfirmDialog(
+      context,
+      title: 'Paylaşım silinsin mi?',
+      content: 'Bu paylaşım kalıcı olarak kaldırılacak.',
+      confirmLabel: 'Sil',
+      cancelLabel: 'Vazgeç',
+      isDestructive: true,
     );
 
     if (confirmed != true || !context.mounted) return;

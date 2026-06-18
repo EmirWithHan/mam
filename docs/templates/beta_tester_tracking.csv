@@ -1,0 +1,2 @@
+tester_name,tester_email_placeholder,device_model,android_version,install_date,registered,verified_email,username_created,home_tested,events_tested,profile_tested,search_tested,settings_tested,forgot_password_tested,bugs_reported,status,notes
+Tester Placeholder,tester@example.com,Pixel 7,Android 14,YYYY-MM-DD,no,no,no,no,no,no,no,no,no,0,not_started,Use real tester details only in a private local copy.

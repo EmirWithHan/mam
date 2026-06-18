@@ -7,8 +7,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/date_formatter.dart';
 import '../../../core/widgets/app_logo.dart';
 import '../../../core/widgets/empty_state.dart';
+import '../../../core/widgets/adaptive_dialog.dart';
 import '../profile_activity_provider.dart';
 import '../profile_provider.dart';
 
@@ -96,7 +98,7 @@ class _ProfileGalleryViewerPageState
       backgroundColor: AppColors.background,
       appBar: AppBar(
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: 'Geri',
           onPressed: () {
             if (context.canPop()) {
               context.pop();
@@ -241,24 +243,13 @@ class _ProfileGalleryViewerPageState
   }
 
   Future<void> _confirmDelete(ProfileGalleryViewerItem item) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Bu gönderiyi silmek istediğine emin misin?'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Vazgeç'),
-            ),
-            TextButton(
-              style: TextButton.styleFrom(foregroundColor: AppColors.error),
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Sil'),
-            ),
-          ],
-        );
-      },
+    final confirmed = await showAdaptiveConfirmDialog(
+      context,
+      title: 'Bu gönderiyi silmek istediğine emin misin?',
+      content: 'Bu gönderi kalıcı olarak silinecek.',
+      confirmLabel: 'Sil',
+      cancelLabel: 'Vazgeç',
+      isDestructive: true,
     );
 
     if (confirmed != true || !mounted) return;
@@ -354,20 +345,16 @@ class _GalleryViewerPost extends StatelessWidget {
                   Text(caption, style: AppTextStyles.body),
                 ],
                 const SizedBox(height: AppSpacing.sm),
-                Text(_formatDate(item.createdAt), style: AppTextStyles.caption),
+                Text(
+                  DateFormatter.shortDate(item.createdAt),
+                  style: AppTextStyles.caption,
+                ),
               ],
             ),
           ),
         ),
       ],
     );
-  }
-
-  String _formatDate(DateTime value) {
-    final year = value.year.toString().padLeft(4, '0');
-    final month = value.month.toString().padLeft(2, '0');
-    final day = value.day.toString().padLeft(2, '0');
-    return '$day.$month.$year';
   }
 }
 

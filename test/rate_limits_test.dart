@@ -10,7 +10,7 @@ void main() {
   group('RateLimitRules', () {
     test('keeps configured action limits explicit', () {
       expect(RateLimitRules.createPostPerHour, 10);
-      expect(RateLimitRules.normalCreateEventPerDay, 1);
+      expect(RateLimitRules.normalCreateEventPerDay, 3);
       expect(RateLimitRules.businessCreateEventPerDay, 3);
       expect(RateLimitRules.commentsPerHour, 30);
       expect(RateLimitRules.followRequestsPerHour, 30);
@@ -35,7 +35,7 @@ void main() {
     test('map raw DB token to shared copy', () {
       expect(
         friendlyErrorMessage('PostgrestException rate_limit_exceeded'),
-        friendlyRateLimitMessage,
+        'Etkinlik veya işlem limitine ulaştın. Güvenilir sporcular günde 3, yeni sporcular günde 2, standart işletmeler ise ayda 3 etkinlik oluşturabilir. Limiti artırmak için Business Plus\'a geçebilirsin.',
       );
       expect(
         friendlyCreatePostErrorMessage('rate_limit_exceeded'),

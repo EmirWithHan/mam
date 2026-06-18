@@ -1,0 +1,2 @@
+tester_name,tester_email,device_model,android_version,opt_in_date,installed,day_1_done,day_7_done,day_14_done,feedback_received,still_opted_in,notes
+TESTER_NAME_PLACEHOLDER,TESTER_EMAIL_PLACEHOLDER,DEVICE_MODEL_PLACEHOLDER,ANDROID_VERSION_PLACEHOLDER,YYYY-MM-DD,no,no,no,no,no,yes,placeholder row only - replace locally and do not commit real tester emails

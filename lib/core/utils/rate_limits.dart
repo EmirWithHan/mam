@@ -19,7 +19,7 @@ class RateLimitRules {
   const RateLimitRules._();
 
   static const createPostPerHour = 10;
-  static const normalCreateEventPerDay = 1;
+  static const normalCreateEventPerDay = 3;
   static const businessCreateEventPerDay = 3;
   static const businessApplicationActivePending = 1;
   static const commentsPerHour = 30;

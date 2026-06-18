@@ -9,11 +9,12 @@ This is an engineering/product readiness audit for closed beta and future store 
 - App name in app UI/docs: Match A Man / MaM
 - Flutter package name: `match_a_man`
 - pubspec version/build: `1.0.0+1`
-- Android namespace: `com.example.mam`
-- Android applicationId: `com.example.mam`
+- Android namespace: `com.matchaman.app`
+- Android applicationId: `com.matchaman.app`
 - Android app label: `MaM`
-- iOS bundle id: `com.example.mam`
+- iOS bundle id: `com.matchaman.app`
 - iOS display name: `MaM`
+- Any AAB built with a previous identifier must be rebuilt before Play upload.
 - Web title: `MaM`
 - Web manifest name/short_name: `MaM`
 
@@ -21,8 +22,8 @@ This is an engineering/product readiness audit for closed beta and future store 
 
 - Confirm beta display name: `MaM` vs `Match A Man`.
 - Confirm version/build number strategy before distributing test builds.
-- Replace placeholder Android package/applicationId before Play Console testing.
-- Replace placeholder iOS bundle id before TestFlight.
+- Confirm Play Console app record uses Android applicationId `com.matchaman.app`.
+- Confirm App Store Connect app record uses iOS bundle id `com.matchaman.app`.
 - Confirm release Supabase redirect URLs for the selected package/bundle/domain setup.
 - Keep secrets supplied through `--dart-define`, CI secrets, or local environment only.
 
@@ -30,9 +31,12 @@ This is an engineering/product readiness audit for closed beta and future store 
 
 - Finalize legal app name, subtitle, category, descriptions, screenshots, and review notes.
 - Publish Privacy Policy, Terms of Service, and User Data Deletion pages.
-- Configure Android signing and iOS signing/provisioning.
+- Configure local Android upload keystore and iOS signing/provisioning.
 - Complete Play Console Data Safety and App Store privacy labels.
 - Revisit Sign in with Apple requirements before public iOS launch if Google/Facebook remain available.
+- Turkish UI text audit completed for Play Closed Testing; remaining English
+  terms should be limited to technical identifiers, URLs, and provider names
+  such as Google.
 
 ## App Icon And Splash
 
@@ -48,8 +52,9 @@ This is an engineering/product readiness audit for closed beta and future store 
 
 ## Current Blockers
 
-- Android and iOS identifiers are still `com.example.mam`.
-- Android release signing uses the debug signing config.
+- Android and iOS identifiers are set to `com.matchaman.app`.
+- Android release builds require `android/key.properties` and use
+  `signingConfigs.release`; local upload keystore still needs to be created.
 - Privacy Policy URL is not finalized.
 - Terms of Service URL is not finalized.
 - User Data Deletion URL/instructions are not finalized.

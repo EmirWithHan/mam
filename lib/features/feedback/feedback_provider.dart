@@ -83,7 +83,7 @@ class FeedbackController extends StateNotifier<FeedbackState> {
       await _service.submitFeedback(input);
       state = const FeedbackState(
         success: true,
-        message: 'Geri bildirimin için teşekkürler.',
+        message: 'Mesaj\u0131n al\u0131nd\u0131. Te\u015Fekk\u00FCr ederiz.',
       );
       return true;
     } on FeedbackException catch (error) {

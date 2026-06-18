@@ -6,14 +6,19 @@ class RouteNames {
   static const accountDeletionPending = 'accountDeletionPending';
   static const login = 'login';
   static const register = 'register';
+  static const emailVerification = 'emailVerification';
+  static const forgotPassword = 'forgotPassword';
+  static const resetPassword = 'resetPassword';
   static const authCallback = 'authCallback';
   static const profile = 'profile';
+  static const usernameOnboarding = 'usernameOnboarding';
   static const publicProfile = 'publicProfile';
   static const profileFollowList = 'profileFollowList';
   static const profileGalleryViewer = 'profileGalleryViewer';
   static const profileComplete = 'profileComplete';
   static const settings = 'settings';
   static const feedback = 'feedback';
+  static const rulesAndAgreements = 'rulesAndAgreements';
   static const privacyPolicy = 'privacyPolicy';
   static const termsOfUse = 'termsOfUse';
   static const communityGuidelines = 'communityGuidelines';
@@ -24,6 +29,7 @@ class RouteNames {
   static const businessProfile = 'businessProfile';
   static const admin = 'admin';
   static const notifications = 'notifications';
+  static const followRequests = 'followRequests';
   static const trustScoreHistory = 'trustScoreHistory';
   static const feed = 'feed';
   static const create = 'create';
@@ -35,7 +41,10 @@ class RouteNames {
   static const eventDetail = 'eventDetail';
   static const eventChat = 'eventChat';
   static const createEvent = 'createEvent';
+  static const editEvent = 'editEvent';
   static const home = 'home';
+  static const directConversations = 'directConversations';
+  static const directChat = 'directChat';
 }
 
 class RoutePaths {
@@ -46,14 +55,19 @@ class RoutePaths {
   static const accountDeletionPending = '/account-deletion-pending';
   static const login = '/auth/login';
   static const register = '/auth/register';
+  static const emailVerification = '/auth/email-verification';
+  static const forgotPassword = '/auth/forgot-password';
+  static const resetPassword = '/reset-password';
   static const authCallback = '/auth/callback';
   static const profile = '/profile';
+  static const usernameOnboarding = '/onboarding/username';
   static const publicProfile = '/profile/public/:userId';
   static const profileFollowList = '/profile/public/:userId/follows/:type';
   static const profileGalleryViewer = '/profile-gallery-viewer';
   static const profileComplete = '/profile/complete';
   static const settings = '/settings';
   static const feedback = '/settings/feedback';
+  static const rulesAndAgreements = '/settings/rules-and-agreements';
   static const privacyPolicy = '/settings/privacy-policy';
   static const termsOfUse = '/settings/terms-of-use';
   static const communityGuidelines = '/settings/community-guidelines';
@@ -64,6 +78,7 @@ class RoutePaths {
   static const businessProfile = '/business/:businessId';
   static const admin = '/admin';
   static const notifications = '/notifications';
+  static const followRequests = '/notifications/follow-requests';
   static const trustScoreHistory = '/profile/trust-score';
   static const feed = '/feed';
   static const create = '/create';
@@ -75,7 +90,10 @@ class RoutePaths {
   static const eventDetail = '/events/:eventId';
   static const eventChat = '/events/:eventId/chat';
   static const createEvent = '/events/create';
+  static const editEvent = '/events/:eventId/edit';
   static const home = '/home';
+  static const directConversations = '/dms';
+  static const directChat = '/dms/:conversationId';
   static const profileCompleteModeEventRequirements = 'eventRequirements';
 
   static bool isSafeReturnPath(String? value) {

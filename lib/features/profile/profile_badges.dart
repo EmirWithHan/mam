@@ -44,84 +44,25 @@ class ProfileBadgeCatalog {
 
   static const previewLimit = 5;
 
-  static const upcomingBadges = [
-    ProfileBadge(
-      id: 'team_player',
-      label: 'Takım Oyuncusu',
-      description: 'Takım sporları rozetleri sonraki kurallarla açılacak.',
-      icon: Icons.handshake_outlined,
-      status: ProfileBadgeStatus.upcoming,
-      sortOrder: 90,
-    ),
-    ProfileBadge(
-      id: 'early_joiner',
-      label: 'Erken Katılan',
-      description: 'Erken katılım sinyalleri sonraki rozet altyapısına bağlı.',
-      icon: Icons.bolt_outlined,
-      status: ProfileBadgeStatus.upcoming,
-      sortOrder: 100,
-    ),
-  ];
-
   static List<ProfileBadge> fallbackCatalog() {
     return const [
       ProfileBadge(
-        id: 'first_step',
-        label: 'İlk Adım',
-        description: 'Profilini tamamladı.',
-        icon: Icons.flag_outlined,
-        status: ProfileBadgeStatus.locked,
-        sortOrder: 10,
-      ),
-      ProfileBadge(
-        id: 'first_event',
-        label: 'İlk Etkinlik',
-        description: 'İlk etkinliğine katıldı.',
-        icon: Icons.event_available_outlined,
-        status: ProfileBadgeStatus.locked,
-        sortOrder: 20,
-      ),
-      ProfileBadge(
-        id: 'reliable_participant',
-        label: 'Güvenilir Katılımcı',
-        description: 'Toplulukta güven kazandı.',
+        id: 'onayli_profil',
+        label: 'Onaylı profil',
+        description: 'Profil bilgilerini eksiksiz tamamladı.',
         icon: Icons.verified_outlined,
         status: ProfileBadgeStatus.locked,
-        sortOrder: 30,
-      ),
-      ProfileBadge(
-        id: 'active_player',
-        label: 'Aktif Oyuncu',
-        description: 'Birden fazla etkinlikte yer aldı.',
-        icon: Icons.directions_run,
-        status: ProfileBadgeStatus.locked,
-        sortOrder: 40,
-      ),
-      ProfileBadge(
-        id: 'organizer',
-        label: 'Organizatör',
-        description: 'Etkinlik organize etti.',
-        icon: Icons.groups_2_outlined,
-        status: ProfileBadgeStatus.locked,
-        sortOrder: 50,
-      ),
-      ProfileBadge(
-        id: 'social',
-        label: 'Sosyal',
-        description: 'Toplulukta aktif paylaşım yaptı.',
-        icon: Icons.forum_outlined,
-        status: ProfileBadgeStatus.locked,
-        sortOrder: 60,
+        sortOrder: 20,
       ),
     ];
   }
 
   static List<ProfileBadge> withUpcoming(List<ProfileBadge> badges) {
-    final existingIds = badges.map((badge) => badge.id).toSet();
-    return [
-      ...badges,
-      ...upcomingBadges.where((badge) => !existingIds.contains(badge.id)),
-    ]..sort(_sortBadges);
+    return List<ProfileBadge>.from(badges)..sort(_sortBadges);
+  }
+
+  static List<ProfileBadge> launchVisible(List<ProfileBadge> badges) {
+    return badges;
   }
 
   static List<ProfileBadge> preview(List<ProfileBadge> badges) {
@@ -154,10 +95,31 @@ IconData _iconForKey(String? key) {
     'flag' => Icons.flag_outlined,
     'event' => Icons.event_available_outlined,
     'verified' => Icons.verified_outlined,
+    'verified_user' => Icons.verified_user_outlined,
     'run' => Icons.directions_run,
-    'groups' => Icons.groups_2_outlined,
+    'group' => Icons.group_outlined,
+    'groups' => Icons.groups_outlined,
+    'workspace_premium' => Icons.workspace_premium_outlined,
+    'home' => Icons.home_outlined,
+    'military_tech' => Icons.military_tech_outlined,
+    'sports_soccer' => Icons.sports_soccer,
+    'directions_run' => Icons.directions_run,
+    'pool' => Icons.pool,
+    'sports_tennis' => Icons.sports_tennis,
+    'category' => Icons.category_outlined,
+    'schedule' => Icons.schedule_outlined,
+    'explore' => Icons.explore_outlined,
+    'terrain' => Icons.terrain_outlined,
+    'hiking' => Icons.hiking,
+    'casino' => Icons.casino_outlined,
+    'fitness_center' => Icons.fitness_center,
+    'sports_handball' => Icons.sports_handball,
+    'music_note' => Icons.music_note,
+    'directions_bike' => Icons.directions_bike,
+    'bolt' => Icons.bolt,
+    'star' => Icons.star_outline,
+    'trending_up' => Icons.trending_up,
     'chat' => Icons.forum_outlined,
-    'bolt' => Icons.bolt_outlined,
     'team' => Icons.handshake_outlined,
     _ => Icons.workspace_premium_outlined,
   };

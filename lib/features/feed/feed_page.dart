@@ -72,6 +72,14 @@ class _FeedPageState extends ConsumerState<FeedPage> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<FeedState>(feedControllerProvider, (previous, next) {
+      if (next.message != null && next.message != previous?.message) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(next.message!)));
+      }
+    });
+
     final feedState = ref.watch(feedControllerProvider);
 
     return SafeArea(
@@ -138,6 +146,15 @@ class _FeedHeader extends ConsumerWidget {
         const SizedBox(height: AppSpacing.lg),
         Row(
           children: [
+            Container(
+              width: 4,
+              height: 24,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(child: Text('Akış', style: AppTextStyles.headline)),
             Container(
               width: 44,

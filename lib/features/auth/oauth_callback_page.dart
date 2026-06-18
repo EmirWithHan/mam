@@ -28,7 +28,7 @@ class _OAuthCallbackPageState extends ConsumerState<OAuthCallbackPage> {
   void initState() {
     super.initState();
     final uri = Uri.base;
-    _failureMessage = _oauthFailureMessage(uri);
+    _failureMessage = _authFailureMessage(uri);
     debugPrint(
       '[AuthCallback] reached path=${uri.path} '
       'queryKeys=${uri.queryParameters.keys.join(',')} '
@@ -58,12 +58,19 @@ class _OAuthCallbackPageState extends ConsumerState<OAuthCallbackPage> {
   Widget build(BuildContext context) {
     final authState = ref.watch(authControllerProvider);
 
+    if (authState.status == AuthStatus.passwordRecovery) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.goNamed(RouteNames.resetPassword);
+      });
+    }
+
     if (authState.status == AuthStatus.authenticated) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         final routeName = authState.isProfileCompleted
             ? RouteNames.events
-            : RouteNames.profileComplete;
+            : RouteNames.usernameOnboarding;
         debugPrint('[AuthCallback] route decision=$routeName');
         context.goNamed(routeName);
       });
@@ -110,13 +117,13 @@ class _OAuthCallbackPageState extends ConsumerState<OAuthCallbackPage> {
   }
 }
 
-String _oauthFailureMessage(Uri uri) {
+String _authFailureMessage(Uri uri) {
   final values = [
     ...uri.queryParameters.values,
     uri.fragment,
   ].join(' ').toLowerCase();
-  if (values.contains('facebook')) {
-    return 'Facebook ile giriş tamamlanamadı.';
+  if (values.contains('expired') || values.contains('invalid')) {
+    return 'Bağlantı geçersiz veya süresi dolmuş olabilir.';
   }
   return 'Giriş işlemi tamamlanamadı.';
 }

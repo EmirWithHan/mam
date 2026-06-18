@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../../services/supabase_service.dart';
 import 'public_profile_models.dart';
 
@@ -55,17 +56,23 @@ class PublicProfileService {
 
     if (uniqueUserIds.isEmpty) return const {};
 
-    final data = await SupabaseService.client.rpc(
-      'get_public_profile_previews',
-      params: {'p_user_ids': uniqueUserIds},
-    );
+    try {
+      final results = await Future.wait(
+        uniqueUserIds.map((userId) => fetchPublicProfilePreview(userId)),
+      );
 
-    if (data is! List) return const {};
-
-    final previews = data.whereType<Map>().map(
-      (item) => PublicProfilePreview.fromJson(Map<String, dynamic>.from(item)),
-    );
-
-    return {for (final preview in previews) preview.userId: preview};
+      final Map<String, PublicProfilePreview> resultMap = {};
+      for (final preview in results) {
+        if (preview != null) {
+          resultMap[preview.userId] = preview;
+        }
+      }
+      return resultMap;
+    } catch (e) {
+      debugPrint(
+        '[PublicProfileService] Error fetching previews in parallel: $e',
+      );
+      return const {};
+    }
   }
 }

@@ -6,26 +6,21 @@ class RateLimitService {
 
   Future<void> checkAndRecord({
     required String action,
-    required int limitCount,
-    required int windowSeconds,
     String? targetId,
   }) async {
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    if (userId == null) {
+      throw StateError('You must be signed in to perform this action.');
+    }
     await SupabaseService.client.rpc(
       'check_and_record_rate_limit',
-      params: {
-        'p_action': action,
-        'p_limit_count': limitCount,
-        'p_window_seconds': windowSeconds,
-        'p_target_id': targetId,
-      },
+      params: {'user_id': userId, 'action': action, 'target_id': targetId},
     );
   }
 
   Future<void> createPost({String? targetId}) {
     return checkAndRecord(
       action: RateLimitActions.createPost,
-      limitCount: RateLimitRules.createPostPerHour,
-      windowSeconds: RateLimitRules.hourWindowSeconds,
       targetId: targetId,
     );
   }
@@ -33,27 +28,17 @@ class RateLimitService {
   Future<void> createEvent({required bool isBusinessEvent, String? targetId}) {
     return checkAndRecord(
       action: RateLimitActions.createEvent,
-      limitCount: RateLimitRules.createEventLimit(
-        isBusinessEvent: isBusinessEvent,
-      ),
-      windowSeconds: RateLimitRules.dayWindowSeconds,
       targetId: targetId,
     );
   }
 
   Future<void> submitBusinessApplication() {
-    return checkAndRecord(
-      action: RateLimitActions.businessApplicationSubmit,
-      limitCount: RateLimitRules.businessApplicationActivePending,
-      windowSeconds: RateLimitRules.dayWindowSeconds,
-    );
+    return checkAndRecord(action: RateLimitActions.businessApplicationSubmit);
   }
 
   Future<void> createComment({required String postId}) {
     return checkAndRecord(
       action: RateLimitActions.commentCreate,
-      limitCount: RateLimitRules.commentsPerHour,
-      windowSeconds: RateLimitRules.hourWindowSeconds,
       targetId: postId,
     );
   }
@@ -61,8 +46,6 @@ class RateLimitService {
   Future<void> followRequest({required String targetUserId}) {
     return checkAndRecord(
       action: RateLimitActions.followRequest,
-      limitCount: RateLimitRules.followRequestsPerHour,
-      windowSeconds: RateLimitRules.hourWindowSeconds,
       targetId: targetUserId,
     );
   }
@@ -70,8 +53,6 @@ class RateLimitService {
   Future<void> eventJoinRequest({required String eventId}) {
     return checkAndRecord(
       action: RateLimitActions.eventJoinRequest,
-      limitCount: RateLimitRules.eventJoinRequestsPerDay,
-      windowSeconds: RateLimitRules.dayWindowSeconds,
       targetId: eventId,
     );
   }
@@ -79,8 +60,6 @@ class RateLimitService {
   Future<void> eventJoinReview({required String requestId}) {
     return checkAndRecord(
       action: RateLimitActions.eventJoinReview,
-      limitCount: RateLimitRules.eventJoinReviewsPerHour,
-      windowSeconds: RateLimitRules.hourWindowSeconds,
       targetId: requestId,
     );
   }
@@ -88,8 +67,6 @@ class RateLimitService {
   Future<void> submitReport({required String targetId}) {
     return checkAndRecord(
       action: RateLimitActions.reportCreate,
-      limitCount: RateLimitRules.reportsPerDay,
-      windowSeconds: RateLimitRules.dayWindowSeconds,
       targetId: targetId,
     );
   }
@@ -100,8 +77,6 @@ class RateLimitService {
   }) {
     return checkAndRecord(
       action: RateLimitActions.businessReviewSubmit,
-      limitCount: RateLimitRules.businessReviewPerTarget,
-      windowSeconds: RateLimitRules.dayWindowSeconds,
       targetId: eventId,
     );
   }
@@ -109,17 +84,11 @@ class RateLimitService {
   Future<void> markBusinessAttendance({required String participantUserId}) {
     return checkAndRecord(
       action: RateLimitActions.businessAttendanceMark,
-      limitCount: RateLimitRules.businessAttendanceMarksPerHour,
-      windowSeconds: RateLimitRules.hourWindowSeconds,
       targetId: participantUserId,
     );
   }
 
   Future<void> submitFeedback() {
-    return checkAndRecord(
-      action: RateLimitActions.feedbackSubmit,
-      limitCount: RateLimitRules.feedbackSubmitsPerDay,
-      windowSeconds: RateLimitRules.dayWindowSeconds,
-    );
+    return checkAndRecord(action: RateLimitActions.feedbackSubmit);
   }
 }

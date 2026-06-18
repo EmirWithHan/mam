@@ -8,6 +8,44 @@ class EventOrganizerType {
   static const business = 'business';
 }
 
+class EventCapacityBucket {
+  const EventCapacityBucket._();
+
+  static const generic = 'generic';
+  static const male = 'male';
+  static const female = 'female';
+}
+
+class EventCapacityRules {
+  const EventCapacityRules._();
+
+  static String? bucketFor({
+    required String? gender,
+    required int genericRemaining,
+    required int maleRemaining,
+    required int femaleRemaining,
+  }) {
+    final normalizedGender = _normalizeGender(gender);
+    if (normalizedGender == EventCapacityBucket.male && maleRemaining > 0) {
+      return EventCapacityBucket.male;
+    }
+    if (normalizedGender == EventCapacityBucket.female && femaleRemaining > 0) {
+      return EventCapacityBucket.female;
+    }
+    if (genericRemaining > 0) return EventCapacityBucket.generic;
+    return null;
+  }
+
+  static String? _normalizeGender(String? gender) {
+    final value = gender?.trim().toLowerCase();
+    if (value == 'erkek' || value == 'male') return EventCapacityBucket.male;
+    if (value == 'kadın' || value == 'kadin' || value == 'female') {
+      return EventCapacityBucket.female;
+    }
+    return null;
+  }
+}
+
 class EventBusinessOrganizer {
   const EventBusinessOrganizer({
     required this.id,
@@ -78,6 +116,12 @@ class Event {
     this.priceCurrency = 'TRY',
     this.createdAt,
     this.updatedAt,
+    this.listingExpiresAt,
+    this.businessOpenTime,
+    this.businessCloseTime,
+    this.eventStartTime,
+    this.eventEndTime,
+    this.priceType,
   });
 
   final String id;
@@ -109,12 +153,106 @@ class Event {
   final String priceCurrency;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final DateTime? listingExpiresAt;
+  final String? businessOpenTime;
+  final String? businessCloseTime;
+  final String? eventStartTime;
+  final String? eventEndTime;
+  final String? priceType;
 
   bool isHost(String? userId) => userId != null && hostId == userId;
 
   bool get isPast => eventDate.isBefore(DateTime.now());
 
-  int get safeCapacityTotal => capacityTotal < 0 ? 0 : capacityTotal;
+  bool get canBeEdited => status == 'active' && !isPast;
+
+  DateTime get attendanceWindowStart =>
+      eventStartDateTime.subtract(const Duration(hours: 2));
+
+  DateTime get attendanceWindowEnd {
+    final end = eventEndDateTime;
+    if (end != null) return end.add(const Duration(hours: 6));
+    return DateTime(
+      eventStartDateTime.year,
+      eventStartDateTime.month,
+      eventStartDateTime.day,
+      23,
+      59,
+      59,
+    );
+  }
+
+  bool isAttendanceWindowOpen([DateTime? now]) {
+    final reference = now ?? DateTime.now();
+    return !reference.isBefore(attendanceWindowStart) &&
+        !reference.isAfter(attendanceWindowEnd);
+  }
+
+  bool isBeforeAttendanceWindow([DateTime? now]) {
+    final reference = now ?? DateTime.now();
+    return reference.isBefore(attendanceWindowStart);
+  }
+
+  bool isAfterAttendanceWindow([DateTime? now]) {
+    final reference = now ?? DateTime.now();
+    return reference.isAfter(attendanceWindowEnd);
+  }
+
+  DateTime get eventStartDateTime {
+    final time = _parseClockTime(eventStartTime);
+    if (time == null) return eventDate;
+    return DateTime(
+      eventDate.year,
+      eventDate.month,
+      eventDate.day,
+      time.hour,
+      time.minute,
+      time.second,
+    );
+  }
+
+  DateTime? get eventEndDateTime {
+    final time = _parseClockTime(eventEndTime);
+    if (time == null) return null;
+    final start = eventStartDateTime;
+    var end = DateTime(
+      eventDate.year,
+      eventDate.month,
+      eventDate.day,
+      time.hour,
+      time.minute,
+      time.second,
+    );
+    if (!end.isAfter(start)) {
+      end = end.add(const Duration(days: 1));
+    }
+    return end;
+  }
+
+  int get genericCapacity {
+    final explicitGeneric = capacityAny;
+    if (explicitGeneric != null) {
+      return explicitGeneric < 0 ? 0 : explicitGeneric;
+    }
+    return capacityTotal < 0 ? 0 : capacityTotal;
+  }
+
+  int get maleCapacity {
+    final value = capacityMale ?? 0;
+    return value < 0 ? 0 : value;
+  }
+
+  int get femaleCapacity {
+    final value = capacityFemale ?? 0;
+    return value < 0 ? 0 : value;
+  }
+
+  int get safeCapacityTotal {
+    if (capacityAny == null && capacityMale == null && capacityFemale == null) {
+      return capacityTotal < 0 ? 0 : capacityTotal;
+    }
+    return genericCapacity + maleCapacity + femaleCapacity;
+  }
 
   int get safeApprovedCount => approvedCount < 0 ? 0 : approvedCount;
 
@@ -146,9 +284,15 @@ class Event {
     );
   }
 
-  bool get isVisibleInEventsList {
+  bool isVisibleInEventsList({String? currentUserId}) {
     if (!isBusinessEvent) return true;
-    return businessOrganizer?.isActive == true;
+    if (businessOrganizer?.isActive != true) return false;
+
+    final expiry = listingExpiresAt;
+    if (expiry != null && expiry.isBefore(DateTime.now())) {
+      return isHost(currentUserId);
+    }
+    return true;
   }
 
   bool isActiveSponsoredPlacement(DateTime now) {
@@ -167,7 +311,7 @@ class Event {
 
   String get priceLabel {
     if (!isBusinessEvent) return '';
-    if (!isPaid) return 'Ücretsiz';
+    if (priceType == 'free') return 'Ücretsiz';
     final amount = priceAmount;
     if (amount == null || amount <= 0) return 'Ücretsiz';
     final wholeAmount = amount == amount.roundToDouble();
@@ -177,7 +321,21 @@ class Event {
               .toStringAsFixed(2)
               .replaceAll(RegExp(r'0+$'), '')
               .replaceAll(RegExp(r'\.$'), '');
+    if (priceType == 'pay_at_business') {
+      return '₺$formatted (İşletmede)';
+    }
     return '₺$formatted';
+  }
+
+  String get priceTypeLabel {
+    switch (priceType) {
+      case 'free':
+        return 'Ücretsiz';
+      case 'pay_at_business':
+        return 'İşletmede ödeme';
+      default:
+        return isPaid ? 'İşletmede ödeme' : 'Ücretsiz';
+    }
   }
 
   bool get hasDescription => description?.trim().isNotEmpty == true;
@@ -218,10 +376,15 @@ class Event {
   String get capacityLabel => formattedCapacityLabel;
 
   String get formattedCapacityLabel {
-    return '$approvedCount / $capacityTotal kişi onaylandı';
+    return '$safeApprovedCount / $safeCapacityTotal kişi onaylandı';
+  }
+
+  String get capacityBreakdownLabel {
+    return 'Karışık: $genericCapacity, Erkek: $maleCapacity, Kadın: $femaleCapacity';
   }
 
   factory Event.fromJson(Map<String, dynamic> json) {
+    final isPaid = json['is_paid'] as bool? ?? false;
     return Event(
       id: json['id']?.toString() ?? '',
       hostId: json['host_id']?.toString() ?? '',
@@ -235,9 +398,15 @@ class Event {
       locationLng: (json['location_lng'] as num?)?.toDouble(),
       eventDate: _dateTimeFromJson(json['event_date']) ?? DateTime.now(),
       capacityTotal: _intFromJson(json['capacity_total']),
-      capacityMale: (json['capacity_male'] as num?)?.toInt(),
-      capacityFemale: (json['capacity_female'] as num?)?.toInt(),
-      capacityAny: (json['capacity_any'] as num?)?.toInt(),
+      capacityMale:
+          (json['male_capacity'] as num?)?.toInt() ??
+          (json['capacity_male'] as num?)?.toInt(),
+      capacityFemale:
+          (json['female_capacity'] as num?)?.toInt() ??
+          (json['capacity_female'] as num?)?.toInt(),
+      capacityAny:
+          (json['generic_capacity'] as num?)?.toInt() ??
+          (json['capacity_any'] as num?)?.toInt(),
       approvedCount: _intFromJson(json['approved_count']),
       status: json['status']?.toString() ?? 'active',
       isSponsored: json['is_sponsored'] as bool? ?? false,
@@ -248,11 +417,27 @@ class Event {
       organizerUserId: json['organizer_user_id']?.toString(),
       organizerBusinessId: json['organizer_business_id']?.toString(),
       businessOrganizer: _businessOrganizerFromJson(json['business_accounts']),
-      isPaid: json['is_paid'] as bool? ?? false,
+      isPaid: isPaid,
       priceAmount: _doubleFromJson(json['price_amount']),
       priceCurrency: json['price_currency']?.toString() ?? 'TRY',
       createdAt: _dateTimeFromJson(json['created_at']),
       updatedAt: _dateTimeFromJson(json['updated_at']),
+      listingExpiresAt: _dateTimeFromJson(json['listing_expires_at']),
+      businessOpenTime:
+          json['business_open_time']?.toString() ??
+          json['event_start_time']?.toString(),
+      businessCloseTime:
+          json['business_close_time']?.toString() ??
+          json['event_end_time']?.toString(),
+      eventStartTime:
+          json['event_start_time']?.toString() ??
+          json['business_open_time']?.toString(),
+      eventEndTime:
+          json['event_end_time']?.toString() ??
+          json['business_close_time']?.toString(),
+      priceType:
+          json['price_type']?.toString() ??
+          (isPaid ? 'pay_at_business' : 'free'),
     );
   }
 
@@ -286,6 +471,12 @@ class Event {
     String? priceCurrency,
     DateTime? createdAt,
     DateTime? updatedAt,
+    DateTime? listingExpiresAt,
+    String? businessOpenTime,
+    String? businessCloseTime,
+    String? eventStartTime,
+    String? eventEndTime,
+    String? priceType,
   }) {
     return Event(
       id: id ?? this.id,
@@ -317,6 +508,12 @@ class Event {
       priceCurrency: priceCurrency ?? this.priceCurrency,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      listingExpiresAt: listingExpiresAt ?? this.listingExpiresAt,
+      businessOpenTime: businessOpenTime ?? this.businessOpenTime,
+      businessCloseTime: businessCloseTime ?? this.businessCloseTime,
+      eventStartTime: eventStartTime ?? this.eventStartTime,
+      eventEndTime: eventEndTime ?? this.eventEndTime,
+      priceType: priceType ?? this.priceType,
     );
   }
 }
@@ -357,25 +554,35 @@ List<Event> eventsWithSponsoredPlacement(List<Event> events, {DateTime? now}) {
   return placed;
 }
 
-enum EventDateFilter { all, today, thisWeek, upcoming }
+enum EventDateFilter { all, today, tomorrow, thisWeek, weekend, upcoming }
+
+enum EventPriceFilter { all, free, paid }
+
+enum EventSortOption { recommended, newest, oldest, dateAsc, dateDesc }
 
 class EventFilters {
   const EventFilters({
     this.selectedSportType,
     this.selectedCity,
     this.dateFilter = EventDateFilter.all,
+    this.priceFilter = EventPriceFilter.all,
+    this.sortOption = EventSortOption.recommended,
     this.onlyAvailableSpots = false,
   });
 
   final String? selectedSportType;
   final String? selectedCity;
   final EventDateFilter dateFilter;
+  final EventPriceFilter priceFilter;
+  final EventSortOption sortOption;
   final bool onlyAvailableSpots;
 
   bool get isActive {
     return selectedSportType?.trim().isNotEmpty == true ||
         selectedCity?.trim().isNotEmpty == true ||
         dateFilter != EventDateFilter.all ||
+        priceFilter != EventPriceFilter.all ||
+        sortOption != EventSortOption.recommended ||
         onlyAvailableSpots;
   }
 
@@ -383,6 +590,8 @@ class EventFilters {
     String? selectedSportType,
     String? selectedCity,
     EventDateFilter? dateFilter,
+    EventPriceFilter? priceFilter,
+    EventSortOption? sortOption,
     bool? onlyAvailableSpots,
     bool clearSportType = false,
     bool clearCity = false,
@@ -393,6 +602,8 @@ class EventFilters {
           : selectedSportType ?? this.selectedSportType,
       selectedCity: clearCity ? null : selectedCity ?? this.selectedCity,
       dateFilter: dateFilter ?? this.dateFilter,
+      priceFilter: priceFilter ?? this.priceFilter,
+      sortOption: sortOption ?? this.sortOption,
       onlyAvailableSpots: onlyAvailableSpots ?? this.onlyAvailableSpots,
     );
   }
@@ -469,10 +680,30 @@ class EventParticipation {
   const EventParticipation({
     required this.role,
     required this.attendanceStatus,
+    this.checkInToken,
+    this.excuseText,
+    this.excuseSubmittedAt,
+    this.checkedInByUserId,
+    this.onTime = false,
+    this.verificationMethod,
+    this.excuseStatus = 'none',
+    this.cancelledAt,
+    this.cancellationReason,
+    this.cancellationWindow,
   });
 
   final String role;
   final String attendanceStatus;
+  final String? checkInToken;
+  final String? excuseText;
+  final DateTime? excuseSubmittedAt;
+  final String? checkedInByUserId;
+  final bool onTime;
+  final String? verificationMethod;
+  final String excuseStatus;
+  final DateTime? cancelledAt;
+  final String? cancellationReason;
+  final String? cancellationWindow;
 
   bool get isParticipant => role == 'participant';
 
@@ -499,6 +730,50 @@ class EventParticipation {
     return EventParticipation(
       role: json['role'] as String? ?? '',
       attendanceStatus: json['attendance_status'] as String? ?? '',
+      checkInToken: json['check_in_token']?.toString(),
+      excuseText: json['excuse_text']?.toString(),
+      excuseSubmittedAt: json['excuse_submitted_at'] != null
+          ? DateTime.tryParse(json['excuse_submitted_at'].toString())
+          : null,
+      checkedInByUserId: json['checked_in_by_user_id']?.toString(),
+      onTime: json['on_time'] as bool? ?? false,
+      verificationMethod: json['verification_method']?.toString(),
+      excuseStatus: json['excuse_status']?.toString() ?? 'none',
+      cancelledAt: json['cancelled_at'] != null
+          ? DateTime.tryParse(json['cancelled_at'].toString())
+          : null,
+      cancellationReason: json['cancellation_reason']?.toString(),
+      cancellationWindow: json['cancellation_window']?.toString(),
+    );
+  }
+
+  EventParticipation copyWith({
+    String? role,
+    String? attendanceStatus,
+    String? checkInToken,
+    String? excuseText,
+    DateTime? excuseSubmittedAt,
+    String? checkedInByUserId,
+    bool? onTime,
+    String? verificationMethod,
+    String? excuseStatus,
+    DateTime? cancelledAt,
+    String? cancellationReason,
+    String? cancellationWindow,
+  }) {
+    return EventParticipation(
+      role: role ?? this.role,
+      attendanceStatus: attendanceStatus ?? this.attendanceStatus,
+      checkInToken: checkInToken ?? this.checkInToken,
+      excuseText: excuseText ?? this.excuseText,
+      excuseSubmittedAt: excuseSubmittedAt ?? this.excuseSubmittedAt,
+      checkedInByUserId: checkedInByUserId ?? this.checkedInByUserId,
+      onTime: onTime ?? this.onTime,
+      verificationMethod: verificationMethod ?? this.verificationMethod,
+      excuseStatus: excuseStatus ?? this.excuseStatus,
+      cancelledAt: cancelledAt ?? this.cancelledAt,
+      cancellationReason: cancellationReason ?? this.cancellationReason,
+      cancellationWindow: cancellationWindow ?? this.cancellationWindow,
     );
   }
 }
@@ -590,6 +865,10 @@ class BusinessEventCheckInParticipant {
     this.avatarUrl,
     required this.attendanceStatus,
     this.checkedInAt,
+    this.checkInToken,
+    this.excuseText,
+    this.excuseSubmittedAt,
+    this.excuseStatus = 'none',
   });
 
   final String userId;
@@ -599,6 +878,10 @@ class BusinessEventCheckInParticipant {
   final String? avatarUrl;
   final String attendanceStatus;
   final DateTime? checkedInAt;
+  final String? checkInToken;
+  final String? excuseText;
+  final DateTime? excuseSubmittedAt;
+  final String excuseStatus;
 
   String get displayName {
     final first = firstName?.trim();
@@ -611,11 +894,19 @@ class BusinessEventCheckInParticipant {
   String? get handleLabel => formatUserHandle(username, tag);
 
   String get statusLabel {
+    if (attendanceStatus == EventParticipationStatus.cancelled) {
+      if (excuseStatus == 'accepted') return 'Mazeret Kabul Edildi';
+      if (excuseStatus == 'rejected') return 'Mazeret Reddedildi';
+      return 'İptal Etti (Mazeretli)';
+    }
     return EventParticipationStatus.businessAttendanceLabel(attendanceStatus);
   }
 
   bool get canMarkAttendance {
-    return attendanceStatus == EventParticipationStatus.confirmed;
+    return attendanceStatus == EventParticipationStatus.confirmed ||
+        attendanceStatus == EventParticipationStatus.planned ||
+        (attendanceStatus == EventParticipationStatus.cancelled &&
+            excuseStatus == 'pending');
   }
 
   factory BusinessEventCheckInParticipant.fromJson(Map<String, dynamic> json) {
@@ -629,6 +920,12 @@ class BusinessEventCheckInParticipant {
           json['attendance_status']?.toString() ??
           EventParticipationStatus.confirmed,
       checkedInAt: _dateTimeFromJson(json['checked_in_at']),
+      checkInToken: json['check_in_token']?.toString(),
+      excuseText: json['excuse_text']?.toString(),
+      excuseSubmittedAt: json['excuse_submitted_at'] != null
+          ? DateTime.tryParse(json['excuse_submitted_at'].toString())
+          : null,
+      excuseStatus: json['excuse_status']?.toString() ?? 'none',
     );
   }
 }
@@ -652,6 +949,11 @@ class CreateEventInput {
     this.businessAccount,
     this.isPaid = false,
     this.priceAmount,
+    this.businessOpenTime,
+    this.businessCloseTime,
+    this.eventStartTime,
+    this.eventEndTime,
+    this.priceType,
   });
 
   final String title;
@@ -671,8 +973,15 @@ class CreateEventInput {
   final BusinessAccount? businessAccount;
   final bool isPaid;
   final double? priceAmount;
+  final String? businessOpenTime;
+  final String? businessCloseTime;
+  final String? eventStartTime;
+  final String? eventEndTime;
+  final String? priceType;
 
   bool get isBusinessEvent => organizerType == EventOrganizerType.business;
+
+  bool get hasEventLocationInfo => locationText?.trim().isNotEmpty == true;
 
   static bool canSelectBusinessEvent(BusinessAccount? _) {
     return false;
@@ -719,10 +1028,141 @@ class CreateEventInput {
       if (locationLng != null) 'location_lng': locationLng,
       'event_date': eventDate.toIso8601String(),
       'capacity_total': capacityTotal,
-      'capacity_male': capacityMale,
-      'capacity_female': capacityFemale,
-      'capacity_any': capacityAny,
+      'generic_capacity': capacityAny,
+      'male_capacity': capacityMale,
+      'female_capacity': capacityFemale,
       'status': 'active',
+      if (isBusinessEvent) ...{
+        'listing_expires_at': DateTime.now()
+            .add(const Duration(hours: 24))
+            .toIso8601String(),
+        'event_start_time': eventStartTime,
+        'event_end_time': eventEndTime,
+        'price_type': priceType ?? (isPaid ? 'pay_at_business' : 'free'),
+      },
+    };
+  }
+
+  Map<String, dynamic> toLegacyCreateJson({required String hostId}) {
+    return {
+      'host_id': hostId,
+      'organizer_type': isBusinessEvent
+          ? EventOrganizerType.business
+          : EventOrganizerType.user,
+      'organizer_user_id': hostId,
+      if (isBusinessEvent) 'organizer_business_id': businessAccount?.id,
+      'is_paid': isBusinessEvent && isPaid,
+      if (isBusinessEvent && isPaid) 'price_amount': priceAmount,
+      if (isBusinessEvent) 'price_currency': 'TRY',
+      'title': title.trim(),
+      'description': _nullableTrim(description),
+      'sport_type': sportType.trim(),
+      'city': city.trim(),
+      'district': _nullableTrim(district),
+      'location_text': _nullableTrim(locationText),
+      if (locationLat != null) 'location_lat': locationLat,
+      if (locationLng != null) 'location_lng': locationLng,
+      'event_date': eventDate.toIso8601String(),
+      'capacity_total': capacityTotal,
+      'status': 'active',
+    };
+  }
+}
+
+class UpdateEventInput {
+  const UpdateEventInput({
+    required this.title,
+    this.description,
+    required this.sportType,
+    required this.city,
+    this.district,
+    this.locationText,
+    this.locationLat,
+    this.locationLng,
+    required this.eventDate,
+    required this.capacityTotal,
+    required this.capacityMale,
+    required this.capacityFemale,
+    required this.capacityAny,
+    required this.isBusinessEvent,
+    this.isPaid = false,
+    this.priceAmount,
+    this.businessOpenTime,
+    this.businessCloseTime,
+    this.eventStartTime,
+    this.eventEndTime,
+    this.priceType,
+  });
+
+  final String title;
+  final String? description;
+  final String sportType;
+  final String city;
+  final String? district;
+  final String? locationText;
+  final double? locationLat;
+  final double? locationLng;
+  final DateTime eventDate;
+  final int capacityTotal;
+  final int capacityMale;
+  final int capacityFemale;
+  final int capacityAny;
+  final bool isBusinessEvent;
+  final bool isPaid;
+  final double? priceAmount;
+  final String? businessOpenTime;
+  final String? businessCloseTime;
+  final String? eventStartTime;
+  final String? eventEndTime;
+  final String? priceType;
+
+  bool get hasEventLocationInfo => locationText?.trim().isNotEmpty == true;
+
+  Map<String, dynamic> toUpdateJson() {
+    return {
+      'title': title.trim(),
+      'description': _nullableTrim(description),
+      'sport_type': sportType.trim(),
+      'city': city.trim(),
+      'district': _nullableTrim(district),
+      'location_text': _nullableTrim(locationText),
+      'location_lat': locationLat,
+      'location_lng': locationLng,
+      'event_date': eventDate.toIso8601String(),
+      'capacity_total': capacityTotal,
+      'generic_capacity': capacityAny,
+      'male_capacity': capacityMale,
+      'female_capacity': capacityFemale,
+      if (isBusinessEvent) ...{
+        'is_paid': isPaid,
+        'price_amount': isPaid ? priceAmount : null,
+        'price_currency': 'TRY',
+        'event_start_time': eventStartTime,
+        'event_end_time': eventEndTime,
+        'price_type': priceType ?? (isPaid ? 'pay_at_business' : 'free'),
+      },
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+  }
+
+  Map<String, dynamic> toLegacyUpdateJson() {
+    return {
+      'title': title.trim(),
+      'description': _nullableTrim(description),
+      'sport_type': sportType.trim(),
+      'city': city.trim(),
+      'district': _nullableTrim(district),
+      'location_text': _nullableTrim(locationText),
+      'location_lat': locationLat,
+      'location_lng': locationLng,
+      'event_date': eventDate.toIso8601String(),
+      'capacity_total': capacityTotal,
+      if (isBusinessEvent) ...{
+        'is_paid': isPaid,
+        'price_amount': isPaid ? priceAmount : null,
+        'price_currency': 'TRY',
+      },
+      'updated_at': DateTime.now().toIso8601String(),
     };
   }
 }
@@ -755,9 +1195,98 @@ String? _nullableTrim(String? value) {
   return trimmed;
 }
 
+_ClockTime? _parseClockTime(String? value) {
+  final trimmed = value?.trim();
+  if (trimmed == null || trimmed.isEmpty) return null;
+  final parts = trimmed.split(':');
+  if (parts.length < 2) return null;
+  final hour = int.tryParse(parts[0]);
+  final minute = int.tryParse(parts[1]);
+  final second = parts.length > 2 ? int.tryParse(parts[2].split('.').first) : 0;
+  if (hour == null ||
+      minute == null ||
+      second == null ||
+      hour < 0 ||
+      hour > 23 ||
+      minute < 0 ||
+      minute > 59 ||
+      second < 0 ||
+      second > 59) {
+    return null;
+  }
+  return _ClockTime(hour: hour, minute: minute, second: second);
+}
+
+class _ClockTime {
+  const _ClockTime({
+    required this.hour,
+    required this.minute,
+    required this.second,
+  });
+
+  final int hour;
+  final int minute;
+  final int second;
+}
+
 bool _looksLikeRawCoordinates(String value) {
   final trimmed = value.trim();
   if (trimmed == 'Mevcut konum seçildi') return true;
   if (trimmed.startsWith('Konum seçildi:')) return true;
   return RegExp(r'^-?\d+(\.\d+)?,\s*-?\d+(\.\d+)?$').hasMatch(trimmed);
+}
+
+class MyEventItem {
+  final Event event;
+  final String status;
+
+  const MyEventItem({required this.event, required this.status});
+
+  bool get isHost => status == 'host';
+  bool get isPending => status == 'pending' || status == 'pending_confirmation';
+  bool get isConfirmed =>
+      status == 'confirmed' ||
+      status == 'planned' ||
+      status == 'attended' ||
+      status == 'checked_in';
+}
+
+class EventParticipantAnalytics {
+  final String userId;
+  final String username;
+  final String firstName;
+  final String? avatarUrl;
+  final DateTime joinedAt;
+  final DateTime? checkedInAt;
+  final int messageCount;
+
+  const EventParticipantAnalytics({
+    required this.userId,
+    required this.username,
+    required this.firstName,
+    this.avatarUrl,
+    required this.joinedAt,
+    this.checkedInAt,
+    required this.messageCount,
+  });
+
+  factory EventParticipantAnalytics.fromJson(Map<String, dynamic> json) {
+    return EventParticipantAnalytics(
+      userId: json['user_id']?.toString() ?? '',
+      username: json['username']?.toString() ?? '',
+      firstName: json['first_name']?.toString() ?? '',
+      avatarUrl: json['avatar_url']?.toString(),
+      joinedAt: DateTime.parse(json['joined_at'].toString()),
+      checkedInAt: json['checked_in_at'] != null
+          ? DateTime.parse(json['checked_in_at'].toString())
+          : null,
+      messageCount: (json['message_count'] as num?)?.toInt() ?? 0,
+    );
+  }
+
+  String get displayName {
+    if (firstName.trim().isNotEmpty) return firstName.trim();
+    if (username.trim().isNotEmpty) return '@${username.trim()}';
+    return 'Katılımcı';
+  }
 }

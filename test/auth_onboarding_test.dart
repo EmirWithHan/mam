@@ -7,12 +7,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:match_a_man/core/constants/sport_types.dart';
 import 'package:match_a_man/core/router/route_names.dart';
 import 'package:match_a_man/core/widgets/event_cover_image.dart';
+import 'package:match_a_man/core/widgets/app_logo.dart';
 import 'package:match_a_man/core/widgets/main_navigation_shell.dart';
 import 'package:match_a_man/core/utils/error_messages.dart';
 import 'package:match_a_man/core/utils/pagination.dart';
 import 'package:match_a_man/core/utils/phone_verification.dart';
 import 'package:match_a_man/core/utils/trust_score_rules.dart';
 import 'package:match_a_man/core/utils/user_handle.dart';
+import 'package:match_a_man/core/utils/validators.dart';
 import 'package:match_a_man/features/auth/auth_service.dart';
 import 'package:match_a_man/features/business/business_models.dart';
 import 'package:match_a_man/features/business/business_reviews_models.dart';
@@ -33,6 +35,8 @@ import 'package:match_a_man/features/profile/profile_provider.dart';
 import 'package:match_a_man/features/profile/profile_service.dart';
 import 'package:match_a_man/features/profile/public_profile_models.dart';
 import 'package:match_a_man/features/profile/widgets/safe_avatar.dart';
+import 'package:match_a_man/services/maps_service.dart';
+import 'package:match_a_man/services/storage_service.dart';
 
 void main() {
   group('OAuth redirects', () {
@@ -86,6 +90,8 @@ void main() {
     test('event route constants remain available', () {
       expect(RouteNames.events, 'events');
       expect(RoutePaths.events, '/events');
+      expect(RouteNames.usernameOnboarding, 'usernameOnboarding');
+      expect(RoutePaths.usernameOnboarding, '/onboarding/username');
       expect(RouteNames.eventDetail, 'eventDetail');
       expect(RoutePaths.eventDetail, '/events/:eventId');
       expect(RouteNames.createEvent, 'createEvent');
@@ -168,15 +174,16 @@ void main() {
       expect(value.length, lessThanOrEqualTo(ProfileUsername.maxLength));
     });
 
-    test('profile form only requires username and name for core identity', () {
+    test('profile form only requires username for minimum profile', () {
       const formData = ProfileFormData(
         username: 'EmirHan',
         tag: '1234',
-        firstName: 'Emir',
+        firstName: '',
       );
 
       expect(formData.isComplete, isTrue);
       expect(formData.toUpdateJson()['username'], 'emirhan');
+      expect(formData.toUpdateJson()['first_name'], 'emirhan');
       expect(formData.toUpdateJson().containsKey('last_name'), isFalse);
       expect(formData.toUpdateJson()['tag'], '1234');
       expect(formData.toUpdateJson()['city'], isNull);
@@ -193,6 +200,7 @@ void main() {
 
       expect(profile.id, 'user-1');
       expect(profile.userId, 'user-1');
+      expect(profile.hasMinimumProfile, isTrue);
       expect(profile.hasCoreIdentity, isTrue);
     });
 
@@ -280,6 +288,35 @@ void main() {
 
       expect(message, isNot(contains('PostgrestException')));
       expect(message, contains('kullan'));
+      expect(
+        friendlyErrorMessage(
+          const ProfileSaveException('Bu kullanıcı adı zaten alınmış.'),
+        ),
+        'Bu kullanıcı adı zaten alınmış.',
+      );
+    });
+
+    test('username save path is own-profile scoped and narrow', () {
+      final service = File(
+        'lib/features/profile/profile_service.dart',
+      ).readAsStringSync();
+      final start = service.indexOf('Future<Profile> updateMyUsername');
+      final end = service.indexOf(
+        'Future<Profile> updateMyProfilePrivacy',
+        start,
+      );
+      final method = service.substring(start, end);
+
+      expect(method, contains('_currentUserId()'));
+      expect(method, contains('_usernameTakenByAnotherUser'));
+      expect(method, contains('_upsertMyProfileRow(payload, userId)'));
+      expect(method, contains("'first_name': normalizedUsername"));
+      expect(method, contains("'is_profile_completed': true"));
+      expect(method, isNot(contains('account_status')));
+      expect(method, isNot(contains('account_type')));
+      expect(method, isNot(contains('business_account_id')));
+      expect(method, isNot(contains('is_admin')));
+      expect(method, isNot(contains('service_role')));
     });
 
     test('business event approve RPC errors stay user-facing', () {
@@ -304,27 +341,42 @@ void main() {
   });
 
   group('profile access rules', () {
-    test(
-      'username and name allow general app access but not event actions',
-      () {
-        const profile = Profile(
-          id: 'profile-1',
-          userId: 'user-1',
-          username: 'emirhan',
-          firstName: 'Emir',
-        );
+    test('profile primary stats show follow follower and event labels', () {
+      final source = File(
+        'lib/features/profile/profile_page.dart',
+      ).readAsStringSync();
+      final statsStart = source.indexOf('class _OwnProfileStats');
+      final statsEnd = source.indexOf('class _ProfileEmptyState', statsStart);
+      final statsSource = source.substring(statsStart, statsEnd);
 
-        expect(profile.hasCoreIdentity, isTrue);
-        expect(profile.hasEventRequiredFields, isFalse);
-        final state = ProfileState(
-          status: ProfileStatus.success,
-          profile: profile,
-        );
-        expect(state.isProfileCompleted, isTrue);
-        expect(state.canCreateEvent, isFalse);
-        expect(state.canRequestToJoinEvent, isFalse);
-      },
-    );
+      expect(statsSource, contains("label: 'Takip'"));
+      expect(statsSource, contains("label: 'Takipçi'"));
+      expect(statsSource, contains("label: 'Etkinlik'"));
+      expect(statsSource, contains('Row('));
+      expect(RegExp(r'Expanded\(').allMatches(statsSource), hasLength(3));
+      expect(statsSource, isNot(contains('Wrap(')));
+      expect(statsSource, isNot(contains('trust')));
+      expect(statsSource, isNot(contains('Güven')));
+    });
+
+    test('username alone allows app access but not join requests', () {
+      const profile = Profile(
+        id: 'profile-1',
+        userId: 'user-1',
+        username: 'emirhan',
+      );
+
+      expect(profile.hasMinimumProfile, isTrue);
+      expect(profile.hasCoreIdentity, isFalse);
+      expect(profile.hasEventRequiredFields, isFalse);
+      final state = ProfileState(
+        status: ProfileStatus.success,
+        profile: profile,
+      );
+      expect(state.isProfileCompleted, isTrue);
+      expect(state.canCreateEvent, isFalse);
+      expect(state.canRequestToJoinEvent, isFalse);
+    });
 
     test('city, district, and birth date allow event actions', () {
       final profile = Profile(
@@ -338,6 +390,11 @@ void main() {
       );
 
       expect(profile.hasEventRequiredFields, isTrue);
+      final state = ProfileState(
+        status: ProfileStatus.success,
+        profile: profile,
+      );
+      expect(state.canRequestToJoinEvent, isTrue);
     });
 
     test('event readiness reports each missing required field', () {
@@ -378,7 +435,9 @@ void main() {
       );
     });
 
-    test('event requirement route is profile completion, not events', () {
+    test('full profile edit remains optional and separate from onboarding', () {
+      expect(RouteNames.usernameOnboarding, isNot(RouteNames.profileComplete));
+      expect(RoutePaths.usernameOnboarding, isNot(RoutePaths.profileComplete));
       expect(RouteNames.profileComplete, isNot(RouteNames.events));
       expect(RoutePaths.profileComplete, isNot(RoutePaths.events));
       expect(RoutePaths.profileComplete, startsWith('/profile'));
@@ -386,6 +445,82 @@ void main() {
   });
 
   group('event action precedence', () {
+    testWidgets('incomplete profile cannot trigger join request action', (
+      tester,
+    ) async {
+      var requested = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: JoinRequestButton(
+              event: _event(),
+              profileState: const ProfileState(
+                status: ProfileStatus.success,
+                profile: Profile(
+                  id: 'profile-1',
+                  userId: 'user-1',
+                  username: 'emirhan',
+                  firstName: 'Emir',
+                ),
+              ),
+              request: null,
+              isLoading: false,
+              onRequest: () => requested = true,
+              onCancel: () {},
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Profilini tamamla'), findsOneWidget);
+      expect(
+        find.text(
+          'Etkinliklere katılım isteği göndermeden önce profil bilgilerini tamamlamalısın.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Profili tamamla'), findsOneWidget);
+      expect(find.text('Katılım isteği gönder'), findsNothing);
+      expect(requested, isFalse);
+    });
+
+    testWidgets('event-ready profile can still trigger join request action', (
+      tester,
+    ) async {
+      var requested = false;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: JoinRequestButton(
+              event: _event(),
+              profileState: ProfileState(
+                status: ProfileStatus.success,
+                profile: Profile(
+                  id: 'profile-1',
+                  userId: 'user-1',
+                  username: 'emirhan',
+                  firstName: 'Emir',
+                  city: 'İstanbul',
+                  district: 'Kadıköy',
+                  birthDate: DateTime(1998),
+                ),
+              ),
+              request: null,
+              isLoading: false,
+              onRequest: () => requested = true,
+              onCancel: () {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Katılım isteği gönder'));
+
+      expect(requested, isTrue);
+    });
+
     test(
       'public participant visibility excludes pending/rejected/left users',
       () {
@@ -808,7 +943,7 @@ void main() {
       expect(event.isBusinessEvent, isTrue);
       expect(event.businessOrganizer?.displayName, 'Padel Club');
       expect(event.businessOrganizer?.isVerified, isTrue);
-      expect(event.priceLabel, '₺450');
+      expect(event.priceLabel, '₺450 (İşletmede)');
     });
 
     test('free business event displays Ucretsiz', () {
@@ -848,6 +983,10 @@ void main() {
         title: 'Padel Night',
         sportType: 'Padel',
         city: 'Istanbul',
+        district: 'Kadikoy',
+        locationText: 'Kadikoy Padel Club, Kort 2',
+        locationLat: 40.9901,
+        locationLng: 29.028,
         eventDate: DateTime(2026, 5, 28),
         capacityTotal: 12,
         capacityMale: 0,
@@ -866,11 +1005,52 @@ void main() {
       expect(payload['is_paid'], isTrue);
       expect(payload['price_amount'], 450);
       expect(payload['price_currency'], 'TRY');
+      expect(payload['city'], 'Istanbul');
+      expect(payload['district'], 'Kadikoy');
+      expect(payload['location_text'], 'Kadikoy Padel Club, Kort 2');
+      expect(payload['location_lat'], 40.9901);
+      expect(payload['location_lng'], 29.028);
+      expect(payload['capacity_total'], 12);
+      expect(payload['generic_capacity'], 12);
+      expect(payload['male_capacity'], 0);
+      expect(payload['female_capacity'], 0);
+      expect(input.hasEventLocationInfo, isTrue);
       expect(payload.containsKey('is_sponsored'), isFalse);
       expect(payload.containsKey('sponsored_until'), isFalse);
       expect(payload.containsKey('sponsored_priority'), isFalse);
       expect(payload.containsKey('is_verified'), isFalse);
     });
+
+    test(
+      'normal generic capacity create payload keeps gender buckets zero',
+      () {
+        final input = CreateEventInput(
+          title: 'Ankara mac',
+          sportType: 'Futbol',
+          city: 'Ankara',
+          district: 'Mamak',
+          locationText: 'Can spor tesisleri',
+          eventDate: DateTime(2026, 6, 13, 15, 9),
+          capacityTotal: 3,
+          capacityMale: 0,
+          capacityFemale: 0,
+          capacityAny: 3,
+        );
+
+        final payload = input.toCreateJson(hostId: 'user-1');
+        final legacyPayload = input.toLegacyCreateJson(hostId: 'user-1');
+
+        expect(payload['capacity_total'], 3);
+        expect(payload['generic_capacity'], 3);
+        expect(payload['male_capacity'], 0);
+        expect(payload['female_capacity'], 0);
+        expect(payload['organizer_type'], EventOrganizerType.user);
+        expect(legacyPayload['capacity_total'], 3);
+        expect(legacyPayload.containsKey('generic_capacity'), isFalse);
+        expect(legacyPayload.containsKey('male_capacity'), isFalse);
+        expect(legacyPayload.containsKey('female_capacity'), isFalse);
+      },
+    );
 
     test('business account creates business event by default', () {
       const account = BusinessAccount(
@@ -925,6 +1105,7 @@ void main() {
         title: 'Normal Padel',
         sportType: 'Padel',
         city: 'Istanbul',
+        locationText: 'Moda Sahil buluşma noktası',
         eventDate: DateTime(2026, 5, 28),
         capacityTotal: 12,
         capacityMale: 0,
@@ -942,6 +1123,188 @@ void main() {
       expect(payload['is_paid'], isFalse);
       expect(payload.containsKey('price_amount'), isFalse);
       expect(payload.containsKey('price_currency'), isFalse);
+    });
+
+    test('event location validation requires event-specific address text', () {
+      expect(Validators.eventLocation(''), 'Etkinlik konumunu yazmalısın.');
+      expect(
+        Validators.eventLocation('  A  '),
+        'Etkinlik konumunu yazmalısın.',
+      );
+      expect(Validators.eventLocation('Kadıköy Padel Club Kort 2'), isNull);
+
+      final input = CreateEventInput(
+        title: 'Adres eksik',
+        sportType: 'Padel',
+        city: 'Istanbul',
+        eventDate: DateTime(2026, 5, 28),
+        capacityTotal: 12,
+        capacityMale: 0,
+        capacityFemale: 0,
+        capacityAny: 12,
+      );
+
+      expect(input.hasEventLocationInfo, isFalse);
+      expect(
+        friendlyErrorMessage(StateError('Etkinlik konumunu yazmalısın.')),
+        'Etkinlik konumunu yazmalısın.',
+      );
+    });
+
+    test('event capacity model falls back old total to generic capacity', () {
+      final oldEvent = Event(
+        id: 'event-1',
+        hostId: 'host-1',
+        title: 'Legacy match',
+        city: 'Ankara',
+        eventDate: DateTime(2026, 7, 24),
+        capacityTotal: 10,
+        approvedCount: 3,
+        status: 'active',
+      );
+
+      expect(oldEvent.genericCapacity, 10);
+      expect(oldEvent.maleCapacity, 0);
+      expect(oldEvent.femaleCapacity, 0);
+      expect(oldEvent.safeCapacityTotal, 10);
+      expect(oldEvent.isFull, isFalse);
+      expect(oldEvent.formattedCapacityLabel, '3 / 10 kişi onaylandı');
+      expect(
+        oldEvent.capacityBreakdownLabel,
+        'Karışık: 10, Erkek: 0, Kadın: 0',
+      );
+
+      final missingCapacityEvent = Event(
+        id: 'event-2',
+        hostId: 'host-1',
+        title: 'Missing capacity',
+        city: 'Ankara',
+        eventDate: DateTime(2026, 7, 24),
+        capacityTotal: 0,
+        status: 'active',
+      );
+      expect(missingCapacityEvent.safeCapacityTotal, 0);
+      expect(missingCapacityEvent.isFull, isFalse);
+      expect(
+        missingCapacityEvent.formattedCapacityLabel,
+        '0 / 0 kişi onaylandı',
+      );
+    });
+
+    test('capacity schema errors are not shown as event full', () {
+      final message = friendlyErrorMessage(
+        'PostgrestException column events.generic_capacity does not exist',
+      );
+
+      expect(message, isNot('Bu etkinlik şu anda dolu.'));
+    });
+
+    test('create form and event list state are kept separate', () {
+      final createSource = File(
+        'lib/features/events/create_event_page.dart',
+      ).readAsStringSync();
+      final providerSource = File(
+        'lib/features/events/events_provider.dart',
+      ).readAsStringSync();
+
+      expect(createSource, contains('capacityTotal < 1'));
+      expect(createSource, contains('En az bir kontenjan'));
+      expect(createSource, isNot(contains('dolu')));
+      expect(createSource, contains('eventsState.isMutating'));
+      expect(createSource, contains('eventsState.mutationMessage'));
+      expect(providerSource, contains('mutationMessage'));
+      expect(providerSource, contains('isMutating'));
+    });
+
+    test('gender-aware capacity rules choose eligible buckets', () {
+      expect(
+        EventCapacityRules.bucketFor(
+          gender: 'Erkek',
+          genericRemaining: 4,
+          maleRemaining: 2,
+          femaleRemaining: 2,
+        ),
+        EventCapacityBucket.male,
+      );
+      expect(
+        EventCapacityRules.bucketFor(
+          gender: 'Erkek',
+          genericRemaining: 4,
+          maleRemaining: 0,
+          femaleRemaining: 2,
+        ),
+        EventCapacityBucket.generic,
+      );
+      expect(
+        EventCapacityRules.bucketFor(
+          gender: 'Kadın',
+          genericRemaining: 4,
+          maleRemaining: 2,
+          femaleRemaining: 1,
+        ),
+        EventCapacityBucket.female,
+      );
+      expect(
+        EventCapacityRules.bucketFor(
+          gender: 'Belirtmek istemiyorum',
+          genericRemaining: 1,
+          maleRemaining: 2,
+          femaleRemaining: 2,
+        ),
+        EventCapacityBucket.generic,
+      );
+      expect(
+        EventCapacityRules.bucketFor(
+          gender: null,
+          genericRemaining: 0,
+          maleRemaining: 2,
+          femaleRemaining: 2,
+        ),
+        isNull,
+      );
+    });
+
+    test('event map candidates prefer generic map schemes', () {
+      const service = MapsService();
+
+      final coordinateUrls = service.eventLocationCandidates(
+        latitude: 41.015,
+        longitude: 29.02,
+        label: 'Kadıköy Padel Club',
+      );
+      expect(coordinateUrls.first.scheme, 'geo');
+      expect(coordinateUrls.map((uri) => uri.host), contains('maps.apple.com'));
+      expect(
+        coordinateUrls.map((uri) => uri.host),
+        contains('www.openstreetmap.org'),
+      );
+
+      final addressUrls = service.eventLocationCandidates(
+        locationText: 'Kadıköy Padel Club Kort 2',
+      );
+      expect(addressUrls.first.scheme, 'geo');
+      expect(addressUrls.first.query, contains('Kad%C4%B1k%C3%B6y'));
+      expect(
+        addressUrls.map((uri) => uri.host),
+        isNot(contains('www.google.com')),
+      );
+
+      final contextualQuery = service.contextualSearchQuery(
+        locationText: 'Can Spor Tesisleri',
+        district: 'Çankaya',
+        city: 'Ankara',
+      );
+      expect(contextualQuery, 'Can Spor Tesisleri, Çankaya, Ankara, Türkiye');
+
+      final duplicateSafeQuery = service.contextualSearchQuery(
+        locationText: 'Can Spor Tesisleri, Çankaya, Ankara',
+        district: 'Çankaya',
+        city: 'Ankara',
+      );
+      expect(
+        duplicateSafeQuery,
+        'Can Spor Tesisleri, Çankaya, Ankara, Türkiye',
+      );
     });
 
     test('sponsored business event is inserted after 4 normal events', () {
@@ -1101,7 +1464,7 @@ void main() {
         'deleted-sponsored',
       ]);
       expect(deletedSponsored.isActiveSponsoredPlacement(now), isFalse);
-      expect(deletedSponsored.isVisibleInEventsList, isFalse);
+      expect(deletedSponsored.isVisibleInEventsList(), isFalse);
     });
 
     test('normal event list remains unchanged without sponsored events', () {
@@ -1317,6 +1680,41 @@ void main() {
       expect(payload.containsKey('event_id'), isFalse);
     });
 
+    test('post image storage path is scoped to authenticated user folder', () {
+      final path = StorageService.postImagePath(
+        userId: 'user-1',
+        fileName: 'maç günü!.jpg',
+        now: DateTime.fromMillisecondsSinceEpoch(12345),
+      );
+
+      expect(path, 'user-1/12345_ma__g_n__.jpg');
+      expect(StorageService.safeStorageFileName(''), 'photo.jpg');
+      expect(
+        StorageService.imageContentTypeFor(fileName: 'match.PNG'),
+        'image/png',
+      );
+      expect(
+        StorageService.imageContentTypeFor(
+          fileName: 'match.jpg',
+          contentType: 'application/octet-stream',
+        ),
+        'image/jpeg',
+      );
+    });
+
+    test('post image storage migration keeps writes owner scoped', () {
+      final migration = File(
+        'supabase/migrations/20260612110000_post_images_storage_bucket.sql',
+      ).readAsStringSync();
+
+      expect(migration, contains("'post-images'"));
+      expect(migration, contains('to authenticated'));
+      expect(migration, contains('for insert'));
+      expect(migration, contains('auth.uid()::text'));
+      expect(migration, contains('storage.foldername(name)'));
+      expect(migration, isNot(contains('for insert\nto public')));
+    });
+
     test('feed and create post errors use focused Turkish copy', () {
       expect(
         friendlyFeedLoadErrorMessage('PostgrestException policy 42501'),
@@ -1368,7 +1766,7 @@ void main() {
         ),
       );
 
-      expect(find.text('E'), findsOneWidget);
+      expect(find.byType(AppLogo), findsOneWidget);
     });
   });
 
@@ -1538,6 +1936,14 @@ void main() {
     test('business required field validation is friendly', () {
       expect(BusinessAccountValidators.name(''), 'İşletme adı gerekli.');
       expect(BusinessAccountValidators.category(null), 'Kategori seçmelisin.');
+      expect(
+        BusinessApplicationValidators.manualCategory(''),
+        'İşletme kategorisini yazmalısın.',
+      );
+      expect(
+        BusinessApplicationValidators.manualCategory('At Çiftliği'),
+        isNull,
+      );
       expect(
         BusinessAccountValidators.cityDistrict(city: 'Ankara', district: ''),
         'Şehir ve ilçe seçmelisin.',
@@ -2393,6 +2799,7 @@ void main() {
         title: 'User Padel',
         sportType: 'Padel',
         city: 'Istanbul',
+        locationText: 'Kadikoy Padel Club',
         eventDate: DateTime(2026, 6, 4),
         capacityTotal: 8,
         capacityMale: 0,

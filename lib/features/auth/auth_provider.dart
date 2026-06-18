@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
 import '../../core/utils/error_messages.dart';
+import '../../core/utils/validators.dart';
 import '../profile/profile_provider.dart';
 import '../profile/profile_service.dart';
 import 'auth_models.dart';
@@ -42,6 +43,13 @@ class AuthController extends StateNotifier<AuthState> {
         '[Auth] auth state event=${authState.event.name} '
         'sessionRestored=${authState.session != null}',
       );
+      if (authState.event == supabase.AuthChangeEvent.passwordRecovery) {
+        state = AuthState.passwordRecovery(
+          userId: user?.id,
+          message: 'Yeni şifreni belirleyebilirsin.',
+        );
+        return;
+      }
       if (user == null) {
         state = const AuthState.unauthenticated();
         return;
@@ -66,11 +74,12 @@ class AuthController extends StateNotifier<AuthState> {
         return;
       }
       debugPrint(
-        '[Auth] authenticated profileCompleted=${profile.hasCoreIdentity}',
+        '[Auth] authenticated minimumProfile=${profile.hasMinimumProfile}',
       );
       state = AuthState.authenticated(
         userId: userId,
-        isProfileCompleted: profile.hasCoreIdentity,
+        isProfileCompleted: profile.hasMinimumProfile,
+        hasAcceptedTerms: _authService.currentUserHasAcceptedTerms,
         message: message,
       );
     } catch (error) {
@@ -82,6 +91,7 @@ class AuthController extends StateNotifier<AuthState> {
         state = AuthState.authenticated(
           userId: currentUser.id,
           isProfileCompleted: false,
+          hasAcceptedTerms: _authService.currentUserHasAcceptedTerms,
           message: message,
         );
         return;
@@ -95,10 +105,11 @@ class AuthController extends StateNotifier<AuthState> {
     required String password,
   }) async {
     state = const AuthState.loading();
+    final normalizedEmail = email.trim();
 
     try {
       final response = await _authService.signInWithEmailAndPassword(
-        email: email.trim(),
+        email: normalizedEmail,
         password: password,
       );
       final user = response.user;
@@ -111,44 +122,146 @@ class AuthController extends StateNotifier<AuthState> {
 
       await _setAuthenticatedState(user.id, message: 'Giriş yapıldı.');
     } on supabase.AuthException catch (error) {
+      if (_isEmailNotConfirmedError(error)) {
+        state = AuthState.emailVerificationRequired(
+          pendingEmail: normalizedEmail,
+          message: 'E-posta adresini doğrulaman gerekiyor.',
+        );
+        return;
+      }
       state = AuthState.error(message: friendlyErrorMessage(error));
     } catch (error) {
       state = AuthState.error(message: friendlyErrorMessage(error));
     }
   }
 
-  Future<void> signUpWithEmailAndPassword({
+  Future<EmailSignUpResult?> signUpWithEmailAndPassword({
     required String email,
     required String password,
+    required bool termsAccepted,
   }) async {
+    if (!termsAccepted) {
+      state = const AuthState.error(
+        message: 'Devam etmek için Kullanıcı Sözleşmesi’ni kabul etmelisin.',
+      );
+      return null;
+    }
+
     state = const AuthState.loading();
+    final normalizedEmail = email.trim();
 
     try {
-      final response = await _authService.signUpWithEmailAndPassword(
-        email: email.trim(),
+      final result = await _authService.signUpWithEmailAndPassword(
+        email: normalizedEmail,
         password: password,
+        termsAcceptedAt: DateTime.now(),
       );
-      final user = response.user;
-      final session = response.session;
 
-      if (user == null) {
-        state = const AuthState.error(message: 'Giriş işlemi tamamlanamadı.');
-        return;
+      switch (result) {
+        case EmailVerificationRequired(:final email):
+          state = AuthState.emailVerificationRequired(pendingEmail: email);
+          return result;
+        case EmailSignUpAuthenticated(:final userId):
+          await _setAuthenticatedState(userId, message: 'Hesabın oluşturuldu.');
+          return result;
       }
-
-      if (session == null) {
-        state = const AuthState.unauthenticated(
-          message:
-              'Hesabın oluşturuldu. E-posta doğrulaması gerekiyorsa gelen kutunu kontrol et.',
-        );
-        return;
-      }
-
-      await _setAuthenticatedState(user.id, message: 'Hesabın oluşturuldu.');
     } on supabase.AuthException catch (error) {
+      if (_isAlreadyRegisteredError(error)) {
+        state = const AuthState.error(
+          message:
+              'Bu e-posta ile kayıtlı bir hesap var. Giriş yapmayı deneyebilirsin.',
+        );
+        return null;
+      }
       state = AuthState.error(message: friendlyErrorMessage(error));
+      return null;
     } catch (error) {
       state = AuthState.error(message: friendlyErrorMessage(error));
+      return null;
+    }
+  }
+
+  Future<bool> resendSignupConfirmationEmail(String email) async {
+    final normalizedEmail = email.trim();
+    if (Validators.email(normalizedEmail) != null) {
+      state = AuthState.emailVerificationRequired(
+        pendingEmail: normalizedEmail,
+        message: 'Geçerli bir e-posta adresi gir.',
+      );
+      return false;
+    }
+
+    state = const AuthState.loading();
+    try {
+      await _authService.resendSignupConfirmationEmail(normalizedEmail);
+      state = AuthState.emailVerificationRequired(
+        pendingEmail: normalizedEmail,
+        message: 'Doğrulama bağlantısı tekrar gönderildi.',
+      );
+      return true;
+    } on supabase.AuthException catch (error) {
+      state = AuthState.emailVerificationRequired(
+        pendingEmail: normalizedEmail,
+        message: AuthLinkMessages.resendConfirmationError(error),
+      );
+      return false;
+    } catch (error) {
+      state = AuthState.emailVerificationRequired(
+        pendingEmail: normalizedEmail,
+        message: AuthLinkMessages.resendConfirmationError(error),
+      );
+      return false;
+    }
+  }
+
+  Future<void> sendPasswordResetLink(String email) async {
+    final normalizedEmail = email.trim();
+    final emailError = Validators.email(normalizedEmail);
+    if (emailError != null) {
+      state = AuthState.error(message: 'Geçerli bir e-posta adresi gir.');
+      return;
+    }
+
+    state = const AuthState.loading();
+    try {
+      await _authService.sendPasswordResetLink(normalizedEmail);
+      state = const AuthState.unauthenticated(
+        message: 'Şifre sıfırlama bağlantısı e-postana gönderildi.',
+      );
+    } on supabase.AuthException catch (error) {
+      state = AuthState.error(
+        message: AuthLinkMessages.passwordResetError(error),
+      );
+    } catch (error) {
+      state = AuthState.error(
+        message: AuthLinkMessages.passwordResetError(error),
+      );
+    }
+  }
+
+  Future<void> updatePassword(String password) async {
+    state = const AuthState.loading();
+    try {
+      await _authService.updatePassword(password);
+      final currentUser = _authService.currentUser;
+      if (currentUser == null) {
+        state = const AuthState.unauthenticated(message: 'Şifren güncellendi.');
+        return;
+      }
+      await _setAuthenticatedState(
+        currentUser.id,
+        message: 'Şifren güncellendi.',
+      );
+    } on supabase.AuthException catch (error) {
+      state = AuthState.passwordRecovery(
+        userId: _authService.currentUser?.id,
+        message: AuthLinkMessages.updatePasswordError(error),
+      );
+    } catch (error) {
+      state = AuthState.passwordRecovery(
+        userId: _authService.currentUser?.id,
+        message: AuthLinkMessages.updatePasswordError(error),
+      );
     }
   }
 
@@ -159,11 +272,32 @@ class AuthController extends StateNotifier<AuthState> {
     );
   }
 
-  Future<void> signInWithFacebook() async {
+  Future<void> signInWithApple() async {
     await _startSocialSignIn(
-      startOAuth: _authService.signInWithFacebook,
-      providerName: 'Facebook',
+      startOAuth: _authService.signInWithApple,
+      providerName: 'Apple',
     );
+  }
+
+  Future<bool> acceptTerms() async {
+    final currentState = state;
+    if (currentState.status != AuthStatus.authenticated) return false;
+    if (currentState.hasAcceptedTerms) return true;
+
+    try {
+      await _authService.acceptTerms(termsAcceptedAt: DateTime.now());
+      if (!mounted) return false;
+      state = currentState.copyWith(hasAcceptedTerms: true);
+      return true;
+    } on supabase.AuthException catch (error) {
+      if (!mounted) return false;
+      state = currentState.copyWith(message: friendlyErrorMessage(error));
+      return false;
+    } catch (error) {
+      if (!mounted) return false;
+      state = currentState.copyWith(message: friendlyErrorMessage(error));
+      return false;
+    }
   }
 
   Future<void> _startSocialSignIn({
@@ -215,8 +349,16 @@ String _socialAuthError(Object error, String providerName) {
   if (normalized.contains('cancel') || normalized.contains('dismiss')) {
     return 'İşlem iptal edildi.';
   }
-  if (providerName == 'Facebook') {
-    return 'Facebook ile giriş tamamlanamadı.';
-  }
   return '$providerName ile giriş başlatılamadı.';
+}
+
+bool _isEmailNotConfirmedError(Object error) {
+  return error.toString().toLowerCase().contains('email not confirmed');
+}
+
+bool _isAlreadyRegisteredError(Object error) {
+  final normalized = error.toString().toLowerCase();
+  return normalized.contains('already registered') ||
+      normalized.contains('already exists') ||
+      normalized.contains('user already registered');
 }

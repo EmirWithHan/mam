@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:image_cropper/image_cropper.dart';
 
+import '../../core/utils/image_crop_helper.dart';
 import '../../core/constants/turkey_locations.dart';
 import '../../core/layout/responsive_layout.dart';
 import '../../core/router/route_names.dart';
@@ -119,7 +121,7 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
       if (avatarUrl == null) {
         final message = ref.read(profileControllerProvider).message;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(message ?? 'Avatar upload failed.')),
+          SnackBar(content: Text(message ?? 'Avatar yüklenemedi.')),
         );
         return;
       }
@@ -153,7 +155,7 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
     if (profile != null) {
       ref
           .read(authControllerProvider.notifier)
-          .markProfileCompletion(isCompleted: profile.hasCoreIdentity);
+          .markProfileCompletion(isCompleted: profile.hasMinimumProfile);
       _navigateAfterSave(context);
       return;
     }
@@ -174,7 +176,13 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
       );
       if (image == null) return;
 
-      final bytes = await image.readAsBytes();
+      final croppedFile = await cropImage(
+        image.path,
+        initialAspectRatio: CropAspectRatioPreset.square,
+      );
+      if (croppedFile == null) return;
+
+      final bytes = await croppedFile.readAsBytes();
       if (!mounted) return;
 
       setState(() {
@@ -182,14 +190,20 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
         _avatarFileName = image.name;
         _avatarContentType = image.mimeType;
       });
-    } on PlatformException {
+    } on PlatformException catch (e, stack) {
+      debugPrint(
+        '[ProfileCompletionPage] PlatformException picking/cropping avatar: $e\n$stack',
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Fotoğraf seçilemedi. Galeri iznini kontrol et.'),
         ),
       );
-    } catch (_) {
+    } catch (e, stack) {
+      debugPrint(
+        '[ProfileCompletionPage] Error picking/cropping avatar: $e\n$stack',
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Fotoğraf seçilemedi. Tekrar dene.')),
@@ -206,7 +220,7 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: 'Geri',
           onPressed: () => _goBack(context),
           icon: const Icon(Icons.arrow_back),
         ),
@@ -222,8 +236,8 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
               const SizedBox(height: AppSpacing.sm),
               Text(
                 _isEventRequirementsMode
-                    ? 'Etkinliklere katılmak için profilini tamamlamalısın. Gerekli bilgiler: şehir, ilçe ve doğum tarihi.'
-                    : 'Devam etmek için kullanıcı adını ve adını ekle. Diğer bilgileri sonra tamamlayabilirsin.',
+                    ? 'Etkinlik deneyimini güçlendirmek için şehir, ilçe ve doğum tarihi bilgilerini ekleyebilirsin.'
+                    : 'Profil bilgilerini istediğin zaman düzenleyebilirsin. Fotoğraf, bio ve şehir bilgilerini ekleyerek profilini güçlendirebilirsin.',
                 style: AppTextStyles.body,
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -244,17 +258,16 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
-                      label: 'Ad',
+                      label: 'Ad (opsiyonel)',
                       controller: _nameController,
                       prefixIcon: const Icon(Icons.person_outline),
-                      validator: Validators.firstName,
                     ),
                     const SizedBox(height: AppSpacing.md),
                     AppTextField(
                       label: _isEventRequirementsMode
                           ? 'Doğum tarihi'
                           : 'Doğum tarihi (opsiyonel)',
-                      hintText: 'Tarih seç',
+                      hintText: 'GG.AA.YYYY',
                       controller: _birthDateController,
                       readOnly: true,
                       onTap: _selectBirthDate,
@@ -359,9 +372,18 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
     final firstDate = DateTime(1900);
     final picked = await showDatePicker(
       context: context,
+      locale: const Locale('tr', 'TR'),
       firstDate: firstDate,
       lastDate: now,
       initialDate: _initialBirthDate(now, firstDate),
+      initialEntryMode: DatePickerEntryMode.calendarOnly,
+      helpText: 'Tarih seç',
+      cancelText: 'İptal',
+      confirmText: 'Tamam',
+      fieldLabelText: 'Tarih',
+      fieldHintText: 'GG.AA.YYYY',
+      errorFormatText: 'Tarihi GG.AA.YYYY formatında gir.',
+      errorInvalidText: 'Geçerli bir tarih seç.',
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -582,81 +604,87 @@ class _SelectionSheetState extends State<_SelectionSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return DraggableScrollableSheet(
       initialChildSize: 0.72,
       minChildSize: 0.42,
       maxChildSize: 0.9,
       builder: (context, scrollController) {
-        return DecoratedBox(
-          decoration: const BoxDecoration(
-            color: AppColors.background,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg,
-              AppSpacing.md,
-              AppSpacing.lg,
-              AppSpacing.lg,
+        return AnimatedPadding(
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          padding: EdgeInsets.only(bottom: bottomInset),
+          child: DecoratedBox(
+            decoration: const BoxDecoration(
+              color: AppColors.background,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Center(
-                  child: Container(
-                    width: 42,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: AppColors.textMuted.withValues(alpha: 0.35),
-                      borderRadius: AppRadius.pillBorder,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.md,
+                AppSpacing.lg,
+                AppSpacing.lg,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 42,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppColors.textMuted.withValues(alpha: 0.35),
+                        borderRadius: AppRadius.pillBorder,
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: AppSpacing.lg),
-                Text(widget.title, style: AppTextStyles.title),
-                if (widget.searchable) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(widget.title, style: AppTextStyles.title),
+                  if (widget.searchable) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Ara',
+                      controller: _searchController,
+                      prefixIcon: const Icon(Icons.search),
+                      onChanged: _onSearchChanged,
+                    ),
+                  ],
                   const SizedBox(height: AppSpacing.md),
-                  AppTextField(
-                    label: 'Ara',
-                    controller: _searchController,
-                    prefixIcon: const Icon(Icons.search),
-                    onChanged: _onSearchChanged,
+                  Expanded(
+                    child: _options.isEmpty
+                        ? Center(
+                            child: Text(
+                              'Sonuç bulunamadı.',
+                              style: AppTextStyles.body.copyWith(
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                          )
+                        : ListView.separated(
+                            controller: scrollController,
+                            itemCount: _options.length,
+                            separatorBuilder: (context, index) =>
+                                const SizedBox(height: AppSpacing.xs),
+                            itemBuilder: (context, index) {
+                              final option = _options[index];
+                              return ListTile(
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: AppRadius.mdBorder,
+                                ),
+                                tileColor: AppColors.surface,
+                                title: Text(option),
+                                trailing: const Icon(
+                                  Icons.chevron_right,
+                                  color: AppColors.primary,
+                                ),
+                                onTap: () => Navigator.of(context).pop(option),
+                              );
+                            },
+                          ),
                   ),
                 ],
-                const SizedBox(height: AppSpacing.md),
-                Expanded(
-                  child: _options.isEmpty
-                      ? Center(
-                          child: Text(
-                            'Sonuç bulunamadı.',
-                            style: AppTextStyles.body.copyWith(
-                              color: AppColors.textMuted,
-                            ),
-                          ),
-                        )
-                      : ListView.separated(
-                          controller: scrollController,
-                          itemCount: _options.length,
-                          separatorBuilder: (context, index) =>
-                              const SizedBox(height: AppSpacing.xs),
-                          itemBuilder: (context, index) {
-                            final option = _options[index];
-                            return ListTile(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: AppRadius.mdBorder,
-                              ),
-                              tileColor: AppColors.surface,
-                              title: Text(option),
-                              trailing: const Icon(
-                                Icons.chevron_right,
-                                color: AppColors.primary,
-                              ),
-                              onTap: () => Navigator.of(context).pop(option),
-                            );
-                          },
-                        ),
-                ),
-              ],
+              ),
             ),
           ),
         );

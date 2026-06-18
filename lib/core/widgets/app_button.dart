@@ -26,11 +26,15 @@ class AppButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDisabled = onPressed == null || isLoading;
+    final isPrimary = variant == AppButtonVariant.primary && !isDisabled;
 
-    final button = FilledButton(
+    Widget button = FilledButton(
       onPressed: isDisabled ? null : onPressed,
       style: FilledButton.styleFrom(
-        backgroundColor: _backgroundColor(isDisabled),
+        backgroundColor: isPrimary
+            ? Colors.transparent
+            : _backgroundColor(isDisabled),
+        shadowColor: Colors.transparent,
         foregroundColor: _foregroundColor(isDisabled),
         disabledBackgroundColor: _backgroundColor(true),
         disabledForegroundColor: _foregroundColor(true),
@@ -38,7 +42,9 @@ class AppButton extends StatelessWidget {
         textStyle: AppTextStyles.button,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.pill),
-          side: BorderSide(color: _borderColor(isDisabled)),
+          side: isPrimary
+              ? BorderSide.none
+              : BorderSide(color: _borderColor(isDisabled)),
         ),
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg,
@@ -56,9 +62,30 @@ class AppButton extends StatelessWidget {
           : Text(label),
     );
 
-    if (!fullWidth) return button;
+    if (isPrimary) {
+      button = Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+          gradient: const LinearGradient(
+            colors: [AppColors.primary, AppColors.tertiary],
+            begin: Alignment.centerLeft,
+            end: Alignment.centerRight,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withValues(alpha: 0.35),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: button,
+      );
+    }
 
-    return SizedBox(width: double.infinity, child: button);
+    if (!fullWidth) return SizedBox(height: 52, child: button);
+
+    return SizedBox(width: double.infinity, height: 52, child: button);
   }
 
   Color _backgroundColor(bool isDisabled) {

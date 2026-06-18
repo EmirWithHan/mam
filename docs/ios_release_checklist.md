@@ -2,7 +2,7 @@
 
 ## Current Status
 
-- iOS bundle id: `com.example.mam`
+- iOS bundle id: `com.matchaman.app`
 - Display name: `MaM`
 - Version/build comes from Flutter: `1.0.0+1`
 - Deployment target: iOS 13.0
@@ -14,7 +14,7 @@
 ## Blockers Before TestFlight/App Store
 
 - Apple Developer Program account needed.
-- Replace placeholder bundle id with final bundle id.
+- Verify App Store Connect app record uses `com.matchaman.app`.
 - Configure signing and provisioning.
 - Prepare TestFlight tester plan.
 - Publish Privacy Policy URL.

@@ -101,8 +101,6 @@ class FollowService {
       throw StateError('You must be signed in to unfollow members.');
     }
 
-    await _rateLimitService.followRequest(targetUserId: targetUserId);
-
     await SupabaseService.client
         .from('follows')
         .delete()

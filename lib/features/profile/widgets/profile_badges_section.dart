@@ -11,30 +11,42 @@ class ProfileBadgesSection extends StatelessWidget {
   const ProfileBadgesSection({
     super.key,
     required this.badges,
+    this.trustScore,
     this.isLoading = false,
     this.errorMessage,
   });
 
-  factory ProfileBadgesSection.fromAsync(AsyncValue<List<ProfileBadge>> async) {
+  factory ProfileBadgesSection.fromAsync(
+    AsyncValue<List<ProfileBadge>> async, {
+    int? trustScore,
+  }) {
     return async.when(
-      data: (badges) => ProfileBadgesSection(badges: badges),
-      loading: () => const ProfileBadgesSection(badges: [], isLoading: true),
+      data: (badges) =>
+          ProfileBadgesSection(badges: badges, trustScore: trustScore),
+      loading: () => ProfileBadgesSection(
+        badges: const [],
+        trustScore: trustScore,
+        isLoading: true,
+      ),
       error: (_, _) => ProfileBadgesSection(
         badges: ProfileBadgeCatalog.withUpcoming(
           ProfileBadgeCatalog.fallbackCatalog(),
         ),
+        trustScore: trustScore,
         errorMessage: 'Rozetler yüklenemedi.',
       ),
     );
   }
 
   final List<ProfileBadge> badges;
+  final int? trustScore;
   final bool isLoading;
   final String? errorMessage;
 
   @override
   Widget build(BuildContext context) {
-    final previewBadges = ProfileBadgeCatalog.preview(badges);
+    final visibleBadges = ProfileBadgeCatalog.launchVisible(badges);
+    final previewBadges = ProfileBadgeCatalog.preview(visibleBadges);
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -56,10 +68,12 @@ class ProfileBadgesSection extends StatelessWidget {
           children: [
             Row(
               children: [
-                Expanded(child: Text('Rozetler', style: AppTextStyles.title)),
+                Expanded(
+                  child: Text('Rozetler ve Güven', style: AppTextStyles.title),
+                ),
                 TextButton(
-                  onPressed: () => _showAllBadges(context),
-                  child: const Text('Tümü gör'),
+                  onPressed: () => _showAllBadges(context, visibleBadges),
+                  child: const Text('Tümünü Gör'),
                 ),
               ],
             ),
@@ -76,29 +90,38 @@ class ProfileBadgesSection extends StatelessWidget {
                   color: AppColors.textMuted,
                 ),
               )
-            else if (previewBadges.isEmpty)
-              Text(
-                'Henüz rozet yok. Etkinliklere katılarak rozet kazanabilirsin.',
-                style: AppTextStyles.bodySmall.copyWith(
-                  color: AppColors.textMuted,
+            else ...[
+              if (trustScore != null) ...[
+                _TrustScoreCard(score: trustScore!),
+                const SizedBox(height: AppSpacing.md),
+              ],
+              if (previewBadges.isEmpty)
+                Text(
+                  'Henüz rozet kazanılmadı. Etkinliklere katılarak rozet kazanabilirsin.',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+                )
+              else
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  runSpacing: AppSpacing.sm,
+                  children: [
+                    for (final badge in previewBadges)
+                      _BadgeChip(badge: badge, compact: true),
+                  ],
                 ),
-              )
-            else
-              Wrap(
-                spacing: AppSpacing.sm,
-                runSpacing: AppSpacing.sm,
-                children: [
-                  for (final badge in previewBadges)
-                    _BadgeChip(badge: badge, compact: true),
-                ],
-              ),
+            ],
           ],
         ),
       ),
     );
   }
 
-  Future<void> _showAllBadges(BuildContext context) {
+  Future<void> _showAllBadges(
+    BuildContext context,
+    List<ProfileBadge> visibleBadges,
+  ) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -135,11 +158,11 @@ class ProfileBadgesSection extends StatelessWidget {
                 Flexible(
                   child: ListView.separated(
                     shrinkWrap: true,
-                    itemCount: badges.length,
+                    itemCount: visibleBadges.length,
                     separatorBuilder: (context, index) =>
                         const SizedBox(height: AppSpacing.sm),
                     itemBuilder: (context, index) {
-                      return _BadgeTile(badge: badges[index]);
+                      return _BadgeTile(badge: visibleBadges[index]);
                     },
                   ),
                 ),
@@ -148,6 +171,70 @@ class ProfileBadgesSection extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+class _TrustScoreCard extends StatelessWidget {
+  const _TrustScoreCard({required this.score});
+
+  final int score;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.success.withValues(alpha: 0.06),
+        borderRadius: AppRadius.lgBorder,
+        border: Border.all(color: AppColors.success.withValues(alpha: 0.15)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.xs),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.verified_user,
+                color: AppColors.success,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text('Güven Puanı:', style: AppTextStyles.bodyStrong),
+                      const SizedBox(width: AppSpacing.xs),
+                      Text(
+                        '$score/100',
+                        style: AppTextStyles.bodyStrong.copyWith(
+                          color: AppColors.success,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Trust Score, etkinliklere katılım, zamanında iptal ve QR doğrulama gibi davranışlara göre otomatik hesaplanır.',
+                    style: AppTextStyles.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

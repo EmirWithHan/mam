@@ -13,11 +13,13 @@ class PublicProfileName extends ConsumerWidget {
     required this.userId,
     this.showUsernameTag = true,
     this.compact = false,
+    this.textStyle,
   });
 
   final String userId;
   final bool showUsernameTag;
   final bool compact;
+  final TextStyle? textStyle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,9 +40,11 @@ class PublicProfileName extends ConsumerWidget {
             children: [
               Text(
                 profile?.displayName ?? 'Match A Man kullanıcısı',
-                style: compact
-                    ? AppTextStyles.caption
-                    : AppTextStyles.bodyStrong,
+                style:
+                    textStyle ??
+                    (compact
+                        ? AppTextStyles.caption
+                        : AppTextStyles.bodyStrong),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -61,11 +65,15 @@ class PublicProfileName extends ConsumerWidget {
       },
       loading: () => Text(
         'Match A Man kullanıcısı',
-        style: compact ? AppTextStyles.caption : AppTextStyles.bodyStrong,
+        style:
+            textStyle ??
+            (compact ? AppTextStyles.caption : AppTextStyles.bodyStrong),
       ),
       orElse: () => Text(
         'Match A Man kullanıcısı',
-        style: compact ? AppTextStyles.caption : AppTextStyles.bodyStrong,
+        style:
+            textStyle ??
+            (compact ? AppTextStyles.caption : AppTextStyles.bodyStrong),
       ),
     );
   }

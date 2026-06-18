@@ -7,9 +7,16 @@ String friendlyErrorMessage(Object error) {
   final message = error.toString();
   final normalized = message.toLowerCase();
 
+  if (normalized.contains('rate_limit_exceeded')) {
+    return 'Etkinlik veya işlem limitine ulaştın. Güvenilir sporcular günde 3, yeni sporcular günde 2, standart işletmeler ise ayda 3 etkinlik oluşturabilir. Limiti artırmak için Business Plus\'a geçebilirsin.';
+  }
+
   if (isRateLimitError(error)) {
     return friendlyRateLimitMessage;
   }
+
+  final authMessage = friendlyAuthErrorMessage(error);
+  if (authMessage != null) return authMessage;
 
   if (normalized.contains('notifications') ||
       normalized.contains('notification') ||
@@ -43,7 +50,7 @@ String friendlyErrorMessage(Object error) {
 
   if (normalized.contains('etkinliklere katılmak') ||
       normalized.contains('event profile')) {
-    return 'Etkinliklere katılmak için profilini tamamlamalısın.';
+    return 'Kullanıcı adını seçerek başlayabilirsin.';
   }
 
   if (normalized.contains('bu etkinlik geçmişte kaldı') ||
@@ -52,13 +59,20 @@ String friendlyErrorMessage(Object error) {
   }
 
   if (normalized.contains('bu etkinlik şu anda dolu') ||
-      normalized.contains('event is full') ||
-      normalized.contains('capacity')) {
+      normalized.contains('event is full')) {
     return 'Bu etkinlik şu anda dolu.';
   }
 
   if (normalized.contains('event_full')) {
     return 'Bu etkinlik şu anda dolu.';
+  }
+
+  if (normalized.contains('no_eligible_capacity')) {
+    return 'Bu kullanıcı için uygun kontenjan kalmadı.';
+  }
+
+  if (normalized.contains('etkinlik konumunu yazmalısın')) {
+    return 'Etkinlik konumunu yazmalısın.';
   }
 
   if (normalized.contains('join_request_not_pending')) {
@@ -203,6 +217,14 @@ void logSupabaseDebug(String area, String action, Object error) {
     return;
   }
 
+  if (error is StorageException) {
+    debugPrint(
+      '[$area] $action failed status=${error.statusCode ?? 'unknown'} '
+      'message=${_safeDebugMessage(error.message)}',
+    );
+    return;
+  }
+
   debugPrint('[$area] $action failed type=${error.runtimeType}');
 }
 
@@ -261,4 +283,57 @@ String friendlyCreatePostErrorMessage(Object error) {
     return 'Bağlantı sorunu oluştu. Tekrar dene.';
   }
   return 'Paylaşım oluşturulamadı. Tekrar dene.';
+}
+
+String? friendlyAuthErrorMessage(Object error) {
+  final normalized = error.toString().toLowerCase();
+
+  if (normalized.contains('email not confirmed')) {
+    return 'E-posta adresini doğrulaman gerekiyor.';
+  }
+  if (normalized.contains('invalid login credentials') ||
+      normalized.contains('invalid credentials')) {
+    return 'E-posta veya şifre hatalı.';
+  }
+  if (normalized.contains('user already registered') ||
+      normalized.contains('already registered') ||
+      normalized.contains('already exists')) {
+    return 'Bu e-posta ile kayıtlı bir hesap var. Giriş yapmayı deneyebilirsin.';
+  }
+  if (normalized.contains('weak password') ||
+      normalized.contains('password should be') ||
+      normalized.contains('password is too weak')) {
+    return 'Daha güçlü bir şifre belirlemelisin.';
+  }
+  if (isRateLimitError(error) ||
+      normalized.contains('rate limit') ||
+      normalized.contains('too many') ||
+      normalized.contains('429')) {
+    return 'Çok sık deneme yaptın. Biraz bekleyip tekrar dene.';
+  }
+  if ((normalized.contains('expired') || normalized.contains('expire')) &&
+      (normalized.contains('link') ||
+          normalized.contains('token') ||
+          normalized.contains('recovery'))) {
+    return 'Bağlantının süresi dolmuş olabilir. Yeni bağlantı iste.';
+  }
+  if ((normalized.contains('invalid') || normalized.contains('malformed')) &&
+      (normalized.contains('link') ||
+          normalized.contains('token') ||
+          normalized.contains('recovery'))) {
+    return 'Bu bağlantı geçersiz görünüyor.';
+  }
+  if (normalized.contains('network') ||
+      normalized.contains('socket') ||
+      normalized.contains('connection') ||
+      normalized.contains('timeout') ||
+      normalized.contains('failed host lookup')) {
+    return 'Bağlantı sorunu var. Lütfen tekrar dene.';
+  }
+  if (normalized.contains('auth') ||
+      normalized.contains('gotrue') ||
+      normalized.contains('session')) {
+    return 'İşlem tamamlanamadı. Lütfen tekrar dene.';
+  }
+  return null;
 }

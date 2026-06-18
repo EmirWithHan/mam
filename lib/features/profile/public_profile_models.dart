@@ -16,6 +16,10 @@ class PublicProfilePreview {
     this.businessTag,
     this.businessLogoUrl,
     this.businessIsVerified = false,
+    this.businessCustomThemeColor,
+    this.businessPinnedEventId,
+    this.businessGalleryUrls,
+    this.businessIsPlusActive = false,
   });
 
   final String userId;
@@ -32,6 +36,10 @@ class PublicProfilePreview {
   final String? businessTag;
   final String? businessLogoUrl;
   final bool businessIsVerified;
+  final String? businessCustomThemeColor;
+  final String? businessPinnedEventId;
+  final List<String>? businessGalleryUrls;
+  final bool businessIsPlusActive;
 
   bool get isBusinessAccount => accountType == 'business';
 
@@ -80,13 +88,17 @@ class PublicProfilePreview {
   }
 
   factory PublicProfilePreview.fromJson(Map<String, dynamic> json) {
+    final userIdVal = json['user_id'];
+    if (userIdVal == null) {
+      throw ArgumentError('user_id is required');
+    }
     return PublicProfilePreview(
-      userId: json['user_id'].toString(),
-      username: json['username'] as String?,
-      tag: json['tag'] as String?,
-      firstName: json['first_name'] as String?,
-      city: json['city'] as String?,
-      avatarUrl: json['avatar_url'] as String?,
+      userId: userIdVal.toString(),
+      username: json['username']?.toString(),
+      tag: json['tag']?.toString(),
+      firstName: json['first_name']?.toString(),
+      city: json['city']?.toString(),
+      avatarUrl: json['avatar_url']?.toString(),
       trustScore: (json['trust_score'] as num?)?.toInt(),
       isProfileCompleted: json['is_profile_completed'] as bool? ?? false,
       accountType: json['account_type']?.toString() ?? 'user',
@@ -95,6 +107,14 @@ class PublicProfilePreview {
       businessTag: json['business_tag']?.toString(),
       businessLogoUrl: json['business_logo_url']?.toString(),
       businessIsVerified: json['business_is_verified'] as bool? ?? false,
+      businessCustomThemeColor: json['business_custom_theme_color']?.toString(),
+      businessPinnedEventId: json['business_pinned_event_id']?.toString(),
+      businessGalleryUrls: json['business_gallery_urls'] is List
+          ? (json['business_gallery_urls'] as List)
+                .map((e) => e.toString())
+                .toList()
+          : null,
+      businessIsPlusActive: json['business_is_plus_active'] as bool? ?? false,
     );
   }
 }

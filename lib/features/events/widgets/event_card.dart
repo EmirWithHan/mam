@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/sport_types.dart';
@@ -13,14 +14,16 @@ import '../../../core/widgets/sport_icon.dart';
 import '../../business/widgets/business_badge.dart';
 import '../../profile/widgets/public_profile_preview_tile.dart';
 import '../events_models.dart';
+import 'event_share_sheet.dart';
 
-class EventCard extends StatelessWidget {
-  const EventCard({super.key, required this.event});
+class EventCard extends ConsumerWidget {
+  const EventCard({super.key, required this.event, this.status});
 
   final Event event;
+  final String? status;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final showSponsorChip = event.isActiveSponsoredPlacement(DateTime.now());
     final spotsLeft = event.safeCapacityTotal - event.safeApprovedCount;
     final spotsLabel = event.isPast || spotsLeft <= 0
@@ -29,15 +32,20 @@ class EventCard extends StatelessWidget {
 
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppColors.surface,
         borderRadius: AppRadius.lgBorder,
+        gradient: const LinearGradient(
+          colors: [Colors.white, Color(0xFFFFF9F6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textPrimary.withValues(alpha: 0.06),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            color: AppColors.textPrimary.withValues(alpha: 0.09),
+            blurRadius: 26,
+            offset: const Offset(0, 12),
           ),
         ],
+        border: Border.all(color: const Color(0xFFFFF0EA), width: 0.8),
       ),
       child: Material(
         color: Colors.transparent,
@@ -77,7 +85,7 @@ class EventCard extends StatelessWidget {
                     _SportChip(sportType: event.sportType),
                   ],
                 ),
-                if (showSponsorChip || event.isPast) ...[
+                if (showSponsorChip || event.isPast || status != null) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Wrap(
                     spacing: AppSpacing.sm,
@@ -89,7 +97,10 @@ class EventCard extends StatelessWidget {
                           color: const Color(0xFFFF7E79),
                           textColor: Colors.white,
                         ),
-                      if (event.isPast)
+                      if (status != null) ...[
+                        if (_buildStatusPill(status!) != null)
+                          _buildStatusPill(status!)!,
+                      ] else if (event.isPast)
                         _Pill(
                           label: 'Gecmis',
                           color: AppColors.border,
@@ -136,7 +147,34 @@ class EventCard extends StatelessWidget {
                         children: [
                           _OrganizerTile(event: event),
                           const SizedBox(height: AppSpacing.sm),
-                          _OpenEventButton(eventId: event.id, fullWidth: true),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _OpenEventButton(
+                                  eventId: event.id,
+                                  fullWidth: true,
+                                ),
+                              ),
+                              const SizedBox(width: AppSpacing.sm),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.share_outlined,
+                                  color: AppColors.primary,
+                                  size: 20,
+                                ),
+                                tooltip: 'Paylaş',
+                                onPressed: () {
+                                  showModalBottomSheet<void>(
+                                    context: context,
+                                    isScrollControlled: true,
+                                    backgroundColor: Colors.transparent,
+                                    builder: (_) =>
+                                        EventShareSheet(event: event),
+                                  );
+                                },
+                              ),
+                            ],
+                          ),
                         ],
                       );
                     }
@@ -145,6 +183,23 @@ class EventCard extends StatelessWidget {
                       children: [
                         Expanded(child: _OrganizerTile(event: event)),
                         const SizedBox(width: AppSpacing.sm),
+                        IconButton(
+                          icon: const Icon(
+                            Icons.share_outlined,
+                            color: AppColors.primary,
+                            size: 20,
+                          ),
+                          tooltip: 'Paylaş',
+                          onPressed: () {
+                            showModalBottomSheet<void>(
+                              context: context,
+                              isScrollControlled: true,
+                              backgroundColor: Colors.transparent,
+                              builder: (_) => EventShareSheet(event: event),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
                         _OpenEventButton(eventId: event.id),
                       ],
                     );
@@ -166,6 +221,89 @@ class EventCard extends StatelessWidget {
     final minute = value.minute.toString().padLeft(2, '0');
     return '$year-$month-$day $hour:$minute';
   }
+
+  Widget? _buildStatusPill(String status) {
+    final now = DateTime.now();
+    final isPast = event.eventDate.isBefore(now);
+
+    if (isPast &&
+        status != 'cancelled' &&
+        status != 'rejected' &&
+        status != 'no_show') {
+      return const _Pill(
+        label: 'Geçmiş',
+        color: AppColors.border,
+        textColor: AppColors.textMuted,
+      );
+    }
+
+    switch (status) {
+      case 'host':
+        return const _Pill(
+          label: 'Organizatör',
+          color: AppColors.primarySoft,
+          textColor: AppColors.primary,
+        );
+      case 'pending':
+        return const _Pill(
+          label: 'İstek gönderildi',
+          color: Color(0xFFFEF3C7),
+          textColor: Color(0xFF92400E),
+        );
+      case 'pending_confirmation':
+        return const _Pill(
+          label: 'Beklemede',
+          color: Color(0xFFFFEDD5),
+          textColor: Color(0xFF9A3412),
+        );
+      case 'approved':
+      case 'planned':
+        return const _Pill(
+          label: 'Onaylandı',
+          color: Color(0xFFDCFCE7),
+          textColor: Color(0xFF166534),
+        );
+      case 'confirmed':
+        return const _Pill(
+          label: 'Rezervasyon',
+          color: Color(0xFFDBEAFE),
+          textColor: Color(0xFF1E40AF),
+        );
+      case 'attended':
+      case 'checked_in':
+        return const _Pill(
+          label: 'Katıldın',
+          color: Color(0xFFCCFBF1),
+          textColor: Color(0xFF0F766E),
+        );
+      case 'cancelled':
+        return const _Pill(
+          label: 'İptal edildi',
+          color: Color(0xFFFEE2E2),
+          textColor: Color(0xFF991B1B),
+        );
+      case 'rejected':
+        return const _Pill(
+          label: 'Reddedildi',
+          color: Color(0xFFFEE2E2),
+          textColor: Color(0xFF991B1B),
+        );
+      case 'waitlisted':
+        return const _Pill(
+          label: 'Yedek sıra',
+          color: Color(0xFFF3E8FF),
+          textColor: Color(0xFF6B21A8),
+        );
+      case 'no_show':
+        return const _Pill(
+          label: 'Katılmadı',
+          color: Color(0xFFE5E7EB),
+          textColor: Color(0xFF374151),
+        );
+      default:
+        return null;
+    }
+  }
 }
 
 class _OrganizerTile extends StatelessWidget {
@@ -184,8 +322,8 @@ class _OrganizerTile extends StatelessWidget {
   }
 
   String get _participantSummary {
-    if (event.safeApprovedCount <= 0) return 'Ilk katilimci ol';
-    return '${event.safeApprovedCount} katilimci - '
+    if (event.safeApprovedCount <= 0) return 'İlk katılımcı ol';
+    return '${event.safeApprovedCount} katılımcı - '
         '${event.safeCapacityTotal} kapasite';
   }
 }
@@ -287,7 +425,7 @@ class _OpenEventButton extends StatelessWidget {
                 pathParameters: {'eventId': eventId},
               ),
         child: const Text(
-          'Katil',
+          'Katıl',
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
         ),

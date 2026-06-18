@@ -8,6 +8,7 @@ import '../../core/utils/pagination.dart';
 import '../../services/supabase_service.dart';
 import 'business_models.dart';
 import 'business_service.dart';
+import '../profile/profile_badges.dart';
 
 enum BusinessAccountStatusState { initial, loading, success, error }
 
@@ -71,6 +72,13 @@ final publicBusinessAccountProvider =
       return ref
           .watch(businessAccountServiceProvider)
           .fetchBusinessAccountById(businessId);
+    });
+
+final businessBadgesProvider =
+    FutureProvider.family<List<ProfileBadge>, String>((ref, businessId) {
+      return ref
+          .watch(businessAccountServiceProvider)
+          .fetchBusinessBadges(businessId);
     });
 
 final pendingBusinessApplicationsProvider =
@@ -373,6 +381,41 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
       final account = await _service.updateBusinessAccount(
         id: id,
         input: input,
+      );
+      state = state.copyWith(
+        status: BusinessAccountStatusState.success,
+        account: account,
+      );
+      return account;
+    } catch (error) {
+      state = BusinessAccountState(
+        status: BusinessAccountStatusState.error,
+        account: state.account,
+        application: state.application,
+        isAdmin: state.isAdmin,
+        message: _businessMessage(error),
+      );
+      return null;
+    }
+  }
+
+  Future<BusinessAccount?> updateCustomizations({
+    required String id,
+    String? customThemeColor,
+    String? pinnedEventId,
+    List<String>? galleryUrls,
+  }) async {
+    state = state.copyWith(
+      status: BusinessAccountStatusState.loading,
+      clearMessage: true,
+    );
+
+    try {
+      final account = await _service.updateCustomizations(
+        id: id,
+        customThemeColor: customThemeColor,
+        pinnedEventId: pinnedEventId,
+        galleryUrls: galleryUrls,
       );
       state = state.copyWith(
         status: BusinessAccountStatusState.success,

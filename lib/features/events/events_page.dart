@@ -16,6 +16,7 @@ import '../auth/auth_provider.dart';
 import '../notifications/notifications_provider.dart';
 import 'events_models.dart';
 import 'events_provider.dart';
+import 'widgets/business_recommendation_card.dart';
 import 'widgets/event_card.dart';
 import 'widgets/event_filter_sheet.dart';
 
@@ -35,7 +36,8 @@ class _EventsPageState extends ConsumerState<EventsPage> {
     super.initState();
     Future.microtask(() {
       if (!mounted) return;
-      ref.read(eventsControllerProvider.notifier).loadEvents();
+      ref.read(featuredEventsProvider.notifier).loadEvents();
+      ref.read(followingEventsProvider.notifier).loadEvents();
       ref
           .read(notificationsControllerProvider.notifier)
           .startRealtime(ref.read(authControllerProvider).userId);
@@ -50,7 +52,6 @@ class _EventsPageState extends ConsumerState<EventsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final eventsState = ref.watch(eventsControllerProvider);
     final compact = MediaQuery.sizeOf(context).height < 720;
 
     return Scaffold(
@@ -66,18 +67,77 @@ class _EventsPageState extends ConsumerState<EventsPage> {
         ],
       ),
       body: SafeArea(
-        child: _EventsBody(
-          eventsState: eventsState,
-          searchQuery: _searchController.text,
-          filters: _filters,
-          compact: compact,
-          searchController: _searchController,
-          filtersActive: _filters.isActive,
-          onSearchChanged: (_) => setState(() {}),
-          onFilterPressed: _openFilterSheet,
-          onClearFilters: _clearSearchAndFilters,
-          onLoadMore: () =>
-              ref.read(eventsControllerProvider.notifier).loadMoreEvents(),
+        child: DefaultTabController(
+          length: 3,
+          child: NestedScrollView(
+            headerSliverBuilder: (context, innerBoxIsScrolled) {
+              return [
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: AppResponsive.pagePadding(
+                      context,
+                      top: compact ? AppSpacing.sm : AppSpacing.md,
+                      bottom: compact ? AppSpacing.sm : AppSpacing.md,
+                    ),
+                    child: _EventsHeader(
+                      compact: compact,
+                      controller: _searchController,
+                      filtersActive: _filters.isActive,
+                      onSearchChanged: (_) => setState(() {}),
+                      onFilterPressed: _openFilterSheet,
+                    ),
+                  ),
+                ),
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _SliverTabBarDelegate(
+                    TabBar(
+                      labelColor: AppColors.primary,
+                      unselectedLabelColor: Colors.grey,
+                      indicatorColor: AppColors.primary,
+                      tabs: const [
+                        Tab(text: 'Öne Çıkanlar'),
+                        Tab(text: 'Takip Ettiklerim'),
+                        Tab(text: 'Katıldıklarım'),
+                      ],
+                    ),
+                  ),
+                ),
+              ];
+            },
+            body: TabBarView(
+              children: [
+                _EventsTabList(
+                  eventsState: ref.watch(featuredEventsProvider),
+                  searchQuery: _searchController.text,
+                  filters: _filters,
+                  onLoadMore: () => ref
+                      .read(featuredEventsProvider.notifier)
+                      .loadMoreEvents(),
+                  onRefresh: () =>
+                      ref.read(featuredEventsProvider.notifier).refreshEvents(),
+                  onClearFilters: _clearSearchAndFilters,
+                  isFeatured: true,
+                ),
+                _EventsTabList(
+                  eventsState: ref.watch(followingEventsProvider),
+                  searchQuery: _searchController.text,
+                  filters: _filters,
+                  onLoadMore: () => ref
+                      .read(followingEventsProvider.notifier)
+                      .loadMoreEvents(),
+                  onRefresh: () => ref
+                      .read(followingEventsProvider.notifier)
+                      .refreshEvents(),
+                  onClearFilters: _clearSearchAndFilters,
+                  isFeatured: false,
+                ),
+                _MyEventsTabList(
+                  onRefresh: () => ref.refresh(myEventsProvider.future),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -138,137 +198,168 @@ class _NotificationBell extends StatelessWidget {
   }
 }
 
-class _EventsBody extends StatelessWidget {
-  const _EventsBody({
+class _EventsTabList extends ConsumerWidget {
+  const _EventsTabList({
     required this.eventsState,
     required this.searchQuery,
     required this.filters,
-    required this.compact,
-    required this.searchController,
-    required this.filtersActive,
-    required this.onSearchChanged,
-    required this.onFilterPressed,
-    required this.onClearFilters,
     required this.onLoadMore,
+    required this.onRefresh,
+    required this.onClearFilters,
+    required this.isFeatured,
   });
 
   final EventsState eventsState;
   final String searchQuery;
   final EventFilters filters;
-  final bool compact;
-  final TextEditingController searchController;
-  final bool filtersActive;
-  final ValueChanged<String> onSearchChanged;
-  final VoidCallback onFilterPressed;
-  final VoidCallback onClearFilters;
   final VoidCallback onLoadMore;
+  final Future<void> Function() onRefresh;
+  final VoidCallback onClearFilters;
+  final bool isFeatured;
 
   @override
-  Widget build(BuildContext context) {
-    final padding = AppResponsive.pagePadding(
-      context,
-      top: compact ? AppSpacing.sm : AppSpacing.md,
-      bottom: compact ? AppSpacing.md : AppSpacing.lg,
-    );
-    final header = _EventsHeader(
-      compact: compact,
-      controller: searchController,
-      filtersActive: filtersActive,
-      onSearchChanged: onSearchChanged,
-      onFilterPressed: onFilterPressed,
-    );
-
-    if (eventsState.isLoading) {
-      return ListView(
-        padding: padding,
-        children: [
-          header,
-          SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
-          const SizedBox(height: 280, child: AppLoader()),
-        ],
-      );
-    }
-
-    if (eventsState.status == EventsStatus.error) {
-      return ListView(
-        padding: padding,
-        children: [
-          header,
-          SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
-          ErrorView(message: eventsState.message ?? 'Etkinlikler yüklenemedi.'),
-        ],
-      );
-    }
-
+  Widget build(BuildContext context, WidgetRef ref) {
     final filteredEvents = eventsState.events
         .where((event) => _matchesSearch(event, searchQuery))
         .where((event) => _matchesFilters(event, filters))
         .toList();
 
-    if (eventsState.events.isEmpty) {
-      return ListView(
-        padding: padding,
-        children: [
-          header,
-          SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
-          EmptyState(
-            title: 'Henüz etkinlik yok',
-            message:
-                'İlk etkinliği sen oluşturabilir ya da daha sonra tekrar keşfe çıkabilirsin.',
-            icon: Icons.event_available_outlined,
-            actionLabel: 'Etkinlik oluştur',
-            onAction: () => context.pushNamed(RouteNames.createEvent),
-            secondaryActionLabel: 'Profilini tamamla',
-            onSecondaryAction: () =>
-                context.pushNamed(RouteNames.profileComplete),
-          ),
-        ],
-      );
-    }
-
-    if (filteredEvents.isEmpty) {
-      return ListView(
-        padding: padding,
-        children: [
-          header,
-          SizedBox(height: compact ? AppSpacing.md : AppSpacing.lg),
-          EmptyState(
-            title: 'Etkinlik bulunamadı',
-            message: 'Arama veya filtreleri değiştirerek tekrar dene.',
-            actionLabel: 'Filtreleri temizle',
-            onAction: onClearFilters,
-          ),
-        ],
-      );
+    // Apply sorting
+    switch (filters.sortOption) {
+      case EventSortOption.recommended:
+        break;
+      case EventSortOption.newest:
+        filteredEvents.sort((a, b) {
+          final timeA = a.createdAt ?? a.eventDate;
+          final timeB = b.createdAt ?? b.eventDate;
+          return timeB.compareTo(timeA);
+        });
+        break;
+      case EventSortOption.oldest:
+        filteredEvents.sort((a, b) {
+          final timeA = a.createdAt ?? a.eventDate;
+          final timeB = b.createdAt ?? b.eventDate;
+          return timeA.compareTo(timeB);
+        });
+        break;
+      case EventSortOption.dateAsc:
+        filteredEvents.sort((a, b) => a.eventDate.compareTo(b.eventDate));
+        break;
+      case EventSortOption.dateDesc:
+        filteredEvents.sort((a, b) => b.eventDate.compareTo(a.eventDate));
+        break;
     }
 
     final placedEvents = eventsWithSponsoredPlacement(filteredEvents);
 
-    return ListView.separated(
-      padding: padding,
-      itemCount: placedEvents.length + 2,
-      separatorBuilder: (context, index) =>
-          const SizedBox(height: AppSpacing.md),
-      itemBuilder: (context, index) {
-        if (index == 0) return header;
+    List<dynamic> itemsList = [];
+    if (isFeatured) {
+      final businessRecsState = ref.watch(businessRecommendationsProvider);
+      final businessRecs = businessRecsState.valueOrNull ?? [];
+      final recommendations = businessRecs
+          .map((row) => BusinessRecommendation.fromJson(row))
+          .toList();
 
-        final eventIndex = index - 1;
-        if (eventIndex == placedEvents.length) {
-          if (!eventsState.hasMore) {
-            return Text(
-              'Daha fazla içerik yok.',
-              style: AppTextStyles.caption,
-              textAlign: TextAlign.center,
+      if (recommendations.isNotEmpty) {
+        int recIndex = 0;
+        for (int i = 0; i < placedEvents.length; i++) {
+          itemsList.add(placedEvents[i]);
+          if ((itemsList.length) % 5 == 4) {
+            itemsList.add(recommendations[recIndex % recommendations.length]);
+            recIndex++;
+          }
+        }
+      } else {
+        itemsList = placedEvents;
+      }
+    } else {
+      itemsList = placedEvents;
+    }
+
+    if (eventsState.isLoading && eventsState.events.isEmpty) {
+      return const Center(child: AppLoader());
+    }
+
+    if (eventsState.status == EventsStatus.error &&
+        eventsState.events.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: onRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: AppResponsive.pagePadding(context),
+          children: [
+            SizedBox(
+              height: MediaQuery.sizeOf(context).height * 0.4,
+              child: ErrorView(
+                message: eventsState.message ?? 'Etkinlikler yüklenemedi.',
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (itemsList.isEmpty) {
+      final isEmptyState = eventsState.events.isEmpty;
+      return RefreshIndicator(
+        onRefresh: onRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: AppResponsive.pagePadding(context),
+          children: [
+            SizedBox(
+              height: MediaQuery.sizeOf(context).height * 0.4,
+              child: isEmptyState
+                  ? EmptyState(
+                      title: 'Henüz etkinlik yok',
+                      message:
+                          'İlk etkinliği sen oluşturabilir ya da daha sonra tekrar keşfe çıkabilirsin.',
+                      icon: Icons.event_available_outlined,
+                      actionLabel: 'Etkinlik oluştur',
+                      onAction: () => context.pushNamed(RouteNames.createEvent),
+                    )
+                  : EmptyState(
+                      title: 'Etkinlik bulunamadı',
+                      message:
+                          'Arama veya filtreleri değiştirerek tekrar dene.',
+                      actionLabel: 'Filtreleri temizle',
+                      onAction: onClearFilters,
+                    ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: AppResponsive.pagePadding(context),
+        itemCount: itemsList.length + (eventsState.hasMore ? 1 : 0),
+        separatorBuilder: (context, index) =>
+            const SizedBox(height: AppSpacing.md),
+        itemBuilder: (context, index) {
+          if (index == itemsList.length) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+              child: AppButton(
+                label: 'Daha fazla yükle',
+                isLoading: eventsState.isLoadingMore,
+                onPressed: eventsState.isLoadingMore ? null : onLoadMore,
+              ),
             );
           }
-          return AppButton(
-            label: 'Daha fazla yükle',
-            isLoading: eventsState.isLoadingMore,
-            onPressed: eventsState.isLoadingMore ? null : onLoadMore,
-          );
-        }
-        return EventCard(event: placedEvents[eventIndex]);
-      },
+
+          final item = itemsList[index];
+          if (item is Event) {
+            return EventCard(event: item);
+          } else if (item is BusinessRecommendation) {
+            return BusinessRecommendationCard(recommendation: item);
+          }
+          return const SizedBox.shrink();
+        },
+      ),
     );
   }
 
@@ -297,21 +388,39 @@ class _EventsBody extends StatelessWidget {
     }
 
     if (filters.onlyAvailableSpots &&
-        event.approvedCount >= event.capacityTotal) {
+        event.safeApprovedCount >= event.safeCapacityTotal) {
       return false;
     }
 
+    // Price Filter
+    switch (filters.priceFilter) {
+      case EventPriceFilter.all:
+        break;
+      case EventPriceFilter.free:
+        if (event.isPaid) return false;
+        break;
+      case EventPriceFilter.paid:
+        if (!event.isPaid) return false;
+        break;
+    }
+
     final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     switch (filters.dateFilter) {
       case EventDateFilter.all:
         return true;
       case EventDateFilter.today:
         return DateUtils.isSameDay(event.eventDate, now);
+      case EventDateFilter.tomorrow:
+        final tomorrow = today.add(const Duration(days: 1));
+        return DateUtils.isSameDay(event.eventDate, tomorrow);
       case EventDateFilter.thisWeek:
-        final today = DateTime(now.year, now.month, now.day);
         final end = today.add(const Duration(days: 7));
         return !event.eventDate.isBefore(today) &&
             event.eventDate.isBefore(end);
+      case EventDateFilter.weekend:
+        final weekday = event.eventDate.weekday;
+        return weekday == DateTime.saturday || weekday == DateTime.sunday;
       case EventDateFilter.upcoming:
         return event.eventDate.isAfter(now);
     }
@@ -365,6 +474,15 @@ class _EventsHeader extends StatelessWidget {
       children: [
         Row(
           children: [
+            Container(
+              width: 4,
+              height: 24,
+              decoration: BoxDecoration(
+                color: AppColors.primary,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
             Expanded(
               child: Text('Etkinlik Bul', style: AppTextStyles.headline),
             ),
@@ -456,6 +574,162 @@ class _SearchFilterRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
+  _SliverTabBarDelegate(this.tabBar);
+
+  final TabBar tabBar;
+
+  @override
+  double get minExtent => tabBar.preferredSize.height;
+  @override
+  double get maxExtent => tabBar.preferredSize.height;
+
+  @override
+  Widget build(
+    BuildContext context,
+    double shrinkOffset,
+    bool overlapsContent,
+  ) {
+    return Container(
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: tabBar,
+    );
+  }
+
+  @override
+  bool shouldRebuild(_SliverTabBarDelegate oldDelegate) {
+    return false;
+  }
+}
+
+class _MyEventsTabList extends ConsumerWidget {
+  const _MyEventsTabList({required this.onRefresh});
+
+  final Future<void> Function() onRefresh;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final myEventsAsync = ref.watch(myEventsProvider);
+
+    return myEventsAsync.when(
+      data: (items) {
+        final now = DateTime.now();
+
+        int getPriority(MyEventItem item) {
+          final status = item.status;
+          final isPast = item.event.eventDate.isBefore(now);
+          if (status == 'cancelled' ||
+              status == 'rejected' ||
+              status == 'left' ||
+              status == 'no_show') {
+            return 4;
+          }
+          if (isPast) {
+            return 3;
+          }
+          if (status == 'pending' ||
+              status == 'pending_confirmation' ||
+              status == 'waitlisted') {
+            return 2;
+          }
+          return 1;
+        }
+
+        final sortedItems = List<MyEventItem>.from(items)
+          ..sort((a, b) {
+            final pA = getPriority(a);
+            final pB = getPriority(b);
+            if (pA != pB) {
+              return pA.compareTo(pB);
+            }
+            if (pA == 1 || pA == 2) {
+              return a.event.eventDate.compareTo(b.event.eventDate);
+            } else {
+              return b.event.eventDate.compareTo(a.event.eventDate);
+            }
+          });
+
+        return _MyEventsSubList(
+          items: sortedItems,
+          emptyTitle: 'Henüz katıldığın veya istek gönderdiğin etkinlik yok.',
+          emptyMessage:
+              'Katıldığın, istek gönderdiğin veya düzenlediğin tüm etkinlikler burada listelenir.',
+          onRefresh: onRefresh,
+        );
+      },
+      loading: () => const Center(child: AppLoader()),
+      error: (err, stack) => RefreshIndicator(
+        onRefresh: onRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: AppResponsive.pagePadding(context),
+          children: [
+            SizedBox(
+              height: MediaQuery.sizeOf(context).height * 0.4,
+              child: ErrorView(
+                message: 'Etkinliklerim yüklenemedi. Lütfen tekrar dene.',
+                onRetry: () => ref.invalidate(myEventsProvider),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _MyEventsSubList extends StatelessWidget {
+  const _MyEventsSubList({
+    required this.items,
+    required this.emptyTitle,
+    required this.emptyMessage,
+    required this.onRefresh,
+  });
+
+  final List<MyEventItem> items;
+  final String emptyTitle;
+  final String emptyMessage;
+  final Future<void> Function() onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) {
+      return RefreshIndicator(
+        onRefresh: onRefresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: AppResponsive.pagePadding(context),
+          children: [
+            SizedBox(
+              height: MediaQuery.sizeOf(context).height * 0.4,
+              child: EmptyState(
+                title: emptyTitle,
+                message: emptyMessage,
+                icon: Icons.event_available_outlined,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: onRefresh,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: AppResponsive.pagePadding(context),
+        itemCount: items.length,
+        separatorBuilder: (context, index) =>
+            const SizedBox(height: AppSpacing.md),
+        itemBuilder: (context, index) {
+          final item = items[index];
+          return EventCard(event: item.event, status: item.status);
+        },
+      ),
     );
   }
 }

@@ -74,7 +74,7 @@ class _EventFilterSheetState extends State<EventFilterSheet> {
                   Text('Filtrele', style: AppTextStyles.title),
                   const SizedBox(height: AppSpacing.lg),
                   _SectionCard(
-                    title: 'Spor türü',
+                    title: 'Etkinlik türü',
                     child: _SportOptions(
                       selectedSportType: _filters.selectedSportType,
                       onChanged: (value) {
@@ -111,6 +111,30 @@ class _EventFilterSheetState extends State<EventFilterSheet> {
                       onChanged: (value) {
                         setState(() {
                           _filters = _filters.copyWith(dateFilter: value);
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _SectionCard(
+                    title: 'Fiyat',
+                    child: _PriceOptions(
+                      selectedFilter: _filters.priceFilter,
+                      onChanged: (value) {
+                        setState(() {
+                          _filters = _filters.copyWith(priceFilter: value);
+                        });
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _SectionCard(
+                    title: 'Sıralama',
+                    child: _SortOptions(
+                      selectedOption: _filters.sortOption,
+                      onChanged: (value) {
+                        setState(() {
+                          _filters = _filters.copyWith(sortOption: value);
                         });
                       },
                     ),
@@ -298,7 +322,9 @@ class _DateOptions extends StatelessWidget {
     const options = {
       EventDateFilter.all: 'Tümü',
       EventDateFilter.today: 'Bugün',
+      EventDateFilter.tomorrow: 'Yarın',
       EventDateFilter.thisWeek: 'Bu hafta',
+      EventDateFilter.weekend: 'Hafta sonu',
       EventDateFilter.upcoming: 'Yaklaşanlar',
     };
 
@@ -308,6 +334,66 @@ class _DateOptions extends StatelessWidget {
       children: options.entries.map((entry) {
         return ChoiceChip(
           selected: selectedFilter == entry.key,
+          label: Text(entry.value),
+          selectedColor: AppColors.primarySoft,
+          onSelected: (_) => onChanged(entry.key),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _PriceOptions extends StatelessWidget {
+  const _PriceOptions({required this.selectedFilter, required this.onChanged});
+
+  final EventPriceFilter selectedFilter;
+  final ValueChanged<EventPriceFilter> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    const options = {
+      EventPriceFilter.all: 'Tümü',
+      EventPriceFilter.free: 'Ücretsiz',
+      EventPriceFilter.paid: 'Ücretli',
+    };
+
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      children: options.entries.map((entry) {
+        return ChoiceChip(
+          selected: selectedFilter == entry.key,
+          label: Text(entry.value),
+          selectedColor: AppColors.primarySoft,
+          onSelected: (_) => onChanged(entry.key),
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _SortOptions extends StatelessWidget {
+  const _SortOptions({required this.selectedOption, required this.onChanged});
+
+  final EventSortOption selectedOption;
+  final ValueChanged<EventSortOption> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    const options = {
+      EventSortOption.recommended: 'Önerilen',
+      EventSortOption.newest: 'En yeni',
+      EventSortOption.oldest: 'En eski',
+      EventSortOption.dateAsc: 'Yaklaşan tarih',
+      EventSortOption.dateDesc: 'Uzak tarih',
+    };
+
+    return Wrap(
+      spacing: AppSpacing.sm,
+      runSpacing: AppSpacing.sm,
+      children: options.entries.map((entry) {
+        return ChoiceChip(
+          selected: selectedOption == entry.key,
           label: Text(entry.value),
           selectedColor: AppColors.primarySoft,
           onSelected: (_) => onChanged(entry.key),

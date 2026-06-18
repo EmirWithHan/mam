@@ -50,12 +50,20 @@ scripts/*.local.ps1
 .env.local
 .env.*.local
 
+# Local Supabase CLI state
+supabase/.temp/
+
 # Local Android signing artifacts
 key.properties
+**/key.properties
 android/key.properties
 upload-keystore.jks
+android/upload-keystore.jks
 android/app/upload-keystore.jks
 android/app/*.jks
 android/app/*.keystore
 *.jks
 *.keystore
+
+docs/play_private_values_checklist.md
+docs/play_reviewer_app_access_private_instructions.md

@@ -41,8 +41,8 @@ The public page should include:
 ## Release TODO
 
 - Publish the deletion web page.
-- Replace `SUPPORT_EMAIL`, `PRIVACY_POLICY_URL`, and
-  `FORM_ACTION_OR_EDGE_FUNCTION_URL` placeholders before hosting.
+- Replace `[DESTEK E-POSTASI]`, `[GIZLILIK POLITIKASI URL]`, and
+  `[FORM VEYA DESTEK URL]` before hosting.
 - Add the public URL to store listings and privacy policy where required.
 - Enter the real hosted URL in Play Console Data Safety / Data deletion.
 - Define the admin/backend final deletion runbook for Supabase Auth, Storage,
@@ -51,3 +51,40 @@ The public page should include:
   instant in Play Console or legal copy.
 - Have the deletion language reviewed by a lawyer or privacy advisor before
   public release.
+
+## MVP-Safe Turkish Draft
+
+Title: Match A Man Hesap Silme Bilgilendirmesi
+
+Version: `account_deletion_v1_2026_06_10`
+
+Last updated: 10 Haziran 2026
+
+Suggested public copy:
+
+Match A Man hesabını silmek isteyen kullanıcılar uygulama içinde
+`Ayarlar > Hesabımı sil` yolunu kullanabilir. Bu ekranda devam etmek için
+`SİL` yazarak hesap silme talebi oluşturulur. Talep oluşturulduğunda oturum
+kapatılır ve hesap silme/deaktivasyon süreci başlatılır.
+
+Kapalı test MVP sürümünde hesap silme işlemi anlık fiziksel silme olarak
+tamamlanmayabilir. Talep alındıktan sonra herkese açık profil kimliği
+pasifleştirilebilir, profil görünürlüğü kapatılabilir, gelecek etkinlikler
+yayından kaldırılabilir ve nihai veri silme/anonimleştirme işlemi kısa bir
+inceleme veya manuel backend süreci sonrasında tamamlanabilir.
+
+Hesap silme sürecinde profil bilgileri, herkese açık kullanıcı kimliği,
+avatar/profil görünürlüğü, gelecek etkinlikler, bazı sosyal içerikler, takip
+görünürlüğü ve hesapla ilişkilendirilen aktif kullanım kayıtları silinebilir,
+arşivlenebilir, pasifleştirilebilir veya anonimleştirilebilir.
+
+Güvenlik, kötüye kullanımın önlenmesi, rapor veya şikayet incelemesi, hukuki
+yükümlülük, uyuşmazlık çözümü, dolandırıcılık veya sistem bütünlüğü gibi meşru
+sebeplerle bazı kayıtlar sınırlı süreyle saklanabilir.
+
+Uygulamaya erişemeyen kullanıcılar [DESTEK E-POSTASI] üzerinden hesap
+e-postasını, kullanıcı adını biliyorsa kullanıcı adını ve talebinin hesap silme
+mi yoksa veri talebi mi olduğunu paylaşarak başvuru yapabilir.
+
+Yayınlamadan önce `[DESTEK E-POSTASI]` değerini gerçek destek adresiyle
+değiştir.

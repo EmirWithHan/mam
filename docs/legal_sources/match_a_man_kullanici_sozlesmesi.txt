@@ -1,0 +1,72 @@
+NOT: Bu dosya eski/reddedilmiş sözleşme kaynağıdır. Uygulama içinde kullanılan güncel hukuki metin değildir. Play Closed Testing veya kullanıcıya açık sayfalarda kullanılmamalıdır. Güncel metin lib/features/settings/legal_info_page.dart içindedir.
+
+MATCH_A_MAN PLATFORMU KULLANICI SÖZLEŞMESİ VE HİZMET ŞARTLARI
+
+Son Güncelleme Tarihi: 10 Haziran 2026
+
+LÜTFEN BU SÖZLEŞMEYİ DİKKATLİCE OKUYUNUZ. PLATFORMU KULLANMANIZ, BU SÖZLEŞMEDE YER ALAN TÜM ŞARTLARI KABUL ETTİĞİNİZ VE BU ŞARTLARLA HUKUKEN BAĞLI OLDUĞUNUZ ANLAMINA GELİR.
+
+1. TARAFLAR VE TANIMLAR
+
+1.1. Şirket / Platform: Match_A_Man mobil uygulaması, web sitesi ve bu platformun arkasındaki tüm hak sahiplerini, geliştiricilerini ve işletmecilerini ifade eder.
+1.2. Kullanıcı: Platform'u mobil cihazına indiren, üye olan, arayüzü kullanan, uygulama içi satın alım gerçekleştiren veya platform aracılığıyla düzenlenen etkinliklere katılan her bir gerçek kişiyi ifade eder.
+1.3. Etkinlik / Müsabaka: Platform üzerinden kullanıcıların bir araya gelerek organize ettiği, katıldığı veya biletlediği her türlü rekreasyonel spor faaliyetini (halı saha maçı, basketbol müsabakası vb.) ifade eder.
+1.4. Dijital Cüzdan / Bakiye: Kullanıcının uygulama içi iptaller veya yüklemeler neticesinde sahip olduğu, yalnızca platform içi hizmetlerde kullanılabilen dijital değer birimidir.
+
+2. SÖZLEŞMENİN KABULÜ VE YÜRÜRLÜK
+
+2.1. İşbu Sözleşme, Kullanıcı'nın Platform üzerinde hesap oluşturması, "Kabul Ediyorum" butonuna tıklaması veya Platform'u fiilen kullanmaya başlaması anında elektronik ortamda akdedilmiş ve yürürlüğe girmiştir.
+2.2. Kullanıcı, bu Sözleşme'yi onaylayarak 18 yaşından büyük olduğunu ve hukuki işlem yapma ehliyetine sahip olduğunu beyan ve taahhüt eder.
+
+3. ARACI HİZMET SAĞLAYICI STATÜSÜ VE SORUMLULUK SINIRI
+
+3.1. Match_A_Man, 6563 sayılı Elektronik Ticaretin Düzenlenmesi Hakkında Kanun uyarınca bir "Aracı Hizmet Sağlayıcı" konumundadır. Platform, yalnızca sporseverlerin bir araya gelmesine, takım kurmasına ve etkinlik organize etmesine imkan tanıyan dijital bir altyapıdır.
+3.2. Platform; etkinliklerin doğrudan düzenleyicisi, işletmecisi, hakemi veya saha/salon sağlayıcısı değildir. Sahedo gerçekleşen hiçbir olay, fiziksel koşul veya üçüncü şahıs eylemi üzerinde doğrudan denetim yetkisi bulunmamaktadır.
+
+4. ÇİFT ONAY (DOUBLE-CONFIRMATION) VE BEKLEME LİSTESİ (WAITLIST) MEKANİZMASI
+
+4.1. Çift Onay Sistemi: Bir etkinliğe kayıt yaptıran Kullanıcı, müsabaka saatinden önce sistem tarafından belirlenen kritik zaman diliminde (örneğin son 12 veya 24 saat) gönderilecek olan "Kesin Katılım Onayı" bildirimine olumlu yanıt vermekle mükelleftir. Bu onayı zamanında vermeyen Kullanıcıların kaydı sistem tarafından otomatik olarak iptal edilir ve sıradaki kullanıcıya yer açılır.
+4.2. Bekleme Listesi (Waitlist) Algoritması: Kontenjanı dolan etkinliklerde Kullanıcılar sistem tarafından otomatik olarak bekleme listesine alınır. Asil listedeki bir Kullanıcının iptali veya çift onay vermemesi durumunda, bekleme listesindeki Kullanıcılar sistemin belirlediği algoritmik öncelik sırasına göre asil listeye davet edilir.
+4.3. Ghosting ve Suistimal Cezaları: Çift onay verdiği halde müsabakaya mazeretsiz ve bildirim yapmaksızın katılmayan (Ghosting), bekleme listesi algoritmalarını manipüle eden veya platformun işleyişini kasıtlı olarak bozan Kullanıcıların "Güvenilirlik Puanı" düşürülür. Platform, bu Kullanıcıların hesaplarını geçici veya kalıcı olarak askıya alma, etkinlik katılım haklarını kısıtlama hakkını tek taraflı olarak saklı tutar.
+
+5. UYGULAMA İÇİ ÖDEMELER, FİNANSAL HÜKÜMLER VE İADE POLİTİKASI
+
+5.1. Tahsilat Altyapısı: Platform üzerinden gerçekleştirilen etkinlik katılım payları, saha kiralama avansları veya premium özellik satın alımları; entegre edilmiş 3. taraf lisanslı ödeme kuruluşları (Apple In-App Purchase, Google Play Billing, Iyzico, Stripe vb.) aracılığıyla tahsil edilir. Platform, kredi kartı bilgilerini kendi sunucularında saklamaz.
+5.2. Kesin İade Edilmeme Kuralı: Rekreasyonel ve zamana bağlı etkinliklerin doğası gereği, Kullanıcı tarafından etkinlik saatine 24 saatten daha az bir süre kala yapılan iptallerde, çift onay verilip etkinliğe gelinmediğinde veya Kullanıcı'nın kişisel sağlık/fiziksel yetersizlik iddialarında kesinlikle ücret iadesi yapılmaz.
+5.3. Mücbir Sebep ve Platform İptalleri: Etkinliğin yeterli katılımcı sayısına ulaşamaması, hava muhalefeti, mekanın (halı saha, kort vb.) kapanması veya Platform kaynaklı teknik aksaklıklar nedeniyle iptal edilmesi durumunda, tahsil edilen tutar varsayılan olarak Kullanıcı'nın uygulama içi "Dijital Cüzdanı"na bakiye/kredi olarak yüklenir. Kullanıcının orijinal ödeme yöntemine nakit iade talep etmesi, Platform'un operasyonel değerlendirmesine ve 3. taraf ödeme sistemlerinin işlem sürelerine (bankalar arası takas döngüleri) tabidir.
+5.4. Haksız Harcama İtirazı (Chargeback): Kullanıcının, Platform kuralları dahilinde gerçekleşen bir işlem sonrasında bankası nezdinde haksız veya kötü niyetli "Harcama İtirazı" (Chargeback) başlatması durumunda; Platform, Kullanıcı hesabını derhal ve süresiz olarak kapatma, ters ibraz nedeniyle uğradığı komisyon, ceza ve operasyonel masrafları Kullanıcı'dan hukuki yollarla tahsil etme hakkına sahiptir.
+
+6. VERİ MADENCİLİĞİ VE BİLGİ İŞLEME ESNEKLİĞİ
+
+6.1. Algoritmik Profilleme: Kullanıcı; Platform'u kullanırken ürettiği konum verilerinin, tercih ettiği spor dallarının, müsabaka katılım sıklığının, harcama alışkanlıklarının ve diğer kullanıcılarla olan dijital etkileşim geçmişinin (join-lifecycles) Platform tarafından toplanmasına, işlenmesine ve analiz edilmesine açıkça rıza gösterir.
+6.2. Ticari Veri Kullanımı ve Reklam: Platform, toplanan bu verileri anonimleştirerek veya agrege (kümeleştirilmiş) hale getirerek; eşleştirme algoritmalarının geliştirilmesi, platform içi optimizasyon, hedeflenmiş reklamcılık (targeted ads), sponsorlu spor etkinlikleri düzenlenmesi veya 3. taraf spor markalarıyla ticari iş birlikleri kapsamında veri madenciliği (data mining) süreçlerinde kullanma hakkına sahiptir.
+
+7. FİZİKSEL RİSKLER, SAĞLIK BEYANI VE SORUMLULUK REDDİ
+
+7.1. Fiziksel Risklerin Üstlenilmesi: Kullanıcı, rekreasyonel spor faaliyetlerinin doğası gereği fiziksel yaralanma, sakatlanma, burkulma, kırılma, kalp krizi ve hatta ölüm dahil olmak üzere ciddi sağlık riskleri barındırdığını bildiğini ve bu riskleri tamamen kendi iradesiyle üstlendiğini kabul eder.
+7.2. Sağlık Beyanı: Kullanıcı, katıldığı etkinliklerin gerektirdiği fiziksel ve zihinsel kondisyona sahip olduğunu, spor yapmasına engel teşkil eden herhangi bir kronik veya akut rahatsızlığı bulunmadığını şahsen beyan ve taahhüt eder. Sahada meydana gelebilecek hiçbir tıbbi müdahale ihtiyacından, kalıcı sakatlıktan veya ölüm vakasından Platform, çalışanları veya ortakları hukuken ve cezai olarak sorumlu tutulamaz.
+7.3. Üçüncü Şahıs Kusurları ve Mekan Standartları: Etkinliğin gerçekleştiği ticari işletmelerin (halı saha, basketbol salonu vb.) zemin bozuklukları, ışıklandırma yetersizlikleri veya güvenlik zafiyetleri nedeniyle meydana gelebilecek kazalardan; ayrıca diğer kullanıcıların saha içinde veya dışındaki sözlü/fiziksel şiddet, darp, hırsızlık veya dolandırıcılık eylemlerinden Platform'un hiçbir sorumluluğu bulunmamaktadır. Cezai ve hukuki muhatap, zarara sebebiyet veren şahsın veya mekan işletmesinin kendisidir.
+
+8. TEK TARAFLI DEĞİŞİKLİK VE GÜNCELLEME HAKKI
+
+8.1. Önceden Bildirimsiz Değişiklik Yetkisi: Platform; işbu Sözleşmeyi, eklerini, uygulama içi kullanım ücretlerini, komisyon oranlarını, iade ve ceza politikalarını, tamamen kendi takdirine bağlı olarak ve önceden herhangi bir ihtarda bulunmaksızın dilediği zaman tek taraflı olarak değiştirme, güncelleme veya yürürlükten kaldırma hakkını saklı tutar.
+8.2. Zımni Kabul ve Yürürlük: Güncellenen Sözleşme, Platform üzerinde yayınlandığı an itibarıyla tüm kullanıcılar için geçerlilik kazanır. Kullanıcı'nın Sözleşme güncellemesinden sonra Platform'u kullanmaya, etkinlik aramaya veya bakiyesini yönetmeye devam etmesi, yapılan değişiklikleri koşulsuz, şartsız ve geri dönülemez bir şekilde kabul ettiği anlamına gelir.
+
+9. FİKRİ VE SİNAİ MÜLKİYET HAKLARI
+
+9.1. Mülkiyet Sınırları: Platform'un arayüz tasarımı, yazılım kodları, kaynak kodları (source code), eşleştirme algoritmaları, bekleme listesi mantığı, markası, logosu ve veri tabanı üzerindeki tüm fikri mülkiyet hakları münhasıran Match_A_Man'e aittir.
+9.2. İhlal Yasağı: Kullanıcı; Platform yazılımını kopyalamayacağını, tersine mühendislik (reverse engineering) işlemlerine tabi tutmayacağını, kaynak kodlarına erişmeye çalışmayacağını veya Platform'un veri trafiğini engelleyecek bot, örümcek (spider) gibi yazılımlar kullanmayacağını taahhüt eder. Aksine davranışlar ağır cezai yaptırımlara ve tazminat sorumluluğuna tabidir.
+
+10. SÖZLEŞMENİN FESHİ VE HESABIN KAPATILMASI
+
+10.1. Platform'un Fesih Hakkı: Platform, Kullanıcı'nın işbu Sözleşme maddelerine aykırı davranması, diğer kullanıcıları taciz veya tehdit etmesi, sahte hesap açması veya finansal sistemleri suistimal etmeye çalışması durumunda; hiçbir ihbar süresine uymaksızın ve herhangi bir tazminat ödeme yükümlülüğü altında kalmaksızın Kullanıcı'nın hesabını derhal kapatma veya geçici olarak askıya alma hakkına sahiptir.
+
+11. DELİL SÖZLEŞMESİ, UYGULANACAK HUKUK VE YETKİLİ MAHKEME
+
+11.1. Delil Sözleşmesi: İşbu Sözleşme'den doğabilecek her türlü uyuşmazlıkta, Platform'un sunucu logları, veritabanı kayıtları, sistem günlükleri (log-files), uygulama içi mesajlaşma kayıtları ve e-posta yazışmaları, 6100 sayılı Hukuk Muhakemeleri Kanunu uyarınca kesin ve münhasır delil teşkil edecektir.
+11.2. Uygulanacak Hukuk: Sözleşme'nin yorumlanmasında ve uygulanmasında Türkiye Cumhuriyeti Kanunları uygulanır.
+11.3. Yetkili Mahkeme: Sözleşme'den kaynaklanan her türlü adli, cezai veya finansal uyuşmazlığın çözümünde Ankara Mahkemeleri ve İcra Daireleri münhasıran yetkilidir.
+
+12. YÜRÜRLÜK VE BEYAN
+
+Kullanıcı, 12 ana maddeden oluşan işbu Sözleşme'nin tüm şartlarını özgür iradesiyle okuduğunu, finansal riskleri, fiziksel riskleri ve verilerinin işlenme esnekliğini anladığını, onay verdiğini ve bu şartlara uyacağını elektronik ortamda beyan eder.

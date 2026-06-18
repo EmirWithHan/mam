@@ -41,6 +41,8 @@
 	<string>Konumun, etkinlik konumunu otomatik doldurmak icin kullanilir.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Galerinden profil avatarini veya paylasim fotografini secmek icin kullanilir.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Yoklama doğrulamak amacıyla QR kod taramak için kamerayı kullanır.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

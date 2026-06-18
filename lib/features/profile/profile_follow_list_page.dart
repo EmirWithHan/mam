@@ -111,7 +111,7 @@ class _ProfileFollowListPageState extends ConsumerState<ProfileFollowListPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: 'Geri',
           onPressed: () {
             if (context.canPop()) {
               context.pop();

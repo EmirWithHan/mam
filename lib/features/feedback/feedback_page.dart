@@ -20,8 +20,7 @@ class FeedbackPage extends ConsumerStatefulWidget {
 
 class _FeedbackPageState extends ConsumerState<FeedbackPage> {
   final _messageController = TextEditingController();
-  int? _rating;
-  String? _category;
+  String _category = FeedbackCategory.suggestion;
 
   @override
   void dispose() {
@@ -45,49 +44,59 @@ class _FeedbackPageState extends ConsumerState<FeedbackPage> {
     final state = ref.watch(feedbackControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Geri Bildirim')),
+      appBar: AppBar(title: const Text('\u0130stek & \u00D6neri')),
       body: SafeArea(
         child: ListView(
           padding: AppResponsive.pagePadding(context),
           children: [
-            Text('Geri Bildirim', style: AppTextStyles.headline),
+            Text('\u0130stek & \u00D6neri', style: AppTextStyles.headline),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Deneyimini bize anlat. İyi gidenleri de sorun yaşadığın yerleri de güvenle paylaşabilirsin.',
+              'Bize \u00F6nerini, sorununu veya iste\u011Fini g\u00F6nder.',
               style: AppTextStyles.body,
             ),
             const SizedBox(height: AppSpacing.lg),
-            Text('Puan', style: AppTextStyles.bodyStrong),
+            Text('Kategori', style: AppTextStyles.bodyStrong),
             const SizedBox(height: AppSpacing.sm),
-            _RatingPicker(
-              value: _rating,
-              onChanged: (value) => setState(() => _rating = value),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            DropdownButtonFormField<String>(
-              initialValue: _category,
-              decoration: const InputDecoration(labelText: 'Kategori'),
-              items: FeedbackCategory.values
-                  .map(
-                    (category) => DropdownMenuItem(
-                      value: category,
-                      child: Text(category),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final category in FeedbackCategory.values)
+                  ChoiceChip(
+                    selected: _category == category,
+                    label: Text(category),
+                    selectedColor: AppColors.primary,
+                    backgroundColor: AppColors.primarySoft,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: AppRadius.pillBorder,
                     ),
-                  )
-                  .toList(growable: false),
-              onChanged: (value) => setState(() => _category = value),
+                    labelStyle: AppTextStyles.bodyStrong.copyWith(
+                      color: _category == category
+                          ? Colors.white
+                          : AppColors.primary,
+                    ),
+                    onSelected: (_) => setState(() => _category = category),
+                  ),
+              ],
             ),
             const SizedBox(height: AppSpacing.lg),
             AppTextField(
               label: 'Mesaj',
-              hintText: 'Dilersen detay ekle',
+              hintText: 'En az 10 karakter yaz',
               controller: _messageController,
-              maxLines: 6,
+              maxLines: 7,
+              helperText: 'En az 10, en fazla 1000 karakter.',
               textInputAction: TextInputAction.newline,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              'Hesab\u0131na ba\u011Fl\u0131 kullan\u0131c\u0131 bilgin talebi takip etmek i\u00E7in eklenir.',
+              style: AppTextStyles.caption,
             ),
             const SizedBox(height: AppSpacing.xl),
             AppButton(
-              label: 'Gönder',
+              label: 'G\u00F6nder',
               isLoading: state.isSubmitting,
               onPressed: state.isSubmitting ? null : _submit,
             ),
@@ -99,10 +108,9 @@ class _FeedbackPageState extends ConsumerState<FeedbackPage> {
 
   Future<void> _submit() async {
     final input = UserFeedbackInput(
-      rating: _rating,
       category: _category,
       message: _messageController.text,
-      source: 'settings',
+      source: 'settings_request_suggestion',
     );
     final validationError = input.validationError;
     if (validationError != null) {
@@ -113,38 +121,5 @@ class _FeedbackPageState extends ConsumerState<FeedbackPage> {
     }
 
     await ref.read(feedbackControllerProvider.notifier).submit(input);
-  }
-}
-
-class _RatingPicker extends StatelessWidget {
-  const _RatingPicker({required this.value, required this.onChanged});
-
-  final int? value;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: AppSpacing.sm,
-      children: [
-        for (var rating = 1; rating <= 5; rating += 1)
-          ChoiceChip(
-            selected: value == rating,
-            label: Text('$rating'),
-            avatar: Icon(
-              Icons.star_rounded,
-              size: 18,
-              color: value == rating ? Colors.white : AppColors.primary,
-            ),
-            selectedColor: AppColors.primary,
-            backgroundColor: AppColors.primarySoft,
-            shape: RoundedRectangleBorder(borderRadius: AppRadius.pillBorder),
-            labelStyle: AppTextStyles.bodyStrong.copyWith(
-              color: value == rating ? Colors.white : AppColors.primary,
-            ),
-            onSelected: (_) => onChanged(rating),
-          ),
-      ],
-    );
   }
 }

@@ -1,7 +1,4 @@
-import 'dart:math';
-
 import 'package:flutter/foundation.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' as supabase;
 
 import '../../core/utils/user_handle.dart';
 import '../../core/utils/pagination.dart';
@@ -59,38 +56,24 @@ class ProfileService {
   }
 
   Future<Profile> _createEmptyProfileIfMissing(String userId) async {
-    final user = SupabaseService.client.auth.currentUser;
     final existingProfile = await getMyProfile();
     if (existingProfile != null) {
-      final shouldCompleteSocial =
-          _isSocialUser(user) && !existingProfile.hasCoreIdentity;
-      if (!shouldCompleteSocial && UserHandle.isValidTag(existingProfile.tag)) {
+      if (UserHandle.isValidTag(existingProfile.tag)) {
         return existingProfile;
       }
 
-      final payload = shouldCompleteSocial
-          ? await _socialProfileDefaults(user, existingProfile)
-          : {
-              'tag': _generateProfileTag(),
-              'updated_at': DateTime.now().toIso8601String(),
-            };
+      final payload = {
+        'tag': _generateProfileTag(),
+        'updated_at': DateTime.now().toIso8601String(),
+      };
       debugPrint('[Profile] completing profile identity/tag');
       final data = await _updateMyProfileRow(payload, userId);
 
       return Profile.fromJson(data);
     }
 
-    if (!_isSocialUser(user)) {
-      debugPrint('[Profile] creating empty profile for email user');
-      final data = await _insertProfile(_newProfileJson(userId));
-
-      return Profile.fromJson(data);
-    }
-
-    debugPrint('[Profile] auto-creating social profile');
-    final profileJson = await _socialProfileDefaults(user, null);
-    profileJson['user_id'] = userId;
-    final data = await _insertGeneratedProfile(profileJson);
+    debugPrint('[Profile] creating empty profile for authenticated user');
+    final data = await _insertProfile(_newProfileJson(userId));
 
     return Profile.fromJson(data);
   }
@@ -117,6 +100,35 @@ class ProfileService {
     }
 
     return profile;
+  }
+
+  Future<Profile> updateMyUsername(String username) async {
+    final userId = _currentUserId();
+    final usernameError = ProfileUsername.validate(username);
+    if (usernameError != null) {
+      throw ProfileSaveException(usernameError);
+    }
+
+    final normalizedUsername = ProfileUsername.normalize(username);
+    final existingProfile = await getMyProfile();
+    if (await _usernameTakenByAnotherUser(normalizedUsername, userId)) {
+      throw const ProfileSaveException('Bu kullanıcı adı zaten alınmış.');
+    }
+
+    final existingName = existingProfile?.firstName?.trim();
+    final payload = <String, dynamic>{
+      'username': normalizedUsername,
+      'tag': UserHandle.isValidTag(existingProfile?.tag)
+          ? existingProfile!.tag!.trim()
+          : _generateProfileTag(),
+      if (existingName == null || existingName.isEmpty)
+        'first_name': normalizedUsername,
+      'is_profile_completed': true,
+      'updated_at': DateTime.now().toIso8601String(),
+    };
+
+    final data = await _upsertMyProfileRow(payload, userId);
+    return Profile.fromJson(data);
   }
 
   Future<Profile> updateMyProfilePrivacy({required bool isPrivate}) async {
@@ -385,76 +397,11 @@ class ProfileService {
     final profileJson = <String, dynamic>{
       'user_id': userId,
       'tag': _generateProfileTag(),
+      'is_private': true,
     };
     if (fullName != null) profileJson['first_name'] = fullName;
     if (avatarUrl != null) profileJson['avatar_url'] = avatarUrl;
 
-    return profileJson;
-  }
-
-  Future<Map<String, dynamic>> _insertGeneratedProfile(
-    Map<String, dynamic> profileJson,
-  ) async {
-    var payload = profileJson;
-    for (var attempt = 0; attempt < 4; attempt += 1) {
-      try {
-        debugPrint('[Profile] generated profile insert attempt=${attempt + 1}');
-        return await _insertProfile(payload);
-      } catch (error) {
-        if (_isDuplicateProfileRowError(error)) {
-          debugPrint('[Profile] profile row already exists, reloading');
-          final existing = await getMyProfile();
-          if (existing != null) return _profileToJson(existing);
-        }
-        if (!_isDuplicateUsernameError(error) || attempt == 3) rethrow;
-        debugPrint('[Profile] generated username collision retry');
-        final username = await _uniqueGeneratedUsername(
-          '${payload['username']}_${_shortSuffix()}',
-        );
-        payload = {...payload, 'username': username};
-      }
-    }
-    throw StateError('Profile could not be created.');
-  }
-
-  Future<Map<String, dynamic>> _socialProfileDefaults(
-    supabase.User? user,
-    Profile? existingProfile,
-  ) async {
-    final metadata = user?.userMetadata ?? const <String, dynamic>{};
-    final fullName = _metadataString(metadata, [
-      'full_name',
-      'name',
-      'display_name',
-    ]);
-    final avatarUrl = _metadataString(metadata, ['avatar_url', 'picture']);
-    final currentName = existingProfile?.firstName?.trim();
-    final currentUsername = existingProfile?.username?.trim();
-    final username = currentUsername == null || currentUsername.isEmpty
-        ? await _uniqueGeneratedUsername(_usernameSeed(user, fullName))
-        : ProfileUsername.normalize(currentUsername);
-    final tag = UserHandle.isValidTag(existingProfile?.tag)
-        ? existingProfile!.tag!.trim()
-        : _generateProfileTag();
-    debugPrint('[Profile] generated username ready');
-    final name = currentName == null || currentName.isEmpty
-        ? (fullName ?? username)
-        : currentName;
-
-    final profileJson = <String, dynamic>{
-      'username': username,
-      'tag': tag,
-      'first_name': name,
-      'is_profile_completed': true,
-      'updated_at': DateTime.now().toIso8601String(),
-    };
-    if (avatarUrl != null &&
-        existingProfile?.avatarUrl?.trim().isEmpty != false) {
-      profileJson['avatar_url'] = avatarUrl;
-    }
-    if (existingProfile == null) {
-      profileJson['is_private'] = false;
-    }
     return profileJson;
   }
 
@@ -509,97 +456,23 @@ class ProfileService {
     }
   }
 
-  String _usernameSeed(supabase.User? user, String? fullName) {
-    final metadata = user?.userMetadata ?? const <String, dynamic>{};
-    final preferred = _metadataString(metadata, [
-      'preferred_username',
-      'user_name',
-      'username',
-      'nickname',
-    ]);
-    return ProfileUsername.socialSeed(
-      preferredUsername: preferred,
-      email: user?.email,
-      fullName: fullName,
-      fallbackId: user?.id ?? _shortSuffix(),
-    );
-  }
-
-  Future<String> _uniqueGeneratedUsername(String seed) async {
-    final base = _fitUsername(ProfileUsername.slug(seed));
-    var candidate = base;
-    for (var attempt = 0; attempt < 6; attempt += 1) {
-      final exists = await _usernameExists(candidate);
-      if (!exists) return candidate;
-      debugPrint('[Profile] generated username exists, adding suffix');
-      final suffix = _shortSuffix();
-      candidate = ProfileUsername.withSuffix(base, suffix);
-    }
-    final suffix = _shortSuffix();
-    return ProfileUsername.withSuffix(base, suffix);
-  }
-
-  Future<bool> _usernameExists(String username) async {
+  Future<bool> _usernameTakenByAnotherUser(
+    String username,
+    String userId,
+  ) async {
     final data = await SupabaseService.client
         .from('profiles')
         .select('user_id')
         .eq('username', username)
         .maybeSingle();
-    return data != null;
-  }
-
-  String _fitUsername(
-    String value, {
-    int maxLength = ProfileUsername.maxLength,
-  }) {
-    final fallback = value.length >= ProfileUsername.minLength
-        ? value
-        : 'user_${_shortSuffix()}';
-    if (fallback.length <= maxLength) return fallback;
-    return fallback.substring(0, maxLength);
-  }
-
-  bool _isSocialUser(supabase.User? user) {
-    final appMetadata = user?.appMetadata ?? const <String, dynamic>{};
-    final provider = appMetadata['provider']?.toString().toLowerCase();
-    if (provider == 'google' || provider == 'facebook') return true;
-
-    final providers = appMetadata['providers'];
-    if (providers is Iterable) {
-      return providers
-          .map((item) => item.toString().toLowerCase())
-          .any((item) => item == 'google' || item == 'facebook');
-    }
-    return false;
-  }
-
-  bool _isDuplicateUsernameError(Object error) {
-    final normalized = error.toString().toLowerCase();
-    return (normalized.contains('username') ||
-            normalized.contains('profiles_username_key')) &&
-        (normalized.contains('duplicate') ||
-            normalized.contains('unique') ||
-            normalized.contains('23505'));
-  }
-
-  bool _isDuplicateProfileRowError(Object error) {
-    final normalized = error.toString().toLowerCase();
-    return normalized.contains('23505') &&
-        (normalized.contains('profiles_pkey') ||
-            normalized.contains('profiles_user_id') ||
-            normalized.contains('user_id'));
+    if (data == null) return false;
+    return data['user_id']?.toString() != userId;
   }
 
   bool _isNoRowsError(Object error) {
     final normalized = error.toString().toLowerCase();
     return normalized.contains('pgrst116') ||
         normalized.contains('cannot coerce the result to a single json object');
-  }
-
-  String _shortSuffix() {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    final random = Random.secure();
-    return List.generate(4, (_) => chars[random.nextInt(chars.length)]).join();
   }
 
   String _generateProfileTag() {
@@ -635,33 +508,6 @@ Future<void> _applyMyTrustScoreEvent({
   } catch (error) {
     debugPrint('[Profile] trust score event failed: ${error.runtimeType}');
   }
-}
-
-Map<String, dynamic> _profileToJson(Profile profile) {
-  return {
-    'id': profile.id,
-    'user_id': profile.userId,
-    'username': profile.username,
-    'tag': profile.tag,
-    'first_name': profile.firstName,
-    'birth_date': profile.birthDate?.toIso8601String(),
-    'gender': profile.gender,
-    'city': profile.city,
-    'district': profile.district,
-    'phone': profile.phone,
-    'phone_number': profile.phoneNumber,
-    'phone_verified': profile.phoneVerified,
-    'phone_verified_at': profile.phoneVerifiedAt?.toIso8601String(),
-    'account_type': profile.accountType,
-    'business_account_id': profile.businessAccountId,
-    'bio': profile.bio,
-    'avatar_url': profile.avatarUrl,
-    'trust_score': profile.trustScore,
-    'is_private': profile.isPrivate,
-    'is_profile_completed': profile.isProfileCompleted,
-    'created_at': profile.createdAt?.toIso8601String(),
-    'updated_at': profile.updatedAt?.toIso8601String(),
-  };
 }
 
 void _logProfileError(String label, Object error) {

@@ -91,14 +91,13 @@ void main() {
         'lib/features/events/events_page.dart',
       ).readAsStringSync();
 
-      expect(source, contains('return ListView.separated('));
-      expect(source, contains('if (index == 0) return header;'));
+      expect(source, contains('NestedScrollView('));
+      expect(source, contains('SliverToBoxAdapter('));
       expect(source, contains('class _EventsHeader extends StatelessWidget'));
       expect(
         source,
         isNot(contains('Expanded(\n                child: _EventsBody')),
       );
-      expect(source, isNot(contains('SliverPersistentHeader')));
     });
 
     test('remaining blocker sweep keeps realtime logs sanitized', () {

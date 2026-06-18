@@ -14,6 +14,7 @@ import '../../core/utils/validators.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_text_field.dart';
+import '../../core/utils/image_crop_helper.dart';
 import 'feed_models.dart';
 import 'feed_provider.dart';
 import 'widgets/linked_event_picker.dart';
@@ -49,7 +50,10 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
       );
       if (image == null) return;
 
-      final bytes = await image.readAsBytes();
+      final croppedFile = await cropImage(image.path);
+      if (croppedFile == null) return;
+
+      final bytes = await croppedFile.readAsBytes();
       if (!mounted) return;
 
       setState(() {
@@ -57,14 +61,18 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
         _fileName = image.name;
         _contentType = image.mimeType;
       });
-    } on PlatformException {
+    } on PlatformException catch (e, stack) {
+      debugPrint(
+        '[CreatePostPage] PlatformException picking/cropping image: $e\n$stack',
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Fotoğraf seçilemedi. Galeri iznini kontrol et.'),
         ),
       );
-    } catch (_) {
+    } catch (e, stack) {
+      debugPrint('[CreatePostPage] Error picking/cropping image: $e\n$stack');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Fotoğraf seçilemedi. Tekrar dene.')),
@@ -117,7 +125,7 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: 'Geri',
           onPressed: () => _goBack(context),
           icon: const Icon(Icons.arrow_back),
         ),
@@ -161,12 +169,6 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                 'İstersen bu paylaşımı katıldığın bir etkinlikle ilişkilendirebilirsin.',
                 style: AppTextStyles.caption,
               ),
-              const SizedBox(height: AppSpacing.xl),
-              AppButton(
-                label: 'Fotoğraf paylaş',
-                isLoading: feedState.isCreating,
-                onPressed: feedState.isCreating ? null : _createPost,
-              ),
               if (feedState.message != null) ...[
                 const SizedBox(height: AppSpacing.md),
                 Text(
@@ -176,6 +178,21 @@ class _CreatePostPageState extends ConsumerState<CreatePostPage> {
                 ),
               ],
             ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg,
+            AppSpacing.sm,
+            AppSpacing.lg,
+            AppSpacing.md,
+          ),
+          child: AppButton(
+            label: 'Fotoğraf paylaş',
+            isLoading: feedState.isCreating,
+            onPressed: feedState.isCreating ? null : _createPost,
           ),
         ),
       ),
@@ -204,54 +221,60 @@ class _ImagePickerPreview extends StatelessWidget {
   Widget build(BuildContext context) {
     final bytes = imageBytes;
 
-    return InkWell(
-      borderRadius: AppRadius.xlBorder,
-      onTap: onPickImage,
-      child: AspectRatio(
-        aspectRatio: 4 / 3,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            borderRadius: AppRadius.lgBorder,
-            color: AppColors.surface,
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.textPrimary.withValues(alpha: 0.05),
-                blurRadius: 22,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: ClipRRect(
-            borderRadius: AppRadius.lgBorder,
-            child: bytes == null
-                ? Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 56,
-                          height: 56,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primarySoft,
-                            shape: BoxShape.circle,
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 420),
+      child: InkWell(
+        borderRadius: AppRadius.xlBorder,
+        onTap: onPickImage,
+        child: AspectRatio(
+          aspectRatio: 4 / 3,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              borderRadius: AppRadius.lgBorder,
+              color: AppColors.background,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.textPrimary.withValues(alpha: 0.05),
+                  blurRadius: 22,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: AppRadius.lgBorder,
+              child: bytes == null
+                  ? Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primarySoft,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.add_photo_alternate_outlined,
+                              color: AppColors.primary,
+                            ),
                           ),
-                          child: const Icon(
-                            Icons.add_photo_alternate_outlined,
-                            color: AppColors.primary,
+                          const SizedBox(height: AppSpacing.sm),
+                          Text('Fotoğraf seç', style: AppTextStyles.bodyStrong),
+                          const SizedBox(height: AppSpacing.xs),
+                          Text(
+                            'Bir anını paylaşmak için galerinden fotoğraf seç.',
+                            style: AppTextStyles.caption,
+                            textAlign: TextAlign.center,
                           ),
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        Text('Fotoğraf seç', style: AppTextStyles.bodyStrong),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          'Bir anını paylaşmak için galerinden fotoğraf seç.',
-                          style: AppTextStyles.caption,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
+                        ],
+                      ),
+                    )
+                  : ColoredBox(
+                      color: AppColors.background,
+                      child: Image.memory(bytes, fit: BoxFit.contain),
                     ),
-                  )
-                : Image.memory(bytes, fit: BoxFit.cover),
+            ),
           ),
         ),
       ),

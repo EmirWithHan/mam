@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/widgets/app_logo.dart';
 
 class SafeAvatar extends StatelessWidget {
   const SafeAvatar({
@@ -65,15 +66,6 @@ class SafeAvatar extends StatelessWidget {
       return Icon(icon, color: foregroundColor, size: radius * 0.96);
     }
 
-    return Center(
-      child: Text(
-        fallbackText.trim().isEmpty ? 'M' : fallbackText.trim(),
-        style: TextStyle(
-          color: foregroundColor,
-          fontWeight: FontWeight.w800,
-          fontSize: fontSize ?? radius * 0.72,
-        ),
-      ),
-    );
+    return Center(child: AppLogo(size: radius * 1.2));
   }
 }

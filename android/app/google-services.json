@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "781242799456",
+    "project_id": "match-a-man-66ee7",
+    "storage_bucket": "match-a-man-66ee7.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:781242799456:android:471a8aa7a8b8772e783a05",
+        "android_client_info": {
+          "package_name": "com.matchaman.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDrgAtu0IcsBRdfHAY69Y5ZxjLuCeqT63A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

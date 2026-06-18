@@ -36,7 +36,7 @@ class TrustScoreBadge extends StatelessWidget {
             : Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Trust score', style: AppTextStyles.label),
+                  Text('Güven puanı', style: AppTextStyles.label),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     '$clampedScore',

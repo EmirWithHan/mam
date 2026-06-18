@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../core/utils/error_messages.dart';
 import '../../core/utils/pagination.dart';
 import '../../services/supabase_service.dart';
@@ -93,8 +95,55 @@ class NotificationsService {
     }
   }
 
+  Future<void> registerPushToken(PushTokenRegistration registration) async {
+    if (!registration.isValid) {
+      throw StateError('Push token geÃ§ersiz.');
+    }
+
+    try {
+      final userId = _currentUserId();
+      debugPrint(
+        '[Notifications] user_push_tokens upsert started '
+        'hasUser=${userId.isNotEmpty} tokenLength=${registration.token.length}',
+      );
+      await SupabaseService.client
+          .from('user_push_tokens')
+          .upsert(
+            registration.toUpsertJson(userId: userId),
+            onConflict: 'user_id,token',
+          );
+      debugPrint('[Notifications] user_push_tokens upsert succeeded');
+    } catch (error) {
+      debugPrint(
+        '[Notifications] user_push_tokens upsert failed: ${error.runtimeType}',
+      );
+      logSupabaseDebug('Notifications', 'registerPushToken', error);
+      rethrow;
+    }
+  }
+
+  Future<void> deletePushToken(String token) async {
+    final trimmed = token.trim();
+    if (trimmed.isEmpty) return;
+
+    try {
+      final userId = _currentUserId();
+      await SupabaseService.client
+          .from('user_push_tokens')
+          .delete()
+          .eq('user_id', userId)
+          .eq('token', trimmed);
+    } catch (error) {
+      logSupabaseDebug('Notifications', 'deletePushToken', error);
+      rethrow;
+    }
+  }
+
   String _currentUserId() {
     final userId = SupabaseService.client.auth.currentUser?.id;
+    debugPrint(
+      '[Notifications] current authenticated user present=${userId != null}',
+    );
     if (userId == null) {
       throw StateError('Bu işlem için giriş yapmalısın.');
     }

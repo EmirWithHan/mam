@@ -15,6 +15,13 @@ Related docs:
 - `docs/bug_triage_system.md`
 - `docs/real_device_test_matrix.md`
 - `docs/beta_tester_message_tr.md`
+- `docs/tester_recruitment_message_tr.md`
+- `docs/apk_distribution_message_tr.md`
+- `docs/beta_bug_report_short_template.md`
+- `docs/templates/beta_tester_tracking.csv`
+- `docs/apk_beta_operating_plan.md`
+- `docs/beta_tester_task_checklist_tr.md`
+- `docs/beta_known_limitations.md`
 
 ## Tester Instructions
 
@@ -33,8 +40,9 @@ the team sends a debug APK, expect it to be much larger.
 
 1. Use the test account email provided by the team.
 2. Enter the password shared privately outside this repo.
-3. Complete the profile if the app asks.
-4. Do not share passwords in screenshots, chats, bug reports, or public places.
+3. If the app asks, choose only a username on `Kullanıcı adını seç`.
+4. Full profile completion is optional and can be done later from Profile.
+5. Do not share passwords in screenshots, chats, bug reports, or public places.
 
 ### Flows To Test
 
@@ -193,3 +201,15 @@ broken.
 - Attach screenshots/videos to the task.
 - Group duplicates by screen and root cause.
 - Retest blocker/high fixes on a real Android device before sharing a new APK.
+
+## Email Auth During Beta
+
+- Email/password testers must confirm their email by opening the Supabase
+  confirmation link before they can enter the main app.
+- After first verified login, testers only need to choose a username. They do
+  not need to complete photo, bio, city, birth date, phone, or business profile
+  fields before testing the app.
+- Password reset uses an email link and should be reported under
+  `login/register` if the link does not arrive, does not open the app, or does
+  not allow setting a new password.
+- Do not collect or store tester passwords in feedback notes.

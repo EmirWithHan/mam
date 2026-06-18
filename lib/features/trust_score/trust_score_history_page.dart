@@ -76,7 +76,7 @@ class _TrustScoreHistoryBody extends ConsumerWidget {
       return const EmptyState(
         title: 'Henüz değişiklik yok',
         message:
-            'Trust score geçmişin zamanla etkinlik davranışların ve güvenlik sinyalleriyle oluşur.',
+            'Güven puanı geçmişin zamanla etkinlik davranışların ve güvenlik sinyalleriyle oluşur.',
         icon: Icons.verified_user_outlined,
       );
     }
@@ -91,7 +91,7 @@ class _TrustScoreHistoryBody extends ConsumerWidget {
           Text('Güven Puanı', style: AppTextStyles.headline),
           const SizedBox(height: AppSpacing.sm),
           Text(
-            'Trust score geçmişin zamanla etkinlik davranışların ve güvenlik sinyalleriyle oluşur.',
+            'Güven puanı geçmişin zamanla etkinlik davranışların ve güvenlik sinyalleriyle oluşur.',
             style: AppTextStyles.body,
           ),
           const SizedBox(height: AppSpacing.lg),

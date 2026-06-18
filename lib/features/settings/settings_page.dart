@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/widgets/adaptive_dialog.dart';
+
 import '../../core/router/route_names.dart';
 import '../../core/layout/responsive_layout.dart';
 import '../../core/theme/app_colors.dart';
@@ -83,6 +85,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             _PrivacySection(
               profile: profile,
               isLoading: profileState.isLoading,
+              isBusinessMode: isBusinessMode,
               onChanged: (value) async {
                 final success = await ref
                     .read(profileControllerProvider.notifier)
@@ -143,45 +146,21 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
             const SizedBox(height: AppSpacing.md),
             SettingsMenuTile(
               icon: Icons.rate_review_outlined,
+              title: '\u0130stek & \u00D6neri',
+              subtitle:
+                  'Bize \u00F6nerini, sorununu veya iste\u011Fini g\u00F6nder.',
+              /*
               title: 'Geri bildirim gönder',
               subtitle: 'Deneyimini ve önerilerini paylaş',
+              */
               onTap: () => context.pushNamed(RouteNames.feedback),
             ),
             const SizedBox(height: AppSpacing.md),
             SettingsMenuTile(
-              icon: Icons.privacy_tip_outlined,
-              title: 'Gizlilik Politikası',
-              subtitle: 'MVP gizlilik özeti ve veri kullanımı',
-              onTap: () => context.pushNamed(RouteNames.privacyPolicy),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            SettingsMenuTile(
-              icon: Icons.description_outlined,
-              title: 'Kullanım Şartları',
-              subtitle: 'Uygulama kuralları ve kullanıcı sorumlulukları',
-              onTap: () => context.pushNamed(RouteNames.termsOfUse),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            SettingsMenuTile(
-              icon: Icons.groups_outlined,
-              title: 'Topluluk Kuralları',
-              subtitle: 'Güvenli ve saygılı etkinlik topluluğu',
-              onTap: () => context.pushNamed(RouteNames.communityGuidelines),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            SettingsMenuTile(
-              icon: Icons.health_and_safety_outlined,
-              title: 'Etkinlik Güvenliği ve Sorumluluk Reddi',
-              subtitle:
-                  'Etkinliklere katılım riskleri ve kullanıcı sorumlulukları',
-              onTap: () => context.pushNamed(RouteNames.eventSafetyDisclaimer),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            SettingsMenuTile(
-              icon: Icons.support_agent_outlined,
-              title: 'Bize Ulaş / Destek',
-              subtitle: 'Geri bildirim, güvenlik ve hesap talepleri',
-              onTap: () => context.pushNamed(RouteNames.support),
+              icon: Icons.policy_outlined,
+              title: 'Kurallar ve sözleşmeler',
+              subtitle: 'Kullanıcı sözleşmesi, gizlilik ve topluluk kuralları',
+              onTap: () => context.pushNamed(RouteNames.rulesAndAgreements),
             ),
             const SizedBox(height: AppSpacing.md),
             if (!isBusinessMode)
@@ -212,6 +191,37 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 },
               ),
             if (isBusinessMode) ...[
+              const SizedBox(height: AppSpacing.md),
+              SettingsMenuTile(
+                icon: Icons.star_outline_rounded,
+                title: 'Business Plus',
+                subtitle: businessAccount?.isPlusActive == true
+                    ? 'Plus aktif ✦'
+                    : 'Plus aktif değil - Plus\'a geç',
+                trailing: businessAccount?.isPlusActive == true
+                    ? const Icon(Icons.star_rounded, color: AppColors.tertiary)
+                    : null,
+                onTap: () {
+                  showDialog<void>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: AppRadius.lgBorder,
+                      ),
+                      title: const Text('Business Plus'),
+                      content: const Text(
+                        'Aylık Plus aboneliği yakında.\nSatın alma yakında aktif olacak.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Tamam'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: AppSpacing.md),
               SettingsMenuTile(
                 icon: Icons.delete_outline,
@@ -264,28 +274,16 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Future<void> _confirmDeleteBusinessAccount(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('İşletme hesabını sil?'),
-          content: const Text(
-            'İşletme bilgilerin pasifleştirilecek ve gelecekteki işletme '
-            'etkinliklerin yayından kaldırılacak. Hesabın kullanıcı hesabı '
-            'olarak devam edecek.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Vazgeç'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('İşletme hesabımı sil'),
-            ),
-          ],
-        );
-      },
+    final confirmed = await showAdaptiveConfirmDialog(
+      context,
+      title: 'İşletme hesabını sil?',
+      content:
+          'İşletme bilgilerin pasifleştirilecek ve gelecekteki işletme '
+          'etkinliklerin yayından kaldırılacak. Hesabın kullanıcı hesabı '
+          'olarak devam edecek.',
+      confirmLabel: 'Sil',
+      cancelLabel: 'Vazgeç',
+      isDestructive: true,
     );
 
     if (confirmed != true) return;
@@ -309,7 +307,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final profile = ref.read(profileControllerProvider).profile;
     ref
         .read(authControllerProvider.notifier)
-        .markProfileCompletion(isCompleted: profile?.hasCoreIdentity ?? false);
+        .markProfileCompletion(
+          isCompleted: profile?.hasMinimumProfile ?? false,
+        );
     await ref.read(myBusinessAccountProvider.notifier).loadMyBusinessAccount();
     await ref.read(eventsControllerProvider.notifier).refreshEvents();
     if (!context.mounted) return;
@@ -463,16 +463,19 @@ class _PrivacySection extends StatelessWidget {
   const _PrivacySection({
     required this.profile,
     required this.isLoading,
+    required this.isBusinessMode,
     required this.onChanged,
   });
 
   final Profile? profile;
   final bool isLoading;
+  final bool isBusinessMode;
   final ValueChanged<bool> onChanged;
 
   @override
   Widget build(BuildContext context) {
-    final isPrivate = profile?.isPrivate ?? false;
+    final isPrivate = isBusinessMode ? false : (profile?.isPrivate ?? false);
+    final isDisabled = isLoading || profile == null || isBusinessMode;
 
     return DecoratedBox(
       decoration: BoxDecoration(
@@ -482,12 +485,14 @@ class _PrivacySection extends StatelessWidget {
       ),
       child: SwitchListTile.adaptive(
         value: isPrivate,
-        onChanged: isLoading || profile == null ? null : onChanged,
+        onChanged: isDisabled ? null : onChanged,
         activeThumbColor: AppColors.primary,
         secondary: const Icon(Icons.lock_outline, color: AppColors.primary),
         title: Text('Gizli hesap', style: AppTextStyles.bodyStrong),
-        subtitle: const Text(
-          'Gizli hesapta galeri ve geçmiş etkinlikler sadece takipçilerine görünür.',
+        subtitle: Text(
+          isBusinessMode
+              ? 'İşletme hesapları gizli hesap olamaz.'
+              : 'Gizli hesapta galeri ve geçmiş etkinlikler sadece takipçilerine görünür.',
         ),
       ),
     );

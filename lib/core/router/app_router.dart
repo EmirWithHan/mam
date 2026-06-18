@@ -6,13 +6,18 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/auth_page.dart';
 import '../../features/auth/account_deletion_pending_page.dart';
 import '../../features/auth/auth_models.dart';
+import '../../features/auth/email_verification_page.dart';
+import '../../features/auth/forgot_password_page.dart';
 import '../../features/auth/login_page.dart';
 import '../../features/auth/oauth_callback_page.dart';
 import '../../features/auth/register_page.dart';
+import '../../features/auth/reset_password_page.dart';
 import '../../features/business/business_profile_page.dart';
 import '../../features/business/admin_business_applications_page.dart';
 import '../../features/business/create_business_account_page.dart';
 import '../../features/chat/event_chat_page.dart';
+import '../../features/direct_messages/direct_messages_page.dart';
+import '../../features/direct_messages/direct_chat_page.dart';
 import '../../features/events/create_event_page.dart';
 import '../../features/events/event_detail_page.dart';
 import '../../features/events/events_page.dart';
@@ -22,14 +27,17 @@ import '../../features/feedback/feedback_page.dart';
 import '../../features/home/create_hub_page.dart';
 import '../../features/home/home_page.dart';
 import '../../features/notifications/notifications_page.dart';
+import '../../features/notifications/follow_requests_page.dart';
 import '../../features/profile/profile_completion_page.dart';
 import '../../features/profile/profile_follow_list_page.dart';
 import '../../features/profile/profile_follow_list_provider.dart';
 import '../../features/profile/profile_page.dart';
+import '../../features/profile/username_onboarding_page.dart';
 import '../../features/profile/public_profile_page.dart';
 import '../../features/profile/widgets/profile_gallery_viewer_page.dart';
 import '../../features/reports/blocked_users_page.dart';
 import '../../features/settings/legal_info_page.dart';
+import '../../features/settings/rules_and_agreements_page.dart';
 import '../../features/settings/settings_page.dart';
 import '../../features/social/social_page.dart';
 import '../../features/trust_score/trust_score_history_page.dart';
@@ -53,17 +61,25 @@ GoRouter createAppRouter(AuthState authState) {
           authState.status == AuthStatus.initial ||
           authState.status == AuthStatus.loading;
       final isAuthenticated = authState.status == AuthStatus.authenticated;
+      final needsEmailVerification =
+          authState.status == AuthStatus.emailVerificationRequired;
+      final isPasswordRecovery =
+          authState.status == AuthStatus.passwordRecovery;
       final isAccountDeletionPending =
           authState.status == AuthStatus.accountDeletionRequested;
-      final needsProfileCompletion =
+      final needsUsernameOnboarding =
           isAuthenticated && !authState.isProfileCompleted;
       final isAuthRoute =
           location == RoutePaths.auth ||
           location == RoutePaths.login ||
           location == RoutePaths.register ||
+          location == RoutePaths.emailVerification ||
+          location == RoutePaths.forgotPassword ||
+          location == RoutePaths.resetPassword ||
           location == RoutePaths.authCallback;
       final isSplashRoute = location == RoutePaths.splash;
-      final isProfileCompletionRoute = location == RoutePaths.profileComplete;
+      final isUsernameOnboardingRoute =
+          location == RoutePaths.usernameOnboarding;
       final isAccountDeletionPendingRoute =
           location == RoutePaths.accountDeletionPending;
 
@@ -74,9 +90,19 @@ GoRouter createAppRouter(AuthState authState) {
         'auth=${authState.status.name} profileDone=${authState.isProfileCompleted}',
       );
 
+      if (_isPasswordRecoveryReturnUri(uri) &&
+          location != RoutePaths.resetPassword) {
+        debugPrint('[Router] password recovery return detected');
+        return RoutePaths.resetPassword;
+      }
+
       if (_isOAuthReturnUri(uri) && location != RoutePaths.authCallback) {
         debugPrint('[Router] OAuth return detected; routing to auth callback');
         return RoutePaths.authCallback;
+      }
+
+      if (isPasswordRecovery && location != RoutePaths.resetPassword) {
+        return RoutePaths.resetPassword;
       }
 
       if (isInitializing) {
@@ -91,14 +117,27 @@ GoRouter createAppRouter(AuthState authState) {
         return isAuthenticated ? RoutePaths.events : RoutePaths.auth;
       }
 
-      if (isAuthenticated && (isAuthRoute || isSplashRoute)) {
-        return needsProfileCompletion
-            ? RoutePaths.profileComplete
-            : RoutePaths.events;
+      if (needsEmailVerification && !isAuthRoute) {
+        debugPrint(
+          '[Router] email confirmation pending allowed unauthenticated=true',
+        );
+        return RoutePaths.emailVerification;
       }
 
-      if (needsProfileCompletion && !isProfileCompletionRoute) {
-        return RoutePaths.profileComplete;
+      if (isAuthenticated &&
+          !isPasswordRecovery &&
+          (isAuthRoute || isSplashRoute)) {
+        return needsUsernameOnboarding
+            ? RoutePaths.usernameOnboarding
+            : RoutePaths.home;
+      }
+
+      if (needsUsernameOnboarding && !isUsernameOnboardingRoute) {
+        return RoutePaths.usernameOnboarding;
+      }
+
+      if (!needsUsernameOnboarding && isUsernameOnboardingRoute) {
+        return RoutePaths.home;
       }
 
       if (!isAuthenticated && !isAuthRoute) {
@@ -132,6 +171,23 @@ GoRouter createAppRouter(AuthState authState) {
         path: RoutePaths.register,
         name: RouteNames.register,
         builder: (context, state) => const RegisterPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.emailVerification,
+        name: RouteNames.emailVerification,
+        builder: (context, state) => EmailVerificationPage(
+          email: state.uri.queryParameters['email'] ?? '',
+        ),
+      ),
+      GoRoute(
+        path: RoutePaths.forgotPassword,
+        name: RouteNames.forgotPassword,
+        builder: (context, state) => const ForgotPasswordPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.resetPassword,
+        name: RouteNames.resetPassword,
+        builder: (context, state) => const ResetPasswordPage(),
       ),
       GoRoute(
         path: RoutePaths.authCallback,
@@ -175,6 +231,11 @@ GoRouter createAppRouter(AuthState authState) {
         },
       ),
       GoRoute(
+        path: RoutePaths.usernameOnboarding,
+        name: RouteNames.usernameOnboarding,
+        builder: (context, state) => const UsernameOnboardingPage(),
+      ),
+      GoRoute(
         path: RoutePaths.profileComplete,
         name: RouteNames.profileComplete,
         builder: (context, state) => MainNavigationShell(
@@ -211,6 +272,14 @@ GoRouter createAppRouter(AuthState authState) {
         name: RouteNames.feedback,
         builder: (context, state) =>
             const MainNavigationShell(currentIndex: 4, child: FeedbackPage()),
+      ),
+      GoRoute(
+        path: RoutePaths.rulesAndAgreements,
+        name: RouteNames.rulesAndAgreements,
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 4,
+          child: RulesAndAgreementsPage(),
+        ),
       ),
       GoRoute(
         path: RoutePaths.privacyPolicy,
@@ -293,6 +362,24 @@ GoRouter createAppRouter(AuthState authState) {
         builder: (context, state) => const NotificationsPage(),
       ),
       GoRoute(
+        path: RoutePaths.directConversations,
+        name: RouteNames.directConversations,
+        builder: (context, state) => const DirectConversationsPage(),
+      ),
+      GoRoute(
+        path: RoutePaths.directChat,
+        name: RouteNames.directChat,
+        builder: (context, state) {
+          final conversationId = state.pathParameters['conversationId'] ?? '';
+          return DirectChatPage(conversationId: conversationId);
+        },
+      ),
+      GoRoute(
+        path: RoutePaths.followRequests,
+        name: RouteNames.followRequests,
+        builder: (context, state) => const FollowRequestsPage(),
+      ),
+      GoRoute(
         path: RoutePaths.trustScoreHistory,
         name: RouteNames.trustScoreHistory,
         builder: (context, state) => const MainNavigationShell(
@@ -355,6 +442,17 @@ GoRouter createAppRouter(AuthState authState) {
         ),
       ),
       GoRoute(
+        path: RoutePaths.editEvent,
+        name: RouteNames.editEvent,
+        builder: (context, state) {
+          final eventId = state.pathParameters['eventId'] ?? '';
+          return MainNavigationShell(
+            currentIndex: 1,
+            child: CreateEventPage(eventId: eventId),
+          );
+        },
+      ),
+      GoRoute(
         path: RoutePaths.eventChat,
         name: RouteNames.eventChat,
         builder: (context, state) {
@@ -404,6 +502,17 @@ bool _isOAuthReturnUri(Uri uri) {
       uri.queryParameters.containsKey('error') ||
       uri.fragment.contains('access_token') ||
       uri.fragment.contains('error_description');
+}
+
+bool _isPasswordRecoveryReturnUri(Uri uri) {
+  final values = [
+    uri.path,
+    ...uri.queryParameters.values,
+    uri.fragment,
+  ].join(' ').toLowerCase();
+  return values.contains('reset-password') ||
+      values.contains('type=recovery') ||
+      values.contains('recovery');
 }
 
 class _SplashPage extends StatelessWidget {

@@ -31,18 +31,13 @@ class EventCallService {
   Future<void> callPhoneNumber(String phone) async {
     final trimmed = phone.trim();
     if (trimmed.isEmpty) {
-      throw StateError('This member does not have a phone number.');
+      throw StateError('Bu kullanıcı için telefon numarası bulunmuyor.');
     }
 
     final uri = Uri(scheme: 'tel', path: trimmed);
-    final canLaunch = await canLaunchUrl(uri);
-    if (!canLaunch) {
-      throw StateError('Could not open the phone app.');
-    }
-
-    final launched = await launchUrl(uri);
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!launched) {
-      throw StateError('Could not start the phone call.');
+      throw StateError('Arama ekranı açılamadı.');
     }
   }
 }

@@ -65,7 +65,7 @@ class EventCallController extends StateNotifier<EventCallState> {
         targetUserId: targetUserId,
       );
       if (!contact.hasPhone) {
-        throw StateError('Bu kullanıcının telefon numarası yok.');
+        throw StateError('Bu kullanıcı için telefon numarası bulunmuyor.');
       }
 
       await _service.callPhoneNumber(contact.phone!);
@@ -78,10 +78,21 @@ class EventCallController extends StateNotifier<EventCallState> {
     } catch (error) {
       state = state.copyWith(
         loading: false,
-        message: friendlyErrorMessage(error),
+        message: _friendlyCallErrorMessage(error),
         clearActiveTarget: true,
       );
       return false;
     }
   }
+}
+
+String _friendlyCallErrorMessage(Object error) {
+  final message = error.toString();
+  if (message.contains('telefon numarası bulunmuyor')) {
+    return 'Bu kullanıcı için telefon numarası bulunmuyor.';
+  }
+  if (message.contains('Arama ekranı açılamadı')) {
+    return 'Arama ekranı açılamadı.';
+  }
+  return friendlyErrorMessage(error);
 }

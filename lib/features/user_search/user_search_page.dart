@@ -133,7 +133,7 @@ class _UserSearchResultTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.white,
+      color: AppColors.surface,
       borderRadius: AppRadius.mdBorder,
       child: InkWell(
         borderRadius: AppRadius.mdBorder,

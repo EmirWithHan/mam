@@ -119,9 +119,13 @@ class _ProfileBody extends ConsumerWidget {
             profile: profile,
             publicDetail: publicDetailAsync.valueOrNull,
             businessAccount: businessAccount,
+            eventCount: activityState.events.length,
           ),
           const SizedBox(height: AppSpacing.lg),
-          ProfileBadgesSection.fromAsync(badgesAsync),
+          ProfileBadgesSection.fromAsync(
+            badgesAsync,
+            trustScore: profile.trustScoreValue,
+          ),
           const SizedBox(height: AppSpacing.lg),
           _ProfileActivityTabs(
             selectedTab: selectedTab,
@@ -287,7 +291,7 @@ class ProfileIncompleteGuidanceUnused extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
-              'Etkinlik oluşturmak ve katılım isteği göndermek için temel profil bilgilerini tamamlamalısın.',
+              'Fotoğraf, bio ve şehir bilgilerini ekleyerek profilini güçlendirebilirsin.',
               style: AppTextStyles.bodySmall,
             ),
             const SizedBox(height: AppSpacing.lg),
@@ -307,11 +311,13 @@ class _ProfileHeader extends StatelessWidget {
     required this.profile,
     required this.publicDetail,
     required this.businessAccount,
+    required this.eventCount,
   });
 
   final Profile profile;
   final PublicProfileDetail? publicDetail;
   final BusinessAccount? businessAccount;
+  final int eventCount;
 
   @override
   Widget build(BuildContext context) {
@@ -355,7 +361,7 @@ class _ProfileHeader extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              handle ?? 'Your profile',
+              handle ?? 'Profilin',
               style: AppTextStyles.bodySmall,
               textAlign: TextAlign.center,
             ),
@@ -393,13 +399,7 @@ class _ProfileHeader extends StatelessWidget {
               userId: profile.userId,
               followersCount: publicDetail?.followersCount ?? 0,
               followingCount: publicDetail?.followingCount ?? 0,
-              trustScore: profile.trustScoreValue,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              'Güven Skoru etkinlik davranışlarına göre zamanla değişir.',
-              style: AppTextStyles.caption,
-              textAlign: TextAlign.center,
+              eventCount: eventCount,
             ),
           ],
         ),
@@ -413,60 +413,57 @@ class _OwnProfileStats extends StatelessWidget {
     required this.userId,
     required this.followersCount,
     required this.followingCount,
-    required this.trustScore,
+    required this.eventCount,
   });
 
   final String userId;
   final int followersCount;
   final int followingCount;
-  final int trustScore;
+  final int eventCount;
 
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
       builder: (context, constraints) {
-        final cardWidth = constraints.maxWidth < 420
-            ? (constraints.maxWidth - AppSpacing.sm) / 2
-            : (constraints.maxWidth - (AppSpacing.sm * 2)) / 3;
-
-        return Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
-          alignment: WrapAlignment.center,
-          children: [
-            SizedBox(
-              width: cardWidth.clamp(132.0, 220.0),
-              child: _OwnProfileStatCard(
-                value: followingCount,
-                label: 'Takip Edilen',
-                icon: Icons.person_add_alt_1_outlined,
-                onTap: () => context.pushNamed(
-                  RouteNames.profileFollowList,
-                  pathParameters: {'userId': userId, 'type': 'following'},
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            border: Border.all(color: AppColors.border),
+            borderRadius: AppRadius.lgBorder,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.sm),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _OwnProfileStatCard(
+                    value: followingCount,
+                    label: 'Takip',
+                    onTap: () => context.pushNamed(
+                      RouteNames.profileFollowList,
+                      pathParameters: {'userId': userId, 'type': 'following'},
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            SizedBox(
-              width: cardWidth.clamp(132.0, 220.0),
-              child: _OwnProfileStatCard(
-                value: followersCount,
-                label: 'Takipçi',
-                icon: Icons.groups_2_outlined,
-                onTap: () => context.pushNamed(
-                  RouteNames.profileFollowList,
-                  pathParameters: {'userId': userId, 'type': 'followers'},
+                Expanded(
+                  child: _OwnProfileStatCard(
+                    value: followersCount,
+                    label: 'Takipçi',
+                    onTap: () => context.pushNamed(
+                      RouteNames.profileFollowList,
+                      pathParameters: {'userId': userId, 'type': 'followers'},
+                    ),
+                  ),
                 ),
-              ),
+                Expanded(
+                  child: _OwnProfileStatCard(
+                    value: eventCount,
+                    label: 'Etkinlik',
+                  ),
+                ),
+              ],
             ),
-            SizedBox(
-              width: cardWidth.clamp(132.0, 220.0),
-              child: _OwnProfileStatCard(
-                value: trustScore,
-                label: 'Güven Skoru',
-                icon: Icons.verified_outlined,
-              ),
-            ),
-          ],
+          ),
         );
       },
     );
@@ -477,13 +474,11 @@ class _OwnProfileStatCard extends StatelessWidget {
   const _OwnProfileStatCard({
     required this.value,
     required this.label,
-    required this.icon,
     this.onTap,
   });
 
   final int value;
   final String label;
-  final IconData icon;
   final VoidCallback? onTap;
 
   @override
@@ -495,22 +490,21 @@ class _OwnProfileStatCard extends StatelessWidget {
         onTap: onTap,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: AppColors.background,
-            border: Border.all(color: AppColors.border),
+            color: Colors.transparent,
+            border: Border.all(color: Colors.transparent),
             borderRadius: AppRadius.lgBorder,
           ),
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 2,
+              vertical: AppSpacing.sm,
+            ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(icon, color: AppColors.primary, size: 20),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  _compactCount(value),
-                  style: AppTextStyles.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Text(_compactCount(value), style: AppTextStyles.title),
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(

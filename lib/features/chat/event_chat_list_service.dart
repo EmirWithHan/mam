@@ -1,4 +1,5 @@
 import '../../services/supabase_service.dart';
+import 'event_chat_service.dart';
 import 'event_chat_list_models.dart';
 
 class EventChatListService {
@@ -14,7 +15,7 @@ class EventChatListService {
         .from('event_participants')
         .select('event_id,role,attendance_status')
         .eq('user_id', userId)
-        .inFilter('attendance_status', ['planned', 'attended']);
+        .inFilter('attendance_status', eventChatActiveParticipantStatuses);
 
     final rolesByEventId = <String, String>{};
     for (final row in participantRows) {

@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -76,6 +78,173 @@ final notificationsControllerProvider =
         ref: ref,
       );
     });
+
+final pushRegistrationControllerProvider = Provider<PushRegistrationController>(
+  (ref) {
+    final controller = PushRegistrationController(
+      service: ref.watch(notificationsServiceProvider),
+    );
+    ref.onDispose(controller.dispose);
+    return controller;
+  },
+);
+
+class PushRegistrationController {
+  PushRegistrationController({required NotificationsService service})
+    : _service = service;
+
+  final NotificationsService _service;
+  StreamSubscription<String>? _tokenRefreshSubscription;
+  StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
+  String? _currentToken;
+  bool _initialized = false;
+  bool _loggedAlreadyInitialized = false;
+  String? _lastReadinessSignature;
+
+  void debugAuthReadiness({
+    required bool isAuthenticated,
+    required bool hasUserId,
+    required bool isProfileCompleted,
+    required bool hasAcceptedTerms,
+  }) {
+    final signature =
+        'auth=$isAuthenticated user=$hasUserId '
+        'profile=$isProfileCompleted terms=$hasAcceptedTerms';
+    if (_lastReadinessSignature == signature) return;
+    _lastReadinessSignature = signature;
+    debugPrint('[Notifications] push readiness $signature');
+  }
+
+  Future<void> initializeForAuthenticatedUser() async {
+    if (_initialized) {
+      if (!_loggedAlreadyInitialized) {
+        _loggedAlreadyInitialized = true;
+        debugPrint(
+          '[Notifications] FCM registration skipped: already initialized',
+        );
+      }
+      return;
+    }
+    _initialized = true;
+    _loggedAlreadyInitialized = false;
+
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+      debugPrint(
+        '[Notifications] FCM registration skipped: unsupported platform',
+      );
+      return;
+    }
+
+    try {
+      final hasUser = SupabaseService.client.auth.currentUser != null;
+      debugPrint('[Notifications] FCM registration started hasUser=$hasUser');
+      final messaging = FirebaseMessaging.instance;
+      final settings = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      debugPrint(
+        '[Notifications] FCM permission status='
+        '${settings.authorizationStatus.name}',
+      );
+
+      if (settings.authorizationStatus == AuthorizationStatus.denied) {
+        debugPrint(
+          '[Notifications] FCM registration skipped: permission denied',
+        );
+        return;
+      }
+
+      final token = await messaging.getToken();
+      debugPrint(
+        '[Notifications] FCM token present=${token != null} '
+        'length=${token?.length ?? 0}',
+      );
+      if (token != null && token.trim().isNotEmpty) {
+        _currentToken = token;
+        await registerToken(token: token, platform: 'android');
+      } else {
+        debugPrint('[Notifications] FCM registration skipped: token empty');
+      }
+
+      _tokenRefreshSubscription ??= FirebaseMessaging.instance.onTokenRefresh
+          .listen((token) {
+            _currentToken = token;
+            debugPrint(
+              '[Notifications] FCM token refresh received length=${token.length}',
+            );
+            unawaited(registerToken(token: token, platform: 'android'));
+          });
+
+      _foregroundMessageSubscription ??= FirebaseMessaging.onMessage.listen((
+        message,
+      ) {
+        debugPrint(
+          '[Notifications] foreground FCM message type='
+          '${message.data['type'] ?? 'unknown'}',
+        );
+      });
+    } catch (error) {
+      debugPrint('[Notifications] FCM init failed: ${error.runtimeType}');
+      _initialized = false;
+      _loggedAlreadyInitialized = false;
+    }
+  }
+
+  Future<void> registerToken({
+    required String token,
+    required String platform,
+  }) async {
+    try {
+      final hasUser = SupabaseService.client.auth.currentUser != null;
+      debugPrint(
+        '[Notifications] Supabase push token save started '
+        'hasUser=$hasUser platform=$platform tokenLength=${token.length}',
+      );
+      await _service.registerPushToken(
+        PushTokenRegistration(token: token, platform: platform),
+      );
+      debugPrint('[Notifications] Supabase push token save succeeded');
+    } catch (error) {
+      debugPrint(
+        '[Notifications] Supabase push token save failed: ${error.runtimeType}',
+      );
+      logSupabaseDebug('Notifications', 'push token registration', error);
+    }
+  }
+
+  Future<void> deleteToken(String token) async {
+    try {
+      await _service.deletePushToken(token);
+    } catch (error) {
+      logSupabaseDebug('Notifications', 'push token delete', error);
+    }
+  }
+
+  Future<void> deleteCurrentToken() async {
+    final token = _currentToken;
+    _currentToken = null;
+    _initialized = false;
+    _loggedAlreadyInitialized = false;
+    if (token != null && token.trim().isNotEmpty) {
+      debugPrint(
+        '[Notifications] Supabase push token delete started '
+        'tokenLength=${token.length}',
+      );
+      await deleteToken(token);
+    } else {
+      debugPrint(
+        '[Notifications] Supabase push token delete skipped: no token',
+      );
+    }
+  }
+
+  void dispose() {
+    _tokenRefreshSubscription?.cancel();
+    _foregroundMessageSubscription?.cancel();
+  }
+}
 
 class NotificationsController extends StateNotifier<NotificationsState> {
   NotificationsController({

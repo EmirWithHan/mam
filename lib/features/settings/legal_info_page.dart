@@ -80,103 +80,233 @@ class LegalInfoPage extends StatelessWidget {
 _LegalContent _content(LegalInfoType type) {
   return switch (type) {
     LegalInfoType.privacyPolicy => const _LegalContent(
-      title: 'Gizlilik Politikası',
+      title: 'Match A Man Gizlilik Politikası ve KVKK Aydınlatma Metni',
       notice:
-          'Bu metin MVP taslağıdır. Yayın öncesi avukat veya hukuk danışmanı tarafından incelenmelidir.',
+          'Sürüm: privacy_v1_2026_06_10\nSon güncelleme: 10 Haziran 2026\nBu metin kapalı test MVP sürümü için hazırlanmış gizlilik ve aydınlatma bilgilendirmesidir.',
       sections: [
         _LegalSection(
-          title: 'Toplanan bilgiler',
+          title: 'Veri sorumlusu ve iletişim',
           body:
-              'Match A Man; hesap oluşturma, Supabase Auth oturumu, profil bilgileri, kullanıcı adı, avatar, şehir/ilçe, etkinlik katılımı, gönderiler, yorumlar, takip ilişkileri, bildirimler, işletme başvuruları, geri bildirimler, şikayetler ve engelleme kayıtları gibi uygulamanın çalışması için gerekli verileri işler.',
+              'Match A Man uygulamasında işlenen kişisel veriler için resmi iletişim ve destek kanalları uygulama içinde veya Match A Man’in resmi sayfalarında paylaşılır. Destek, veri talebi ve hesap silme başvuruları uygulama içindeki destek ve hesap kanalları üzerinden iletilebilir.',
         ),
         _LegalSection(
-          title: 'Konum ve medya',
+          title: 'Uygulamanın amacı',
           body:
-              'Konum bilgisi yalnızca kullanıcı etkinlik konumu eklemek veya harita yardımı almak istediğinde kullanılır. Fotoğraf ve medya yüklemeleri kullanıcı tarafından başlatılır. Kamera veya galeri erişimi, ilgili işlem yapılmadan istenmez.',
+              'Match A Man; kullanıcıların sosyal spor ve etkinlikler etrafında profil oluşturmasına, etkinlik keşfetmesine, etkinlik oluşturmasına, katılım isteği göndermesine, onaylı etkinlik sohbetlerine katılmasına, sosyal içerik paylaşmasına ve topluluk güvenliğini yönetmesine yardımcı olan bir platformdur.',
         ),
         _LegalSection(
-          title: 'Kullanım amacı',
+          title: 'İşlenen kişisel veri kategorileri',
           body:
-              'Veriler kimlik doğrulama, profil ve etkinlik akışı, katılım istekleri, güvenlik, topluluk moderasyonu, bildirimler, destek, hata çözümü, kötüye kullanımın önlenmesi ve hizmet kalitesinin artırılması amacıyla kullanılır.',
+              'Kapalı test MVP sürümünde hesap kimliği, e-posta, giriş yöntemi, kullanıcı adı, etiket, ad, doğum tarihi, cinsiyet tercihi, şehir/ilçe, telefon numarası, profil açıklaması, avatar/profil fotoğrafı URL bilgisi, gizli hesap tercihi, güven puanı, hesap durumu, etkinlik katılımı, bildirimler, raporlar, engellemeler, geri bildirimler ve işletme başvuru bilgileri gibi uygulamanın çalışması için gerekli veriler işlenebilir.',
         ),
         _LegalSection(
-          title: 'Paylaşım ve görünürlük',
+          title: 'Hesap ve kimlik verileri',
           body:
-              'Profil, gönderi, etkinlik, takip ve yorum görünürlüğü uygulamadaki gizlilik ayarlarına ve güvenlik kurallarına göre değişebilir. E-posta, telefon, auth metadata ve moderasyon alanları herkese açık profil veya arama sonuçlarında gösterilmez.',
+              'E-posta/şifre ve Google ile giriş Supabase Auth üzerinden yürütülür. Google girişinde sağlayıcı tarafından dönen temel hesap bilgileri, oturum açma ve gerekiyorsa profil başlangıcı için kullanılabilir. E-posta, auth metadata, sağlayıcı tokenları ve benzeri hesap güvenliği alanları herkese açık profil alanlarında gösterilmez.',
         ),
         _LegalSection(
-          title: 'Kullanıcı kontrolü',
+          title: 'Profil verileri',
           body:
-              'Kullanıcılar profil bilgilerini güncelleyebilir, gizli hesap ayarını değiştirebilir, kullanıcıları engelleyebilir, içerikleri bildirebilir, işletme hesabı durumunu yönetebilir ve hesap silme talebi oluşturabilir. Hesap silme talebi sonrasında herkese açık profil kimliği pasifleştirilir. Nihai veri silme, saklama ve yasal kayıt süreçleri yayın öncesi yasal değerlendirmeyle netleştirilmelidir.',
+              'Profilde kullanıcı adı, etiket, ad, şehir/ilçe, doğum tarihi, cinsiyet tercihi, telefon, bio, avatar, gizli hesap tercihi, takipçi/takip edilen ilişkileri, güven puanı ve profil tamamlama bilgileri yer alabilir. Profil görünürlüğü uygulamadaki gizlilik ayarlarına, takip ilişkilerine ve güvenlik kurallarına göre değişebilir.',
         ),
         _LegalSection(
-          title: 'Gelecek özellikler',
+          title: 'Etkinlik ve konum verileri',
           body:
-              'Telefon doğrulama/OTP, ödeme ve anlık push bildirimleri aktif değilse bu veriler veya izinler zorunlu tutulmaz. Bu özellikler ileride eklenirse gizlilik metni güncellenmelidir.',
+              'Etkinlik oluştururken başlık, açıklama, spor türü, şehir, ilçe, tarih/saat, kapasite, katılım durumu, host/katılımcı rolü, adres veya buluşma noktası, isteğe bağlı konum koordinatları ve işletme etkinliği fiyat bilgisi gibi alanlar işlenebilir. Konum bilgisi kullanıcının etkinlik konumu eklemesi, mevcut konumu kullanması veya harita uygulamasında konumu açması için kullanılır.',
+        ),
+        _LegalSection(
+          title: 'Kullanıcı içerikleri',
+          body:
+              'Etkinlik sohbet mesajları, gönderiler, fotoğraflar, fotoğraf açıklamaları, yorumlar, beğeniler, etkinlik bağlantıları, işletme yorumları ve benzeri kullanıcı içerikleri uygulamanın sosyal ve etkinlik akışlarını çalıştırmak için işlenir. Kullanıcı içerikleri görünürlük ayarlarına, etkinlik katılımına, gizli hesap ayarına ve moderasyon kararlarına göre farklı kullanıcılara gösterilebilir.',
+        ),
+        _LegalSection(
+          title: 'Bildirim ve push token verileri',
+          body:
+              'Uygulama içi bildirimler ve cihaz izinlerine bağlı push bildirimleri; takip istekleri, etkinlik katılım istekleri, onay/red durumları, işletme etkinliği doğrulama hatırlatmaları ve benzeri hesap/etkinlik akışları için kullanılabilir. Push bildirimi gönderebilmek için Firebase Cloud Messaging cihaz tokenı, kullanıcı hesabıyla ilişkilendirilerek saklanabilir. Tam token değeri kullanıcıya açık alanlarda gösterilmez.',
+        ),
+        _LegalSection(
+          title: 'Güvenlik, bildirme ve moderasyon verileri',
+          body:
+              'Şikayetler, bildirim nedenleri, açıklamalar, hedef kullanıcı/etkinlik/gönderi/yorum bilgileri, engelleme kayıtları, takip istekleri, güven puanı olayları, oran sınırlama kayıtları ve hesap durumu bilgileri kötüye kullanımı önlemek, topluluk güvenliğini sağlamak ve ihlalleri incelemek için işlenebilir.',
+        ),
+        _LegalSection(
+          title: 'Geri bildirim ve destek verileri',
+          body:
+              'Kullanıcılar puan, kategori, mesaj, kaynak ekran ve benzeri geri bildirim bilgileri paylaşabilir. Bu veriler hata çözümü, ürün iyileştirme, destek, kapalı test değerlendirmesi ve kötüye kullanım incelemeleri için kullanılabilir.',
+        ),
+        _LegalSection(
+          title: 'İşletme başvurusu ve işletme verileri',
+          body:
+              'İşletme hesabı veya işletme başvurusu akışlarında işletme adı, işletme kullanıcı adı, kategori, şehir/ilçe, adres, telefon, web sitesi, Instagram, açıklama, başvuru durumu, yönetici notu, doğrulama durumu, logo/kapak URL bilgisi ve işletme etkinlikleri işlenebilir. Bu bilgiler işletme hesabını incelemek, yönetmek ve kullanıcılara göstermek için kullanılabilir.',
+        ),
+        _LegalSection(
+          title: 'İşleme amaçları',
+          body:
+              'Kişisel veriler; hesap oluşturma ve oturum yönetimi, profil ve etkinlik akışlarını sunma, katılım isteklerini yönetme, sohbet/gönderi/yorum özelliklerini çalıştırma, bildirim gönderme, güvenlik ve moderasyon sağlama, rapor/engelleme araçlarını işletme, destek ve geri bildirimleri değerlendirme, hata çözümü, kötüye kullanımın önlenmesi ve hizmet kalitesinin artırılması amaçlarıyla işlenir.',
+        ),
+        _LegalSection(
+          title: 'Hukuki sebepler',
+          body:
+              'Veriler; sözleşmenin kurulması ve ifası, kullanıcının talep ettiği hizmetin sunulması, veri sorumlusunun meşru menfaatleri, hukuki yükümlülüklerin yerine getirilmesi ve gerektiğinde bir hakkın tesisi, kullanılması veya korunması gibi KVKK kapsamındaki hukuki sebeplere dayanarak işlenebilir. Açık rıza gerektiren ayrı bir işlem olursa bu rıza genel gizlilik metninin içine gizlenmez; ayrı ve açık bir onay ekranı veya metniyle yönetilir.',
+        ),
+        _LegalSection(
+          title: 'Aktarım yapılabilecek taraflar',
+          body:
+              'Veriler; uygulamanın çalışması için Supabase Auth, Supabase Database, Supabase Storage ve Supabase Realtime altyapısıyla; push bildirimleri için Firebase Cloud Messaging ile; Google ile giriş için Google OAuth/Supabase Auth akışıyla; konumun harita uygulamasında açılması halinde cihazdaki harita uygulamaları, Apple Maps veya OpenStreetMap gibi harici harita servisleriyle sınırlı olarak paylaşılabilir veya bu servisler üzerinden işlenebilir. Yetkili kurumlara aktarım yalnızca hukuki zorunluluk bulunduğunda yapılır.',
+        ),
+        _LegalSection(
+          title: 'Ödeme, reklam ve analiz durumu',
+          body:
+              'Mevcut kapalı test sürümünde uygulama içi ödeme, cüzdan, ücretli abonelik veya reklam sistemi bulunmamaktadır. Kod tabanında ödeme sağlayıcısı, cüzdan bakiyesi, Firebase Analytics veya Crashlytics entegrasyonu bulunmamaktadır. İleride bu tür özellikler eklenirse gizlilik metni ve gerekiyorsa ayrı rıza süreçleri güncellenmelidir.',
+        ),
+        _LegalSection(
+          title: 'Saklama süresi ve silme ilkeleri',
+          body:
+              'Veriler, ilgili hesabın ve uygulama özelliklerinin çalışması için gerekli olduğu sürece saklanır. Hesap silme talebi alındığında herkese açık profil kimliği pasifleştirilebilir, gelecek etkinlikler yayından kaldırılabilir ve sosyal içerikler arşivlenebilir veya anonimleştirilebilir. Güvenlik, kötüye kullanım incelemesi, hukuki yükümlülük, uyuşmazlık çözümü veya zorunlu kayıt saklama sebepleriyle bazı kayıtlar sınırlı süreyle tutulabilir.',
+        ),
+        _LegalSection(
+          title: 'KVKK kapsamındaki haklar',
+          body:
+              'KVKK kapsamında kişisel verilerinin işlenip işlenmediğini öğrenme, işlenmişse bilgi talep etme, işleme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme, yurt içi veya yurt dışı aktarım yapılan tarafları bilme, eksik veya yanlış işlenen verilerin düzeltilmesini isteme, ilgili şartlar altında silme veya yok etme talep etme, yapılan işlemlerin aktarılan üçüncü kişilere bildirilmesini isteme, otomatik sistemler sonucu aleyhe bir sonuca itiraz etme ve kanuna aykırı işleme nedeniyle zararın giderilmesini talep etme haklarına sahipsin.',
+        ),
+        _LegalSection(
+          title: 'Başvuru ve iletişim',
+          body:
+              'Veri, gizlilik ve hesap silme taleplerini uygulama içindeki Ayarlar > Hesabımı sil veya Ayarlar > Geri bildirim gönder ekranlarından iletebilirsin. Başvurularda hesap sahipliğini doğrulamak için makul ek bilgi istenebilir. Resmi iletişim ve destek kanalları uygulama içinde veya Match A Man’in resmi sayfalarında paylaşılır.',
+        ),
+        _LegalSection(
+          title: 'Çocuklar ve yaş sınırı',
+          body:
+              'Match A Man 18 yaş ve üzeri kullanıcılar için tasarlanmıştır. 18 yaşın altındaki kişilerin uygulamayı kullanması amaçlanmaz. Yaşla ilgili yanlış bilgi veya güvenlik riski tespit edilirse hesap erişimi sınırlandırılabilir.',
+        ),
+        _LegalSection(
+          title: 'Güvenlik önlemleri',
+          body:
+              'Match A Man, kullanıcı verilerini korumak için Supabase yetkilendirme kuralları, hesap oturumu, erişim kontrolleri, RLS politikaları, oran sınırlama, raporlama/engelleme araçları ve gizli anahtarların istemci uygulamaya konulmaması gibi makul teknik ve idari önlemler kullanır. Buna rağmen hiçbir dijital sistem için mutlak güvenlik garantisi verilemez.',
+        ),
+        _LegalSection(
+          title: 'Politika güncellemeleri',
+          body:
+              'Bu metin zaman zaman güncellenebilir. Önemli gizlilik değişiklikleri uygulama içi bildirim, e-posta, push bildirimi veya benzeri makul yollarla duyurulabilir. Açık rıza gerektiren pazarlama, reklam, analiz veya benzeri yeni işleme faaliyetleri olursa bunlar ayrı onay süreçleriyle yönetilir.',
         ),
       ],
     ),
     LegalInfoType.termsOfUse => const _LegalContent(
-      title: 'Kullanım Şartları',
+      title: 'Match A Man Kullanıcı Sözleşmesi',
       notice:
-          'Bu metin MVP taslağıdır. Nihai yasal metin değildir; yayın öncesi avukat veya hukuk danışmanı tarafından incelenmelidir.',
+          'Sürüm: terms_v1_2026_06_10\nSon güncelleme: 10 Haziran 2026\nBu metin kapalı test MVP sürümü için hazırlanmıştır.',
       sections: [
         _LegalSection(
-          title: 'Şartları kabul',
+          title: 'Taraflar ve platform açıklaması',
           body:
-              'Match A Man hesabı oluşturduğunuzda, uygulamayı kullandığınızda, etkinlik oluşturduğunuzda, etkinliğe katılmak istediğinizde, gönderi veya yorum paylaştığınızda bu kullanım şartlarını kabul etmiş sayılırsınız. Şartları kabul etmiyorsanız uygulamayı kullanmayı bırakmalısınız.',
+              'Bu Kullanıcı Sözleşmesi, Match A Man mobil uygulamasını kullanan kişi ile Match A Man platformu arasındaki temel kullanım şartlarını açıklar. Match A Man bir sosyal spor ve etkinlik platformudur; kullanıcıların spor ve sosyal etkinlikler etrafında profil oluşturmasına, etkinlik keşfetmesine, etkinlik oluşturmasına, katılım isteği göndermesine ve topluluk içinde iletişim kurmasına yardımcı olur.',
         ),
         _LegalSection(
-          title: 'Platformun rolü',
+          title: 'Yaş ve uygunluk',
           body:
-              'Match A Man spor ve sosyal etkinlikleri keşfetmek, oluşturmak, katılım isteği göndermek ve diğer kullanıcılarla uygulama içinde iletişim kurmak için aracılık sağlayan bir platformdur. Platform, kullanıcılar tarafından oluşturulan etkinliklerin doğrudan düzenleyicisi, gözetmeni, sigortacısı, güvenlik sağlayıcısı veya fiziksel kontrol sorumlusu değildir.',
+              'Match A Man yalnızca 18 yaş ve üzeri kullanıcılar içindir. 18 yaşın altındaysan veya bulunduğun yerde bu hizmeti kullanman yasal olarak uygun değilse uygulamayı kullanmamalısın.',
         ),
         _LegalSection(
-          title: 'Etkinliklere katılım riski',
+          title: 'Hesap, giriş ve kabul',
           body:
-              'Kullanıcılar etkinlik oluşturma ve etkinliklere katılma kararını kendi sorumluluğunda verir. Etkinlik detaylarını, konumu, saatleri, katılımcıları, ulaşımı, mekan koşullarını, fiziksel uygunluğu ve güvenlik durumunu kontrol etmek kullanıcının sorumluluğundadır. Spor aktiviteleri sakatlanma ve kaza riski taşıyabilir.',
+              'Uygulamaya e-posta/şifre veya Google ile giriş yapılabilir. Hesap oluştururken Kullanıcı Sözleşmesi kabul kutusunu işaretlemen istenebilir. Hesap güvenliğinden, giriş bilgilerinin korunmasından ve hesabın üzerinden yapılan işlemlerden sen sorumlusun.',
         ),
         _LegalSection(
-          title: 'Sorumluluk sınırı',
+          title: 'Profil bilgilerinin doğruluğu',
           body:
-              'Yürürlükteki hukukun izin verdiği en geniş ölçüde; yaralanma, kaza, kavga, hırsızlık, taciz, mal kaybı, eşya hasarı, ulaşım sorunu, mekan problemi, iptal, geç kalma, gelmeme, kullanıcılar arası anlaşmazlık, yanlış veya eksik etkinlik bilgisi gibi durumlardan platform sorumlu tutulamaz.',
+              'Kullanıcı adı, profil bilgileri, şehir/ilçe, fotoğraf, açıklama ve etkinliklere ilişkin bilgilerin doğru, güncel ve yanıltıcı olmayacak şekilde paylaşılması beklenir. Başkasının kimliğine bürünmek, sahte profil açmak veya yanıltıcı bilgilerle topluluk güvenini zedelemek yasaktır.',
         ),
         _LegalSection(
-          title: 'Kullanıcı davranışı',
+          title: 'Etkinlikler ve katılım istekleri',
           body:
-              'Kullanıcılar yasalara, mekan kurallarına, spor güvenliği kurallarına ve topluluk kurallarına uymalıdır. Hukuka aykırı, zararlı, nefret içerikli, cinsel, şiddet içeren, tehditkar, taciz edici, dolandırıcı, yanıltıcı veya başkalarının haklarını ihlal eden içerik paylaşmak yasaktır.',
+              'Kullanıcılar etkinlik oluşturabilir, etkinlik konumu veya buluşma noktası ekleyebilir ve etkinliklere katılım isteği gönderebilir. Etkinlik sahibi veya host, katılım isteklerini etkinliğin amacı, kontenjanı, güvenliği ve topluluk deneyimi gibi makul sebeplerle onaylayabilir ya da reddedebilir.',
         ),
         _LegalSection(
-          title: 'Kimlik ve hesap kullanımı',
+          title: 'Etkinlik katılımı ve kullanıcı sorumluluğu',
           body:
-              'Başkasının kimliğine bürünmek, yanıltıcı profil oluşturmak, sahte etkinlik açmak, başka kullanıcıları kandırmak, güven puanı veya katılım süreçlerini kötüye kullanmak yasaktır. Bir hesap, bir profil ve tek bir kamusal kimlik prensibi korunur.',
+              'Etkinliğe katılmadan önce saat, konum, ulaşım, ekipman, seviye beklentisi, mekan koşulları ve kişisel uygunluk gibi bilgileri kontrol etmelisin. Katılacağını belirttiğin etkinliklere makul özen göstermen, gelemeyeceksen mümkün olduğunca erken haber vermen ve diğer kullanıcıların planlarını gereksiz yere aksatmaman beklenir.',
+        ),
+        _LegalSection(
+          title: 'Spor ve fiziksel aktivite riskleri',
+          body:
+              'Spor ve fiziksel aktiviteler efor, temas, düşme, sakatlanma, kaza veya sağlık riski içerebilir. Kendi sağlık ve kondisyon durumunu değerlendirmen, gerekirse profesyonel sağlık görüşü alman ve etkinlik sırasında mekan, host ve güvenlik kurallarına uyman gerekir. Acil durumlarda uygulama içi bildirim yerine yerel acil yardım, tesis yetkilileri veya yetkili makamlarla iletişime geçilmelidir.',
+        ),
+        _LegalSection(
+          title: 'Topluluk kuralları ve yasak davranışlar',
+          body:
+              'Taciz, tehdit, nefret söylemi, ayrımcılık, dolandırıcılık, kimliğe bürünme, spam, hukuka aykırı faaliyet, güvenli olmayan davranışlar, başkalarının kişisel verilerini izinsiz paylaşmak, izinsiz reklam yapmak veya platformun güvenliğini bozmak yasaktır. Topluluk Kuralları bu sözleşmenin tamamlayıcı parçası olarak uygulanabilir.',
+        ),
+        _LegalSection(
+          title: 'Kullanıcı içerikleri',
+          body:
+              'Profil bilgileri, etkinlik açıklamaları, gönderiler, fotoğraflar, yorumlar ve mesajlar gibi kullanıcı içeriklerinden içeriği paylaşan kullanıcı sorumludur. Match A Man, kuralları ihlal eden, güvenlik riski oluşturan veya başkalarının haklarını ihlal eden içerikleri görünürlükten kaldırabilir, sınırlandırabilir veya incelemeye alabilir.',
+        ),
+        _LegalSection(
+          title: 'Raporlama, engelleme ve moderasyon',
+          body:
+              'Kullanıcılar rahatsız edici davranışları, etkinlikleri, profilleri, gönderileri veya yorumları bildirebilir ve kullanıcıları engelleyebilir. Match A Man, güvenlik, kötüye kullanım veya kural ihlali durumlarında içerikleri kaldırabilir, etkinlik katılımını sınırlandırabilir, hesabı geçici olarak kısıtlayabilir, askıya alabilir veya gerekli hallerde hesabın kapatılması sürecini başlatabilir.',
+        ),
+        _LegalSection(
+          title: 'Bildirimler',
+          body:
+              'Match A Man; hesap, profil, etkinlik, katılım isteği, host onayı/reddi, güvenlik, destek, uygulama işleyişi ve topluluk deneyimiyle ilgili uygulama içi bildirimler veya push bildirimleri gönderebilir. Cihaz bildirim izinlerini işletim sistemi ayarlarından yönetebilirsin.',
+        ),
+        _LegalSection(
+          title: 'Flört uygulaması değildir',
+          body:
+              'Match A Man flört veya dating uygulaması değildir. Platformun amacı kullanıcıları romantik eşleşme için değil, sosyal spor ve etkinlik deneyimleri etrafında bir araya getirmektir. Taciz edici, ısrarcı, cinsel içerikli veya rahatsız edici iletişim topluluk kurallarına aykırıdır.',
+        ),
+        _LegalSection(
+          title: 'Kapalı test ve ödeme durumu',
+          body:
+              'Mevcut kapalı test sürümünde uygulama içi ödeme, cüzdan veya ücretli biletleme sunulmamaktadır. Bazı işletme etkinliklerinde fiyat bilgisi görüntülenebilir; bu bilgi uygulama içi tahsilat, cüzdan bakiyesi, satın alma veya iade süreci anlamına gelmez. İleride ücretli özellikler eklenirse ayrı ödeme şartları, bilgilendirmeler veya politikalar yayımlanabilir.',
         ),
         _LegalSection(
           title: 'İşletme hesapları',
           body:
-              'İşletme hesabı açan kullanıcılar işletme bilgileri, fiyatlar, hizmet iddiaları, mekan koşulları, etkinlik açıklamaları, vergi/yasal uygunluk ve müşteri ilişkilerinden kendileri sorumludur. İşletme hesaplarının kötüye kullanılması, yanıltıcı tanıtım yapılması veya uygunsuz etkinlik açılması hesabın kısıtlanmasına yol açabilir.',
+              'Uygulamada işletme başvurusu ve işletme profili akışları bulunabilir. İşletme hesabı kullanan kişiler; işletme bilgileri, etkinlik açıklamaları, mekan koşulları, fiyat bilgisi, hizmet iddiaları ve yasal uygunluk gibi konularda doğru ve yanıltıcı olmayan bilgi paylaşmalıdır. Match A Man, işletme başvurularını inceleyebilir ve uygun görmediği hesapları sınırlandırabilir.',
         ),
         _LegalSection(
-          title: 'Moderasyon ve güvenlik',
+          title: 'Fikri mülkiyet',
           body:
-              'Platform; güvenlik, kötüye kullanım, şikayet, hukuki risk veya topluluk ihlali durumlarında içerikleri kaldırabilir, etkinlikleri gizleyebilir, hesapları kısıtlayabilir, işletme başvurularını reddedebilir veya işletme hesaplarını askıya alabilir. Şikayetler incelenir ancak anında işlem garantisi verilmez.',
+              'Match A Man adı, arayüzü, yazılımı, görsel kimliği, metinleri ve platforma ait teknik bileşenler ilgili hak sahiplerine aittir. Kullanıcılar platformu kopyalayamaz, tersine mühendislik yapamaz, yetkisiz erişim denemesi yapamaz veya platformun güvenliğini ve işleyişini bozacak araçlar kullanamaz.',
         ),
         _LegalSection(
-          title: 'Ödeme, OTP ve push durumu',
+          title: 'Hizmetin kullanılabilirliği',
           body:
-              'Ücretli/ödeme özellikleri açıkça uygulanmadıkça aktif değildir. Telefon doğrulama veya OTP ertelenmiş olabilir. Firebase veya push bildirimleri aktif değilse kullanıcılar yalnızca uygulama içi bildirimleri görebilir.',
+              'Kapalı test ve MVP sürümü hata, kesinti, gecikme, eksik özellik veya beklenmeyen davranışlar içerebilir. Match A Man hizmeti güvenli ve kullanılabilir tutmak için makul çabayı gösterir; ancak uygulamanın her zaman kesintisiz, hatasız veya tüm cihazlarda aynı şekilde çalışacağı garanti edilmez.',
         ),
         _LegalSection(
-          title: 'Değişiklikler',
+          title: 'Sorumluluğun sınırları',
           body:
-              'Kullanım şartları zaman içinde güncellenebilir. Önemli değişiklikler uygulama içinde veya uygun başka kanallarla duyurulabilir. Güncellenen şartları kabul etmeyen kullanıcı uygulamayı kullanmayı bırakmalıdır.',
+              'Match A Man, kullanıcıların kendi içerikleri, etkinlik kararları, fiziksel katılım tercihleri, kullanıcılar arası iletişimleri ve üçüncü taraf mekan/işletme koşulları üzerinde tam kontrol sahibi değildir. Yürürlükteki zorunlu tüketici hakları ve emredici mevzuat saklı kalmak üzere, platformun sorumluluğu makul ve hukuken izin verilen sınırlar içinde değerlendirilir.',
+        ),
+        _LegalSection(
+          title: 'Sözleşme Değişiklikleri',
+          body:
+              'Match A Man bu sözleşmeyi zaman zaman güncelleyebilir. Güncel sözleşme uygulama içinde veya resmi sayfalarda yayımlanır. Önemli değişiklikler uygulama içi bildirim, e-posta, push bildirimi veya benzeri makul yöntemlerle duyurulabilir ve kullanıcıya değişiklikleri inceleme fırsatı verilir. Kullanıcı, önemli bir değişikliğin yürürlük tarihinden sonra uygulamayı kullanmaya devam ederse güncel şartları kabul etmiş sayılabilir. Bir değişiklik hukuken veya teknik olarak yeniden açık kabul gerektirirse, uygulamaya devam etmek için kullanıcıdan güncellenen şartları kabul etmesi istenebilir. Güncellenen şartları kabul etmeyen kullanıcı uygulamayı kullanmayı bırakabilir ve hesap silme talebinde bulunabilir. KVKK, Gizlilik Politikası, Aydınlatma Metni veya açık rıza gerektiren değişiklikler bu sözleşmenin içine gizlenmez; gerekli hallerde ayrı metinler veya onay ekranları üzerinden yönetilir.',
+        ),
+        _LegalSection(
+          title: 'Hesap silme ve sona erme',
+          body:
+              'Kullanıcılar uygulama içindeki hesap silme veya destek kanallarını kullanarak hesaplarına ilişkin taleplerini iletebilir. Match A Man, kural ihlali, güvenlik riski, kötüye kullanım veya hukuki zorunluluk halinde hesap erişimini sınırlandırabilir ya da hesabı askıya alabilir. Hesap silme ve veri saklama süreçleri geçerli mevzuat, güvenlik kayıtları ve zorunlu saklama süreleri dikkate alınarak yürütülür.',
+        ),
+        _LegalSection(
+          title: 'Uygulanacak hukuk',
+          body:
+              'Bu sözleşmenin yorumlanmasında Türkiye Cumhuriyeti hukuku uygulanır. Tüketici hakları, zorunlu yetki kuralları ve yürürlükteki emredici mevzuattan doğan haklar saklıdır.',
+        ),
+        _LegalSection(
+          title: 'İletişim ve destek',
+          body:
+              'Destek, güvenlik, geri bildirim, hesap ve veri talepleri için uygulama içindeki destek ve geri bildirim kanallarını kullanabilirsin. Resmi iletişim kanalları uygulama içinde veya Match A Man tarafından duyurulan resmi sayfalarda yayımlanabilir.',
         ),
       ],
     ),
     LegalInfoType.communityGuidelines => const _LegalContent(
       title: 'Topluluk Kuralları',
       notice:
-          'Bu metin MVP taslağıdır. Yayın öncesi güvenlik ve hukuk incelemesi gerekir.',
+          'Bu kurallar, etkinlik odaklı ve güvenli bir spor topluluğu deneyimi için geçerlidir.',
       sections: [
         _LegalSection(
           title: 'Saygılı iletişim',
@@ -201,9 +331,9 @@ _LegalContent _content(LegalInfoType type) {
       ],
     ),
     LegalInfoType.eventSafetyDisclaimer => const _LegalContent(
-      title: 'Etkinlik Güvenliği ve Sorumluluk Reddi',
+      title: 'Etkinlik Güvenliği ve Sorumluluk Bilgilendirmesi',
       notice:
-          'Bu metin MVP taslağıdır. Yayın öncesi avukat veya hukuk danışmanı tarafından incelenmelidir.',
+          'Etkinliklere katılım kararı ve hazırlığı kullanıcının kendi değerlendirmesine bağlıdır.',
       sections: [
         _LegalSection(
           title: 'Kendi riskinle katılım',
@@ -233,24 +363,49 @@ _LegalContent _content(LegalInfoType type) {
       ],
     ),
     LegalInfoType.support => const _LegalContent(
-      title: 'Bize Ulaş / Destek',
+      title: 'Match A Man Hesap Silme Bilgilendirmesi',
       notice:
-          'Bu metin MVP taslağıdır. Final destek kanalları yayın öncesi netleştirilmelidir.',
+          'Sürüm: account_deletion_v1_2026_06_10\nSon güncelleme: 10 Haziran 2026\nBu metin hesap silme, veri talepleri ve destek kanalları için kapalı test MVP bilgilendirmesidir.',
       sections: [
         _LegalSection(
-          title: 'Uygulama içi destek',
+          title: 'Uygulama içinden hesap silme talebi',
           body:
-              'Ayarlar > Geri bildirim gönder ekranından hata, öneri veya deneyim notunu iletebilirsin.',
+              'Hesabını silmek için uygulama içinde Ayarlar > Hesabımı sil yolunu kullanabilirsin. Bu ekranda devam etmek için SİL yazarak hesabın için silme talebi oluşturursun. Talep oluşturulduğunda oturumun kapatılır ve hesap silme/deaktivasyon süreci başlatılır.',
         ),
         _LegalSection(
-          title: 'Güvenlik konuları',
+          title: 'Talep sonrası işleyiş',
           body:
-              'Taciz, sahte etkinlik, dolandırıcılık, tehdit veya güvenlik riski gördüğünde ilgili kullanıcıyı, etkinliği, gönderiyi veya yorumu bildir ve gerekirse kullanıcıyı engelle.',
+              'Mevcut kapalı test sürümünde hesap silme işlemi anlık fiziksel silme olarak tamamlanmayabilir. Talep alındıktan sonra herkese açık profil kimliğin pasifleştirilebilir, profil görünürlüğün kapatılabilir, gelecek etkinliklerin yayından kaldırılabilir ve nihai veri silme/anonimleştirme işlemi kısa bir inceleme veya manuel backend süreci sonrasında tamamlanabilir.',
         ),
         _LegalSection(
-          title: 'Hesap talepleri',
+          title: 'Silinen veya anonimleştirilen veriler',
           body:
-              'MVP içinde işletme hesabını pasifleştirme ve kullanıcı hesabı silme talebi oluşturma akışları bulunur. Tam veri silme, saklama, erişim talebi ve yayın öncesi web destek süreci yasal metinlerle tamamlanmalıdır.',
+              'Hesap silme sürecinde profil bilgileri, herkese açık kullanıcı kimliği, avatar/profil görünürlüğü, gelecek etkinlikler, bazı sosyal içerikler, takip görünürlüğü ve hesapla ilişkilendirilen aktif kullanım kayıtları silinebilir, arşivlenebilir, pasifleştirilebilir veya anonimleştirilebilir. Silme yöntemi verinin türüne, görünürlüğüne ve güvenlik/uyuşmazlık ihtiyacına göre değişebilir.',
+        ),
+        _LegalSection(
+          title: 'Sınırlı süre saklanabilecek veriler',
+          body:
+              'Güvenlik, kötüye kullanımın önlenmesi, rapor veya şikayet incelemesi, hukuki yükümlülük, uyuşmazlık çözümü, dolandırıcılık veya sistem bütünlüğü gibi meşru sebeplerle bazı kayıtlar sınırlı süreyle saklanabilir. Bu kapsamda raporlar, engelleme ve moderasyon kayıtları, güvenlik olayları, zorunlu işlem kayıtları ve destek yazışmaları hemen silinmeyebilir.',
+        ),
+        _LegalSection(
+          title: 'Geçici pasifleştirme ve silme farkı',
+          body:
+              'Hesabın geçici olarak pasifleştirilmesi, gizlenmesi, askıya alınması veya işletme modunun kapatılması nihai hesap silme ile aynı şey değildir. Hesap silme talebi, kullanıcı hesabının kapatılması ve ilgili kişisel verilerin silinmesi ya da anonimleştirilmesi için ayrı bir süreçtir.',
+        ),
+        _LegalSection(
+          title: 'İşletme hesabı silme',
+          body:
+              'İşletme hesabı kullanıyorsan Ayarlar > İşletme hesabımı sil akışı işletme modunu pasifleştirir ve hesabın kullanıcı hesabı olarak devam edebilir. Bu işlem, kullanıcı hesabının tamamen silinmesiyle aynı değildir. Kullanıcı hesabının tamamen silinmesi için ayrıca Ayarlar > Hesabımı sil yolunu kullanmalısın.',
+        ),
+        _LegalSection(
+          title: 'Veri erişim ve düzeltme talepleri',
+          body:
+              'Kişisel verilerine erişim, düzeltme, silme, itiraz veya KVKK kapsamındaki diğer taleplerini uygulama içindeki Ayarlar > Geri bildirim gönder ekranından iletebilirsin. Hesap sahipliğini doğrulamak için makul ek bilgi istenebilir. Resmi iletişim ve destek kanalları uygulama içinde veya Match A Man’in resmi sayfalarında paylaşılır.',
+        ),
+        _LegalSection(
+          title: 'Uygulama dışı başvuru ve destek',
+          body:
+              'Uygulamaya erişemiyorsan, resmi destek kanalı üzerinden hesap e-postanı, kullanıcı adını biliyorsan kullanıcı adını ve talebinin hesap silme mi yoksa veri talebi mi olduğunu paylaşarak başvuru yapabilirsin. Resmi iletişim ve destek kanalları uygulama içinde veya Match A Man’in resmi sayfalarında paylaşılır.',
         ),
       ],
     ),

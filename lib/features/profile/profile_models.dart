@@ -67,8 +67,12 @@ class Profile {
       accountStatus == ProfileAccountStatus.deleted;
 
   bool get hasCoreIdentity {
+    return hasMinimumProfile && firstName?.trim().isNotEmpty == true;
+  }
+
+  bool get hasMinimumProfile {
     return username?.trim().isNotEmpty == true &&
-        firstName?.trim().isNotEmpty == true;
+        ProfileUsername.validate(username) == null;
   }
 
   bool get hasEventRequiredFields {
@@ -228,7 +232,7 @@ class ProfileFormData {
   final String? avatarUrl;
 
   bool get isComplete {
-    return normalizedUsername.isNotEmpty && firstName.trim().isNotEmpty;
+    return normalizedUsername.isNotEmpty;
   }
 
   String get normalizedUsername => ProfileUsername.normalize(username);
@@ -237,7 +241,9 @@ class ProfileFormData {
     return {
       'username': normalizedUsername,
       if (UserHandle.isValidTag(tag)) 'tag': tag!.trim(),
-      'first_name': firstName.trim(),
+      'first_name': firstName.trim().isEmpty
+          ? normalizedUsername
+          : firstName.trim(),
       'birth_date': birthDate == null ? null : _dateToJson(birthDate!),
       'gender': _nullableTrim(gender),
       'city': _nullableTrim(city),
@@ -392,6 +398,10 @@ class PublicProfileDetail {
     this.businessLogoUrl,
     this.businessCoverUrl,
     this.businessIsVerified = false,
+    this.businessCustomThemeColor,
+    this.businessPinnedEventId,
+    this.businessGalleryUrls,
+    this.businessIsPlusActive = false,
     this.followersCount = 0,
     this.followingCount = 0,
     this.isFollowing = false,
@@ -423,6 +433,10 @@ class PublicProfileDetail {
   final String? businessLogoUrl;
   final String? businessCoverUrl;
   final bool businessIsVerified;
+  final String? businessCustomThemeColor;
+  final String? businessPinnedEventId;
+  final List<String>? businessGalleryUrls;
+  final bool businessIsPlusActive;
   final int followersCount;
   final int followingCount;
   final bool isFollowing;
@@ -477,15 +491,19 @@ class PublicProfileDetail {
   }
 
   factory PublicProfileDetail.fromJson(Map<String, dynamic> json) {
+    final userIdVal = json['user_id'];
+    if (userIdVal == null) {
+      throw ArgumentError('user_id is required');
+    }
     return PublicProfileDetail(
-      userId: json['user_id'].toString(),
-      username: json['username'] as String?,
-      tag: json['tag'] as String?,
-      firstName: json['first_name'] as String?,
-      city: json['city'] as String?,
-      district: json['district'] as String?,
-      avatarUrl: json['avatar_url'] as String?,
-      bio: json['bio'] as String?,
+      userId: userIdVal.toString(),
+      username: json['username']?.toString(),
+      tag: json['tag']?.toString(),
+      firstName: json['first_name']?.toString(),
+      city: json['city']?.toString(),
+      district: json['district']?.toString(),
+      avatarUrl: json['avatar_url']?.toString(),
+      bio: json['bio']?.toString(),
       trustScore: (json['trust_score'] as num?)?.toInt(),
       isPrivate: json['is_private'] as bool? ?? false,
       accountType: json['account_type']?.toString() ?? ProfileAccountType.user,
@@ -501,6 +519,14 @@ class PublicProfileDetail {
       businessLogoUrl: json['business_logo_url']?.toString(),
       businessCoverUrl: json['business_cover_url']?.toString(),
       businessIsVerified: json['business_is_verified'] as bool? ?? false,
+      businessCustomThemeColor: json['business_custom_theme_color']?.toString(),
+      businessPinnedEventId: json['business_pinned_event_id']?.toString(),
+      businessGalleryUrls: json['business_gallery_urls'] is List
+          ? (json['business_gallery_urls'] as List)
+                .map((e) => e.toString())
+                .toList()
+          : null,
+      businessIsPlusActive: json['business_is_plus_active'] as bool? ?? false,
       followersCount: (json['followers_count'] as num?)?.toInt() ?? 0,
       followingCount: (json['following_count'] as num?)?.toInt() ?? 0,
       isFollowing: json['is_following'] as bool? ?? false,

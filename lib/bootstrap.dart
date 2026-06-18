@@ -3,27 +3,37 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:firebase_core/firebase_core.dart';
 
 import 'app.dart';
 import 'services/supabase_service.dart';
 
 Future<void> bootstrap() {
-  final startup = runZonedGuarded<Future<void>>(
-    () async {
-      WidgetsFlutterBinding.ensureInitialized();
-      _installErrorHandlers();
+  final startup = runZonedGuarded<Future<void>>(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    _installErrorHandlers();
 
-      try {
-        await SupabaseService.initialize();
-        runApp(const MatchAManApp());
-      } catch (error, stackTrace) {
-        _logStartupError(error, stackTrace);
-        runApp(const StartupFailureApp());
-      }
-    },
-    _logStartupError,
-  );
+    try {
+      await SupabaseService.initialize();
+      await _initializeFirebaseForPush();
+      runApp(const MatchAManApp());
+    } catch (error, stackTrace) {
+      _logStartupError(error, stackTrace);
+      runApp(const StartupFailureApp());
+    }
+  }, _logStartupError);
   return startup ?? Future.value();
+}
+
+Future<void> _initializeFirebaseForPush() async {
+  try {
+    debugPrint('[Startup] Firebase push init started');
+    await Firebase.initializeApp();
+    debugPrint('[Startup] Firebase initialized for push transport');
+  } catch (error) {
+    debugPrint('[Startup] Firebase push init skipped: ${error.runtimeType}');
+  }
 }
 
 void _installErrorHandlers() {
@@ -49,6 +59,13 @@ class StartupFailureApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
+      locale: Locale('tr', 'TR'),
+      supportedLocales: [Locale('tr', 'TR')],
+      localizationsDelegates: [
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
       home: StartupFailureScreen(),
     );
   }

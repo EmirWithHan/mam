@@ -6,20 +6,34 @@ class SportTypes {
   static const other = 'Diğer';
 
   static const values = [
-    other,
     'Futbol',
     'Basketbol',
-    'Tenis',
     'Voleybol',
-    'Koşu',
-    'Yürüyüş',
-    'Bisiklet',
-    'Yoga',
-    'Yüzme',
-    'Fitness',
+    'Tenis',
     'Padel',
-    'Masa Tenisi',
-    'Badminton',
+    'Fitness',
+    'Yoga',
+    'Pilates',
+    'Koşu',
+    'Bisiklet',
+    'Yüzme',
+    'Masa tenisi',
+    'Dövüş sporları',
+    'Dans',
+    'Kamp',
+    'Paintball',
+    'Balık tutma',
+    'Doğa yürüyüşü',
+    'Trekking',
+    'Piknik',
+    'Bowling',
+    'Bilardo',
+    'Karting',
+    'Kayak / Snowboard',
+    'Tırmanış',
+    'Satranç',
+    'Masa oyunları',
+    other,
   ];
 }
 
@@ -62,7 +76,10 @@ String sportLabelFor(String? sportType) {
       value.contains('outdoor') ||
       value.contains('doga') ||
       value.contains('trekking') ||
-      value.contains('yuruyus')) {
+      value.contains('yuruyus') ||
+      value.contains('kamp') ||
+      value.contains('piknik') ||
+      value.contains('balik')) {
     return 'Outdoor';
   }
 
@@ -134,7 +151,10 @@ EventCoverStyle eventCoverStyleForSport(String? sportType) {
       value.contains('outdoor') ||
       value.contains('doga') ||
       value.contains('trekking') ||
-      value.contains('yuruyus')) {
+      value.contains('yuruyus') ||
+      value.contains('kamp') ||
+      value.contains('piknik') ||
+      value.contains('balik')) {
     return const EventCoverStyle(
       label: 'Outdoor',
       icon: Icons.hiking,
@@ -170,7 +190,9 @@ IconData sportIconFor(String? sportType) {
   if (value.contains('volleyball') || value.contains('voleybol')) {
     return Icons.sports_volleyball;
   }
-  if (value.contains('yoga')) return Icons.self_improvement;
+  if (value.contains('yoga') || value.contains('pilates')) {
+    return Icons.self_improvement;
+  }
   if (value.contains('running') || value.contains('kosu')) {
     return Icons.directions_run;
   }
@@ -188,10 +210,56 @@ IconData sportIconFor(String? sportType) {
   }
   if (value.contains('hiking') ||
       value.contains('doga') ||
-      value.contains('trekking')) {
+      value.contains('trekking') ||
+      value.contains('yuruyus')) {
     return Icons.hiking;
   }
-  if (value.contains('badminton')) return Icons.sports_tennis;
+  if (value.contains('badminton') || value.contains('masa tenisi')) {
+    return Icons.sports_tennis;
+  }
+  if (value.contains('dovus') || value.contains('combat')) {
+    return Icons.sports_martial_arts;
+  }
+  if (value.contains('dans') || value.contains('dance')) {
+    return Icons.music_note;
+  }
+  if (value.contains('kamp') || value.contains('camp')) {
+    return Icons.explore;
+  }
+  if (value.contains('paintball')) {
+    return Icons.adjust;
+  }
+  if (value.contains('balik') || value.contains('fishing')) {
+    return Icons.waves;
+  }
+  if (value.contains('piknik') || value.contains('picnic')) {
+    return Icons.outdoor_grill;
+  }
+  if (value.contains('bowling')) {
+    return Icons.adjust;
+  }
+  if (value.contains('bilardo') || value.contains('billiards')) {
+    return Icons.lens;
+  }
+  if (value.contains('karting') || value.contains('race')) {
+    return Icons.directions_car;
+  }
+  if (value.contains('kayak') ||
+      value.contains('ski') ||
+      value.contains('snowboard')) {
+    return Icons.downhill_skiing;
+  }
+  if (value.contains('tirmanis') || value.contains('climbing')) {
+    return Icons.terrain;
+  }
+  if (value.contains('satranc') || value.contains('chess')) {
+    return Icons.extension;
+  }
+  if (value.contains('board') ||
+      value.contains('masa oyun') ||
+      value.contains('game')) {
+    return Icons.casino;
+  }
   if (value.contains('other') || value.contains('diger')) {
     return Icons.sports_handball;
   }

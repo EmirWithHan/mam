@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/utils/date_formatter.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
@@ -152,7 +153,8 @@ class _BlockedUserCard extends StatelessWidget {
           children: [
             PublicProfilePreviewTile(
               userId: block.blockedUserId,
-              subtitle: 'Engellendi: ${_formatDate(block.createdAt)}',
+              subtitle:
+                  'Engellendi: ${DateFormatter.shortDate(block.createdAt)}',
               compact: true,
             ),
             const SizedBox(height: AppSpacing.sm),
@@ -178,12 +180,5 @@ class _BlockedUserCard extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatDate(DateTime value) {
-    final year = value.year.toString().padLeft(4, '0');
-    final month = value.month.toString().padLeft(2, '0');
-    final day = value.day.toString().padLeft(2, '0');
-    return '$year-$month-$day';
   }
 }

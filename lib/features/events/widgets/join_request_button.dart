@@ -142,7 +142,8 @@ class JoinRequestButton extends StatelessWidget {
       );
     }
 
-    if (profileState.isLoading) {
+    if (profileState.isLoading ||
+        profileState.status == ProfileStatus.initial) {
       return AppButton(
         label: 'Profil kontrol ediliyor',
         isLoading: isLoading,
@@ -165,8 +166,9 @@ class JoinRequestButton extends StatelessWidget {
         children: [
           const _StatusPanel(
             icon: Icons.assignment_ind_outlined,
-            title: 'Etkinliklere katılmak için profilini tamamlamalısın.',
-            message: 'Gerekli bilgiler: şehir, ilçe ve doğum tarihi.',
+            title: 'Profilini tamamla',
+            message:
+                'Etkinliklere katılım isteği göndermeden önce profil bilgilerini tamamlamalısın.',
             color: AppColors.primary,
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -176,7 +178,6 @@ class JoinRequestButton extends StatelessWidget {
               RouteNames.profileComplete,
               queryParameters: {
                 'mode': RoutePaths.profileCompleteModeEventRequirements,
-                'returnTo': _currentReturnPath(context),
               },
             ),
           ),
@@ -193,11 +194,6 @@ class JoinRequestButton extends StatelessWidget {
     }
 
     return AppButton(label: currentRequest.status, onPressed: null);
-  }
-
-  String _currentReturnPath(BuildContext context) {
-    final uri = GoRouterState.of(context).uri;
-    return uri.hasQuery ? '${uri.path}?${uri.query}' : uri.path;
   }
 }
 

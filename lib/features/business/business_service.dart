@@ -3,6 +3,7 @@ import '../../core/utils/error_messages.dart';
 import '../../core/utils/rate_limits.dart';
 import '../../services/rate_limit_service.dart';
 import '../../services/supabase_service.dart';
+import '../profile/profile_badges.dart';
 import 'business_models.dart';
 
 class BusinessAccountException implements Exception {
@@ -86,6 +87,18 @@ class BusinessAccountService {
       final account = BusinessAccount.fromJson(data);
       return account;
     } catch (error) {
+      if (_isMissingBusinessSchema(error)) {
+        try {
+          final data = await SupabaseService.client
+              .from('business_accounts')
+              .insert(input.toLegacyCreateJson(ownerUserId: userId))
+              .select()
+              .single();
+          return BusinessAccount.fromJson(data);
+        } catch (legacyError) {
+          throw BusinessAccountException(_friendlyBusinessError(legacyError));
+        }
+      }
       throw BusinessAccountException(_friendlyBusinessError(error));
     }
   }
@@ -104,6 +117,53 @@ class BusinessAccountService {
 
       final account = BusinessAccount.fromJson(data);
       return account;
+    } catch (error) {
+      if (_isMissingBusinessSchema(error)) {
+        try {
+          final data = await SupabaseService.client
+              .from('business_accounts')
+              .update(input.toLegacyUpdateJson())
+              .eq('id', id)
+              .select()
+              .single();
+          return BusinessAccount.fromJson(data);
+        } catch (legacyError) {
+          throw BusinessAccountException(_friendlyBusinessError(legacyError));
+        }
+      }
+      throw BusinessAccountException(_friendlyBusinessError(error));
+    }
+  }
+
+  Future<BusinessAccount> updateCustomizations({
+    required String id,
+    String? customThemeColor,
+    String? pinnedEventId,
+    List<String>? galleryUrls,
+  }) async {
+    try {
+      final updates = <String, dynamic>{};
+      if (customThemeColor != null) {
+        updates['custom_theme_color'] = customThemeColor;
+      }
+      updates['pinned_event_id'] =
+          (pinnedEventId == null ||
+              pinnedEventId.isEmpty ||
+              pinnedEventId == 'null')
+          ? null
+          : pinnedEventId;
+      if (galleryUrls != null) {
+        updates['gallery_urls'] = galleryUrls;
+      }
+
+      final data = await SupabaseService.client
+          .from('business_accounts')
+          .update(updates)
+          .eq('id', id)
+          .select()
+          .single();
+
+      return BusinessAccount.fromJson(data);
     } catch (error) {
       throw BusinessAccountException(_friendlyBusinessError(error));
     }
@@ -163,6 +223,19 @@ class BusinessAccountService {
     }
   }
 
+  Future<List<ProfileBadge>> fetchBusinessBadges(String businessId) async {
+    final data = await SupabaseService.client
+        .rpc('get_business_badges', params: {'p_business_id': businessId})
+        .catchError((Object error) {
+          logSupabaseDebug('Business', 'get_business_badges', error);
+          throw error;
+        });
+    return (data as List<dynamic>)
+        .whereType<Map>()
+        .map((row) => ProfileBadge.fromJson(Map<String, dynamic>.from(row)))
+        .toList(growable: false);
+  }
+
   Future<bool> isCurrentUserAdmin() async {
     final data = await SupabaseService.client
         .rpc('is_current_user_admin')
@@ -205,8 +278,6 @@ class BusinessAccountService {
     try {
       await _rateLimitService.checkAndRecord(
         action: RateLimitActions.businessApplicationReview,
-        limitCount: RateLimitRules.businessApplicationReviewsPerHour,
-        windowSeconds: RateLimitRules.hourWindowSeconds,
         targetId: applicationId,
       );
       await SupabaseService.client.rpc(
@@ -227,8 +298,6 @@ class BusinessAccountService {
     try {
       await _rateLimitService.checkAndRecord(
         action: RateLimitActions.businessApplicationReview,
-        limitCount: RateLimitRules.businessApplicationReviewsPerHour,
-        windowSeconds: RateLimitRules.hourWindowSeconds,
         targetId: applicationId,
       );
       await SupabaseService.client.rpc(
@@ -264,7 +333,7 @@ String friendlyBusinessApplicationErrorMessage(Object error) {
     return 'Başvuru gönderilemedi. Yetki ayarları kontrol edilmeli.';
   }
   if (message.contains('not_admin')) {
-    return 'Bu işlem için admin yetkisi gerekli.';
+    return 'Bu işlem için yönetici yetkisi gerekli.';
   }
   if (message.contains('invalid_business_application_phone')) {
     return 'Geçerli bir işletme telefon numarası gir.';
@@ -307,4 +376,16 @@ String friendlyBusinessAccountDeleteErrorMessage(Object error) {
 
 void _debugPrintSupabaseError(String action, Object error) {
   logSupabaseDebug('Business', action, error);
+}
+
+bool _isMissingBusinessSchema(Object error) {
+  final message = error.toString().toLowerCase();
+  return (message.contains('latitude') ||
+          message.contains('longitude') ||
+          message.contains('working_hours') ||
+          message.contains('amenities')) &&
+      (message.contains('column') ||
+          message.contains('schema') ||
+          message.contains('pgrst') ||
+          message.contains('42703'));
 }

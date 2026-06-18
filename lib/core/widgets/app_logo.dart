@@ -40,13 +40,27 @@ class AppLogo extends StatelessWidget {
 
     if (!showText) return logo;
 
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        logo,
-        const SizedBox(width: AppSpacing.sm),
-        Text('MaM', style: AppTextStyles.logo),
-      ],
+    return FittedBox(
+      fit: BoxFit.scaleDown,
+      alignment: Alignment.centerLeft,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          logo,
+          const SizedBox(width: AppSpacing.xs),
+          ShaderMask(
+            shaderCallback: (bounds) => const LinearGradient(
+              colors: [AppColors.primary, Color(0xFFFF9A76)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ).createShader(bounds),
+            child: Text(
+              'MaM',
+              style: AppTextStyles.logo.copyWith(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

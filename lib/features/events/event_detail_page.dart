@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 
 import '../../core/layout/responsive_layout.dart';
 import '../../core/router/route_names.dart';
@@ -15,6 +16,7 @@ import '../../core/widgets/event_cover_image.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/error_view.dart';
+import '../../core/widgets/adaptive_dialog.dart';
 import '../../services/maps_service.dart';
 import '../auth/auth_provider.dart';
 import '../business/business_reviews_models.dart';
@@ -29,13 +31,14 @@ import '../reports/reports_models.dart';
 import '../reports/widgets/block_button.dart';
 import '../reports/widgets/report_button.dart';
 import 'business_event_check_in_page.dart';
+import 'host_analytics_page.dart';
 import 'events_models.dart';
 import 'events_provider.dart';
-import 'widgets/event_call_button.dart';
 import 'widgets/event_participants_preview.dart';
 import 'join_requests_provider.dart';
 import 'widgets/host_join_request_tile.dart';
 import 'widgets/join_request_button.dart';
+import 'widgets/event_share_sheet.dart';
 
 class EventDetailPage extends ConsumerStatefulWidget {
   const EventDetailPage({super.key, required this.eventId});
@@ -89,11 +92,32 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: 'Geri',
           onPressed: () => _goBack(context),
           icon: const Icon(Icons.arrow_back),
         ),
         title: const AppLogo(size: 32, showText: true),
+        actions: eventAsync.valueOrNull == null
+            ? null
+            : [
+                IconButton(
+                  icon: const Icon(
+                    Icons.share_outlined,
+                    color: AppColors.primary,
+                  ),
+                  tooltip: 'Paylaş',
+                  onPressed: () {
+                    showModalBottomSheet<void>(
+                      context: context,
+                      isScrollControlled: true,
+                      backgroundColor: Colors.transparent,
+                      builder: (_) =>
+                          EventShareSheet(event: eventAsync.valueOrNull!),
+                    );
+                  },
+                ),
+                const SizedBox(width: AppSpacing.sm),
+              ],
       ),
       body: SafeArea(
         child: eventAsync.when(
@@ -148,6 +172,9 @@ class _EventDetailBody extends ConsumerWidget {
     final publicParticipantsAsync = ref.watch(
       eventPublicParticipantsProvider(event.id),
     );
+    final capacityCountsAsync = ref.watch(
+      eventCapacityBucketCountsProvider(event.id),
+    );
     final myParticipationAsync = ref.watch(
       eventMyParticipationProvider(event.id),
     );
@@ -182,12 +209,47 @@ class _EventDetailBody extends ConsumerWidget {
           isOwner: isHost,
           attendanceStatus: myParticipation?.attendanceStatus,
         );
+    final isQrWindowOpen = event.isAttendanceWindowOpen();
+    final qrWindowMessage = event.isBeforeAttendanceWindow()
+        ? 'Etkinlik zamanı gelmeden QR okutulamaz.'
+        : event.isAfterAttendanceWindow()
+        ? 'QR okutma süresi sona erdi. Gerekirse manuel düzeltme kullan.'
+        : null;
 
     return ListView(
       padding: AppResponsive.pagePadding(context),
       children: [
         _EventHeroCard(event: event, isHost: isHost),
         const SizedBox(height: AppSpacing.lg),
+        if (isHost) ...[
+          _HostQrScanCard(
+            isEnabled: isQrWindowOpen,
+            helperText: qrWindowMessage,
+            onScan: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => BusinessEventCheckInPage(
+                  eventId: event.id,
+                  eventTitle: event.titleLabel,
+                  openScannerOnLoad: true,
+                  qrScannerEnabled: true,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+        ] else if (!isHost && isFinalParticipant) ...[
+          _ParticipantQrCard(
+            event: event,
+            participation: myParticipation,
+            userId: ref.watch(authControllerProvider).userId,
+            isLoading: myParticipationAsync.isLoading,
+            onOpen: myParticipation?.checkInToken == null
+                ? null
+                : () =>
+                      _showCheckInQrModal(context, event, myParticipation, ref),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+        ],
         const _SectionTitle(title: 'Ev sahibi'),
         const SizedBox(height: AppSpacing.sm),
         _HostPreviewCard(hostId: event.hostId),
@@ -214,7 +276,10 @@ class _EventDetailBody extends ConsumerWidget {
             const SizedBox(height: AppSpacing.md),
             _InfoTile(
               label: 'Kontenjan',
-              value: event.formattedCapacityLabel,
+              value: _formatCapacityBreakdown(
+                event,
+                capacityCountsAsync.valueOrNull,
+              ),
               icon: Icons.groups_outlined,
             ),
           ],
@@ -244,18 +309,35 @@ class _EventDetailBody extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
         ],
-        if (!event.isPast && isHost && event.isBusinessEvent) ...[
+        if (isHost && event.isAfterAttendanceWindow()) ...[
           OutlinedButton.icon(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
                 builder: (_) => BusinessEventCheckInPage(
                   eventId: event.id,
                   eventTitle: event.titleLabel,
+                  qrScannerEnabled: false,
                 ),
               ),
             ),
-            icon: const Icon(Icons.fact_check_outlined),
-            label: const Text('Katılımcı kontrolü'),
+            icon: const Icon(Icons.edit_note_outlined),
+            label: const Text('Manuel düzeltme'),
+          ),
+          const SizedBox(height: AppSpacing.md),
+        ],
+        if (isHost) ...[
+          OutlinedButton.icon(
+            key: const Key('host_analytics_button'),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => HostAnalyticsPage(
+                  eventId: event.id,
+                  eventTitle: event.titleLabel,
+                ),
+              ),
+            ),
+            icon: const Icon(Icons.analytics_outlined),
+            label: const Text('Katılım Analizi'),
           ),
           const SizedBox(height: AppSpacing.md),
         ],
@@ -270,17 +352,47 @@ class _EventDetailBody extends ConsumerWidget {
           const SizedBox(height: AppSpacing.lg),
         ],
         if (!event.isPast && !isHost && isFinalParticipant) ...[
-          EventCallButton(
-            eventId: event.id,
-            targetUserId: event.hostId,
-            label: 'Ev sahibini ara',
-          ),
           if (canLeaveApprovedEvent) ...[
-            const SizedBox(height: AppSpacing.sm),
             _LeaveApprovedEventButton(
               onPressed: () =>
                   _confirmLeaveApprovedEvent(context, ref, requestController),
             ),
+          ],
+          if (myParticipation != null &&
+              myParticipation.isActiveApprovedParticipant &&
+              myParticipation.attendanceStatus !=
+                  EventParticipationStatus.checkedIn &&
+              !event.isPast) ...[
+            const SizedBox(height: AppSpacing.sm),
+            if (myParticipation.excuseText != null)
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSoft,
+                  border: Border.all(color: AppColors.border),
+                  borderRadius: AppRadius.lgBorder,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, color: AppColors.primary),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: Text(
+                          'Mazeret bildirdin: ${myParticipation.excuseText}',
+                          style: AppTextStyles.body,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              AppButton(
+                label: 'Gelemeyeceğim (Mazeret Bildir)',
+                variant: AppButtonVariant.outlined,
+                onPressed: () => _showExcuseDialog(context, ref, event.id),
+              ),
           ],
           const SizedBox(height: AppSpacing.lg),
         ],
@@ -378,34 +490,90 @@ class _EventDetailBody extends ConsumerWidget {
     WidgetRef ref,
     JoinRequestController requestController,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Etkinlikten çıkılsın mı?'),
-          content: const Text(
-            'Bu etkinlikten çıkarsan katılımın iptal edilir ve güven skorun 2 puan düşebilir.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Vazgeç'),
-            ),
-            TextButton(
-              style: TextButton.styleFrom(foregroundColor: AppColors.error),
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Etkinlikten çık'),
-            ),
-          ],
-        );
-      },
-    );
+    final eventStart = event.eventDate;
+    final isLateCancellation =
+        eventStart.difference(DateTime.now()).inHours < 24;
 
-    if (confirmed != true || !context.mounted) return;
+    String? excuseText;
+    bool confirmed = false;
+
+    if (isLateCancellation) {
+      final result = await showDialog<Map<String, dynamic>>(
+        context: context,
+        builder: (dialogContext) {
+          final textController = TextEditingController();
+          return AlertDialog(
+            title: const Text('Etkinlikten Ayrıl'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'Etkinliğe 24 saatten az süre kalmıştır. Ayrılma nedeninizi (mazeretinizi) belirterek güven skorunuzu koruyabilirsiniz. Yöneticiler mazeretinizi onaylarsa puan düşüşü geri alınacaktır.',
+                  style: TextStyle(fontSize: 13),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                TextField(
+                  controller: textController,
+                  decoration: const InputDecoration(
+                    labelText: 'Mazeretiniz (İsteğe bağlı)',
+                    hintText: 'Mazeretini yaz',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(),
+                child: const Text('Vazgeç'),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.error,
+                  foregroundColor: Colors.white,
+                ),
+                onPressed: () {
+                  Navigator.of(dialogContext).pop({
+                    'confirmed': true,
+                    'excuse': textController.text.trim(),
+                  });
+                },
+                child: const Text('Etkinlikten Ayrıl'),
+              ),
+            ],
+          );
+        },
+      );
+      if (result != null && result['confirmed'] == true) {
+        confirmed = true;
+        final exc = result['excuse'] as String;
+        if (exc.isNotEmpty) {
+          excuseText = exc;
+        }
+      }
+    } else {
+      final res = await showAdaptiveConfirmDialog(
+        context,
+        title: 'Etkinlikten çıkılsın mı?',
+        content:
+            'Bu etkinlikten çıkmak istediğinize emin misiniz? Zamanında ayrıldığınız için güven puanınız etkilenmeyecektir.',
+        confirmLabel: 'Etkinlikten çık',
+        cancelLabel: 'Vazgeç',
+        isDestructive: true,
+      );
+      if (res == true) {
+        confirmed = true;
+      }
+    }
+
+    if (!confirmed || !context.mounted) return;
 
     final left = await ref
         .read(eventsControllerProvider.notifier)
-        .leaveApprovedEvent(event.id);
+        .cancelParticipation(eventId: event.id, excuseText: excuseText);
+
     ref.invalidate(eventMyParticipationProvider(event.id));
     ref.invalidate(eventAttendanceStatusProvider(event.id));
     ref.invalidate(eventParticipantAttendanceStatusesProvider(event.id));
@@ -418,8 +586,12 @@ class _EventDetailBody extends ConsumerWidget {
 
     if (left) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Etkinlikten çıkıldı. Güven skoru güncellendi.'),
+        SnackBar(
+          content: Text(
+            excuseText != null
+                ? 'Etkinlikten çıkıldı ve mazeretiniz iletildi.'
+                : 'Etkinlikten çıkıldı.',
+          ),
         ),
       );
       return;
@@ -428,6 +600,158 @@ class _EventDetailBody extends ConsumerWidget {
     final message = ref.read(eventsControllerProvider).message;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message ?? 'Etkinlikten çıkılamadı.')),
+    );
+  }
+
+  void _showCheckInQrModal(
+    BuildContext context,
+    Event event,
+    EventParticipation? participation,
+    WidgetRef ref,
+  ) {
+    final userId = ref.read(authControllerProvider).userId ?? '';
+    final token = participation?.checkInToken;
+    if (token == null || token.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'QR kod olu\u015Fturulamad\u0131. L\u00FCtfen tekrar dene.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final qrData = '${event.id}:$userId:$token';
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.background,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Text(
+                  event.titleLabel,
+                  style: AppTextStyles.title,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'QR Kodum',
+                  style: AppTextStyles.bodyStrong.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Container(
+                  width: 220,
+                  height: 220,
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: AppRadius.lgBorder,
+                    border: Border.all(color: AppColors.border, width: 2),
+                  ),
+                  child: Center(
+                    child: QrImageView(
+                      data: qrData,
+                      version: QrVersions.auto,
+                      size: 190.0,
+                      gapless: false,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                Text(
+                  event.isBusinessEvent
+                      ? 'Bunu işletmeye vardığınızda okutun.'
+                      : 'Bunu etkinlik sahibine okutun.',
+                  style: AppTextStyles.body,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                SelectableText(
+                  'Kod: $token',
+                  style: AppTextStyles.caption.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppButton(
+                  label: 'Kapat',
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showExcuseDialog(BuildContext context, WidgetRef ref, String eventId) {
+    final textController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Mazeret Bildir'),
+          content: TextField(
+            controller: textController,
+            decoration: const InputDecoration(
+              hintText: 'Neden katılamayacağınızı belirtin...',
+            ),
+            maxLines: 3,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('İptal'),
+            ),
+            TextButton(
+              onPressed: () async {
+                final excuse = textController.text.trim();
+                if (excuse.isNotEmpty) {
+                  final success = await ref
+                      .read(eventsControllerProvider.notifier)
+                      .submitExcuse(eventId: eventId, excuseText: excuse);
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    if (success) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Mazeretiniz kaydedildi.'),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Mazeret kaydedilemedi.')),
+                      );
+                    }
+                  }
+                }
+              },
+              child: const Text('Gönder'),
+            ),
+          ],
+        );
+      },
     );
   }
 }
@@ -527,19 +851,19 @@ class _HostRequestsSection extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('You are the host', style: AppTextStyles.title),
+            Text('Ev sahibi sensin', style: AppTextStyles.title),
             const SizedBox(height: AppSpacing.xs),
             Text(
               isPastEvent
                   ? 'Bu etkinlik geçmişte kaldı. Yeni katılım işlemi yapılamaz.'
-                  : 'Review requests and keep your squad moving.',
+                  : 'Katılım isteklerini inceleyip ekibi hazır tutabilirsin.',
               style: AppTextStyles.caption,
             ),
             const SizedBox(height: AppSpacing.md),
             if (state.loading && state.hostRequests.isEmpty)
               const AppLoader()
             else if (state.hostRequests.isEmpty)
-              Text('No join requests yet.', style: AppTextStyles.body)
+              Text('Henüz katılım isteği yok.', style: AppTextStyles.body)
             else
               ...state.hostRequests.map(
                 (request) => Column(
@@ -557,11 +881,6 @@ class _HostRequestsSection extends StatelessWidget {
                       status: participantStatuses[request.userId],
                     )) ...[
                       const SizedBox(height: AppSpacing.xs),
-                      EventCallButton(
-                        eventId: eventId,
-                        targetUserId: request.userId,
-                        label: 'Call participant',
-                      ),
                       const SizedBox(height: AppSpacing.sm),
                     ],
                   ],
@@ -659,8 +978,9 @@ class _EventHeroCard extends StatelessWidget {
               label: 'Ne zaman',
               value: _formatDateTime(event.eventDate),
             ),
-            if (event.isBusinessEvent)
+            if (event.isBusinessEvent) ...[
               _DetailLine(label: 'Düzenleyen', value: 'İşletme etkinliği'),
+            ],
           ],
         ),
       ),
@@ -729,6 +1049,18 @@ class _EventOverflowButton extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: isHost
                         ? [
+                            if (event.canBeEdited) ...[
+                              _EventEditMenuItem(
+                                onTap: () {
+                                  Navigator.of(sheetContext).pop();
+                                  rootContext.pushNamed(
+                                    RouteNames.editEvent,
+                                    pathParameters: {'eventId': event.id},
+                                  );
+                                },
+                              ),
+                              const Divider(height: 1, color: AppColors.border),
+                            ],
                             _EventDeleteMenuItem(
                               onTap: () {
                                 Navigator.of(sheetContext).pop();
@@ -765,27 +1097,14 @@ class _EventOverflowButton extends ConsumerWidget {
   }
 
   Future<void> _confirmDeleteEvent(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Etkinlik silinsin mi?'),
-          content: const Text(
-            'Bu etkinlik kaldırılacak. Etkinlik sohbeti ve katılım istekleri de kaldırılır.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Vazgeç'),
-            ),
-            TextButton(
-              style: TextButton.styleFrom(foregroundColor: AppColors.error),
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('Sil'),
-            ),
-          ],
-        );
-      },
+    final confirmed = await showAdaptiveConfirmDialog(
+      context,
+      title: 'Etkinlik silinsin mi?',
+      content:
+          'Bu etkinlik kaldırılacak. Etkinlik sohbeti ve katılım istekleri de kaldırılır.',
+      confirmLabel: 'Sil',
+      cancelLabel: 'Vazgeç',
+      isDestructive: true,
     );
 
     if (confirmed != true || !context.mounted) return;
@@ -809,6 +1128,21 @@ class _EventOverflowButton extends ConsumerWidget {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message ?? 'Etkinlik silinemedi.')));
+  }
+}
+
+class _EventEditMenuItem extends StatelessWidget {
+  const _EventEditMenuItem({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: const Icon(Icons.edit_outlined, color: AppColors.primary),
+      title: Text('Etkinliği düzenle', style: AppTextStyles.bodyStrong),
+      onTap: onTap,
+    );
   }
 }
 
@@ -842,8 +1176,7 @@ class _HostPreviewCard extends ConsumerWidget {
 
     return asyncProfile.maybeWhen(
       data: (profile) {
-        final secondaryText =
-            profile?.usernameTag ?? profile?.city ?? 'Ev sahibi';
+        final secondaryText = profile?.usernameTag ?? 'Ev sahibi';
         final trustScore = profile?.trustScore;
 
         return InkWell(
@@ -959,6 +1292,160 @@ class _HostPreviewCard extends ConsumerWidget {
   }
 }
 
+class _HostQrScanCard extends StatelessWidget {
+  const _HostQrScanCard({
+    required this.isEnabled,
+    required this.helperText,
+    required this.onScan,
+  });
+
+  final bool isEnabled;
+  final String? helperText;
+  final VoidCallback onScan;
+
+  @override
+  Widget build(BuildContext context) {
+    return _DetailCard(
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 52,
+              height: 52,
+              decoration: const BoxDecoration(
+                color: AppColors.primarySoft,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.qr_code_scanner_rounded,
+                color: AppColors.primary,
+                size: 28,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Kat\u0131l\u0131mc\u0131 QR okut',
+                    style: AppTextStyles.title,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Etkinlik günü katılımcının QR kodunu okutarak gelişini onayla.',
+                    style: AppTextStyles.body,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        AppButton(label: 'QR okut', onPressed: isEnabled ? onScan : null),
+        if (helperText != null) ...[
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            helperText!,
+            style: AppTextStyles.caption.copyWith(
+              color: AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (!isEnabled && helperText!.startsWith('Etkinlik zamanı')) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              'QR okutma etkinlik günü aktif olacak.',
+              style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ],
+      ],
+    );
+  }
+}
+
+class _ParticipantQrCard extends StatelessWidget {
+  const _ParticipantQrCard({
+    required this.event,
+    required this.participation,
+    required this.userId,
+    required this.isLoading,
+    required this.onOpen,
+  });
+
+  final Event event;
+  final EventParticipation? participation;
+  final String? userId;
+  final bool isLoading;
+  final VoidCallback? onOpen;
+
+  @override
+  Widget build(BuildContext context) {
+    final token = participation?.checkInToken;
+    final canShowQr =
+        userId != null && token != null && token.trim().isNotEmpty;
+    final qrData = canShowQr ? '${event.id}:$userId:$token' : null;
+
+    return _DetailCard(
+      children: [
+        Text('QR Kodum', style: AppTextStyles.title),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'Etkinlik günü geldiğinde bu kodu etkinlik sahibine okut.',
+          style: AppTextStyles.body,
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          'Katılımın onaylandı.',
+          style: AppTextStyles.caption.copyWith(color: AppColors.success),
+        ),
+        const SizedBox(height: AppSpacing.lg),
+        Center(
+          child: Container(
+            width: 260,
+            height: 260,
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: AppRadius.xlBorder,
+              border: Border.all(color: AppColors.border, width: 2),
+            ),
+            child: Center(
+              child: isLoading
+                  ? Text(
+                      'QR kod haz\u0131rlan\u0131yor...',
+                      style: AppTextStyles.body,
+                      textAlign: TextAlign.center,
+                    )
+                  : qrData == null
+                  ? Text(
+                      'QR kod olu\u015Fturulamad\u0131. L\u00FCtfen tekrar dene.',
+                      style: AppTextStyles.body,
+                      textAlign: TextAlign.center,
+                    )
+                  : QrImageView(
+                      data: qrData,
+                      version: QrVersions.auto,
+                      size: 220,
+                      gapless: false,
+                    ),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AppButton(
+          label: 'QR kodu b\u00FCy\u00FCt',
+          variant: AppButtonVariant.secondary,
+          onPressed: canShowQr ? onOpen : null,
+        ),
+      ],
+    );
+  }
+}
+
 class _SectionTitle extends StatelessWidget {
   const _SectionTitle({required this.title});
 
@@ -1040,7 +1527,7 @@ class _AreaTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _InfoTile(
-      label: 'Area',
+      label: 'Şehir / ilçe',
       value: event.locationLabel,
       icon: Icons.place_outlined,
       highlighted: true,
@@ -1167,14 +1654,24 @@ class _LocationCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const _InfoLabel('Konum'),
+                      const _InfoLabel('Etkinlik konumu'),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        event.locationDisplayLabel,
+                        event.locationLabel,
                         style: AppTextStyles.bodyStrong,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
+                      if (event.locationDisplayLabel !=
+                          event.locationLabel) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          event.locationDisplayLabel,
+                          style: AppTextStyles.body,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         'Haritada aç',
@@ -1201,12 +1698,14 @@ class _LocationCard extends StatelessWidget {
         latitude: event.locationLat,
         longitude: event.locationLng,
         locationText: event.locationText,
+        city: event.city,
+        district: event.district,
         label: event.title,
       );
     } catch (error) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Harita açılırken bir sorun oluştu.')),
+        const SnackBar(content: Text('Harita uygulaması açılamadı.')),
       );
     }
   }
@@ -1286,4 +1785,16 @@ class _DetailLine extends StatelessWidget {
 
 String _formatDateTime(DateTime value) {
   return DateFormatter.turkishEventDateTime(value);
+}
+
+String _formatCapacityBreakdown(Event event, Map<String, int>? counts) {
+  final genericUsed = counts?[EventCapacityBucket.generic] ?? 0;
+  final maleUsed = counts?[EventCapacityBucket.male] ?? 0;
+  final femaleUsed = counts?[EventCapacityBucket.female] ?? 0;
+  return [
+    'Karışık: $genericUsed/${event.genericCapacity}',
+    'Erkek: $maleUsed/${event.maleCapacity}',
+    'Kadın: $femaleUsed/${event.femaleCapacity}',
+    'Toplam: ${event.safeApprovedCount}/${event.safeCapacityTotal}',
+  ].join(' • ');
 }

@@ -18,6 +18,9 @@ import 'business_reviews_models.dart';
 import 'business_reviews_provider.dart';
 import 'business_stats_page.dart';
 import 'widgets/business_badge.dart';
+import '../profile/profile_badges.dart';
+
+import 'business_customization_page.dart';
 
 class BusinessProfilePage extends ConsumerWidget {
   const BusinessProfilePage({super.key, required this.businessId});
@@ -32,7 +35,7 @@ class BusinessProfilePage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
-          tooltip: 'Back',
+          tooltip: 'Geri',
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             if (context.canPop()) {
@@ -48,14 +51,14 @@ class BusinessProfilePage extends ConsumerWidget {
         child: accountAsync.when(
           loading: () => const AppLoader(),
           error: (error, _) =>
-              ErrorView(message: 'Isletme profili yuklenemedi.'),
+              ErrorView(message: 'İşletme profili yüklenemedi.'),
           data: (account) {
             if (account == null) {
-              return const ErrorView(message: 'Isletme profili bulunamadi.');
+              return const ErrorView(message: 'İşletme profili bulunamadı.');
             }
             final isOwner = account.ownerUserId == authState.userId;
             if (!account.isPubliclyVisible && !isOwner) {
-              return const ErrorView(message: 'Isletme profili yayinda degil.');
+              return const ErrorView(message: 'İşletme profili yayında değil.');
             }
             if (!isOwner) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -142,13 +145,13 @@ class _BusinessProfileBody extends ConsumerWidget {
         if (account.description != null) ...[
           const SizedBox(height: AppSpacing.lg),
           _SectionCard(
-            title: 'Hakkinda',
+            title: 'Hakkında',
             child: Text(account.description!, style: AppTextStyles.body),
           ),
         ],
         const SizedBox(height: AppSpacing.lg),
         _SectionCard(
-          title: 'Iletisim',
+          title: 'İletişim',
           child: Column(
             children: [
               if (account.website != null)
@@ -166,16 +169,44 @@ class _BusinessProfileBody extends ConsumerWidget {
               if (account.website == null &&
                   account.instagram == null &&
                   account.phone == null)
-                Text('Iletisim bilgisi eklenmemis.', style: AppTextStyles.body),
+                Text('İletişim bilgisi eklenmemiş.', style: AppTextStyles.body),
             ],
           ),
         ),
+        const SizedBox(height: AppSpacing.lg),
+        _BusinessBadgesSection(businessId: account.id),
         if (isOwner) ...[
+          const SizedBox(height: AppSpacing.lg),
+          _SubscriptionStatusCard(account: account),
+          const SizedBox(height: AppSpacing.lg),
+          _SectionCard(
+            title: 'Özelleştirme ve Düzenleme',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AppButton(
+                  label: 'Profili Özelleştir',
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          BusinessCustomizationPage(account: account),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                AppButton(
+                  label: 'İşletmeyi Düzenle',
+                  variant: AppButtonVariant.secondary,
+                  onPressed: () => context.pushNamed(RouteNames.businessCreate),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: AppSpacing.lg),
           _SectionCard(
             title: 'İstatistikler',
             child: AppButton(
-              label: 'İstatistikler',
+              label: 'İstatistikler ve Analiz',
               onPressed: () => Navigator.of(context).push(
                 MaterialPageRoute<void>(
                   builder: (_) => BusinessStatsPage(account: account),
@@ -183,13 +214,150 @@ class _BusinessProfileBody extends ConsumerWidget {
               ),
             ),
           ),
-          const SizedBox(height: AppSpacing.lg),
-          AppButton(
-            label: 'Isletmeyi duzenle',
-            onPressed: () => context.pushNamed(RouteNames.businessCreate),
-          ),
         ],
       ],
+    );
+  }
+}
+
+class _SubscriptionStatusCard extends StatelessWidget {
+  const _SubscriptionStatusCard({required this.account});
+
+  final BusinessAccount account;
+
+  static const String _businessPlusPrice = '499 TL / ay';
+
+  @override
+  Widget build(BuildContext context) {
+    final isPlus = account.isPlusActive;
+
+    return Card(
+      elevation: 0,
+      color: isPlus
+          ? AppColors.tertiary.withValues(alpha: 0.15)
+          : AppColors.surface,
+      shape: RoundedRectangleBorder(
+        borderRadius: AppRadius.xlBorder,
+        side: BorderSide(
+          color: isPlus ? AppColors.tertiary : AppColors.border,
+          width: isPlus ? 2 : 1,
+        ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  isPlus ? Icons.star_rounded : Icons.star_outline_rounded,
+                  color: isPlus ? AppColors.tertiary : Colors.grey,
+                  size: 28,
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  isPlus
+                      ? 'Business Plus Aktif ✦'
+                      : 'Business Plus (Plus aktif değil)',
+                  style: AppTextStyles.title.copyWith(
+                    color: isPlus ? AppColors.textPrimary : AppColors.primary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            if (isPlus) ...[
+              const _PlusBenefitLine(
+                text: 'Ayda 30 etkinlik oluşturma hakkı (Kalan: Limitsiz)',
+              ),
+              const _PlusBenefitLine(text: 'Ayda 5 öne çıkarma hakkı'),
+              const _PlusBenefitLine(
+                text:
+                    'Etkinlik ve işletme aramalarında üst sıralarda listelenme',
+              ),
+              const _PlusBenefitLine(text: 'Sponsorlu işletme rozeti aktif'),
+              const _PlusBenefitLine(text: 'Öncelikli destek rozeti aktif'),
+            ] else ...[
+              Text(
+                'İşletmenizi bir üst seviyeye taşımak için Business Plus\'a geçin!',
+                style: AppTextStyles.bodyStrong,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Fiyat: $_businessPlusPrice',
+                style: AppTextStyles.bodyStrong.copyWith(
+                  color: AppColors.tertiary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              const _PlusBenefitLine(text: 'Daha fazla görünürlük'),
+              const _PlusBenefitLine(
+                text: 'Etkinliklerini öne çıkarma altyapısı',
+              ),
+              const _PlusBenefitLine(text: 'QR katılım raporları'),
+              const _PlusBenefitLine(text: 'Gelişmiş işletme istatistikleri'),
+              const _PlusBenefitLine(text: 'Katılımcı dönüşüm verileri'),
+              const _PlusBenefitLine(
+                text: 'Popüler işletme ve güven rozetleri',
+              ),
+              const _PlusBenefitLine(text: 'Daha profesyonel işletme profili'),
+              const _PlusBenefitLine(
+                text: 'Gelecekte kampanya/öne çıkarma özelliklerine hazırlık',
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppButton(
+                label: 'Plus\'a Geç',
+                onPressed: () {
+                  showDialog<void>(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      title: const Text('Business Plus'),
+                      content: const Text(
+                        'Business Plus satın alma yakında aktif olacak.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('Tamam'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PlusBenefitLine extends StatelessWidget {
+  const _PlusBenefitLine({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.check_circle_outline, color: Colors.green, size: 16),
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: Text(
+              text,
+              style: AppTextStyles.bodySmall.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -357,6 +525,127 @@ class _ContactLine extends StatelessWidget {
           Expanded(child: Text(label, style: AppTextStyles.bodySmall)),
         ],
       ),
+    );
+  }
+}
+
+class _BusinessBadgesSection extends ConsumerWidget {
+  const _BusinessBadgesSection({required this.businessId});
+
+  final String businessId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final badgesAsync = ref.watch(businessBadgesProvider(businessId));
+
+    return badgesAsync.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: AppLoader(),
+      ),
+      error: (_, _) => const SizedBox.shrink(),
+      data: (List<ProfileBadge> badges) {
+        if (badges.isEmpty) return const SizedBox.shrink();
+
+        final earnedCount = badges.where((b) => b.isEarned).length;
+
+        return DecoratedBox(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            border: Border.all(color: AppColors.border),
+            borderRadius: AppRadius.lgBorder,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('İşletme Rozetleri', style: AppTextStyles.title),
+                    Text(
+                      '$earnedCount/${badges.length} Kazanıldı',
+                      style: AppTextStyles.caption.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.md),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: badges.length,
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 180,
+                    mainAxisSpacing: AppSpacing.sm,
+                    crossAxisSpacing: AppSpacing.sm,
+                    mainAxisExtent: 105,
+                  ),
+                  itemBuilder: (context, index) {
+                    final badge = badges[index];
+                    final isEarned = badge.isEarned;
+                    final color = isEarned
+                        ? AppColors.primary
+                        : AppColors.textMuted;
+
+                    return DecoratedBox(
+                      decoration: BoxDecoration(
+                        color: isEarned
+                            ? AppColors.primarySoft
+                            : AppColors.background,
+                        border: Border.all(
+                          color: isEarned
+                              ? AppColors.primary.withValues(alpha: 0.18)
+                              : AppColors.border,
+                        ),
+                        borderRadius: AppRadius.mdBorder,
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm,
+                          vertical: AppSpacing.xs,
+                        ),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(badge.icon, color: color, size: 24),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              badge.label,
+                              style: AppTextStyles.bodyStrong.copyWith(
+                                color: isEarned
+                                    ? AppColors.primary
+                                    : AppColors.textSecondary,
+                                fontSize: 11,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              badge.description,
+                              style: AppTextStyles.caption.copyWith(
+                                fontSize: 9,
+                                color: AppColors.textMuted,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

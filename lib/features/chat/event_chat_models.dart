@@ -5,6 +5,8 @@ class EventMessage {
     required this.senderId,
     required this.message,
     required this.createdAt,
+    this.replyToMessageId,
+    this.metadata = const {},
   });
 
   final String id;
@@ -12,6 +14,8 @@ class EventMessage {
   final String senderId;
   final String message;
   final DateTime createdAt;
+  final String? replyToMessageId;
+  final Map<String, dynamic> metadata;
 
   bool isMine(String? currentUserId) {
     return currentUserId != null && senderId == currentUserId;
@@ -24,6 +28,10 @@ class EventMessage {
       senderId: json['sender_id'] as String,
       message: json['message'] as String,
       createdAt: DateTime.parse(json['created_at'].toString()),
+      replyToMessageId: json['reply_to_message_id']?.toString(),
+      metadata: json['metadata'] != null
+          ? Map<String, dynamic>.from(json['metadata'] as Map)
+          : const {},
     );
   }
 
@@ -31,12 +39,24 @@ class EventMessage {
     required String eventId,
     required String senderId,
     required String message,
+    String? replyToMessageId,
+    Map<String, dynamic>? metadata,
   }) {
     return {
       'event_id': eventId,
       'sender_id': senderId,
       'message': message.trim(),
+      if (replyToMessageId != null) 'reply_to_message_id': replyToMessageId,
+      if (metadata != null) 'metadata': metadata,
     };
+  }
+
+  static List<EventMessage> chronological(List<EventMessage> messages) {
+    return [...messages]..sort((a, b) {
+      final createdAtOrder = a.createdAt.compareTo(b.createdAt);
+      if (createdAtOrder != 0) return createdAtOrder;
+      return a.id.compareTo(b.id);
+    });
   }
 }
 

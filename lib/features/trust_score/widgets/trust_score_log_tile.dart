@@ -4,6 +4,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_radius.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text_styles.dart';
+import '../../../core/utils/date_formatter.dart';
 import '../trust_score_models.dart';
 
 class TrustScoreLogTile extends StatelessWidget {
@@ -72,7 +73,7 @@ class TrustScoreLogTile extends StatelessWidget {
                   ],
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    _formatDate(log.createdAt),
+                    DateFormatter.dateTime(log.createdAt),
                     style: AppTextStyles.caption,
                   ),
                 ],
@@ -82,15 +83,6 @@ class TrustScoreLogTile extends StatelessWidget {
         ),
       ),
     );
-  }
-
-  String _formatDate(DateTime value) {
-    final year = value.year.toString().padLeft(4, '0');
-    final month = value.month.toString().padLeft(2, '0');
-    final day = value.day.toString().padLeft(2, '0');
-    final hour = value.hour.toString().padLeft(2, '0');
-    final minute = value.minute.toString().padLeft(2, '0');
-    return '$year-$month-$day $hour:$minute';
   }
 
   String _reasonLabel(String reason, String? sourceType) {

@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../core/utils/date_formatter.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_logo.dart';
@@ -81,7 +82,9 @@ class _AdminBusinessApplicationsPageState
                   ],
                 ),
               )
-            : const ErrorView(message: 'Bu alan icin admin yetkisi gerekli.'),
+            : const ErrorView(
+                message: 'Bu alan için yönetici yetkisi gerekli.',
+              ),
       ),
     );
   }
@@ -155,7 +158,7 @@ class _FeedbackReviewCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.xs),
             Text(
-              feedback.createdAt.toLocal().toString().split('.').first,
+              DateFormatter.dateTime(feedback.createdAt.toLocal()),
               style: AppTextStyles.caption,
             ),
             if (feedback.source != null) ...[
@@ -198,11 +201,11 @@ class _AdminApplicationsBody extends ConsumerWidget {
     }
 
     if (state.message != null && state.applications.isEmpty) {
-      return const ErrorView(message: 'Basvurular yuklenemedi.');
+      return const ErrorView(message: 'Başvurular yüklenemedi.');
     }
 
     if (state.applications.isEmpty) {
-      return const Center(child: Text('Bekleyen isletme basvurusu yok.'));
+      return const Center(child: Text('Bekleyen işletme başvurusu yok.'));
     }
 
     return ListView.separated(

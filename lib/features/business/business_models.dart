@@ -166,8 +166,16 @@ class BusinessAccount {
     this.coverUrl,
     this.isVerified = false,
     this.status = BusinessAccountStatus.active,
+    this.customThemeColor,
+    this.pinnedEventId,
+    this.galleryUrls,
+    this.isPlusActive = false,
     this.createdAt,
     this.updatedAt,
+    this.latitude,
+    this.longitude,
+    this.workingHours,
+    this.amenities,
   });
 
   final String id;
@@ -188,8 +196,16 @@ class BusinessAccount {
   final String? coverUrl;
   final bool isVerified;
   final String status;
+  final String? customThemeColor;
+  final String? pinnedEventId;
+  final List<String>? galleryUrls;
+  final bool isPlusActive;
   final DateTime? createdAt;
   final DateTime? updatedAt;
+  final double? latitude;
+  final double? longitude;
+  final Map<String, dynamic>? workingHours;
+  final List<String>? amenities;
 
   String get displayName {
     final trimmed = name.trim();
@@ -246,8 +262,84 @@ class BusinessAccount {
       coverUrl: _nullableString(json['cover_url']),
       isVerified: json['is_verified'] as bool? ?? false,
       status: json['status']?.toString() ?? BusinessAccountStatus.active,
+      customThemeColor: _nullableString(json['custom_theme_color']),
+      pinnedEventId: _nullableString(json['pinned_event_id']),
+      galleryUrls: json['gallery_urls'] is List
+          ? (json['gallery_urls'] as List).map((e) => e.toString()).toList()
+          : null,
+      isPlusActive: json['is_plus_active'] as bool? ?? false,
       createdAt: _dateTimeFromJson(json['created_at']),
       updatedAt: _dateTimeFromJson(json['updated_at']),
+      latitude: (json['latitude'] as num?)?.toDouble(),
+      longitude: (json['longitude'] as num?)?.toDouble(),
+      workingHours: json['working_hours'] is Map
+          ? Map<String, dynamic>.from(json['working_hours'] as Map)
+          : null,
+      amenities: json['amenities'] is List
+          ? (json['amenities'] as List).map((e) => e.toString()).toList()
+          : null,
+    );
+  }
+
+  BusinessAccount copyWith({
+    String? id,
+    String? ownerUserId,
+    String? name,
+    String? username,
+    String? businessTag,
+    String? category,
+    String? customCategory,
+    String? city,
+    String? district,
+    String? address,
+    String? description,
+    String? phone,
+    String? website,
+    String? instagram,
+    String? logoUrl,
+    String? coverUrl,
+    bool? isVerified,
+    String? status,
+    String? customThemeColor,
+    String? pinnedEventId,
+    List<String>? galleryUrls,
+    bool? isPlusActive,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+    double? latitude,
+    double? longitude,
+    Map<String, dynamic>? workingHours,
+    List<String>? amenities,
+  }) {
+    return BusinessAccount(
+      id: id ?? this.id,
+      ownerUserId: ownerUserId ?? this.ownerUserId,
+      name: name ?? this.name,
+      username: username ?? this.username,
+      businessTag: businessTag ?? this.businessTag,
+      category: category ?? this.category,
+      customCategory: customCategory ?? this.customCategory,
+      city: city ?? this.city,
+      district: district ?? this.district,
+      address: address ?? this.address,
+      description: description ?? this.description,
+      phone: phone ?? this.phone,
+      website: website ?? this.website,
+      instagram: instagram ?? this.instagram,
+      logoUrl: logoUrl ?? this.logoUrl,
+      coverUrl: coverUrl ?? this.coverUrl,
+      isVerified: isVerified ?? this.isVerified,
+      status: status ?? this.status,
+      customThemeColor: customThemeColor ?? this.customThemeColor,
+      pinnedEventId: pinnedEventId ?? this.pinnedEventId,
+      galleryUrls: galleryUrls ?? this.galleryUrls,
+      isPlusActive: isPlusActive ?? this.isPlusActive,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      latitude: latitude ?? this.latitude,
+      longitude: longitude ?? this.longitude,
+      workingHours: workingHours ?? this.workingHours,
+      amenities: amenities ?? this.amenities,
     );
   }
 }
@@ -391,6 +483,10 @@ class BusinessAccountInput {
     this.phone,
     this.website,
     this.instagram,
+    this.latitude,
+    this.longitude,
+    this.workingHours,
+    this.amenities,
   });
 
   final String name;
@@ -404,8 +500,36 @@ class BusinessAccountInput {
   final String? phone;
   final String? website;
   final String? instagram;
+  final double? latitude;
+  final double? longitude;
+  final Map<String, dynamic>? workingHours;
+  final List<String>? amenities;
 
   Map<String, dynamic> toCreateJson({required String ownerUserId}) {
+    return {
+      'owner_user_id': ownerUserId,
+      'name': name.trim(),
+      'username': BusinessAccountValidators.normalizeUsername(username),
+      'category': category.trim(),
+      if (BusinessCategories.isOther(category))
+        'custom_category': BusinessAccountValidators.normalizeCustomCategory(
+          customCategory,
+        ),
+      'city': city.trim(),
+      'district': district.trim(),
+      'address': _nullableTrim(address),
+      'description': _nullableTrim(description),
+      'phone': _nullableTrim(phone),
+      'website': _nullableTrim(website),
+      'instagram': BusinessAccountValidators.normalizeInstagram(instagram),
+      'latitude': latitude,
+      'longitude': longitude,
+      'working_hours': workingHours,
+      'amenities': amenities,
+    };
+  }
+
+  Map<String, dynamic> toLegacyCreateJson({required String ownerUserId}) {
     return {
       'owner_user_id': ownerUserId,
       'name': name.trim(),
@@ -426,6 +550,28 @@ class BusinessAccountInput {
   }
 
   Map<String, dynamic> toUpdateJson() {
+    return {
+      'name': name.trim(),
+      'username': BusinessAccountValidators.normalizeUsername(username),
+      'category': category.trim(),
+      'custom_category': BusinessCategories.isOther(category)
+          ? BusinessAccountValidators.normalizeCustomCategory(customCategory)
+          : null,
+      'city': city.trim(),
+      'district': district.trim(),
+      'address': _nullableTrim(address),
+      'description': _nullableTrim(description),
+      'phone': _nullableTrim(phone),
+      'website': _nullableTrim(website),
+      'instagram': BusinessAccountValidators.normalizeInstagram(instagram),
+      'latitude': latitude,
+      'longitude': longitude,
+      'working_hours': workingHours,
+      'amenities': amenities,
+    };
+  }
+
+  Map<String, dynamic> toLegacyUpdateJson() {
     return {
       'name': name.trim(),
       'username': BusinessAccountValidators.normalizeUsername(username),
@@ -723,6 +869,21 @@ class BusinessApplicationValidators {
 
   static String? category(String? value) {
     return BusinessAccountValidators.category(value);
+  }
+
+  static String? manualCategory(String? value) {
+    final normalized = BusinessAccountValidators.normalizeCustomCategory(value);
+    if (normalized == null) return 'İşletme kategorisini yazmalısın.';
+    if (normalized.length < 2) {
+      return 'İşletme kategorisi en az 2 karakter olmalı.';
+    }
+    if (normalized.length > 40) {
+      return 'İşletme kategorisi en fazla 40 karakter olabilir.';
+    }
+    if (!RegExp(r'[a-zA-ZçğıöşüÇĞİÖŞÜ0-9]').hasMatch(normalized)) {
+      return 'İşletme kategorisini yazmalısın.';
+    }
+    return null;
   }
 
   static String? customCategory({

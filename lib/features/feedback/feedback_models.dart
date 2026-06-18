@@ -1,19 +1,12 @@
 class FeedbackCategory {
   const FeedbackCategory._();
 
-  static const bug = 'Hata';
-  static const suggestion = 'Öneri';
-  static const eventExperience = 'Etkinlik deneyimi';
-  static const businessExperience = 'İşletme deneyimi';
-  static const other = 'Diğer';
+  static const suggestion = '\u00D6neri';
+  static const issue = 'Sorun';
+  static const complaint = '\u015Eikayet';
+  static const other = 'Di\u011Fer';
 
-  static const values = [
-    bug,
-    suggestion,
-    eventExperience,
-    businessExperience,
-    other,
-  ];
+  static const values = [suggestion, issue, complaint, other];
 }
 
 class UserFeedbackRules {
@@ -21,6 +14,7 @@ class UserFeedbackRules {
 
   static const minRating = 1;
   static const maxRating = 5;
+  static const minMessageLength = 10;
   static const maxMessageLength = 1000;
 
   static bool isValidRating(int? rating) {
@@ -33,15 +27,16 @@ class UserFeedbackRules {
 
   static String? validationError(UserFeedbackInput input) {
     if (!isValidRating(input.rating)) {
-      return 'Puan 1 ile 5 arasında olmalı.';
+      return 'Puan 1 ile 5 aras\u0131nda olmal\u0131.';
     }
-    if (normalizeMessage(input.message).length > maxMessageLength) {
+
+    final message = normalizeMessage(input.message);
+    if (message.isEmpty) return 'Mesaj bo\u015F olamaz.';
+    if (message.length < minMessageLength) {
+      return 'Mesaj en az 10 karakter olmal\u0131.';
+    }
+    if (message.length > maxMessageLength) {
       return 'Mesaj en fazla 1000 karakter olabilir.';
-    }
-    if (input.rating == null &&
-        (input.category == null || input.category!.trim().isEmpty) &&
-        normalizeMessage(input.message).isEmpty) {
-      return 'Puan, kategori veya mesaj ekle.';
     }
     return null;
   }
@@ -52,7 +47,7 @@ class UserFeedbackInput {
     this.rating,
     this.category,
     this.message,
-    this.source = 'settings',
+    this.source = 'settings_request_suggestion',
   });
 
   final int? rating;
@@ -161,5 +156,5 @@ class ReviewPromptRules {
 }
 
 String friendlyFeedbackErrorMessage(Object error) {
-  return 'Geri bildirim gönderilemedi. Tekrar dene.';
+  return 'G\u00F6nderilemedi. L\u00FCtfen tekrar dene.';
 }
