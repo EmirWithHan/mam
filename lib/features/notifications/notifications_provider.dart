@@ -8,6 +8,10 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/utils/error_messages.dart';
 import '../../core/utils/pagination.dart';
 import '../../services/supabase_service.dart';
+import '../home/home_feed_provider.dart';
+import '../profile/profile_follow_list_provider.dart';
+import '../profile/profile_provider.dart';
+import '../profile/public_profile_provider.dart';
 import 'notifications_models.dart';
 import 'notifications_service.dart';
 
@@ -468,6 +472,7 @@ class NotificationsController extends StateNotifier<NotificationsState> {
         isUpdating: false,
       );
       _ref.invalidate(notificationsUnreadCountProvider);
+      _refreshFollowSurfaces(notification);
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -476,6 +481,42 @@ class NotificationsController extends StateNotifier<NotificationsState> {
       );
       return false;
     }
+  }
+
+  void _refreshFollowSurfaces(AppNotification notification) {
+    final requesterId = notification.actorId?.trim();
+    final currentUserId = SupabaseService.client.auth.currentUser?.id;
+
+    if (requesterId != null && requesterId.isNotEmpty) {
+      _ref.invalidate(publicProfileDetailProvider(requesterId));
+      _ref.invalidate(publicProfileGalleryProvider(requesterId));
+      _ref.invalidate(publicProfileEventHistoryProvider(requesterId));
+      _ref.invalidate(publicProfilePreviewProvider(requesterId));
+    }
+
+    if (currentUserId != null && currentUserId.isNotEmpty) {
+      _ref.invalidate(
+        profileFollowListControllerProvider(
+          ProfileFollowListArgs(
+            userId: currentUserId,
+            type: ProfileFollowListType.followers,
+          ),
+        ),
+      );
+    }
+
+    if (requesterId != null && requesterId.isNotEmpty) {
+      _ref.invalidate(
+        profileFollowListControllerProvider(
+          ProfileFollowListArgs(
+            userId: requesterId,
+            type: ProfileFollowListType.following,
+          ),
+        ),
+      );
+    }
+
+    _ref.invalidate(homeFeedProvider);
   }
 
   String _readableMessage(Object error) {

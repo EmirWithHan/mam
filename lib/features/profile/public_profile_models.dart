@@ -10,6 +10,8 @@ class PublicProfilePreview {
     this.avatarUrl,
     this.trustScore,
     this.isProfileCompleted = false,
+    this.isPrivate = false,
+    this.canViewExtendedProfile = false,
     this.accountType = 'user',
     this.businessName,
     this.businessUsername,
@@ -30,6 +32,8 @@ class PublicProfilePreview {
   final String? avatarUrl;
   final int? trustScore;
   final bool isProfileCompleted;
+  final bool isPrivate;
+  final bool canViewExtendedProfile;
   final String accountType;
   final String? businessName;
   final String? businessUsername;
@@ -42,6 +46,9 @@ class PublicProfilePreview {
   final bool businessIsPlusActive;
 
   bool get isBusinessAccount => accountType == 'business';
+
+  bool get canShowAvatar =>
+      isBusinessAccount || !isPrivate || canViewExtendedProfile;
 
   String get displayName {
     final first = firstName?.trim();
@@ -101,6 +108,9 @@ class PublicProfilePreview {
       avatarUrl: json['avatar_url']?.toString(),
       trustScore: (json['trust_score'] as num?)?.toInt(),
       isProfileCompleted: json['is_profile_completed'] as bool? ?? false,
+      isPrivate: json['is_private'] as bool? ?? false,
+      canViewExtendedProfile:
+          json['can_view_extended_profile'] as bool? ?? false,
       accountType: json['account_type']?.toString() ?? 'user',
       businessName: json['business_name']?.toString(),
       businessUsername: json['business_username']?.toString(),

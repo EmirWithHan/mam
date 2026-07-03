@@ -43,6 +43,8 @@ class _ProfileRecommendationCardState
 
     final isFollowing = stats?.isFollowedByMe ?? false;
     final isPending = stats?.hasPendingRequestByMe ?? false;
+    final canShowAvatar = !widget.profile.isPrivate || isFollowing;
+    final avatarUrl = canShowAvatar ? widget.profile.avatarUrl?.trim() : null;
 
     return Card(
       elevation: 0,
@@ -70,18 +72,14 @@ class _ProfileRecommendationCardState
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.primarySoft,
-                  image:
-                      widget.profile.avatarUrl != null &&
-                          widget.profile.avatarUrl!.isNotEmpty
+                  image: avatarUrl != null && avatarUrl.isNotEmpty
                       ? DecorationImage(
-                          image: NetworkImage(widget.profile.avatarUrl!),
+                          image: NetworkImage(avatarUrl),
                           fit: BoxFit.cover,
                         )
                       : null,
                 ),
-                child:
-                    widget.profile.avatarUrl == null ||
-                        widget.profile.avatarUrl!.isEmpty
+                child: avatarUrl == null || avatarUrl.isEmpty
                     ? const Icon(
                         Icons.person,
                         color: AppColors.primary,

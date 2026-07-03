@@ -97,8 +97,9 @@ class HomeFeedService {
               tag: preview.tag,
               firstName: preview.firstName,
               city: preview.city,
-              avatarUrl: preview.avatarUrl,
+              avatarUrl: preview.canShowAvatar ? preview.avatarUrl : null,
               trustScore: preview.trustScore,
+              isPrivate: preview.isPrivate,
               isProfileCompleted: preview.isProfileCompleted,
               accountType: preview.accountType,
             );
@@ -143,7 +144,9 @@ class HomeFeedService {
               ...map,
               'author_username': preview?.username,
               'author_tag': preview?.tag,
-              'author_avatar_url': preview?.avatarUrl,
+              'author_avatar_url': preview?.canShowAvatar == true
+                  ? preview?.avatarUrl
+                  : null,
             };
             final post = Post.fromJson(postMap);
             final likes = map['post_likes'] as List? ?? [];
