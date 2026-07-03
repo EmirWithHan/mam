@@ -35,7 +35,7 @@ class RulesAndAgreementsPage extends StatelessWidget {
             Text('Kurallar ve sözleşmeler', style: AppTextStyles.headline),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              'Match A Man’i güvenli ve şeffaf şekilde kullanabilmen için temel kuralları ve sözleşmeleri burada topladık.',
+              'Akanzi’i güvenli ve şeffaf şekilde kullanabilmen için temel kuralları ve sözleşmeleri burada topladık.',
               style: AppTextStyles.body,
             ),
             const SizedBox(height: AppSpacing.lg),

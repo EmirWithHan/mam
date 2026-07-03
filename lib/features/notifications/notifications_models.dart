@@ -94,7 +94,7 @@ class AppNotification {
       'follow_request' => 'Yeni bir takip isteğin var.',
       'follow_request_approved' => 'Takip isteğin onaylandı.',
       'follow_request_rejected' => 'Takip isteğin reddedildi.',
-      'system' => 'Match A Man güncellemesi.',
+      'system' => 'Akanzi güncellemesi.',
       _ => '',
     };
   }
@@ -111,7 +111,7 @@ class AppNotification {
       'follow_request' ||
       'follow_request_approved' ||
       'follow_request_rejected' => 'Sosyal',
-      'system' => 'MaM',
+      'system' => 'Akanzi',
       _ => 'Bildirim',
     };
   }

@@ -55,7 +55,7 @@ class PublicProfilePreview {
       return usernameValue;
     }
 
-    return 'Match A Man kullanıcısı';
+    return 'Akanzi kullanıcısı';
   }
 
   String? get usernameTag {

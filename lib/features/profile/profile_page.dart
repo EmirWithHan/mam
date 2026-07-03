@@ -575,7 +575,7 @@ String _displayName(Profile profile) {
   ].where((part) => part != null && part.isNotEmpty).join(' ');
 
   if (name.isNotEmpty) return name;
-  return 'Match A Man kullanıcısı';
+  return 'Akanzi kullanıcısı';
 }
 
 String _compactCount(int value) {

@@ -34,7 +34,7 @@ class AppTheme {
         elevation: 0,
         centerTitle: true,
         foregroundColor: AppColors.primary,
-        titleTextStyle: AppTextStyles.logo,
+        titleTextStyle: GoogleFonts.mansalva(textStyle: AppTextStyles.logo),
       ),
       cardTheme: CardThemeData(
         color: AppColors.surface,

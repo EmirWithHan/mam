@@ -65,7 +65,7 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'MaM topluluğunu güvenli ve güvenilir tutmaya yardımcı ol.',
+            'Akanzi topluluğunu güvenli ve güvenilir tutmaya yardımcı ol.',
             style: AppTextStyles.caption,
           ),
           const SizedBox(height: AppSpacing.md),

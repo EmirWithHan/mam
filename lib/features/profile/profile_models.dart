@@ -581,7 +581,7 @@ class PublicProfileFollowListItem {
     final user = username?.trim();
     if (name != null && name.isNotEmpty) return name;
     if (user != null && user.isNotEmpty) return user;
-    return 'Match A Man kullanıcısı';
+    return 'Akanzi kullanıcısı';
   }
 
   String? get displayHandle => formatUserHandle(username, tag);

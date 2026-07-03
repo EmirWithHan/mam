@@ -8,7 +8,7 @@ Future<void> showInternalReviewPrompt({
     context: context,
     builder: (dialogContext) {
       return AlertDialog(
-        title: const Text('Match A Man deneyimin nasıldı?'),
+        title: const Text('Akanzi deneyimin nasıldı?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(

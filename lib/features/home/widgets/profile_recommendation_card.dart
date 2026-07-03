@@ -12,30 +12,33 @@ import '../../follow/follow_provider.dart';
 import '../../profile/profile_models.dart';
 
 class ProfileRecommendationCard extends ConsumerStatefulWidget {
-  const ProfileRecommendationCard({
-    super.key,
-    required this.profile,
-  });
+  const ProfileRecommendationCard({super.key, required this.profile});
 
   final Profile profile;
 
   @override
-  ConsumerState<ProfileRecommendationCard> createState() => _ProfileRecommendationCardState();
+  ConsumerState<ProfileRecommendationCard> createState() =>
+      _ProfileRecommendationCardState();
 }
 
-class _ProfileRecommendationCardState extends ConsumerState<ProfileRecommendationCard> {
+class _ProfileRecommendationCardState
+    extends ConsumerState<ProfileRecommendationCard> {
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
       if (!mounted) return;
-      ref.read(followControllerProvider(widget.profile.userId).notifier).loadStats();
+      ref
+          .read(followControllerProvider(widget.profile.userId).notifier)
+          .loadStats();
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    final followState = ref.watch(followControllerProvider(widget.profile.userId));
+    final followState = ref.watch(
+      followControllerProvider(widget.profile.userId),
+    );
     final stats = followState.stats;
 
     final isFollowing = stats?.isFollowedByMe ?? false;
@@ -67,7 +70,8 @@ class _ProfileRecommendationCardState extends ConsumerState<ProfileRecommendatio
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: AppColors.primarySoft,
-                  image: widget.profile.avatarUrl != null &&
+                  image:
+                      widget.profile.avatarUrl != null &&
                           widget.profile.avatarUrl!.isNotEmpty
                       ? DecorationImage(
                           image: NetworkImage(widget.profile.avatarUrl!),
@@ -75,7 +79,8 @@ class _ProfileRecommendationCardState extends ConsumerState<ProfileRecommendatio
                         )
                       : null,
                 ),
-                child: widget.profile.avatarUrl == null ||
+                child:
+                    widget.profile.avatarUrl == null ||
                         widget.profile.avatarUrl!.isEmpty
                     ? const Icon(
                         Icons.person,
@@ -86,7 +91,7 @@ class _ProfileRecommendationCardState extends ConsumerState<ProfileRecommendatio
               ),
             ),
             const SizedBox(width: AppSpacing.md),
-            
+
             // Name and Trust Score
             Expanded(
               child: Column(
@@ -98,7 +103,9 @@ class _ProfileRecommendationCardState extends ConsumerState<ProfileRecommendatio
                       pathParameters: {'userId': widget.profile.userId},
                     ),
                     child: Text(
-                      widget.profile.firstName ?? widget.profile.username ?? 'Sporcu',
+                      widget.profile.firstName ??
+                          widget.profile.username ??
+                          'Sporcu',
                       style: AppTextStyles.bodyStrong,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -107,7 +114,9 @@ class _ProfileRecommendationCardState extends ConsumerState<ProfileRecommendatio
                   const SizedBox(height: 2),
                   Text(
                     widget.profile.displayHandle ?? '',
-                    style: AppTextStyles.caption.copyWith(color: Colors.grey[600]),
+                    style: AppTextStyles.caption.copyWith(
+                      color: Colors.grey[600],
+                    ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -143,15 +152,19 @@ class _ProfileRecommendationCardState extends ConsumerState<ProfileRecommendatio
                 label: isFollowing
                     ? 'Takip'
                     : isPending
-                        ? 'İstek'
-                        : 'Takip Et',
+                    ? 'İstek'
+                    : 'Takip Et',
                 isLoading: followState.loading,
                 variant: isFollowing || isPending
                     ? AppButtonVariant.secondary
                     : AppButtonVariant.primary,
                 onPressed: () {
                   ref
-                      .read(followControllerProvider(widget.profile.userId).notifier)
+                      .read(
+                        followControllerProvider(
+                          widget.profile.userId,
+                        ).notifier,
+                      )
                       .toggleFollow();
                 },
               ),

@@ -36,7 +36,7 @@ class _MatchAManRouterApp extends ConsumerWidget {
     });
 
     return MaterialApp.router(
-      title: 'Match A Man',
+      title: 'Akanzi',
       debugShowCheckedModeBanner: false,
       locale: const Locale('tr', 'TR'),
       supportedLocales: const [Locale('tr', 'TR')],

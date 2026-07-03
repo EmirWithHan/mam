@@ -1227,7 +1227,7 @@ class _HostPreviewCard extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          profile?.displayName ?? 'Match A Man kullanıcısı',
+                          profile?.displayName ?? 'Akanzi kullanıcısı',
                           style: AppTextStyles.bodyStrong,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
@@ -1295,7 +1295,7 @@ class _HostPreviewCard extends ConsumerWidget {
                 SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Text(
-                    'Match A Man kullanıcısı',
+                    'Akanzi kullanıcısı',
                     style: AppTextStyles.bodyStrong,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

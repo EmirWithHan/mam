@@ -16,7 +16,7 @@ class AppLogo extends StatelessWidget {
     final logo = ClipRRect(
       borderRadius: BorderRadius.circular(AppRadius.sm),
       child: Image.asset(
-        'assets/branding/mam_logo.jpg',
+        'assets/branding/akanzi_logo.jpg',
         width: size,
         height: size,
         fit: BoxFit.contain,
@@ -30,7 +30,7 @@ class AppLogo extends StatelessWidget {
               borderRadius: AppRadius.smBorder,
             ),
             child: Text(
-              'MaM',
+              'Akanzi',
               style: AppTextStyles.label.copyWith(color: AppColors.primary),
             ),
           );
@@ -55,7 +55,7 @@ class AppLogo extends StatelessWidget {
               end: Alignment.bottomCenter,
             ).createShader(bounds),
             child: Text(
-              'MaM',
+              'Akanzi',
               style: AppTextStyles.logo.copyWith(color: Colors.white),
             ),
           ),

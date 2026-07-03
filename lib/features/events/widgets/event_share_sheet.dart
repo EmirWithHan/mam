@@ -234,12 +234,12 @@ class _EventShareSheetState extends ConsumerState<EventShareSheet> {
         event.locationText!.trim(),
     ].join(' / ');
 
-    return 'Match A Man\'de bir etkinlik buldum: ${event.titleLabel}\n'
+    return 'Akanzi\'de bir etkinlik buldum: ${event.titleLabel}\n'
         'Tür: $typeStr\n'
         'Tarih: $dateStr\n'
         'Konum: $locationStr\n'
         'Etkinlik ID: ${event.id}\n'
-        'Ayrıntılar için Match A Man uygulamasını ziyaret edebilirsin!';
+        'Ayrıntılar için Akanzi uygulamasını ziyaret edebilirsin!';
   }
 
   String _formatDateTime(DateTime value) {

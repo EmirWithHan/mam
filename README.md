@@ -1,4 +1,4 @@
-# Match A Man
+# Akanzi
 
 A social sports and events Flutter app.
 

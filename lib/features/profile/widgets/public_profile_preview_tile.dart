@@ -62,7 +62,7 @@ class PublicProfilePreviewTile extends ConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      profile?.displayName ?? 'Match A Man kullanıcısı',
+                      profile?.displayName ?? 'Akanzi kullanıcısı',
                       style: compact
                           ? AppTextStyles.caption
                           : AppTextStyles.bodyStrong,
@@ -126,7 +126,7 @@ class _PreviewFallbackTile extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Text(
-              'Match A Man kullanıcısı',
+              'Akanzi kullanıcısı',
               style: compact ? AppTextStyles.caption : AppTextStyles.bodyStrong,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,

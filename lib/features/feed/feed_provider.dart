@@ -421,7 +421,6 @@ class FeedController extends StateNotifier<FeedState> {
     }
   }
 
-
   @override
   void dispose() {
     stopCommentsRealtime();

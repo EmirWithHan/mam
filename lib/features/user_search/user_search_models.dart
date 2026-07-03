@@ -129,7 +129,7 @@ class UserSearchResult {
     return UserSearchResult(
       userId: json['user_id'].toString(),
       displayName: displayName == null || displayName.isEmpty
-          ? username ?? 'Match A Man kullanıcısı'
+          ? username ?? 'Akanzi kullanıcısı'
           : displayName,
       username: username,
       tag: json['tag']?.toString(),

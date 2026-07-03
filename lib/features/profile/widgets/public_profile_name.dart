@@ -39,7 +39,7 @@ class PublicProfileName extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                profile?.displayName ?? 'Match A Man kullanıcısı',
+                profile?.displayName ?? 'Akanzi kullanıcısı',
                 style:
                     textStyle ??
                     (compact
@@ -64,13 +64,13 @@ class PublicProfileName extends ConsumerWidget {
         );
       },
       loading: () => Text(
-        'Match A Man kullanıcısı',
+        'Akanzi kullanıcısı',
         style:
             textStyle ??
             (compact ? AppTextStyles.caption : AppTextStyles.bodyStrong),
       ),
       orElse: () => Text(
-        'Match A Man kullanıcısı',
+        'Akanzi kullanıcısı',
         style:
             textStyle ??
             (compact ? AppTextStyles.caption : AppTextStyles.bodyStrong),

@@ -80,19 +80,19 @@ class LegalInfoPage extends StatelessWidget {
 _LegalContent _content(LegalInfoType type) {
   return switch (type) {
     LegalInfoType.privacyPolicy => const _LegalContent(
-      title: 'Match A Man Gizlilik Politikası ve KVKK Aydınlatma Metni',
+      title: 'Akanzi Gizlilik Politikası ve KVKK Aydınlatma Metni',
       notice:
           'Sürüm: privacy_v1_2026_06_10\nSon güncelleme: 10 Haziran 2026\nBu metin kapalı test MVP sürümü için hazırlanmış gizlilik ve aydınlatma bilgilendirmesidir.',
       sections: [
         _LegalSection(
           title: 'Veri sorumlusu ve iletişim',
           body:
-              'Match A Man uygulamasında işlenen kişisel veriler için resmi iletişim ve destek kanalları uygulama içinde veya Match A Man’in resmi sayfalarında paylaşılır. Destek, veri talebi ve hesap silme başvuruları uygulama içindeki destek ve hesap kanalları üzerinden iletilebilir.',
+              'Akanzi uygulamasında işlenen kişisel veriler için resmi iletişim ve destek kanalları uygulama içinde veya Akanzi\'nin resmi sayfalarında paylaşılır. Destek, veri talebi ve hesap silme başvuruları uygulama içindeki destek ve hesap kanalları üzerinden iletilebilir.',
         ),
         _LegalSection(
           title: 'Uygulamanın amacı',
           body:
-              'Match A Man; kullanıcıların sosyal spor ve etkinlikler etrafında profil oluşturmasına, etkinlik keşfetmesine, etkinlik oluşturmasına, katılım isteği göndermesine, onaylı etkinlik sohbetlerine katılmasına, sosyal içerik paylaşmasına ve topluluk güvenliğini yönetmesine yardımcı olan bir platformdur.',
+              'Akanzi; kullanıcıların sosyal spor ve etkinlikler etrafında profil oluşturmasına, etkinlik keşfetmesine, etkinlik oluşturmasına, katılım isteği göndermesine, onaylı etkinlik sohbetlerine katılmasına, sosyal içerik paylaşmasına ve topluluk güvenliğini yönetmesine yardımcı olan bir platformdur.',
         ),
         _LegalSection(
           title: 'İşlenen kişisel veri kategorileri',
@@ -172,17 +172,17 @@ _LegalContent _content(LegalInfoType type) {
         _LegalSection(
           title: 'Başvuru ve iletişim',
           body:
-              'Veri, gizlilik ve hesap silme taleplerini uygulama içindeki Ayarlar > Hesabımı sil veya Ayarlar > Geri bildirim gönder ekranlarından iletebilirsin. Başvurularda hesap sahipliğini doğrulamak için makul ek bilgi istenebilir. Resmi iletişim ve destek kanalları uygulama içinde veya Match A Man’in resmi sayfalarında paylaşılır.',
+              'Veri, gizlilik ve hesap silme taleplerini uygulama içindeki Ayarlar > Hesabımı sil veya Ayarlar > Geri bildirim gönder ekranlarından iletebilirsin. Başvurularda hesap sahipliğini doğrulamak için makul ek bilgi istenebilir. Resmi iletişim ve destek kanalları uygulama içinde veya Akanzi\'nin resmi sayfalarında paylaşılır.',
         ),
         _LegalSection(
           title: 'Çocuklar ve yaş sınırı',
           body:
-              'Match A Man 18 yaş ve üzeri kullanıcılar için tasarlanmıştır. 18 yaşın altındaki kişilerin uygulamayı kullanması amaçlanmaz. Yaşla ilgili yanlış bilgi veya güvenlik riski tespit edilirse hesap erişimi sınırlandırılabilir.',
+              'Akanzi 18 yaş ve üzeri kullanıcılar için tasarlanmıştır. 18 yaşın altındaki kişilerin uygulamayı kullanması amaçlanmaz. Yaşla ilgili yanlış bilgi veya güvenlik riski tespit edilirse hesap erişimi sınırlandırılabilir.',
         ),
         _LegalSection(
           title: 'Güvenlik önlemleri',
           body:
-              'Match A Man, kullanıcı verilerini korumak için Supabase yetkilendirme kuralları, hesap oturumu, erişim kontrolleri, RLS politikaları, oran sınırlama, raporlama/engelleme araçları ve gizli anahtarların istemci uygulamaya konulmaması gibi makul teknik ve idari önlemler kullanır. Buna rağmen hiçbir dijital sistem için mutlak güvenlik garantisi verilemez.',
+              'Akanzi, kullanıcı verilerini korumak için Supabase yetkilendirme kuralları, hesap oturumu, erişim kontrolleri, RLS politikaları, oran sınırlama, raporlama/engelleme araçları ve gizli anahtarların istemci uygulamaya konulmaması gibi makul teknik ve idari önlemler kullanır. Buna rağmen hiçbir dijital sistem için mutlak güvenlik garantisi verilemez.',
         ),
         _LegalSection(
           title: 'Politika güncellemeleri',
@@ -192,19 +192,19 @@ _LegalContent _content(LegalInfoType type) {
       ],
     ),
     LegalInfoType.termsOfUse => const _LegalContent(
-      title: 'Match A Man Kullanıcı Sözleşmesi',
+      title: 'Akanzi Kullanıcı Sözleşmesi',
       notice:
           'Sürüm: terms_v1_2026_06_10\nSon güncelleme: 10 Haziran 2026\nBu metin kapalı test MVP sürümü için hazırlanmıştır.',
       sections: [
         _LegalSection(
           title: 'Taraflar ve platform açıklaması',
           body:
-              'Bu Kullanıcı Sözleşmesi, Match A Man mobil uygulamasını kullanan kişi ile Match A Man platformu arasındaki temel kullanım şartlarını açıklar. Match A Man bir sosyal spor ve etkinlik platformudur; kullanıcıların spor ve sosyal etkinlikler etrafında profil oluşturmasına, etkinlik keşfetmesine, etkinlik oluşturmasına, katılım isteği göndermesine ve topluluk içinde iletişim kurmasına yardımcı olur.',
+              'Bu Kullanıcı Sözleşmesi, Akanzi mobil uygulamasını kullanan kişi ile Akanzi platformu arasındaki temel kullanım şartlarını açıklar. Akanzi bir sosyal spor ve etkinlik platformudur; kullanıcıların spor ve sosyal etkinlikler etrafında profil oluşturmasına, etkinlik keşfetmesine, etkinlik oluşturmasına, katılım isteği göndermesine ve topluluk içinde iletişim kurmasına yardımcı olur.',
         ),
         _LegalSection(
           title: 'Yaş ve uygunluk',
           body:
-              'Match A Man yalnızca 18 yaş ve üzeri kullanıcılar içindir. 18 yaşın altındaysan veya bulunduğun yerde bu hizmeti kullanman yasal olarak uygun değilse uygulamayı kullanmamalısın.',
+              'Akanzi yalnızca 18 yaş ve üzeri kullanıcılar içindir. 18 yaşın altındaysan veya bulunduğun yerde bu hizmeti kullanman yasal olarak uygun değilse uygulamayı kullanmamalısın.',
         ),
         _LegalSection(
           title: 'Hesap, giriş ve kabul',
@@ -239,22 +239,22 @@ _LegalContent _content(LegalInfoType type) {
         _LegalSection(
           title: 'Kullanıcı içerikleri',
           body:
-              'Profil bilgileri, etkinlik açıklamaları, gönderiler, fotoğraflar, yorumlar ve mesajlar gibi kullanıcı içeriklerinden içeriği paylaşan kullanıcı sorumludur. Match A Man, kuralları ihlal eden, güvenlik riski oluşturan veya başkalarının haklarını ihlal eden içerikleri görünürlükten kaldırabilir, sınırlandırabilir veya incelemeye alabilir.',
+              'Profil bilgileri, etkinlik açıklamaları, gönderiler, fotoğraflar, yorumlar ve mesajlar gibi kullanıcı içeriklerinden içeriği paylaşan kullanıcı sorumludur. Akanzi, kuralları ihlal eden, güvenlik riski oluşturan veya başkalarının haklarını ihlal eden içerikleri görünürlükten kaldırabilir, sınırlandırabilir veya incelemeye alabilir.',
         ),
         _LegalSection(
           title: 'Raporlama, engelleme ve moderasyon',
           body:
-              'Kullanıcılar rahatsız edici davranışları, etkinlikleri, profilleri, gönderileri veya yorumları bildirebilir ve kullanıcıları engelleyebilir. Match A Man, güvenlik, kötüye kullanım veya kural ihlali durumlarında içerikleri kaldırabilir, etkinlik katılımını sınırlandırabilir, hesabı geçici olarak kısıtlayabilir, askıya alabilir veya gerekli hallerde hesabın kapatılması sürecini başlatabilir.',
+              'Kullanıcılar rahatsız edici davranışları, etkinlikleri, profilleri, gönderileri veya yorumları bildirebilir ve kullanıcıları engelleyebilir. Akanzi, güvenlik, kötüye kullanım veya kural ihlali durumlarında içerikleri kaldırabilir, etkinlik katılımını sınırlandırabilir, hesabı geçici olarak kısıtlayabilir, askıya alabilir veya gerekli hallerde hesabın kapatılması sürecini başlatabilir.',
         ),
         _LegalSection(
           title: 'Bildirimler',
           body:
-              'Match A Man; hesap, profil, etkinlik, katılım isteği, host onayı/reddi, güvenlik, destek, uygulama işleyişi ve topluluk deneyimiyle ilgili uygulama içi bildirimler veya push bildirimleri gönderebilir. Cihaz bildirim izinlerini işletim sistemi ayarlarından yönetebilirsin.',
+              'Akanzi; hesap, profil, etkinlik, katılım isteği, host onayı/reddi, güvenlik, destek, uygulama işleyişi ve topluluk deneyimiyle ilgili uygulama içi bildirimler veya push bildirimleri gönderebilir. Cihaz bildirim izinlerini işletim sistemi ayarlarından yönetebilirsin.',
         ),
         _LegalSection(
           title: 'Flört uygulaması değildir',
           body:
-              'Match A Man flört veya dating uygulaması değildir. Platformun amacı kullanıcıları romantik eşleşme için değil, sosyal spor ve etkinlik deneyimleri etrafında bir araya getirmektir. Taciz edici, ısrarcı, cinsel içerikli veya rahatsız edici iletişim topluluk kurallarına aykırıdır.',
+              'Akanzi flört veya dating uygulaması değildir. Platformun amacı kullanıcıları romantik eşleşme için değil, sosyal spor ve etkinlik deneyimleri etrafında bir araya getirmektir. Taciz edici, ısrarcı, cinsel içerikli veya rahatsız edici iletişim topluluk kurallarına aykırıdır.',
         ),
         _LegalSection(
           title: 'Kapalı test ve ödeme durumu',
@@ -264,32 +264,32 @@ _LegalContent _content(LegalInfoType type) {
         _LegalSection(
           title: 'İşletme hesapları',
           body:
-              'Uygulamada işletme başvurusu ve işletme profili akışları bulunabilir. İşletme hesabı kullanan kişiler; işletme bilgileri, etkinlik açıklamaları, mekan koşulları, fiyat bilgisi, hizmet iddiaları ve yasal uygunluk gibi konularda doğru ve yanıltıcı olmayan bilgi paylaşmalıdır. Match A Man, işletme başvurularını inceleyebilir ve uygun görmediği hesapları sınırlandırabilir.',
+              'Uygulamada işletme başvurusu ve işletme profili akışları bulunabilir. İşletme hesabı kullanan kişiler; işletme bilgileri, etkinlik açıklamaları, mekan koşulları, fiyat bilgisi, hizmet iddiaları ve yasal uygunluk gibi konularda doğru ve yanıltıcı olmayan bilgi paylaşmalıdır. Akanzi, işletme başvurularını inceleyebilir ve uygun görmediği hesapları sınırlandırabilir.',
         ),
         _LegalSection(
           title: 'Fikri mülkiyet',
           body:
-              'Match A Man adı, arayüzü, yazılımı, görsel kimliği, metinleri ve platforma ait teknik bileşenler ilgili hak sahiplerine aittir. Kullanıcılar platformu kopyalayamaz, tersine mühendislik yapamaz, yetkisiz erişim denemesi yapamaz veya platformun güvenliğini ve işleyişini bozacak araçlar kullanamaz.',
+              'Akanzi adı, arayüzü, yazılımı, görsel kimliği, metinleri ve platforma ait teknik bileşenler ilgili hak sahiplerine aittir. Kullanıcılar platformu kopyalayamaz, tersine mühendislik yapamaz, yetkisiz erişim denemesi yapamaz veya platformun güvenliğini ve işleyişini bozacak araçlar kullanamaz.',
         ),
         _LegalSection(
           title: 'Hizmetin kullanılabilirliği',
           body:
-              'Kapalı test ve MVP sürümü hata, kesinti, gecikme, eksik özellik veya beklenmeyen davranışlar içerebilir. Match A Man hizmeti güvenli ve kullanılabilir tutmak için makul çabayı gösterir; ancak uygulamanın her zaman kesintisiz, hatasız veya tüm cihazlarda aynı şekilde çalışacağı garanti edilmez.',
+              'Kapalı test ve MVP sürümü hata, kesinti, gecikme, eksik özellik veya beklenmeyen davranışlar içerebilir. Akanzi hizmeti güvenli ve kullanılabilir tutmak için makul çabayı gösterir; ancak uygulamanın her zaman kesintisiz, hatasız veya tüm cihazlarda aynı şekilde çalışacağı garanti edilmez.',
         ),
         _LegalSection(
           title: 'Sorumluluğun sınırları',
           body:
-              'Match A Man, kullanıcıların kendi içerikleri, etkinlik kararları, fiziksel katılım tercihleri, kullanıcılar arası iletişimleri ve üçüncü taraf mekan/işletme koşulları üzerinde tam kontrol sahibi değildir. Yürürlükteki zorunlu tüketici hakları ve emredici mevzuat saklı kalmak üzere, platformun sorumluluğu makul ve hukuken izin verilen sınırlar içinde değerlendirilir.',
+              'Akanzi, kullanıcıların kendi içerikleri, etkinlik kararları, fiziksel katılım tercihleri, kullanıcılar arası iletişimleri ve üçüncü taraf mekan/işletme koşulları üzerinde tam kontrol sahibi değildir. Yürürlükteki zorunlu tüketici hakları ve emredici mevzuat saklı kalmak üzere, platformun sorumluluğu makul ve hukuken izin verilen sınırlar içinde değerlendirilir.',
         ),
         _LegalSection(
           title: 'Sözleşme Değişiklikleri',
           body:
-              'Match A Man bu sözleşmeyi zaman zaman güncelleyebilir. Güncel sözleşme uygulama içinde veya resmi sayfalarda yayımlanır. Önemli değişiklikler uygulama içi bildirim, e-posta, push bildirimi veya benzeri makul yöntemlerle duyurulabilir ve kullanıcıya değişiklikleri inceleme fırsatı verilir. Kullanıcı, önemli bir değişikliğin yürürlük tarihinden sonra uygulamayı kullanmaya devam ederse güncel şartları kabul etmiş sayılabilir. Bir değişiklik hukuken veya teknik olarak yeniden açık kabul gerektirirse, uygulamaya devam etmek için kullanıcıdan güncellenen şartları kabul etmesi istenebilir. Güncellenen şartları kabul etmeyen kullanıcı uygulamayı kullanmayı bırakabilir ve hesap silme talebinde bulunabilir. KVKK, Gizlilik Politikası, Aydınlatma Metni veya açık rıza gerektiren değişiklikler bu sözleşmenin içine gizlenmez; gerekli hallerde ayrı metinler veya onay ekranları üzerinden yönetilir.',
+              'Akanzi bu sözleşmeyi zaman zaman güncelleyebilir. Güncel sözleşme uygulama içinde veya resmi sayfalarda yayımlanır. Önemli değişiklikler uygulama içi bildirim, e-posta, push bildirimi veya benzeri makul yöntemlerle duyurulabilir ve kullanıcıya değişiklikleri inceleme fırsatı verilir. Kullanıcı, önemli bir değişikliğin yürürlük tarihinden sonra uygulamayı kullanmaya devam ederse güncel şartları kabul etmiş sayılabilir. Bir değişiklik hukuken veya teknik olarak yeniden açık kabul gerektirirse, uygulamaya devam etmek için kullanıcıdan güncellenen şartları kabul etmesi istenebilir. Güncellenen şartları kabul etmeyen kullanıcı uygulamayı kullanmayı bırakabilir ve hesap silme talebinde bulunabilir. KVKK, Gizlilik Politikası, Aydınlatma Metni veya açık rıza gerektiren değişiklikler bu sözleşmenin içine gizlenmez; gerekli hallerde ayrı metinler veya onay ekranları üzerinden yönetilir.',
         ),
         _LegalSection(
           title: 'Hesap silme ve sona erme',
           body:
-              'Kullanıcılar uygulama içindeki hesap silme veya destek kanallarını kullanarak hesaplarına ilişkin taleplerini iletebilir. Match A Man, kural ihlali, güvenlik riski, kötüye kullanım veya hukuki zorunluluk halinde hesap erişimini sınırlandırabilir ya da hesabı askıya alabilir. Hesap silme ve veri saklama süreçleri geçerli mevzuat, güvenlik kayıtları ve zorunlu saklama süreleri dikkate alınarak yürütülür.',
+              'Kullanıcılar uygulama içindeki hesap silme veya destek kanallarını kullanarak hesaplarına ilişkin taleplerini iletebilir. Akanzi, kural ihlali, güvenlik riski, kötüye kullanım veya hukuki zorunluluk halinde hesap erişimini sınırlandırabilir ya da hesabı askıya alabilir. Hesap silme ve veri saklama süreçleri geçerli mevzuat, güvenlik kayıtları ve zorunlu saklama süreleri dikkate alınarak yürütülür.',
         ),
         _LegalSection(
           title: 'Uygulanacak hukuk',
@@ -299,7 +299,7 @@ _LegalContent _content(LegalInfoType type) {
         _LegalSection(
           title: 'İletişim ve destek',
           body:
-              'Destek, güvenlik, geri bildirim, hesap ve veri talepleri için uygulama içindeki destek ve geri bildirim kanallarını kullanabilirsin. Resmi iletişim kanalları uygulama içinde veya Match A Man tarafından duyurulan resmi sayfalarda yayımlanabilir.',
+              'Destek, güvenlik, geri bildirim, hesap ve veri talepleri için uygulama içindeki destek ve geri bildirim kanallarını kullanabilirsin. Resmi iletişim kanalları uygulama içinde veya Akanzi tarafından duyurulan resmi sayfalarda yayımlanabilir.',
         ),
       ],
     ),
@@ -338,7 +338,7 @@ _LegalContent _content(LegalInfoType type) {
         _LegalSection(
           title: 'Kendi riskinle katılım',
           body:
-              'Match A Man üzerinde oluşturulan etkinliklere katılım kullanıcının kendi değerlendirmesi ve sorumluluğundadır. Platform etkinlikleri fiziksel olarak denetlemez, organize etmez, garanti etmez veya sigortalamaz.',
+              'Akanzi üzerinde oluşturulan etkinliklere katılım kullanıcının kendi değerlendirmesi ve sorumluluğundadır. Platform etkinlikleri fiziksel olarak denetlemez, organize etmez, garanti etmez veya sigortalamaz.',
         ),
         _LegalSection(
           title: 'Kontrol listesi',
@@ -363,7 +363,7 @@ _LegalContent _content(LegalInfoType type) {
       ],
     ),
     LegalInfoType.support => const _LegalContent(
-      title: 'Match A Man Hesap Silme Bilgilendirmesi',
+      title: 'Akanzi Hesap Silme Bilgilendirmesi',
       notice:
           'Sürüm: account_deletion_v1_2026_06_10\nSon güncelleme: 10 Haziran 2026\nBu metin hesap silme, veri talepleri ve destek kanalları için kapalı test MVP bilgilendirmesidir.',
       sections: [
@@ -400,12 +400,12 @@ _LegalContent _content(LegalInfoType type) {
         _LegalSection(
           title: 'Veri erişim ve düzeltme talepleri',
           body:
-              'Kişisel verilerine erişim, düzeltme, silme, itiraz veya KVKK kapsamındaki diğer taleplerini uygulama içindeki Ayarlar > Geri bildirim gönder ekranından iletebilirsin. Hesap sahipliğini doğrulamak için makul ek bilgi istenebilir. Resmi iletişim ve destek kanalları uygulama içinde veya Match A Man’in resmi sayfalarında paylaşılır.',
+              'Kişisel verilerine erişim, düzeltme, silme, itiraz veya KVKK kapsamındaki diğer taleplerini uygulama içindeki Ayarlar > Geri bildirim gönder ekranından iletebilirsin. Hesap sahipliğini doğrulamak için makul ek bilgi istenebilir. Resmi iletişim ve destek kanalları uygulama içinde veya Akanzi\'nin resmi sayfalarında paylaşılır.',
         ),
         _LegalSection(
           title: 'Uygulama dışı başvuru ve destek',
           body:
-              'Uygulamaya erişemiyorsan, resmi destek kanalı üzerinden hesap e-postanı, kullanıcı adını biliyorsan kullanıcı adını ve talebinin hesap silme mi yoksa veri talebi mi olduğunu paylaşarak başvuru yapabilirsin. Resmi iletişim ve destek kanalları uygulama içinde veya Match A Man’in resmi sayfalarında paylaşılır.',
+              'Uygulamaya erişemiyorsan, resmi destek kanalı üzerinden hesap e-postanı, kullanıcı adını biliyorsan kullanıcı adını ve talebinin hesap silme mi yoksa veri talebi mi olduğunu paylaşarak başvuru yapabilirsin. Resmi iletişim ve destek kanalları uygulama içinde veya Akanzi\'nin resmi sayfalarında paylaşılır.',
         ),
       ],
     ),

@@ -224,7 +224,7 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
           onPressed: () => _goBack(context),
           icon: const Icon(Icons.arrow_back),
         ),
-        title: const Text('MaM'),
+        title: const Text('Akanzi'),
       ),
       body: SafeArea(
         child: Form(

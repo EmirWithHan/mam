@@ -545,7 +545,7 @@ class _SettingsUserCard extends StatelessWidget {
     final name = [
       firstName,
     ].where((part) => part != null && part.isNotEmpty).join(' ');
-    return name.isNotEmpty ? name : 'Match A Man kullanıcısı';
+    return name.isNotEmpty ? name : 'Akanzi kullanıcısı';
   }
 
   String _displayHandle() {

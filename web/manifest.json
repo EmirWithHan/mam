@@ -1,11 +1,11 @@
 {
-    "name": "Match A Man",
-    "short_name": "Match A Man",
+    "name": "Akanzi",
+    "short_name": "Akanzi",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#FDFBF9",
     "theme_color": "#FF7E79",
-    "description": "Match A Man social sports and events app.",
+    "description": "Akanzi social sports and events app.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

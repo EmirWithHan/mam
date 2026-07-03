@@ -100,9 +100,7 @@ Future<void> _applyJoinApprovalTrustEvent(String requestId) async {
 
 void _debugPrintSupabaseError(String action, Object error) {
   if (error is PostgrestException) {
-    debugPrint(
-      '[JoinRequests] $action failed code=${error.code}',
-    );
+    debugPrint('[JoinRequests] $action failed code=${error.code}');
     return;
   }
 

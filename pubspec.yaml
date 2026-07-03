@@ -42,35 +42,35 @@ flutter:
   assets:
     - assets/auth/apple_logo.png
     - assets/auth/google_logo.png
-    - assets/branding/mam_logo.jpg
+    - assets/branding/akanzi_logo.jpg
 
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/branding/mam_logo.jpg"
+  image_path: "assets/branding/akanzi_logo.jpg"
   adaptive_icon_background: "#FDFBF9"
-  adaptive_icon_foreground: "assets/branding/mam_logo.jpg"
+  adaptive_icon_foreground: "assets/branding/akanzi_logo.jpg"
   remove_alpha_ios: true
   web:
     generate: true
-    image_path: "assets/branding/mam_logo.jpg"
+    image_path: "assets/branding/akanzi_logo.jpg"
     background_color: "#FDFBF9"
     theme_color: "#FF7E79"
   windows:
     generate: true
-    image_path: "assets/branding/mam_logo.jpg"
+    image_path: "assets/branding/akanzi_logo.jpg"
     icon_size: 48
   macos:
     generate: true
-    image_path: "assets/branding/mam_logo.jpg"
+    image_path: "assets/branding/akanzi_logo.jpg"
 
 flutter_native_splash:
   color: "#FDFBF9"
-  image: assets/branding/mam_logo.jpg
+  image: assets/branding/akanzi_logo.jpg
   android: true
   ios: true
   web: true
   android_12:
     color: "#FDFBF9"
-    image: assets/branding/mam_logo.jpg
+    image: assets/branding/akanzi_logo.jpg
     icon_background_color: "#FDFBF9"
