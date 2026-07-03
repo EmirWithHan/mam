@@ -805,15 +805,8 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                         if (!businessAccount.isPlusActive) ...[
                           const SizedBox(width: AppSpacing.sm),
                           TextButton(
-                            onPressed: () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Aylık Plus aboneliği yakında. Satın alma yakında aktif olacak.',
-                                  ),
-                                ),
-                              );
-                            },
+                            onPressed: () =>
+                                context.pushNamed(RouteNames.businessPlus),
                             child: const Text('Plus\'a geç'),
                           ),
                         ],

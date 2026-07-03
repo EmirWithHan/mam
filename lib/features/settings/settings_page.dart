@@ -201,26 +201,7 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                 trailing: businessAccount?.isPlusActive == true
                     ? const Icon(Icons.star_rounded, color: AppColors.tertiary)
                     : null,
-                onTap: () {
-                  showDialog<void>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: AppRadius.lgBorder,
-                      ),
-                      title: const Text('Business Plus'),
-                      content: const Text(
-                        'Aylık Plus aboneliği yakında.\nSatın alma yakında aktif olacak.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('Tamam'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                onTap: () => context.pushNamed(RouteNames.businessPlus),
               ),
               const SizedBox(height: AppSpacing.md),
               SettingsMenuTile(

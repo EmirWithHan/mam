@@ -26,6 +26,7 @@ class RouteNames {
   static const support = 'support';
   static const blockedUsers = 'blockedUsers';
   static const businessCreate = 'businessCreate';
+  static const businessPlus = 'businessPlus';
   static const businessProfile = 'businessProfile';
   static const admin = 'admin';
   static const notifications = 'notifications';
@@ -75,6 +76,7 @@ class RoutePaths {
   static const support = '/settings/support';
   static const blockedUsers = '/settings/blocked-users';
   static const businessCreate = '/business/create';
+  static const businessPlus = '/business/plus';
   static const businessProfile = '/business/:businessId';
   static const admin = '/admin';
   static const notifications = '/notifications';

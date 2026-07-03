@@ -14,6 +14,7 @@ import '../../features/auth/register_page.dart';
 import '../../features/auth/reset_password_page.dart';
 import '../../features/business/business_profile_page.dart';
 import '../../features/business/admin_business_applications_page.dart';
+import '../../features/business/business_plus_page.dart';
 import '../../features/business/create_business_account_page.dart';
 import '../../features/chat/event_chat_page.dart';
 import '../../features/direct_messages/direct_messages_page.dart';
@@ -335,6 +336,14 @@ GoRouter createAppRouter(AuthState authState) {
         builder: (context, state) => const MainNavigationShell(
           currentIndex: 4,
           child: CreateBusinessAccountPage(),
+        ),
+      ),
+      GoRoute(
+        path: RoutePaths.businessPlus,
+        name: RouteNames.businessPlus,
+        builder: (context, state) => const MainNavigationShell(
+          currentIndex: 4,
+          child: BusinessPlusPage(),
         ),
       ),
       GoRoute(

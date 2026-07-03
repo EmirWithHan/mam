@@ -225,8 +225,6 @@ class _SubscriptionStatusCard extends StatelessWidget {
 
   final BusinessAccount account;
 
-  static const String _businessPlusPrice = '499 TL / ay';
-
   @override
   Widget build(BuildContext context) {
     final isPlus = account.isPlusActive;
@@ -269,62 +267,29 @@ class _SubscriptionStatusCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             if (isPlus) ...[
               const _PlusBenefitLine(
-                text: 'Ayda 30 etkinlik oluşturma hakkı (Kalan: Limitsiz)',
+                text: 'Daha esnek etkinlik planlama aktif',
               ),
-              const _PlusBenefitLine(text: 'Ayda 5 öne çıkarma hakkı'),
               const _PlusBenefitLine(
-                text:
-                    'Etkinlik ve işletme aramalarında üst sıralarda listelenme',
+                text: 'İşletme profilinde Plus ayrıcalıkları aktif',
               ),
-              const _PlusBenefitLine(text: 'Sponsorlu işletme rozeti aktif'),
-              const _PlusBenefitLine(text: 'Öncelikli destek rozeti aktif'),
             ] else ...[
               Text(
-                'İşletmenizi bir üst seviyeye taşımak için Business Plus\'a geçin!',
+                'İşletmenizi bir üst seviyeye taşımak için Business Plus\'a geçin.',
                 style: AppTextStyles.bodyStrong,
               ),
-              const SizedBox(height: AppSpacing.xs),
-              Text(
-                'Fiyat: $_businessPlusPrice',
-                style: AppTextStyles.bodyStrong.copyWith(
-                  color: AppColors.tertiary,
-                ),
-              ),
               const SizedBox(height: AppSpacing.md),
-              const _PlusBenefitLine(text: 'Daha fazla görünürlük'),
+              const _PlusBenefitLine(text: 'Daha esnek etkinlik planlama'),
               const _PlusBenefitLine(
-                text: 'Etkinliklerini öne çıkarma altyapısı',
+                text: 'İşletme profilinde Plus ayrıcalıkları',
               ),
-              const _PlusBenefitLine(text: 'QR katılım raporları'),
-              const _PlusBenefitLine(text: 'Gelişmiş işletme istatistikleri'),
-              const _PlusBenefitLine(text: 'Katılımcı dönüşüm verileri'),
+              const _PlusBenefitLine(text: 'Profesyonel işletme deneyimi'),
               const _PlusBenefitLine(
-                text: 'Popüler işletme ve güven rozetleri',
-              ),
-              const _PlusBenefitLine(text: 'Daha profesyonel işletme profili'),
-              const _PlusBenefitLine(
-                text: 'Gelecekte kampanya/öne çıkarma özelliklerine hazırlık',
+                text: 'Akanzi içindeki işletme araçlarına hazır Plus altyapısı',
               ),
               const SizedBox(height: AppSpacing.md),
               AppButton(
-                label: 'Plus\'a Geç',
-                onPressed: () {
-                  showDialog<void>(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: const Text('Business Plus'),
-                      content: const Text(
-                        'Business Plus satın alma yakında aktif olacak.',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('Tamam'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                label: 'Business Plus\'a Geç',
+                onPressed: () => context.pushNamed(RouteNames.businessPlus),
               ),
             ],
           ],
