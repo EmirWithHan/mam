@@ -21,6 +21,7 @@ import 'profile_provider.dart';
 import 'widgets/profile_badges_section.dart';
 import 'widgets/profile_event_list.dart';
 import 'widgets/profile_gallery_grid.dart';
+import 'widgets/profile_stats_box.dart';
 import 'widgets/safe_avatar.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
@@ -122,10 +123,7 @@ class _ProfileBody extends ConsumerWidget {
             eventCount: activityState.events.length,
           ),
           const SizedBox(height: AppSpacing.lg),
-          ProfileBadgesSection.fromAsync(
-            badgesAsync,
-            trustScore: profile.trustScoreValue,
-          ),
+          ProfileBadgesSection.fromAsync(badgesAsync),
           const SizedBox(height: AppSpacing.lg),
           _ProfileActivityTabs(
             selectedTab: selectedTab,
@@ -423,102 +421,26 @@ class _OwnProfileStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.background,
-            border: Border.all(color: AppColors.border),
-            borderRadius: AppRadius.lgBorder,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.sm),
-            child: Row(
-              children: [
-                Expanded(
-                  child: _OwnProfileStatCard(
-                    value: followingCount,
-                    label: 'Takip',
-                    onTap: () => context.pushNamed(
-                      RouteNames.profileFollowList,
-                      pathParameters: {'userId': userId, 'type': 'following'},
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: _OwnProfileStatCard(
-                    value: followersCount,
-                    label: 'Takipçi',
-                    onTap: () => context.pushNamed(
-                      RouteNames.profileFollowList,
-                      pathParameters: {'userId': userId, 'type': 'followers'},
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: _OwnProfileStatCard(
-                    value: eventCount,
-                    label: 'Etkinlik',
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _OwnProfileStatCard extends StatelessWidget {
-  const _OwnProfileStatCard({
-    required this.value,
-    required this.label,
-    this.onTap,
-  });
-
-  final int value;
-  final String label;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: AppRadius.lgBorder,
-        onTap: onTap,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            border: Border.all(color: Colors.transparent),
-            borderRadius: AppRadius.lgBorder,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 2,
-              vertical: AppSpacing.sm,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Text(_compactCount(value), style: AppTextStyles.title),
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  label,
-                  style: AppTextStyles.caption,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+    return ProfileStatsBox(
+      items: [
+        ProfileStatItem(
+          value: followingCount,
+          label: 'Takip',
+          onTap: () => context.pushNamed(
+            RouteNames.profileFollowList,
+            pathParameters: {'userId': userId, 'type': 'following'},
           ),
         ),
-      ),
+        ProfileStatItem(
+          value: followersCount,
+          label: 'Takipçi',
+          onTap: () => context.pushNamed(
+            RouteNames.profileFollowList,
+            pathParameters: {'userId': userId, 'type': 'followers'},
+          ),
+        ),
+        ProfileStatItem(value: eventCount, label: 'Etkinlik'),
+      ],
     );
   }
 }
@@ -576,18 +498,4 @@ String _displayName(Profile profile) {
 
   if (name.isNotEmpty) return name;
   return 'Akanzi kullanıcısı';
-}
-
-String _compactCount(int value) {
-  if (value >= 1000000) {
-    final formatted = (value / 1000000).toStringAsFixed(
-      value >= 10000000 ? 0 : 1,
-    );
-    return '${formatted.replaceAll('.0', '')}M';
-  }
-  if (value >= 1000) {
-    final formatted = (value / 1000).toStringAsFixed(value >= 10000 ? 0 : 1);
-    return '${formatted.replaceAll('.0', '')}K';
-  }
-  return value.toString();
 }

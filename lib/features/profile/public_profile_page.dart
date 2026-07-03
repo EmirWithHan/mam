@@ -27,6 +27,7 @@ import 'profile_models.dart';
 import 'profile_provider.dart';
 import 'widgets/profile_badges_section.dart';
 import 'widgets/profile_gallery_viewer_page.dart';
+import 'widgets/profile_stats_box.dart';
 import 'widgets/safe_avatar.dart';
 
 enum _PublicProfileTab { gallery, events }
@@ -96,6 +97,10 @@ class _PublicProfilePageState extends ConsumerState<PublicProfilePage> {
 
         final isMe = currentUserId != null && currentUserId == detail.userId;
         final badgesAsync = ref.watch(profileBadgesProvider(widget.userId));
+        final eventHistoryAsync = ref.watch(
+          publicProfileEventHistoryProvider(widget.userId),
+        );
+        final eventCount = eventHistoryAsync.valueOrNull?.length ?? 0;
 
         ThemeData pageTheme = Theme.of(context);
         if (detail.businessCustomThemeColor != null &&
@@ -151,6 +156,7 @@ class _PublicProfilePageState extends ConsumerState<PublicProfilePage> {
                   children: [
                     _PublicProfileHeader(
                       detail: detail,
+                      eventCount: eventCount,
                       isMe: isMe,
                       onFollowChanged: _refreshPublicProfile,
                     ),
@@ -201,11 +207,13 @@ class _PublicProfilePageState extends ConsumerState<PublicProfilePage> {
 class _PublicProfileHeader extends StatelessWidget {
   const _PublicProfileHeader({
     required this.detail,
+    required this.eventCount,
     required this.isMe,
     required this.onFollowChanged,
   });
 
   final PublicProfileDetail detail;
+  final int eventCount;
   final bool isMe;
   final VoidCallback onFollowChanged;
 
@@ -287,7 +295,7 @@ class _PublicProfileHeader extends StatelessWidget {
               ),
             ],
             const SizedBox(height: AppSpacing.lg),
-            _ProfileStats(detail: detail),
+            _ProfileStats(detail: detail, eventCount: eventCount),
             const SizedBox(height: AppSpacing.lg),
             if (isMe)
               _PublicProfileFollowAction(
@@ -402,120 +410,33 @@ class _InfoPill extends StatelessWidget {
 }
 
 class _ProfileStats extends StatelessWidget {
-  const _ProfileStats({required this.detail});
+  const _ProfileStats({required this.detail, required this.eventCount});
 
   final PublicProfileDetail detail;
+  final int eventCount;
 
   @override
   Widget build(BuildContext context) {
-    final stats = [
-      _StatCardData(
-        value: detail.followingCount,
-        label: 'Takip Edilen',
-        icon: Icons.person_add_alt_1_outlined,
-        onTap: () => context.pushNamed(
-          RouteNames.profileFollowList,
-          pathParameters: {'userId': detail.userId, 'type': 'following'},
-        ),
-      ),
-      _StatCardData(
-        value: detail.followersCount,
-        label: 'Takipçi',
-        icon: Icons.groups_2_outlined,
-        onTap: () => context.pushNamed(
-          RouteNames.profileFollowList,
-          pathParameters: {'userId': detail.userId, 'type': 'followers'},
-        ),
-      ),
-      if (detail.trustScore != null)
-        _StatCardData(
-          value: detail.trustScore!,
-          label: 'Güven Skoru',
-          icon: Icons.verified_outlined,
-        ),
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cardWidth = constraints.maxWidth < 420
-            ? (constraints.maxWidth - AppSpacing.sm) / 2
-            : (constraints.maxWidth - (AppSpacing.sm * 2)) / 3;
-
-        return Wrap(
-          spacing: AppSpacing.sm,
-          runSpacing: AppSpacing.sm,
-          alignment: WrapAlignment.center,
-          children: [
-            for (final stat in stats)
-              SizedBox(
-                width: cardWidth.clamp(132.0, 220.0),
-                child: _StatCard(data: stat),
-              ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _StatCardData {
-  const _StatCardData({
-    required this.value,
-    required this.label,
-    required this.icon,
-    this.onTap,
-  });
-
-  final int value;
-  final String label;
-  final IconData icon;
-  final VoidCallback? onTap;
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({required this.data});
-
-  final _StatCardData data;
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: AppRadius.lgBorder,
-        onTap: data.onTap,
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: AppColors.background,
-            border: Border.all(color: AppColors.border),
-            borderRadius: AppRadius.lgBorder,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(data.icon, color: AppColors.primary, size: 20),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  _compactCount(data.value),
-                  style: AppTextStyles.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  data.label,
-                  style: AppTextStyles.caption,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
+    return ProfileStatsBox(
+      items: [
+        ProfileStatItem(
+          value: detail.followingCount,
+          label: 'Takip',
+          onTap: () => context.pushNamed(
+            RouteNames.profileFollowList,
+            pathParameters: {'userId': detail.userId, 'type': 'following'},
           ),
         ),
-      ),
+        ProfileStatItem(
+          value: detail.followersCount,
+          label: 'Takipçi',
+          onTap: () => context.pushNamed(
+            RouteNames.profileFollowList,
+            pathParameters: {'userId': detail.userId, 'type': 'followers'},
+          ),
+        ),
+        ProfileStatItem(value: eventCount, label: 'Etkinlik'),
+      ],
     );
   }
 }
@@ -1166,16 +1087,6 @@ String _initials(PublicProfileDetail detail) {
   }
 
   return 'M';
-}
-
-String _compactCount(int value) {
-  if (value < 1000) return '$value';
-  if (value < 1000000) {
-    final count = value / 1000;
-    return '${count.toStringAsFixed(count >= 10 ? 0 : 1)}K';
-  }
-  final count = value / 1000000;
-  return '${count.toStringAsFixed(count >= 10 ? 0 : 1)}M';
 }
 
 class _MessageButton extends ConsumerStatefulWidget {

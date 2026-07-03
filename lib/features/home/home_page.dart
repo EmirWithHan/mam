@@ -18,9 +18,7 @@ import '../feed/feed_models.dart';
 import '../feed/feed_provider.dart';
 import '../feed/widgets/post_card.dart';
 import '../notifications/notifications_provider.dart';
-import '../profile/profile_models.dart';
 import 'home_feed_provider.dart';
-import 'widgets/profile_recommendation_card.dart';
 
 class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
@@ -172,23 +170,6 @@ class _HomePageState extends ConsumerState<HomePage> {
           );
         } else if (item is Event) {
           return EventCard(event: item);
-        } else if (item is Profile) {
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
-                child: Text(
-                  'Birlikte katıldığın sporcular',
-                  style: AppTextStyles.caption.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[700],
-                  ),
-                ),
-              ),
-              ProfileRecommendationCard(profile: item),
-            ],
-          );
         }
 
         return const SizedBox.shrink();

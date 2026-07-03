@@ -1,7 +1,6 @@
 import '../../services/supabase_service.dart';
 import '../../core/utils/error_messages.dart';
 import '../feed/feed_models.dart';
-import '../profile/profile_models.dart';
 import '../profile/public_profile_service.dart';
 
 class HomeFeedService {
@@ -79,37 +78,6 @@ class HomeFeedService {
         }
       }
 
-      // Source D: Past participants profiles (recommendations)
-      Future<List<Profile>> fetchRecommendedProfiles() async {
-        final recommendIds = coParticipantIds
-            .where((id) => !followedIds.contains(id) && id != userId)
-            .toList();
-        if (recommendIds.isEmpty) return [];
-        try {
-          const publicProfileService = PublicProfileService();
-          final previewMap = await publicProfileService
-              .fetchPublicProfilePreviews(recommendIds.take(10).toList());
-          return previewMap.values.map((preview) {
-            return Profile(
-              id: preview.userId,
-              userId: preview.userId,
-              username: preview.username,
-              tag: preview.tag,
-              firstName: preview.firstName,
-              city: preview.city,
-              avatarUrl: preview.canShowAvatar ? preview.avatarUrl : null,
-              trustScore: preview.trustScore,
-              isPrivate: preview.isPrivate,
-              isProfileCompleted: preview.isProfileCompleted,
-              accountType: preview.accountType,
-            );
-          }).toList();
-        } catch (error) {
-          logSupabaseDebug('HomeFeed', 'fetchRecommendedProfiles', error);
-          rethrow;
-        }
-      }
-
       // Source E: Past participants posts
       Future<List<PostWithStats>> fetchPastParticipantPosts() async {
         final postsUserIds = coParticipantIds
@@ -136,32 +104,39 @@ class HomeFeedService {
           final previewMap = await publicProfileService
               .fetchPublicProfilePreviews(postsUserIds);
 
-          return dataList.map((row) {
-            final map = Map<String, dynamic>.from(row);
-            final authorId = map['user_id'] as String;
-            final preview = previewMap[authorId];
-            final postMap = {
-              ...map,
-              'author_username': preview?.username,
-              'author_tag': preview?.tag,
-              'author_avatar_url': preview?.canShowAvatar == true
-                  ? preview?.avatarUrl
-                  : null,
-            };
-            final post = Post.fromJson(postMap);
-            final likes = map['post_likes'] as List? ?? [];
-            final comments = map['post_comments'] as List? ?? [];
-            final isLikedByMe = likes.any(
-              (like) => (like as Map)['user_id'] == userId,
-            );
+          return dataList
+              .map((row) {
+                final map = Map<String, dynamic>.from(row);
+                final authorId = map['user_id'] as String;
+                final preview = previewMap[authorId];
+                if (preview == null ||
+                    (preview.isPrivate && !preview.canViewExtendedProfile)) {
+                  return null;
+                }
+                final postMap = {
+                  ...map,
+                  'author_username': preview.username,
+                  'author_tag': preview.tag,
+                  'author_avatar_url': preview.canShowAvatar
+                      ? preview.avatarUrl
+                      : null,
+                };
+                final post = Post.fromJson(postMap);
+                final likes = map['post_likes'] as List? ?? [];
+                final comments = map['post_comments'] as List? ?? [];
+                final isLikedByMe = likes.any(
+                  (like) => (like as Map)['user_id'] == userId,
+                );
 
-            return PostWithStats(
-              post: post,
-              likeCount: likes.length,
-              commentCount: comments.length,
-              isLikedByMe: isLikedByMe,
-            );
-          }).toList();
+                return PostWithStats(
+                  post: post,
+                  likeCount: likes.length,
+                  commentCount: comments.length,
+                  isLikedByMe: isLikedByMe,
+                );
+              })
+              .whereType<PostWithStats>()
+              .toList();
         } catch (error) {
           logSupabaseDebug('HomeFeed', 'fetchPastParticipantPosts', error);
           rethrow;
@@ -171,19 +146,16 @@ class HomeFeedService {
       // Trigger all fetches in parallel
       final results = await Future.wait([
         fetchFollowedPosts(),
-        fetchRecommendedProfiles(),
         fetchPastParticipantPosts(),
       ]);
 
       final followedPosts = results[0] as List<PostWithStats>;
-      final recommendedProfiles = results[1] as List<Profile>;
-      final pastParticipantPosts = results[2] as List<PostWithStats>;
+      final pastParticipantPosts = results[1] as List<PostWithStats>;
 
       // Combine and Interleave
       final List<dynamic> mixedFeed = _mixFeedItems(
         followedPosts: followedPosts,
         pastParticipantPosts: pastParticipantPosts,
-        recommendedProfiles: recommendedProfiles,
       );
 
       return mixedFeed;
@@ -195,10 +167,7 @@ class HomeFeedService {
   List<dynamic> _mixFeedItems({
     required List<PostWithStats> followedPosts,
     required List<PostWithStats> pastParticipantPosts,
-    required List<Profile> recommendedProfiles,
   }) {
-    final List<dynamic> result = [];
-
     // Combine and sort posts (followed + past participants) by recency
     final allPosts = [...followedPosts, ...pastParticipantPosts];
     final seenPostIds = <String>{};
@@ -210,27 +179,6 @@ class HomeFeedService {
     }
     uniquePosts.sort((a, b) => b.post.createdAt.compareTo(a.post.createdAt));
 
-    int postIndex = 0;
-    int profileIndex = 0;
-
-    // Interleave: posts, and occasionally a profile recommendation (e.g. every 5 posts)
-    while (postIndex < uniquePosts.length) {
-      result.add(uniquePosts[postIndex]);
-      postIndex++;
-
-      // Every 5 posts, insert a profile recommendation if available
-      if (postIndex % 5 == 0 && profileIndex < recommendedProfiles.length) {
-        result.add(recommendedProfiles[profileIndex]);
-        profileIndex++;
-      }
-    }
-
-    // Append remaining profiles if any
-    while (profileIndex < recommendedProfiles.length) {
-      result.add(recommendedProfiles[profileIndex]);
-      profileIndex++;
-    }
-
-    return result;
+    return [...uniquePosts];
   }
 }
