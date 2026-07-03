@@ -47,9 +47,11 @@ class DirectInboxState {
 // Inbox controller
 final directInboxProvider =
     StateNotifierProvider<DirectInboxController, DirectInboxState>((ref) {
-      return DirectInboxController(
+      final controller = DirectInboxController(
         service: ref.watch(directMessagingServiceProvider),
       );
+      ref.onDispose(controller.dispose);
+      return controller;
     });
 
 class DirectInboxController extends StateNotifier<DirectInboxState> {
@@ -58,6 +60,8 @@ class DirectInboxController extends StateNotifier<DirectInboxState> {
       super(const DirectInboxState(loading: true));
 
   final DirectMessagingService _service;
+  RealtimeChannel? _realtimeChannel;
+  Timer? _refreshDebounce;
 
   Future<void> loadInbox() async {
     state = state.copyWith(loading: true, clearMessage: true);
@@ -68,6 +72,7 @@ class DirectInboxController extends StateNotifier<DirectInboxState> {
         conversations: list,
         isUnavailable: false,
       );
+      startRealtime();
     } catch (error) {
       final isUnav = error is DirectMessagingUnavailableException;
       state = state.copyWith(
@@ -79,6 +84,41 @@ class DirectInboxController extends StateNotifier<DirectInboxState> {
   }
 
   Future<void> refresh() => loadInbox();
+
+  void startRealtime() {
+    if (_realtimeChannel != null) return;
+    try {
+      _realtimeChannel = SupabaseService.client
+          .channel('direct_inbox_messages')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'direct_messages',
+            callback: (_) => _scheduleRefresh(),
+          )
+          .subscribe();
+    } catch (error) {
+      debugPrint('[DirectMessaging] Inbox realtime failed: $error');
+    }
+  }
+
+  void _scheduleRefresh() {
+    _refreshDebounce?.cancel();
+    _refreshDebounce = Timer(const Duration(milliseconds: 350), () {
+      unawaited(refresh());
+    });
+  }
+
+  @override
+  void dispose() {
+    _refreshDebounce?.cancel();
+    final channel = _realtimeChannel;
+    _realtimeChannel = null;
+    if (channel != null) {
+      unawaited(SupabaseService.client.removeChannel(channel));
+    }
+    super.dispose();
+  }
 }
 
 // Active chat state
@@ -142,6 +182,7 @@ final directChatControllerProvider =
         final controller = DirectChatController(
           conversationId: conversationId,
           service: ref.watch(directMessagingServiceProvider),
+          ref: ref,
         );
         ref.onDispose(controller.dispose);
         return controller;
@@ -152,11 +193,14 @@ class DirectChatController extends StateNotifier<DirectChatState> {
   DirectChatController({
     required this.conversationId,
     required DirectMessagingService service,
+    required Ref ref,
   }) : _service = service,
+       _ref = ref,
        super(const DirectChatState(loading: true));
 
   final String conversationId;
   final DirectMessagingService _service;
+  final Ref _ref;
   RealtimeChannel? _realtimeChannel;
 
   Future<void> loadMessages() async {
@@ -227,8 +271,9 @@ class DirectChatController extends StateNotifier<DirectChatState> {
                 (m) => m.id == newMessage.id,
               );
               if (!alreadyExists) {
-                final updated = [...state.messages, newMessage];
-                state = state.copyWith(messages: updated);
+                state = state.copyWith(
+                  messages: _mergeMessage(state.messages, newMessage),
+                );
 
                 // Mark as read
                 unawaited(markRead(newMessage.id));
@@ -269,13 +314,14 @@ class DirectChatController extends StateNotifier<DirectChatState> {
       final alreadyExists = state.messages.any((m) => m.id == msg.id);
       final List<DirectMessage> updated = alreadyExists
           ? state.messages
-          : [...state.messages, msg];
+          : _mergeMessage(state.messages, msg);
 
       state = state.copyWith(
         sending: false,
         messages: updated,
         clearReplyToMessage: true,
       );
+      unawaited(markRead(msg.id));
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -341,7 +387,27 @@ class DirectChatController extends StateNotifier<DirectChatState> {
         conversationId: conversationId,
         messageId: messageId,
       );
+      unawaited(_refreshInbox());
     } catch (_) {}
+  }
+
+  List<DirectMessage> _mergeMessage(
+    List<DirectMessage> current,
+    DirectMessage message,
+  ) {
+    final byId = {for (final item in current) item.id: item};
+    byId[message.id] = message;
+    final merged = byId.values.toList();
+    merged.sort((a, b) {
+      final createdAtOrder = a.createdAt.compareTo(b.createdAt);
+      if (createdAtOrder != 0) return createdAtOrder;
+      return a.id.compareTo(b.id);
+    });
+    return merged;
+  }
+
+  Future<void> _refreshInbox() async {
+    await _ref.read(directInboxProvider.notifier).refresh();
   }
 
   @override

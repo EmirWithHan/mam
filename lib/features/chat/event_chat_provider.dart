@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -7,6 +9,7 @@ import '../../services/supabase_service.dart';
 import '../events/events_models.dart';
 import '../events/events_provider.dart';
 import '../events/events_service.dart';
+import 'event_chat_list_provider.dart';
 import 'event_chat_models.dart';
 import 'event_chat_service.dart';
 
@@ -82,11 +85,14 @@ final eventChatControllerProvider =
       ref,
       eventId,
     ) {
-      return EventChatController(
+      final controller = EventChatController(
         eventId: eventId,
         service: ref.watch(eventChatServiceProvider),
         eventsService: ref.watch(eventsServiceProvider),
+        ref: ref,
       );
+      ref.onDispose(controller.dispose);
+      return controller;
     });
 
 class EventChatController extends StateNotifier<EventChatState> {
@@ -94,13 +100,17 @@ class EventChatController extends StateNotifier<EventChatState> {
     required this.eventId,
     required EventChatService service,
     required EventsService eventsService,
+    required Ref ref,
   }) : _service = service,
        _eventsService = eventsService,
+       _ref = ref,
        super(const EventChatState(loading: true));
 
   final String eventId;
   final EventChatService _service;
   final EventsService _eventsService;
+  final Ref _ref;
+  RealtimeChannel? _realtimeChannel;
 
   Future<void> loadMessages() async {
     state = state.copyWith(loading: true, clearMessage: true);
@@ -167,6 +177,7 @@ class EventChatController extends StateNotifier<EventChatState> {
         readReceipts: readReceiptsMap,
         participants: participantsData,
       );
+      startRealtime();
 
       if (messages.isNotEmpty) {
         await markRead(messages.last.id);
@@ -210,23 +221,20 @@ class EventChatController extends StateNotifier<EventChatState> {
         metadata['mentions'] = mentionUserIds;
       }
 
-      await _service.sendMessage(
+      final sentMessage = await _service.sendMessage(
         eventId: eventId,
         message: trimmed,
         replyToMessageId: state.replyToMessage?.id,
         metadata: metadata.isNotEmpty ? metadata : null,
       );
 
-      final messages = await _service.fetchMessages(eventId);
       state = state.copyWith(
         sending: false,
-        messages: EventMessage.chronological(messages),
+        messages: _mergeMessage(state.messages, sentMessage),
         clearReplyToMessage: true,
       );
 
-      if (messages.isNotEmpty) {
-        await markRead(messages.last.id);
-      }
+      await markRead(sentMessage.id);
       return true;
     } catch (error) {
       state = state.copyWith(
@@ -323,7 +331,66 @@ class EventChatController extends StateNotifier<EventChatState> {
   Future<void> markRead(String messageId) async {
     try {
       await _service.markMessageAsRead(eventId: eventId, messageId: messageId);
+      unawaited(_refreshChatList());
     } catch (_) {}
+  }
+
+  void startRealtime() {
+    if (_realtimeChannel != null || !state.access.canRead) return;
+    try {
+      _realtimeChannel = SupabaseService.client
+          .channel('event_chat_messages:$eventId')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'event_messages',
+            filter: PostgresChangeFilter(
+              type: PostgresChangeFilterType.eq,
+              column: 'event_id',
+              value: eventId,
+            ),
+            callback: (payload) {
+              final newRow = payload.newRecord;
+              if (newRow.isEmpty) return;
+              final newMessage = EventMessage.fromJson(newRow);
+              final alreadyExists = state.messages.any(
+                (message) => message.id == newMessage.id,
+              );
+              if (alreadyExists) return;
+
+              state = state.copyWith(
+                messages: _mergeMessage(state.messages, newMessage),
+              );
+              unawaited(markRead(newMessage.id));
+            },
+          )
+          .subscribe();
+    } catch (error) {
+      debugPrint('[EventChatController] realtime failed: $error');
+    }
+  }
+
+  void stopRealtime() {
+    final channel = _realtimeChannel;
+    _realtimeChannel = null;
+    if (channel != null) {
+      unawaited(SupabaseService.client.removeChannel(channel));
+    }
+  }
+
+  List<EventMessage> _mergeMessage(
+    List<EventMessage> current,
+    EventMessage message,
+  ) {
+    final byId = {for (final item in current) item.id: item};
+    byId[message.id] = message;
+    return EventMessage.chronological(byId.values.toList());
+  }
+
+  Future<void> _refreshChatList() async {
+    await _ref
+        .read(eventChatListControllerProvider.notifier)
+        .refreshChatGroups();
   }
 
   Future<void> createPoll({
@@ -338,6 +405,7 @@ class EventChatController extends StateNotifier<EventChatState> {
         options: options,
       );
       await loadMessages();
+      unawaited(_refreshChatList());
     } catch (error) {
       state = state.copyWith(
         loading: false,
@@ -379,5 +447,11 @@ class EventChatController extends StateNotifier<EventChatState> {
     }
 
     debugPrint(buffer.toString());
+  }
+
+  @override
+  void dispose() {
+    stopRealtime();
+    super.dispose();
   }
 }
