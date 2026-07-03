@@ -184,6 +184,8 @@ class BusinessEventCheckInController
   final EventsService _eventsService;
   final Ref _ref;
 
+  String? get message => state.message;
+
   Future<bool> markAttendance({
     required String participantUserId,
     required String attendanceStatus,
@@ -284,9 +286,14 @@ class EventsController extends StateNotifier<EventsState> {
   }
 
   Future<void> refreshEvents() {
+    _refreshEventLists();
+    return loadEvents(force: true);
+  }
+
+  void _refreshEventLists() {
+    _ref.invalidate(myEventsProvider);
     _ref.read(featuredEventsProvider.notifier).refreshEvents();
     _ref.read(followingEventsProvider.notifier).refreshEvents();
-    return loadEvents(force: true);
   }
 
   Future<void> loadMoreEvents() async {
@@ -351,8 +358,8 @@ class EventsController extends StateNotifier<EventsState> {
           message: friendlyErrorMessage(refreshError),
         );
       }
-      _ref.read(featuredEventsProvider.notifier).refreshEvents();
-      _ref.read(followingEventsProvider.notifier).refreshEvents();
+      _ref.invalidate(eventDetailProvider(event.id));
+      _refreshEventLists();
       return event;
     } catch (error) {
       state = state.copyWith(
@@ -400,8 +407,8 @@ class EventsController extends StateNotifier<EventsState> {
           message: friendlyErrorMessage(refreshError),
         );
       }
-      _ref.read(featuredEventsProvider.notifier).refreshEvents();
-      _ref.read(followingEventsProvider.notifier).refreshEvents();
+      _ref.invalidate(eventDetailProvider(eventId));
+      _refreshEventLists();
       return event;
     } catch (error) {
       state = state.copyWith(

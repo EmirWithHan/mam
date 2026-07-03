@@ -53,6 +53,7 @@ class EventBusinessOrganizer {
     required this.username,
     this.businessTag,
     this.isVerified = false,
+    this.isPlusActive = false,
     this.status = BusinessAccountStatus.active,
   });
 
@@ -61,6 +62,7 @@ class EventBusinessOrganizer {
   final String username;
   final String? businessTag;
   final bool isVerified;
+  final bool isPlusActive;
   final String status;
 
   bool get isActive => status == BusinessAccountStatus.active;
@@ -80,6 +82,7 @@ class EventBusinessOrganizer {
       username: json['username']?.toString() ?? '',
       businessTag: json['business_tag']?.toString(),
       isVerified: json['is_verified'] as bool? ?? false,
+      isPlusActive: json['is_plus_active'] as bool? ?? false,
       status: json['status']?.toString() ?? BusinessAccountStatus.active,
     );
   }
@@ -122,6 +125,8 @@ class Event {
     this.eventStartTime,
     this.eventEndTime,
     this.priceType,
+    this.organizerEditCount = 0,
+    this.organizerLastEditedAt,
   });
 
   final String id;
@@ -159,28 +164,38 @@ class Event {
   final String? eventStartTime;
   final String? eventEndTime;
   final String? priceType;
+  final int organizerEditCount;
+  final DateTime? organizerLastEditedAt;
 
   bool isHost(String? userId) => userId != null && hostId == userId;
 
   bool get isPast => eventDate.isBefore(DateTime.now());
 
-  bool get canBeEdited => status == 'active' && !isPast;
+  bool get canBeEdited => editLockMessage() == null;
+
+  bool get hasOrganizerEditRemaining => organizerEditCount < 1;
+
+  bool isWithinEditCutoff([DateTime? now]) {
+    final reference = now ?? DateTime.now();
+    return !eventDate.isAfter(reference.add(const Duration(minutes: 15)));
+  }
+
+  String? editLockMessage([DateTime? now]) {
+    if (status != 'active' || isPast) return 'Bu etkinlik artık düzenlenemez.';
+    if (!hasOrganizerEditRemaining) {
+      return 'Bu etkinlik yalnızca bir kez düzenlenebilir.';
+    }
+    if (isWithinEditCutoff(now)) {
+      return 'Etkinliğe 15 dakikadan az kaldığı için düzenleme kapandı.';
+    }
+    return null;
+  }
 
   DateTime get attendanceWindowStart =>
-      eventStartDateTime.subtract(const Duration(hours: 2));
+      eventStartDateTime.subtract(const Duration(hours: 1));
 
-  DateTime get attendanceWindowEnd {
-    final end = eventEndDateTime;
-    if (end != null) return end.add(const Duration(hours: 6));
-    return DateTime(
-      eventStartDateTime.year,
-      eventStartDateTime.month,
-      eventStartDateTime.day,
-      23,
-      59,
-      59,
-    );
-  }
+  DateTime get attendanceWindowEnd =>
+      eventStartDateTime.add(const Duration(hours: 23));
 
   bool isAttendanceWindowOpen([DateTime? now]) {
     final reference = now ?? DateTime.now();
@@ -438,6 +453,10 @@ class Event {
       priceType:
           json['price_type']?.toString() ??
           (isPaid ? 'pay_at_business' : 'free'),
+      organizerEditCount: _intFromJson(json['organizer_edit_count']),
+      organizerLastEditedAt: _dateTimeFromJson(
+        json['organizer_last_edited_at'],
+      ),
     );
   }
 
@@ -477,6 +496,8 @@ class Event {
     String? eventStartTime,
     String? eventEndTime,
     String? priceType,
+    int? organizerEditCount,
+    DateTime? organizerLastEditedAt,
   }) {
     return Event(
       id: id ?? this.id,
@@ -514,6 +535,9 @@ class Event {
       eventStartTime: eventStartTime ?? this.eventStartTime,
       eventEndTime: eventEndTime ?? this.eventEndTime,
       priceType: priceType ?? this.priceType,
+      organizerEditCount: organizerEditCount ?? this.organizerEditCount,
+      organizerLastEditedAt:
+          organizerLastEditedAt ?? this.organizerLastEditedAt,
     );
   }
 }

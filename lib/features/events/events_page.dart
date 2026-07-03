@@ -16,7 +16,6 @@ import '../auth/auth_provider.dart';
 import '../notifications/notifications_provider.dart';
 import 'events_models.dart';
 import 'events_provider.dart';
-import 'widgets/business_recommendation_card.dart';
 import 'widgets/event_card.dart';
 import 'widgets/event_filter_sheet.dart';
 
@@ -117,7 +116,6 @@ class _EventsPageState extends ConsumerState<EventsPage> {
                   onRefresh: () =>
                       ref.read(featuredEventsProvider.notifier).refreshEvents(),
                   onClearFilters: _clearSearchAndFilters,
-                  isFeatured: true,
                 ),
                 _EventsTabList(
                   eventsState: ref.watch(followingEventsProvider),
@@ -130,7 +128,6 @@ class _EventsPageState extends ConsumerState<EventsPage> {
                       .read(followingEventsProvider.notifier)
                       .refreshEvents(),
                   onClearFilters: _clearSearchAndFilters,
-                  isFeatured: false,
                 ),
                 _MyEventsTabList(
                   onRefresh: () => ref.refresh(myEventsProvider.future),
@@ -206,7 +203,6 @@ class _EventsTabList extends ConsumerWidget {
     required this.onLoadMore,
     required this.onRefresh,
     required this.onClearFilters,
-    required this.isFeatured,
   });
 
   final EventsState eventsState;
@@ -215,7 +211,6 @@ class _EventsTabList extends ConsumerWidget {
   final VoidCallback onLoadMore;
   final Future<void> Function() onRefresh;
   final VoidCallback onClearFilters;
-  final bool isFeatured;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -250,31 +245,7 @@ class _EventsTabList extends ConsumerWidget {
         break;
     }
 
-    final placedEvents = eventsWithSponsoredPlacement(filteredEvents);
-
-    List<dynamic> itemsList = [];
-    if (isFeatured) {
-      final businessRecsState = ref.watch(businessRecommendationsProvider);
-      final businessRecs = businessRecsState.valueOrNull ?? [];
-      final recommendations = businessRecs
-          .map((row) => BusinessRecommendation.fromJson(row))
-          .toList();
-
-      if (recommendations.isNotEmpty) {
-        int recIndex = 0;
-        for (int i = 0; i < placedEvents.length; i++) {
-          itemsList.add(placedEvents[i]);
-          if ((itemsList.length) % 5 == 4) {
-            itemsList.add(recommendations[recIndex % recommendations.length]);
-            recIndex++;
-          }
-        }
-      } else {
-        itemsList = placedEvents;
-      }
-    } else {
-      itemsList = placedEvents;
-    }
+    final itemsList = eventsWithSponsoredPlacement(filteredEvents);
 
     if (eventsState.isLoading && eventsState.events.isEmpty) {
       return const Center(child: AppLoader());
@@ -352,12 +323,7 @@ class _EventsTabList extends ConsumerWidget {
           }
 
           final item = itemsList[index];
-          if (item is Event) {
-            return EventCard(event: item);
-          } else if (item is BusinessRecommendation) {
-            return BusinessRecommendationCard(recommendation: item);
-          }
-          return const SizedBox.shrink();
+          return EventCard(event: item);
         },
       ),
     );

@@ -58,7 +58,18 @@ class _EventDetailPageState extends ConsumerState<EventDetailPage> {
     super.initState();
     Future.microtask(() {
       if (!mounted) return;
+      ref.invalidate(eventDetailProvider(widget.eventId));
       ref.read(profileControllerProvider.notifier).loadMyProfile();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant EventDetailPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.eventId == widget.eventId) return;
+    Future.microtask(() {
+      if (!mounted) return;
+      ref.invalidate(eventDetailProvider(widget.eventId));
     });
   }
 
@@ -209,9 +220,8 @@ class _EventDetailBody extends ConsumerWidget {
           isOwner: isHost,
           attendanceStatus: myParticipation?.attendanceStatus,
         );
-    final isQrWindowOpen = event.isAttendanceWindowOpen();
     final qrWindowMessage = event.isBeforeAttendanceWindow()
-        ? 'Etkinlik zamanı gelmeden QR okutulamaz.'
+        ? 'QR okutmayı şimdi açabilirsin. Doğrulama zamanı gelmediyse sistem uyarı gösterecek.'
         : event.isAfterAttendanceWindow()
         ? 'QR okutma süresi sona erdi. Gerekirse manuel düzeltme kullan.'
         : null;
@@ -223,7 +233,6 @@ class _EventDetailBody extends ConsumerWidget {
         const SizedBox(height: AppSpacing.lg),
         if (isHost) ...[
           _HostQrScanCard(
-            isEnabled: isQrWindowOpen,
             helperText: qrWindowMessage,
             onScan: () => Navigator.of(context).push(
               MaterialPageRoute<void>(
@@ -1049,18 +1058,13 @@ class _EventOverflowButton extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: isHost
                         ? [
-                            if (event.canBeEdited) ...[
-                              _EventEditMenuItem(
-                                onTap: () {
-                                  Navigator.of(sheetContext).pop();
-                                  rootContext.pushNamed(
-                                    RouteNames.editEvent,
-                                    pathParameters: {'eventId': event.id},
-                                  );
-                                },
-                              ),
-                              const Divider(height: 1, color: AppColors.border),
-                            ],
+                            _EventEditMenuItem(
+                              onTap: () {
+                                Navigator.of(sheetContext).pop();
+                                _openEditEvent(rootContext);
+                              },
+                            ),
+                            const Divider(height: 1, color: AppColors.border),
                             _EventDeleteMenuItem(
                               onTap: () {
                                 Navigator.of(sheetContext).pop();
@@ -1093,6 +1097,21 @@ class _EventOverflowButton extends ConsumerWidget {
           ),
         );
       },
+    );
+  }
+
+  void _openEditEvent(BuildContext context) {
+    final editLockMessage = event.editLockMessage();
+    if (editLockMessage != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(editLockMessage)));
+      return;
+    }
+
+    context.pushNamed(
+      RouteNames.editEvent,
+      pathParameters: {'eventId': event.id},
     );
   }
 
@@ -1293,13 +1312,8 @@ class _HostPreviewCard extends ConsumerWidget {
 }
 
 class _HostQrScanCard extends StatelessWidget {
-  const _HostQrScanCard({
-    required this.isEnabled,
-    required this.helperText,
-    required this.onScan,
-  });
+  const _HostQrScanCard({required this.helperText, required this.onScan});
 
-  final bool isEnabled;
   final String? helperText;
   final VoidCallback onScan;
 
@@ -1343,7 +1357,7 @@ class _HostQrScanCard extends StatelessWidget {
           ],
         ),
         const SizedBox(height: AppSpacing.lg),
-        AppButton(label: 'QR okut', onPressed: isEnabled ? onScan : null),
+        AppButton(label: 'QR okut', onPressed: onScan),
         if (helperText != null) ...[
           const SizedBox(height: AppSpacing.sm),
           Text(
@@ -1353,14 +1367,6 @@ class _HostQrScanCard extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          if (!isEnabled && helperText!.startsWith('Etkinlik zamanı')) ...[
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              'QR okutma etkinlik günü aktif olacak.',
-              style: AppTextStyles.caption.copyWith(color: AppColors.textMuted),
-              textAlign: TextAlign.center,
-            ),
-          ],
         ],
       ],
     );

@@ -76,6 +76,38 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
 
   bool get _isEditing => widget.eventId?.trim().isNotEmpty == true;
 
+  DateTime get _normalEventCreationMaxDate =>
+      DateTime.now().add(const Duration(days: 28));
+
+  DateTime get _plusEventPickerMaxDate {
+    final now = DateTime.now();
+    return DateTime(now.year + 5, now.month, now.day);
+  }
+
+  DateTime get _eventPickerMaxDate {
+    final maxDate = _canUseBusinessPlusHorizon
+        ? _plusEventPickerMaxDate
+        : _normalEventCreationMaxDate;
+    final existingDate = _editingEvent?.eventDate;
+    if (existingDate != null && existingDate.isAfter(maxDate)) {
+      return existingDate;
+    }
+    return maxDate;
+  }
+
+  bool get _canUseBusinessPlusHorizon {
+    final businessAccount = ref.read(myBusinessAccountProvider).account;
+    final profile = ref.read(profileControllerProvider).profile;
+    final editingEvent = _editingEvent;
+    final isBusinessEvent =
+        editingEvent?.isBusinessEvent ??
+        CreateEventInput.canUseBusinessEventFields(
+          isBusinessAccount: profile?.isBusinessAccount == true,
+          businessAccount: businessAccount,
+        );
+    return isBusinessEvent && businessAccount?.isPlusActive == true;
+  }
+
   @override
   void initState() {
     super.initState();
@@ -145,6 +177,14 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
           isBusinessAccount: profile?.isBusinessAccount == true,
           businessAccount: businessAccount,
         );
+    final eventDate = _currentEventDateForSubmit();
+    final horizonMessage = _eventHorizonError(eventDate);
+    if (horizonMessage != null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(horizonMessage)));
+      return;
+    }
     final capacityTotal = _capacityPartsTotal();
     if (capacityTotal < 1) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -154,6 +194,14 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     }
 
     if (editingEvent != null) {
+      final editLockMessage = editingEvent.editLockMessage();
+      if (editLockMessage != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(editLockMessage)));
+        return;
+      }
+
       final input = UpdateEventInput(
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
@@ -163,7 +211,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
         locationText: _locationTextController.text.trim(),
         locationLat: _locationLat,
         locationLng: _locationLng,
-        eventDate: _selectedEventDate!,
+        eventDate: eventDate,
         capacityTotal: capacityTotal,
         capacityMale: _parseIntOrZero(_capacityMaleController.text),
         capacityFemale: _parseIntOrZero(_capacityFemaleController.text),
@@ -220,7 +268,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
       locationText: _locationTextController.text.trim(),
       locationLat: _locationLat,
       locationLng: _locationLng,
-      eventDate: _selectedEventDate!,
+      eventDate: eventDate,
       capacityTotal: capacityTotal,
       capacityMale: _parseIntOrZero(_capacityMaleController.text),
       capacityFemale: _parseIntOrZero(_capacityFemaleController.text),
@@ -310,12 +358,13 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   Future<void> _pickDateTime() async {
     final now = DateTime.now();
     final initial = _selectedEventDate ?? now.add(const Duration(days: 1));
+    final lastDate = _eventPickerMaxDate;
     final date = await showDatePicker(
       context: context,
       locale: const Locale('tr', 'TR'),
-      initialDate: initial,
+      initialDate: initial.isAfter(lastDate) ? lastDate : initial,
       firstDate: now,
-      lastDate: now.add(const Duration(days: 365)),
+      lastDate: lastDate,
       initialEntryMode: DatePickerEntryMode.calendarOnly,
       helpText: 'Tarih seç',
       cancelText: 'İptal',
@@ -388,6 +437,66 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
       _selectedEventDate = selected;
       _eventDateController.text = DateFormatter.formatEventDateTime(selected);
     });
+  }
+
+  String? _eventHorizonError(DateTime? value) {
+    if (value == null) return null;
+    if (_canUseBusinessPlusHorizon) return null;
+
+    final maxDate = _normalEventCreationMaxDate;
+    if (!value.isAfter(maxDate)) return null;
+
+    final existingDate = _editingEvent?.eventDate;
+    if (existingDate != null &&
+        existingDate.isAfter(maxDate) &&
+        !value.isAfter(existingDate)) {
+      return null;
+    }
+
+    if (value.isAfter(maxDate)) {
+      return 'Etkinlik tarihi en fazla 28 gün sonrası olabilir.';
+    }
+    return null;
+  }
+
+  DateTime _currentEventDateForSubmit() {
+    final visibleDate = _parseEventDateController();
+    if (visibleDate != null) {
+      _selectedEventDate = visibleDate;
+      return visibleDate;
+    }
+    return _selectedEventDate!;
+  }
+
+  DateTime? _parseEventDateController() {
+    final value = _eventDateController.text.trim();
+    final match = RegExp(
+      r'^(\d{1,2})\.(\d{1,2})\.(\d{4})\s+(\d{1,2}):(\d{2})$',
+    ).firstMatch(value);
+    if (match == null) return null;
+
+    final day = int.tryParse(match.group(1)!);
+    final month = int.tryParse(match.group(2)!);
+    final year = int.tryParse(match.group(3)!);
+    final hour = int.tryParse(match.group(4)!);
+    final minute = int.tryParse(match.group(5)!);
+    if (day == null ||
+        month == null ||
+        year == null ||
+        hour == null ||
+        minute == null) {
+      return null;
+    }
+
+    final parsed = DateTime(year, month, day, hour, minute);
+    if (parsed.year != year ||
+        parsed.month != month ||
+        parsed.day != day ||
+        parsed.hour != hour ||
+        parsed.minute != minute) {
+      return null;
+    }
+    return parsed;
   }
 
   Future<void> _useCurrentLocation() async {
@@ -484,6 +593,24 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                   padding: EdgeInsets.all(AppSpacing.lg),
                   child: Text(
                     'Bu etkinliği sadece ev sahibi düzenleyebilir.',
+                    style: AppTextStyles.title,
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+        final editLockMessage = event.editLockMessage();
+        if (editLockMessage != null) {
+          return Scaffold(
+            appBar: _CreateEventAppBar(onBack: () => _goBack(context)),
+            body: SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  child: Text(
+                    editLockMessage,
                     style: AppTextStyles.title,
                     textAlign: TextAlign.center,
                   ),

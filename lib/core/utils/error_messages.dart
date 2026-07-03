@@ -67,6 +67,22 @@ String friendlyErrorMessage(Object error) {
     return 'Bu etkinlik şu anda dolu.';
   }
 
+  if (normalized.contains('event_edit_limit_reached')) {
+    return 'Bu etkinlik yalnızca bir kez düzenlenebilir.';
+  }
+
+  if (normalized.contains('event_edit_window_closed')) {
+    return 'Etkinliğe 15 dakikadan az kaldığı için düzenleme kapandı.';
+  }
+
+  if (normalized.contains('checkin_window_not_open')) {
+    return 'QR okutma zamanı henüz başlamadı. Etkinlik saatine yaklaştığında tekrar dene.';
+  }
+
+  if (normalized.contains('checkin_window_closed')) {
+    return 'QR okutma süresi sona erdi. Gerekirse manuel düzeltme kullan.';
+  }
+
   if (normalized.contains('no_eligible_capacity')) {
     return 'Bu kullanıcı için uygun kontenjan kalmadı.';
   }

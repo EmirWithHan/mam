@@ -227,11 +227,12 @@ class EventCard extends ConsumerWidget {
     final isPast = event.eventDate.isBefore(now);
 
     if (isPast &&
+        status != 'host' &&
         status != 'cancelled' &&
         status != 'rejected' &&
         status != 'no_show') {
       return const _Pill(
-        label: 'Geçmiş',
+        label: 'Katıldın',
         color: AppColors.border,
         textColor: AppColors.textMuted,
       );

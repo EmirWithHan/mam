@@ -472,6 +472,7 @@ class _RealQrScannerSheetState extends State<_RealQrScannerSheet> {
   bool _isProcessing = false;
   String? _errorMessage;
   BusinessEventCheckInParticipant? _scannedParticipant;
+  String? _scannedUserId;
   String? _scannedToken;
 
   @override
@@ -549,18 +550,19 @@ class _RealQrScannerSheetState extends State<_RealQrScannerSheet> {
                 ),
               ),
             ),
-          if (_scannedParticipant != null)
+          if (_scannedToken != null)
             Positioned(
               left: 20,
               right: 20,
               bottom: 120,
               child: _ScannedParticipantPreview(
-                participant: _scannedParticipant!,
+                participant: _scannedParticipant,
                 eventTitle: widget.eventTitle,
                 isLoading: _isProcessing,
                 onCancel: () {
                   setState(() {
                     _scannedParticipant = null;
+                    _scannedUserId = null;
                     _scannedToken = null;
                     _errorMessage = null;
                     _isProcessing = false;
@@ -599,7 +601,7 @@ class _RealQrScannerSheetState extends State<_RealQrScannerSheet> {
   }
 
   void _onDetect(BarcodeCapture capture) async {
-    if (_isProcessing || _scannedParticipant != null) return;
+    if (_isProcessing || _scannedToken != null) return;
 
     final barcode = capture.barcodes.firstOrNull;
     final rawValue = barcode?.rawValue;
@@ -619,9 +621,17 @@ class _RealQrScannerSheetState extends State<_RealQrScannerSheet> {
       return;
     }
 
-    final scannedEventId = parts[0];
-    final scannedUserId = parts[1];
-    final scannedToken = parts[2];
+    final scannedEventId = parts[0].trim();
+    final scannedUserId = parts[1].trim();
+    final scannedToken = parts[2].trim();
+
+    if (scannedUserId.isEmpty || scannedToken.isEmpty) {
+      setState(() {
+        _isProcessing = false;
+        _errorMessage = 'Ge\u00E7ersiz QR kod format\u0131.';
+      });
+      return;
+    }
 
     if (scannedEventId != widget.eventId) {
       setState(() {
@@ -637,39 +647,20 @@ class _RealQrScannerSheetState extends State<_RealQrScannerSheet> {
           (item) => item?.userId == scannedUserId,
           orElse: () => null,
         );
-    if (participant == null ||
-        participant.checkInToken == null ||
-        participant.checkInToken != scannedToken) {
-      setState(() {
-        _isProcessing = false;
-        _errorMessage = 'Ge\u00E7ersiz QR kod.';
-      });
-      return;
-    }
-
-    if (participant.attendanceStatus == EventParticipationStatus.checkedIn ||
-        participant.attendanceStatus == EventParticipationStatus.attended) {
-      setState(() {
-        _isProcessing = false;
-        _errorMessage =
-            'Bu kat\u0131l\u0131mc\u0131 zaten geldi olarak i\u015Faretlenmi\u015F.';
-      });
-      return;
-    }
-
     await scannerController.stop();
     if (!mounted) return;
     setState(() {
       _isProcessing = false;
       _scannedParticipant = participant;
+      _scannedUserId = scannedUserId;
       _scannedToken = scannedToken;
     });
   }
 
   Future<void> _confirmScannedParticipant() async {
-    final participant = _scannedParticipant;
+    final participantUserId = _scannedUserId;
     final token = _scannedToken;
-    if (participant == null || token == null) return;
+    if (participantUserId == null || token == null) return;
 
     setState(() {
       _isProcessing = true;
@@ -677,7 +668,7 @@ class _RealQrScannerSheetState extends State<_RealQrScannerSheet> {
     });
 
     final result = await widget.controller.verifyAndCheckIn(
-      participantUserId: participant.userId,
+      participantUserId: participantUserId,
       token: token,
     );
 
@@ -687,6 +678,7 @@ class _RealQrScannerSheetState extends State<_RealQrScannerSheet> {
       setState(() {
         _isProcessing = false;
         _errorMessage =
+            widget.controller.message ??
             'QR do\u011Frulama ba\u015Far\u0131s\u0131z. L\u00FCtfen tekrar dene.';
       });
       return;
@@ -714,7 +706,7 @@ class _ScannedParticipantPreview extends StatelessWidget {
     required this.onConfirm,
   });
 
-  final BusinessEventCheckInParticipant participant;
+  final BusinessEventCheckInParticipant? participant;
   final String eventTitle;
   final bool isLoading;
   final VoidCallback onCancel;
@@ -722,6 +714,8 @@ class _ScannedParticipantPreview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final participant = this.participant;
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: AppColors.surface,
@@ -736,14 +730,25 @@ class _ScannedParticipantPreview extends StatelessWidget {
           children: [
             Row(
               children: [
-                _Avatar(participant: participant),
+                if (participant == null)
+                  const CircleAvatar(
+                    radius: 24,
+                    backgroundColor: AppColors.primarySoft,
+                    child: Icon(
+                      Icons.qr_code_2_rounded,
+                      color: AppColors.primary,
+                    ),
+                  )
+                else
+                  _Avatar(participant: participant),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        participant.displayName,
+                        participant?.displayName ??
+                            'Kat\u0131l\u0131mc\u0131 QR kodu do\u011Frulanacak',
                         style: AppTextStyles.bodyStrong,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
@@ -762,7 +767,9 @@ class _ScannedParticipantPreview extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.md),
             Text(
-              'Durum: ${participant.statusLabel}',
+              participant == null
+                  ? 'Kat\u0131l\u0131mc\u0131 bilgisi yenileniyor; do\u011Frulama sunucuda yap\u0131lacak.'
+                  : 'Durum: ${participant.statusLabel}',
               style: AppTextStyles.bodySmall,
             ),
             const SizedBox(height: AppSpacing.md),

@@ -22,12 +22,13 @@ class SportTypes {
     'Dans',
     'Kamp',
     'Paintball',
-    'Balık tutma',
+    'Balıkçılık',
     'Doğa yürüyüşü',
     'Trekking',
     'Piknik',
     'Bowling',
     'Bilardo',
+    'Okey',
     'Karting',
     'Kayak / Snowboard',
     'Tırmanış',
@@ -257,7 +258,8 @@ IconData sportIconFor(String? sportType) {
   }
   if (value.contains('board') ||
       value.contains('masa oyun') ||
-      value.contains('game')) {
+      value.contains('game') ||
+      value.contains('okey')) {
     return Icons.casino;
   }
   if (value.contains('other') || value.contains('diger')) {

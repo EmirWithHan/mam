@@ -111,6 +111,12 @@ class EventsService {
       throw StateError('En az bir kontenjan seçmelisin.');
     }
 
+    _ensureWithinEventCreationHorizon(
+      input.eventDate,
+      isBusinessPlusEvent:
+          input.isBusinessEvent && input.businessAccount?.isPlusActive == true,
+    );
+
     await _rateLimitService.createEvent(isBusinessEvent: input.isBusinessEvent);
 
     try {
@@ -159,6 +165,13 @@ class EventsService {
     if (!existingEvent.canBeEdited) {
       throw StateError('Bu etkinlik artÄ±k dÃ¼zenlenemez.');
     }
+    _ensureWithinEventCreationHorizon(
+      input.eventDate,
+      isBusinessPlusEvent:
+          existingEvent.isBusinessEvent &&
+          existingEvent.businessOrganizer?.isPlusActive == true,
+      existingEventDate: existingEvent.eventDate,
+    );
     final occupied = await fetchCapacityBucketCounts(eventId);
     if (input.capacityAny < (occupied[EventCapacityBucket.generic] ?? 0) ||
         input.capacityMale < (occupied[EventCapacityBucket.male] ?? 0) ||
@@ -824,6 +837,7 @@ class EventsService {
 
       final followedIds = followsData
           .map((row) => row['following_id'] as String)
+          .where((id) => id != userId)
           .toList();
 
       if (followedIds.isEmpty) return [];
@@ -870,6 +884,7 @@ class EventsService {
 
     final followedIds = followsData
         .map((row) => row['following_id'] as String)
+        .where((id) => id != userId)
         .toList();
 
     if (followedIds.isEmpty) return [];
@@ -955,12 +970,15 @@ business_close_time,
 event_start_time,
 event_end_time,
 price_type,
+organizer_edit_count,
+organizer_last_edited_at,
 business_accounts:organizer_business_id(
   id,
   name,
   username,
   business_tag,
   is_verified,
+  is_plus_active,
   status
 )
 ''';
@@ -991,12 +1009,15 @@ price_amount,
 price_currency,
 created_at,
 updated_at,
+organizer_edit_count,
+organizer_last_edited_at,
 business_accounts:organizer_business_id(
   id,
   name,
   username,
   business_tag,
   is_verified,
+  is_plus_active,
   status
 )
 ''';
@@ -1027,6 +1048,27 @@ bool _isMissingCapacitySchema(Object error) {
     );
   }
   return isMissing;
+}
+
+void _ensureWithinEventCreationHorizon(
+  DateTime eventDate, {
+  required bool isBusinessPlusEvent,
+  DateTime? existingEventDate,
+}) {
+  if (isBusinessPlusEvent) return;
+
+  final maxDate = DateTime.now().add(const Duration(days: 28));
+  if (!eventDate.isAfter(maxDate)) return;
+
+  if (existingEventDate != null &&
+      existingEventDate.isAfter(maxDate) &&
+      !eventDate.isAfter(existingEventDate)) {
+    return;
+  }
+
+  if (eventDate.isAfter(maxDate)) {
+    throw StateError('Etkinlik tarihi en fazla 28 gün sonrası olabilir.');
+  }
 }
 
 Future<void> _applyMyTrustScoreEvent({
