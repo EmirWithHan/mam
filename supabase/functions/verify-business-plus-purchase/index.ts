@@ -1,4 +1,4 @@
-﻿import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
     });
     return json({ error: "missing_supabase_secrets" }, 500);
   }
-  console.error("service_key_source", { source: serviceKeySource });
+  console.log("service_key_source", { source: serviceKeySource });
 
   const authHeader = req.headers.get("authorization");
   if (!authHeader) {
@@ -168,14 +168,8 @@ Deno.serve(async (req) => {
   }
 
   const subscriptionState = googlePurchase.subscriptionState ?? "unknown";
-  let entitlementStatus = entitlementStatusFor(subscriptionState);
-  let active = entitlementStatus === "active" ||
-    entitlementStatus === "grace_period";
-  const expiryTime = lineItem.expiryTime ?? null;
-  if (active && expiryTime && new Date(expiryTime).getTime() <= Date.now()) {
-    active = false;
-    entitlementStatus = "expired";
-  }
+  const { entitlementStatus, active, expiryTime, autoRenewEnabled } =
+    syncFieldsForGooglePurchase(googlePurchase, lineItem);
 
   let acknowledged = googlePurchase.acknowledgementState ===
     "ACKNOWLEDGEMENT_STATE_ACKNOWLEDGED";
@@ -207,8 +201,7 @@ Deno.serve(async (req) => {
   const tokenHash = await sha256Hex(purchaseToken);
   const purchaseTime = googlePurchase.startTime ?? null;
   const environment = googlePurchase.testPurchase ? "sandbox" : "production";
-  const autoRenewEnabled =
-    lineItem.autoRenewingPlan?.autoRenewEnabled ?? active;
+
 
   const { error: upsertError } = await serviceClient.rpc(
     "service_verify_and_upsert_subscription",
@@ -402,23 +395,51 @@ function findBusinessPlusLineItem(
   return null;
 }
 
-function entitlementStatusFor(subscriptionState: string): string {
-  switch (subscriptionState) {
+function syncFieldsForGooglePurchase(
+  purchase: GoogleSubscriptionPurchase,
+  lineItem: GoogleLineItem,
+) {
+  const state = purchase.subscriptionState ?? "unknown";
+  const expiryTime = lineItem.expiryTime ?? null;
+  const expiryInFuture = expiryTime == null ||
+    new Date(expiryTime).getTime() > Date.now();
+  let entitlementStatus = "expired";
+  let active = false;
+  let autoRenewEnabled = lineItem.autoRenewingPlan?.autoRenewEnabled ?? false;
+
+  switch (state) {
     case "SUBSCRIPTION_STATE_ACTIVE":
-      return "active";
+      entitlementStatus = "active";
+      active = expiryInFuture;
+      autoRenewEnabled = lineItem.autoRenewingPlan?.autoRenewEnabled ?? true;
+      break;
     case "SUBSCRIPTION_STATE_IN_GRACE_PERIOD":
-      return "grace_period";
+      entitlementStatus = "grace_period";
+      active = expiryInFuture;
+      break;
     case "SUBSCRIPTION_STATE_ON_HOLD":
-      return "billing_retry";
+      entitlementStatus = "billing_retry";
+      break;
     case "SUBSCRIPTION_STATE_PAUSED":
-      return "paused";
+      entitlementStatus = "paused";
+      break;
     case "SUBSCRIPTION_STATE_CANCELED":
-      return "cancelled";
+      entitlementStatus = expiryInFuture ? "active" : "expired";
+      active = expiryInFuture;
+      autoRenewEnabled = false;
+      break;
     case "SUBSCRIPTION_STATE_EXPIRED":
-      return "expired";
+      entitlementStatus = "expired";
+      break;
     default:
-      return "paused";
+      entitlementStatus = "expired";
+      break;
   }
+
+  if (!active && entitlementStatus === "active") {
+    entitlementStatus = "expired";
+  }
+  return { entitlementStatus, active, expiryTime, autoRenewEnabled };
 }
 
 function cancellationTime(purchase: GoogleSubscriptionPurchase): string | null {

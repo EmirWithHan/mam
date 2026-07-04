@@ -61,8 +61,17 @@ Deno.serve(async (req) => {
     return json({ error: "method_not_allowed" }, 405);
   }
 
+  const verificationToken = Deno.env.get("GOOGLE_RTDN_VERIFICATION_TOKEN");
+  if (verificationToken) {
+    const url = new URL(req.url);
+    const token = url.searchParams.get("token");
+    if (!token || token !== verificationToken) {
+      return json({ error: "forbidden" }, 403);
+    }
+  }
+
   const serviceKeySource = selectedServiceKeySource();
-  console.error("service_key_source", { source: serviceKeySource });
+  console.log("service_key_source", { source: serviceKeySource });
 
   const serviceClient = serviceSupabaseClient(serviceKeySource);
   let body: PubSubPushBody;

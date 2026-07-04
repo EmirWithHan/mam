@@ -15,6 +15,8 @@ const defaultPackageName = "com.matchaman.app";
 type ReconcileRequest = {
   purchase_token?: string;
   subscription_id?: string;
+  limit?: number;
+  offset?: number;
 };
 
 type GoogleLineItem = {
@@ -60,7 +62,7 @@ Deno.serve(async (req) => {
   }
 
   const serviceKeySource = selectedServiceKeySource();
-  console.error("service_key_source", { source: serviceKeySource });
+  console.log("service_key_source", { source: serviceKeySource });
   const serviceClient = serviceSupabaseClient(serviceKeySource);
 
   let body: ReconcileRequest = {};
@@ -147,6 +149,9 @@ async function reconciliationTargets(
     return [{ ...subscription, purchase_token: proof.purchase_token }];
   }
 
+  const limit = typeof body.limit === "number" ? body.limit : 50;
+  const offset = typeof body.offset === "number" ? body.offset : 0;
+
   const { data: subscriptions, error } = await serviceClient
     .from("business_plus_subscriptions")
     .select("id,business_account_id,owner_user_id,product_id")
@@ -157,7 +162,9 @@ async function reconciliationTargets(
       "billing_retry",
       "paused",
       "cancelled",
-    ]);
+    ])
+    .order("updated_at", { ascending: true })
+    .range(offset, offset + limit - 1);
   if (error) throw error;
 
   const targets: SubscriptionTarget[] = [];

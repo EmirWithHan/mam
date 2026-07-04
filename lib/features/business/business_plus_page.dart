@@ -26,6 +26,7 @@ class BusinessPlusPage extends ConsumerStatefulWidget {
 class _BusinessPlusPageState extends ConsumerState<BusinessPlusPage> {
   bool _isRefreshingStatus = false;
   String? _refreshMessage;
+  DateTime? _lastRefreshTime;
 
   @override
   void initState() {
@@ -81,6 +82,14 @@ class _BusinessPlusPageState extends ConsumerState<BusinessPlusPage> {
 
   Future<void> _refreshStatus() async {
     if (_isRefreshingStatus) return;
+    if (_lastRefreshTime != null &&
+        DateTime.now().difference(_lastRefreshTime!).inMinutes < 2) {
+      setState(() {
+        _refreshMessage = 'Durum kısa süre önce yenilendi.';
+      });
+      return;
+    }
+
     setState(() {
       _isRefreshingStatus = true;
       _refreshMessage = null;
@@ -93,6 +102,7 @@ class _BusinessPlusPageState extends ConsumerState<BusinessPlusPage> {
       await ref.read(businessPlusBillingProvider.notifier).loadProduct();
       if (!mounted) return;
       setState(() {
+        _lastRefreshTime = DateTime.now();
         _refreshMessage = result.message;
       });
     } catch (_) {

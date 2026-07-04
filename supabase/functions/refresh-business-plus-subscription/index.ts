@@ -35,6 +35,11 @@ type SubscriptionRow = {
   business_account_id: string;
   owner_user_id: string;
   product_id: string | null;
+  updated_at?: string;
+  entitlement_status?: string;
+  current_period_end?: string;
+  store_subscription_status?: string;
+  auto_renew_enabled?: boolean;
 };
 
 Deno.serve(async (req) => {
@@ -60,7 +65,7 @@ Deno.serve(async (req) => {
     });
     return json({ error: "missing_supabase_secrets" }, 500);
   }
-  console.error("service_key_source", { source: serviceKeySource });
+  console.log("service_key_source", { source: serviceKeySource });
 
   const authHeader = req.headers.get("authorization");
   if (!authHeader) {
@@ -101,7 +106,9 @@ Deno.serve(async (req) => {
 
   const { data: subscription, error: subscriptionError } = await serviceClient
     .from("business_plus_subscriptions")
-    .select("id,business_account_id,owner_user_id,product_id")
+    .select(
+      "id,business_account_id,owner_user_id,product_id,updated_at,entitlement_status,current_period_end,store_subscription_status,auto_renew_enabled",
+    )
     .eq("business_account_id", business.id)
     .eq("owner_user_id", user.id)
     .eq("store", "google_play")
@@ -125,6 +132,31 @@ Deno.serve(async (req) => {
     subscription.business_account_id !== business.id
   ) {
     return json({ error: "forbidden_subscription_owner" }, 403);
+  }
+
+  if (subscription.updated_at) {
+    const updatedAt = new Date(subscription.updated_at).getTime();
+    const now = Date.now();
+    const diffMinutes = (now - updatedAt) / (1000 * 60);
+
+    if (diffMinutes < 2) {
+      const entitlementStatus = subscription.entitlement_status ?? "unknown";
+      const currentPeriodEnd = subscription.current_period_end ?? null;
+      const isPast = currentPeriodEnd && new Date(currentPeriodEnd).getTime() <= now;
+      const isExpiredOrNone = entitlementStatus === "expired" || entitlementStatus === "none";
+
+      if (!(isExpiredOrNone && isPast)) {
+        return json({
+          refreshed: false,
+          active: entitlementStatus === "active" || entitlementStatus === "grace_period",
+          entitlement_status: entitlementStatus,
+          subscription_state: subscription.store_subscription_status ?? null,
+          current_period_end: currentPeriodEnd,
+          auto_renew_enabled: subscription.auto_renew_enabled ?? null,
+          message: "Durum kısa süre önce yenilendi.",
+        });
+      }
+    }
   }
 
   const { data: proof, error: proofError } = await serviceClient
