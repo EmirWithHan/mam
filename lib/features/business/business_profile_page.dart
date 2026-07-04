@@ -18,6 +18,7 @@ import 'business_reviews_models.dart';
 import 'business_reviews_provider.dart';
 import 'business_stats_page.dart';
 import 'widgets/business_badge.dart';
+import 'widgets/business_plus_badge.dart';
 import '../profile/profile_badges.dart';
 
 import 'business_customization_page.dart';
@@ -127,6 +128,7 @@ class _BusinessProfileBody extends ConsumerWidget {
                   alignment: WrapAlignment.center,
                   children: [
                     BusinessBadge(isVerified: account.isVerified),
+                    if (account.isPlusActive) const BusinessPlusBadge(),
                     _InfoChip(label: account.displayCategory),
                     if (isOwner) _InfoChip(label: account.statusLabel),
                   ],

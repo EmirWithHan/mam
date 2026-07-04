@@ -29,12 +29,12 @@ class AppTheme {
         bodySmall: AppTextStyles.bodySmall,
         labelMedium: AppTextStyles.caption,
       ),
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.background,
         elevation: 0,
         centerTitle: true,
         foregroundColor: AppColors.primary,
-        titleTextStyle: GoogleFonts.mansalva(textStyle: AppTextStyles.logo),
+        titleTextStyle: AppTextStyles.title,
       ),
       cardTheme: CardThemeData(
         color: AppColors.surface,

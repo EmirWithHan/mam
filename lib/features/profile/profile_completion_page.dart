@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
@@ -224,7 +225,12 @@ class _ProfileCompletionPageState extends ConsumerState<ProfileCompletionPage> {
           onPressed: () => _goBack(context),
           icon: const Icon(Icons.arrow_back),
         ),
-        title: const Text('Akanzi'),
+        title: Text(
+          'Akanzi',
+          style: GoogleFonts.mansalva(
+            textStyle: AppTextStyles.logo.copyWith(fontSize: 24),
+          ),
+        ),
       ),
       body: SafeArea(
         child: Form(

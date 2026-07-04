@@ -21,6 +21,7 @@ import '../../services/maps_service.dart';
 import '../auth/auth_provider.dart';
 import '../business/business_reviews_models.dart';
 import '../business/widgets/business_badge.dart';
+import '../business/widgets/business_plus_badge.dart';
 import '../business/widgets/business_review_card.dart';
 import '../chat/event_chat_list_provider.dart';
 import '../chat/event_chat_provider.dart';
@@ -960,6 +961,8 @@ class _EventHeroCard extends StatelessWidget {
                   BusinessBadge(
                     isVerified: event.businessOrganizer?.isVerified ?? false,
                   ),
+                  if (event.businessOrganizer?.isPlusActive == true)
+                    const BusinessPlusBadge(),
                   _MiniChip(
                     label: event.priceLabel,
                     color: AppColors.secondarySoft,

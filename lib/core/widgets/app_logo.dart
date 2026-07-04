@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
@@ -56,7 +57,9 @@ class AppLogo extends StatelessWidget {
             ).createShader(bounds),
             child: Text(
               'Akanzi',
-              style: AppTextStyles.logo.copyWith(color: Colors.white),
+              style: GoogleFonts.mansalva(
+                textStyle: AppTextStyles.logo.copyWith(color: Colors.white),
+              ),
             ),
           ),
         ],

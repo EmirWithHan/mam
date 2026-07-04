@@ -19,6 +19,7 @@ import '../../core/widgets/error_view.dart';
 import '../../core/widgets/sport_icon.dart';
 import '../auth/auth_provider.dart';
 import '../business/widgets/business_badge.dart';
+import '../business/widgets/business_plus_badge.dart';
 import '../direct_messages/direct_messages_provider.dart';
 import '../direct_messages/direct_messages_service.dart';
 import '../follow/follow_provider.dart';
@@ -265,6 +266,7 @@ class _PublicProfileHeader extends StatelessWidget {
               children: [
                 if (detail.isBusinessAccount) ...[
                   BusinessBadge(isVerified: detail.businessIsVerified),
+                  if (detail.businessIsPlusActive) const BusinessPlusBadge(),
                   if (detail.businessCategoryLabel != null)
                     _InfoPill(
                       icon: Icons.category_outlined,

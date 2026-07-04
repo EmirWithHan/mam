@@ -15,6 +15,7 @@ import '../../core/widgets/error_view.dart';
 import '../business/business_models.dart';
 import '../business/business_provider.dart';
 import '../business/widgets/business_badge.dart';
+import '../business/widgets/business_plus_badge.dart';
 import 'profile_activity_provider.dart';
 import 'profile_models.dart';
 import 'profile_provider.dart';
@@ -373,7 +374,15 @@ class _ProfileHeader extends StatelessWidget {
             ],
             if (isBusinessIdentity) ...[
               const SizedBox(height: AppSpacing.md),
-              BusinessBadge(isVerified: businessAccount!.isVerified),
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                alignment: WrapAlignment.center,
+                children: [
+                  BusinessBadge(isVerified: businessAccount!.isVerified),
+                  if (businessAccount!.isPlusActive) const BusinessPlusBadge(),
+                ],
+              ),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 businessAccount!.displayCategory,
