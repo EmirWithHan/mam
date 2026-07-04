@@ -163,14 +163,20 @@ class _BusinessPlusContent extends StatelessWidget {
                   _BillingMessage(text: billingState.message!),
                 ],
                 const SizedBox(height: AppSpacing.lg),
-                const _BenefitLine(text: 'Daha esnek etkinlik planlama'),
                 const _BenefitLine(
-                  text: 'İşletme profilinde Plus ayrıcalıkları',
+                  text: 'Daha ileri tarihlere etkinlik planlama özgürlüğü',
                 ),
-                const _BenefitLine(text: 'Profesyonel işletme deneyimi'),
+                const _BenefitLine(text: 'Ayda 30 etkinlik oluşturma hakkı'),
+                const _BenefitLine(text: 'Aylık 5 öne çıkarma hakkı'),
                 const _BenefitLine(
-                  text:
-                      'Akanzi içindeki işletme araçlarına hazır Plus altyapısı',
+                  text: 'İşletme profilinde Business Plus ayrıcalıkları',
+                ),
+                const _BenefitLine(
+                  text: 'İşletme araçlarını ücretsiz kullanım',
+                ),
+                const _BenefitLine(text: 'Profesyonel işletme görünümü'),
+                const _BenefitLine(
+                  text: 'Etkinlik yönetimi için gelişmiş işletme altyapısı',
                 ),
                 if (!isPlusActive) ...[
                   const SizedBox(height: AppSpacing.lg),
@@ -180,7 +186,9 @@ class _BusinessPlusContent extends StatelessWidget {
                         : 'Business Plus’a Geç - $priceLabel',
                     isLoading:
                         billingState.status ==
-                        BusinessPlusBillingStatus.purchasing,
+                            BusinessPlusBillingStatus.purchasing ||
+                        billingState.status ==
+                            BusinessPlusBillingStatus.verifying,
                     onPressed: canStartPurchase ? onStartPurchase : null,
                   ),
                   const SizedBox(height: AppSpacing.sm),
@@ -257,10 +265,14 @@ String _billingStatusText(BusinessPlusBillingState state) {
       return 'Business Plus ürünü bulunamadı';
     case BusinessPlusBillingStatus.purchasing:
       return 'Satın alma açılıyor';
+    case BusinessPlusBillingStatus.verifying:
+      return 'Satın alma doğrulanıyor';
     case BusinessPlusBillingStatus.pending:
       return 'Satın alma beklemede';
     case BusinessPlusBillingStatus.verificationPending:
       return 'Doğrulama bekleniyor';
+    case BusinessPlusBillingStatus.verifiedActive:
+      return 'Business Plus aktif edildi';
     case BusinessPlusBillingStatus.error:
       return 'Satın alma tamamlanamıyor';
   }

@@ -6,6 +6,7 @@ import 'package:in_app_purchase/in_app_purchase.dart';
 
 import '../../core/constants/business_plus_products.dart';
 import 'business_plus_billing_service.dart';
+import 'business_provider.dart';
 
 enum BusinessPlusBillingStatus {
   initial,
@@ -15,8 +16,10 @@ enum BusinessPlusBillingStatus {
   unsupportedPlatform,
   productNotFound,
   purchasing,
+  verifying,
   pending,
   verificationPending,
+  verifiedActive,
   error,
 }
 
@@ -26,12 +29,14 @@ class BusinessPlusBillingState {
     this.product,
     this.message,
     this.lastPurchase,
+    this.lastVerificationResult,
   });
 
   final BusinessPlusBillingStatus status;
   final ProductDetails? product;
   final String? message;
   final BusinessPlusPurchaseForVerification? lastPurchase;
+  final BusinessPlusVerificationResult? lastVerificationResult;
 
   bool get isLoading => status == BusinessPlusBillingStatus.loading;
 
@@ -50,6 +55,7 @@ class BusinessPlusBillingState {
     ProductDetails? product,
     String? message,
     BusinessPlusPurchaseForVerification? lastPurchase,
+    BusinessPlusVerificationResult? lastVerificationResult,
     bool clearMessage = false,
   }) {
     return BusinessPlusBillingState(
@@ -57,6 +63,8 @@ class BusinessPlusBillingState {
       product: product ?? this.product,
       message: clearMessage ? null : message ?? this.message,
       lastPurchase: lastPurchase ?? this.lastPurchase,
+      lastVerificationResult:
+          lastVerificationResult ?? this.lastVerificationResult,
     );
   }
 }
@@ -73,13 +81,14 @@ final businessPlusBillingProvider =
       BusinessPlusBillingState
     >((ref) {
       return BusinessPlusBillingController(
+        ref,
         ref.watch(businessPlusBillingServiceProvider),
       );
     });
 
 class BusinessPlusBillingController
     extends StateNotifier<BusinessPlusBillingState> {
-  BusinessPlusBillingController(this._service)
+  BusinessPlusBillingController(this._ref, this._service)
     : super(const BusinessPlusBillingState()) {
     _purchaseSubscription = _service.purchaseStream.listen(
       _handlePurchases,
@@ -92,9 +101,11 @@ class BusinessPlusBillingController
     );
   }
 
+  final Ref _ref;
   final BusinessPlusBillingService _service;
   StreamSubscription<List<PurchaseDetails>>? _purchaseSubscription;
   bool _isLoadingProduct = false;
+  final Set<String> _verifyingTokens = <String>{};
 
   Future<void> loadProduct() async {
     if (_isLoadingProduct) return;
@@ -252,11 +263,11 @@ class BusinessPlusBillingController
         case PurchaseStatus.restored:
           final verificationPurchase = _verificationInputFromPurchase(purchase);
           state = state.copyWith(
-            status: BusinessPlusBillingStatus.verificationPending,
-            message:
-                'Satın alma alındı, doğrulama bekleniyor. Plus henüz aktif edilmedi.',
+            status: BusinessPlusBillingStatus.verifying,
+            message: 'Satın alma doğrulanıyor.',
             lastPurchase: verificationPurchase,
           );
+          unawaited(_verifyPurchaseWithBackend(purchase, verificationPurchase));
           break;
         case PurchaseStatus.canceled:
           state = state.copyWith(
@@ -286,6 +297,66 @@ class BusinessPlusBillingController
     );
   }
 
+  Future<void> _verifyPurchaseWithBackend(
+    PurchaseDetails purchase,
+    BusinessPlusPurchaseForVerification verificationPurchase,
+  ) async {
+    final purchaseToken = verificationPurchase.serverVerificationData.trim();
+    if (purchaseToken.isEmpty) {
+      state = state.copyWith(
+        status: BusinessPlusBillingStatus.error,
+        message: 'Satın alma doğrulaması için Play verisi eksik.',
+      );
+      return;
+    }
+    if (_verifyingTokens.contains(purchaseToken)) return;
+
+    final businessId = _ref.read(myBusinessAccountProvider).account?.id;
+    if (businessId == null || businessId.isEmpty) {
+      state = state.copyWith(
+        status: BusinessPlusBillingStatus.error,
+        message: 'Business Plus için aktif bir işletme hesabı gerekir.',
+      );
+      return;
+    }
+
+    _verifyingTokens.add(purchaseToken);
+    try {
+      final result = await _service.verifyBusinessPlusPurchase(
+        businessId: businessId,
+        purchase: verificationPurchase,
+      );
+
+      if (result.verified && result.active) {
+        if (purchase.pendingCompletePurchase) {
+          await _service.completePurchase(purchase);
+        }
+        await _ref
+            .read(myBusinessAccountProvider.notifier)
+            .loadMyBusinessAccount();
+        state = state.copyWith(
+          status: BusinessPlusBillingStatus.verifiedActive,
+          message: 'Business Plus aktif edildi.',
+          lastVerificationResult: result,
+        );
+        return;
+      }
+
+      state = state.copyWith(
+        status: BusinessPlusBillingStatus.verificationPending,
+        message: result.message,
+        lastVerificationResult: result,
+      );
+    } catch (error) {
+      state = state.copyWith(
+        status: BusinessPlusBillingStatus.error,
+        message: _friendlyError(error),
+      );
+    } finally {
+      _verifyingTokens.remove(purchaseToken);
+    }
+  }
+
   @override
   void dispose() {
     _purchaseSubscription?.cancel();
@@ -312,6 +383,17 @@ String _friendlyError(Object error) {
   }
   if (message.contains('unavailable') || message.contains('billing')) {
     return 'Satın alma şu anda kullanılamıyor.';
+  }
+  if (message.contains('not_active')) {
+    return 'Satın alma doğrulandı ancak abonelik aktif görünmüyor.';
+  }
+  if (message.contains('unauthorized') ||
+      message.contains('forbidden') ||
+      message.contains('owner')) {
+    return 'Bu işletme için satın alma doğrulanamadı.';
+  }
+  if (message.contains('verification')) {
+    return 'Satın alma doğrulaması tamamlanamadı. Lütfen tekrar deneyin.';
   }
   return 'Satın alma şu anda tamamlanamıyor.';
 }
