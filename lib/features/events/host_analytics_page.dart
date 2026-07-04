@@ -29,10 +29,20 @@ class HostAnalyticsPage extends ConsumerWidget {
       body: SafeArea(
         child: analyticsAsync.when(
           loading: () => const AppLoader(),
-          error: (error, _) => ErrorView(
-            message: 'Analizler yüklenemedi.',
-            onRetry: () => ref.invalidate(hostEventAnalyticsProvider(eventId)),
-          ),
+          error: (error, _) {
+            final errorStr = error.toString().toLowerCase();
+            final isNotAuthorized =
+                errorStr.contains('not_authorized_host_only') ||
+                errorStr.contains('not_authorized') ||
+                errorStr.contains('yetkisiz');
+            return ErrorView(
+              message: isNotAuthorized
+                  ? 'Bu etkinliğin analizlerini görüntüleme yetkiniz yok.'
+                  : 'Analizler yüklenemedi. Lütfen daha sonra tekrar deneyin.',
+              onRetry: () =>
+                  ref.invalidate(hostEventAnalyticsProvider(eventId)),
+            );
+          },
           data: (list) {
             if (list.isEmpty) {
               return const Center(
