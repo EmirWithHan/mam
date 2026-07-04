@@ -87,13 +87,13 @@ class _BusinessPlusPageState extends ConsumerState<BusinessPlusPage> {
     });
 
     try {
-      await ref
-          .read(myBusinessAccountProvider.notifier)
-          .loadMyBusinessAccount();
+      final result = await ref
+          .read(businessPlusBillingProvider.notifier)
+          .refreshSubscriptionStatus();
       await ref.read(businessPlusBillingProvider.notifier).loadProduct();
       if (!mounted) return;
       setState(() {
-        _refreshMessage = 'Business Plus durumu yenilendi.';
+        _refreshMessage = result.message;
       });
     } catch (_) {
       if (!mounted) return;
@@ -251,12 +251,14 @@ class _BusinessPlusContent extends StatelessWidget {
                   text: 'Daha ileri tarihlere etkinlik planlama özgürlüğü',
                 ),
                 const _BenefitLine(text: 'Ayda 30 etkinlik oluşturma hakkı'),
-                const _BenefitLine(text: 'Aylık 5 öne çıkarma hakkı'),
+                const _BenefitLine(
+                  text: 'İşletmeni daha profesyonel sunan Plus görünümü',
+                ),
                 const _BenefitLine(
                   text: 'İşletme profilinde Business Plus ayrıcalıkları',
                 ),
                 const _BenefitLine(
-                  text: 'İşletme araçlarını ücretsiz kullanım',
+                  text: 'Gelişmiş işletme özelliklerine erişim',
                 ),
                 const _BenefitLine(text: 'Profesyonel işletme görünümü'),
                 const _BenefitLine(

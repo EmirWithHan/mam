@@ -240,6 +240,35 @@ class BusinessPlusBillingController
     }
   }
 
+  Future<BusinessPlusRefreshResult> refreshSubscriptionStatus() async {
+    final previousStatus = state.status;
+    state = state.copyWith(
+      status: BusinessPlusBillingStatus.loading,
+      clearMessage: true,
+    );
+
+    try {
+      final result = await _service.refreshBusinessPlusSubscription();
+      await _ref
+          .read(myBusinessAccountProvider.notifier)
+          .loadMyBusinessAccount();
+
+      final nextStatus = result.active
+          ? BusinessPlusBillingStatus.verifiedActive
+          : state.product == null
+          ? previousStatus
+          : BusinessPlusBillingStatus.available;
+      state = state.copyWith(status: nextStatus, message: result.message);
+      return result;
+    } catch (error) {
+      state = state.copyWith(
+        status: BusinessPlusBillingStatus.error,
+        message: _friendlyError(error),
+      );
+      rethrow;
+    }
+  }
+
   void _handlePurchases(List<PurchaseDetails> purchases) {
     for (final purchase in purchases) {
       if (purchase.productID != BusinessPlusProducts.monthlyProductId) {

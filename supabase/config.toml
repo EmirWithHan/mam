@@ -6,3 +6,6 @@ verify_jwt = false
 
 [functions.reconcile-business-plus-subscription]
 verify_jwt = false
+
+[functions.refresh-business-plus-subscription]
+verify_jwt = true

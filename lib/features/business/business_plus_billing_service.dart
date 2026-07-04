@@ -80,6 +80,22 @@ class BusinessPlusBillingService {
     );
   }
 
+  Future<BusinessPlusRefreshResult> refreshBusinessPlusSubscription() async {
+    final response = await SupabaseService.client.functions.invoke(
+      'refresh-business-plus-subscription',
+    );
+
+    final data = response.data;
+    if (data is! Map) {
+      throw const BusinessPlusBillingException('invalid_refresh_response');
+    }
+    if (data['error'] != null) {
+      throw BusinessPlusBillingException(data['error'].toString());
+    }
+
+    return BusinessPlusRefreshResult.fromJson(Map<String, dynamic>.from(data));
+  }
+
   Future<void> completePurchase(PurchaseDetails purchase) {
     return _inAppPurchase.completePurchase(purchase);
   }
@@ -111,6 +127,40 @@ class BusinessPlusVerificationResult {
       message:
           json['message']?.toString() ?? 'Satın alma doğrulaması tamamlandı.',
       acknowledged: json['acknowledged'] == true,
+    );
+  }
+}
+
+class BusinessPlusRefreshResult {
+  const BusinessPlusRefreshResult({
+    required this.refreshed,
+    required this.active,
+    required this.entitlementStatus,
+    required this.subscriptionState,
+    required this.currentPeriodEnd,
+    required this.autoRenewEnabled,
+    required this.message,
+  });
+
+  final bool refreshed;
+  final bool active;
+  final String? entitlementStatus;
+  final String? subscriptionState;
+  final DateTime? currentPeriodEnd;
+  final bool? autoRenewEnabled;
+  final String message;
+
+  factory BusinessPlusRefreshResult.fromJson(Map<String, dynamic> json) {
+    return BusinessPlusRefreshResult(
+      refreshed: json['refreshed'] == true,
+      active: json['active'] == true,
+      entitlementStatus: json['entitlement_status']?.toString(),
+      subscriptionState: json['subscription_state']?.toString(),
+      currentPeriodEnd: json['current_period_end'] == null
+          ? null
+          : DateTime.tryParse(json['current_period_end'].toString()),
+      autoRenewEnabled: json['auto_renew_enabled'] as bool?,
+      message: json['message']?.toString() ?? 'Business Plus durumu yenilendi.',
     );
   }
 }
