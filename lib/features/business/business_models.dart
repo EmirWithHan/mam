@@ -344,6 +344,61 @@ class BusinessAccount {
   }
 }
 
+class BusinessPlusSubscription {
+  const BusinessPlusSubscription({
+    required this.id,
+    required this.businessAccountId,
+    this.entitlementStatus,
+    this.storeSubscriptionStatus,
+    this.currentPeriodStart,
+    this.currentPeriodEnd,
+    this.autoRenewEnabled,
+    this.cancellationTime,
+    this.gracePeriodEnd,
+    this.revocationTime,
+    this.updatedAt,
+  });
+
+  final String id;
+  final String businessAccountId;
+  final String? entitlementStatus;
+  final String? storeSubscriptionStatus;
+  final DateTime? currentPeriodStart;
+  final DateTime? currentPeriodEnd;
+  final bool? autoRenewEnabled;
+  final DateTime? cancellationTime;
+  final DateTime? gracePeriodEnd;
+  final DateTime? revocationTime;
+  final DateTime? updatedAt;
+
+  bool get hasFuturePeriodEnd {
+    final end = currentPeriodEnd;
+    return end != null && end.isAfter(DateTime.now());
+  }
+
+  bool get isCanceledButActive {
+    return cancellationTime != null && hasFuturePeriodEnd;
+  }
+
+  factory BusinessPlusSubscription.fromJson(Map<String, dynamic> json) {
+    return BusinessPlusSubscription(
+      id: json['id']?.toString() ?? '',
+      businessAccountId: json['business_account_id']?.toString() ?? '',
+      entitlementStatus: _nullableString(json['entitlement_status']),
+      storeSubscriptionStatus: _nullableString(
+        json['store_subscription_status'],
+      ),
+      currentPeriodStart: _dateTimeFromJson(json['current_period_start']),
+      currentPeriodEnd: _dateTimeFromJson(json['current_period_end']),
+      autoRenewEnabled: json['auto_renew_enabled'] as bool?,
+      cancellationTime: _dateTimeFromJson(json['cancellation_time']),
+      gracePeriodEnd: _dateTimeFromJson(json['grace_period_end']),
+      revocationTime: _dateTimeFromJson(json['revocation_time']),
+      updatedAt: _dateTimeFromJson(json['updated_at']),
+    );
+  }
+}
+
 class BusinessAccountStatus {
   const BusinessAccountStatus._();
 

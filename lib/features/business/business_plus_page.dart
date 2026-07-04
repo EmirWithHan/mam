@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../core/constants/business_plus_products.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
 import '../../core/theme/app_spacing.dart';
@@ -21,6 +24,9 @@ class BusinessPlusPage extends ConsumerStatefulWidget {
 }
 
 class _BusinessPlusPageState extends ConsumerState<BusinessPlusPage> {
+  bool _isRefreshingStatus = false;
+  String? _refreshMessage;
+
   @override
   void initState() {
     super.initState();
@@ -48,7 +54,10 @@ class _BusinessPlusPageState extends ConsumerState<BusinessPlusPage> {
               )
             : _BusinessPlusContent(
                 account: account,
+                subscription: businessState.plusSubscription,
                 billingState: billingState,
+                isRefreshingStatus: _isRefreshingStatus,
+                refreshMessage: _refreshMessage,
                 onStartPurchase: () {
                   ref
                       .read(businessPlusBillingProvider.notifier)
@@ -59,31 +68,95 @@ class _BusinessPlusPageState extends ConsumerState<BusinessPlusPage> {
                       .read(businessPlusBillingProvider.notifier)
                       .restorePurchases();
                 },
+                onRefreshStatus: () {
+                  _refreshStatus();
+                },
+                onManageSubscription: () {
+                  _openGooglePlaySubscriptionPage();
+                },
               ),
       ),
     );
+  }
+
+  Future<void> _refreshStatus() async {
+    if (_isRefreshingStatus) return;
+    setState(() {
+      _isRefreshingStatus = true;
+      _refreshMessage = null;
+    });
+
+    try {
+      await ref
+          .read(myBusinessAccountProvider.notifier)
+          .loadMyBusinessAccount();
+      await ref.read(businessPlusBillingProvider.notifier).loadProduct();
+      if (!mounted) return;
+      setState(() {
+        _refreshMessage = 'Business Plus durumu yenilendi.';
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _refreshMessage = 'Durum yenilenemedi. Lütfen tekrar deneyin.';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isRefreshingStatus = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _openGooglePlaySubscriptionPage() async {
+    final uri = Uri.parse(
+      'https://play.google.com/store/account/subscriptions'
+      '?sku=${BusinessPlusProducts.monthlyProductId}&package=com.matchaman.app',
+    );
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (!launched && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Google Play abonelik sayfası açılamadı.'),
+        ),
+      );
+    }
   }
 }
 
 class _BusinessPlusContent extends StatelessWidget {
   const _BusinessPlusContent({
     required this.account,
+    required this.subscription,
     required this.billingState,
+    required this.isRefreshingStatus,
+    required this.refreshMessage,
     required this.onStartPurchase,
     required this.onRestorePurchases,
+    required this.onRefreshStatus,
+    required this.onManageSubscription,
   });
 
   final BusinessAccount account;
+  final BusinessPlusSubscription? subscription;
   final BusinessPlusBillingState billingState;
+  final bool isRefreshingStatus;
+  final String? refreshMessage;
   final VoidCallback onStartPurchase;
   final VoidCallback onRestorePurchases;
+  final VoidCallback onRefreshStatus;
+  final VoidCallback onManageSubscription;
 
   @override
   Widget build(BuildContext context) {
-    final isPlusActive = account.isPlusActive;
+    final isPlusActive =
+        _subscriptionActiveValue(subscription) ?? account.isPlusActive;
     final priceLabel = billingState.priceLabel;
     final canStartPurchase = !isPlusActive && billingState.canStartPurchase;
     final canRestorePurchases = !isPlusActive && billingState.canRestore;
+    final showManageButton =
+        !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -163,6 +236,17 @@ class _BusinessPlusContent extends StatelessWidget {
                   _BillingMessage(text: billingState.message!),
                 ],
                 const SizedBox(height: AppSpacing.lg),
+                _SubscriptionStatusCard(
+                  account: account,
+                  subscription: subscription,
+                  isRefreshing: isRefreshingStatus,
+                  refreshMessage: refreshMessage,
+                  onRefresh: onRefreshStatus,
+                  onManageSubscription: showManageButton
+                      ? onManageSubscription
+                      : null,
+                ),
+                const SizedBox(height: AppSpacing.lg),
                 const _BenefitLine(
                   text: 'Daha ileri tarihlere etkinlik planlama özgürlüğü',
                 ),
@@ -203,6 +287,111 @@ class _BusinessPlusContent extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _SubscriptionStatusCard extends StatelessWidget {
+  const _SubscriptionStatusCard({
+    required this.account,
+    required this.subscription,
+    required this.isRefreshing,
+    required this.refreshMessage,
+    required this.onRefresh,
+    required this.onManageSubscription,
+  });
+
+  final BusinessAccount account;
+  final BusinessPlusSubscription? subscription;
+  final bool isRefreshing;
+  final String? refreshMessage;
+  final VoidCallback onRefresh;
+  final VoidCallback? onManageSubscription;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = _subscriptionStatusText(account, subscription);
+    final periodEnd = subscription?.currentPeriodEnd;
+    final autoRenewEnabled = subscription?.autoRenewEnabled;
+    final statusMessage = _subscriptionStatusMessage(subscription);
+    final dateLabel = autoRenewEnabled == true
+        ? 'Yenileme tarihi'
+        : 'Bitiş tarihi';
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadius.lgBorder,
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Abonelik durumu', style: AppTextStyles.title),
+            const SizedBox(height: AppSpacing.sm),
+            _StatusRow(label: 'Durum', value: status),
+            if (periodEnd != null)
+              _StatusRow(
+                label: dateLabel,
+                value: _formatBusinessPlusDate(periodEnd),
+              ),
+            if (autoRenewEnabled != null)
+              _StatusRow(
+                label: 'Yenileme',
+                value: autoRenewEnabled ? 'Yenileme açık' : 'Yenileme kapalı',
+              ),
+            if (statusMessage != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              Text(statusMessage, style: AppTextStyles.bodySmall),
+            ],
+            if (refreshMessage != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              _BillingMessage(text: refreshMessage!),
+            ],
+            const SizedBox(height: AppSpacing.md),
+            AppButton(
+              label: 'Durumu yenile',
+              variant: AppButtonVariant.secondary,
+              isLoading: isRefreshing,
+              onPressed: isRefreshing ? null : onRefresh,
+            ),
+            if (onManageSubscription != null) ...[
+              const SizedBox(height: AppSpacing.sm),
+              AppButton(
+                label: 'Aboneliği Google Play’de yönet',
+                variant: AppButtonVariant.secondary,
+                onPressed: onManageSubscription,
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _StatusRow extends StatelessWidget {
+  const _StatusRow({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 112,
+            child: Text(label, style: AppTextStyles.bodySmall),
+          ),
+          Expanded(child: Text(value, style: AppTextStyles.bodyStrong)),
+        ],
+      ),
     );
   }
 }
@@ -277,6 +466,68 @@ String _billingStatusText(BusinessPlusBillingState state) {
       return 'Satın alma tamamlanamıyor';
   }
 }
+
+String _subscriptionStatusText(
+  BusinessAccount account,
+  BusinessPlusSubscription? subscription,
+) {
+  if (subscription == null) {
+    return account.isPlusActive ? 'Aktif' : 'Bilinmiyor';
+  }
+  if (subscription.isCanceledButActive) {
+    return 'İptal edildi, dönem sonuna kadar aktif';
+  }
+
+  switch (subscription.entitlementStatus) {
+    case 'active':
+      return 'Aktif';
+    case 'expired':
+      return 'Süresi doldu';
+    case 'billing_retry':
+    case 'grace_period':
+      return 'Ödeme sorunu / yenileme bekleniyor';
+    case 'paused':
+      return 'Yenileme beklemede';
+    case 'cancelled':
+      return subscription.hasFuturePeriodEnd
+          ? 'İptal edildi, dönem sonuna kadar aktif'
+          : 'Süresi doldu';
+    default:
+      return 'Bilinmiyor';
+  }
+}
+
+bool? _subscriptionActiveValue(BusinessPlusSubscription? subscription) {
+  if (subscription == null) return null;
+  if (subscription.isCanceledButActive) return true;
+  switch (subscription.entitlementStatus) {
+    case 'active':
+    case 'grace_period':
+      return subscription.currentPeriodEnd == null ||
+          subscription.currentPeriodEnd!.isAfter(DateTime.now());
+    default:
+      return false;
+  }
+}
+
+String? _subscriptionStatusMessage(BusinessPlusSubscription? subscription) {
+  if (subscription == null) return null;
+  if (subscription.isCanceledButActive) {
+    return 'Aboneliğin iptal edilmiş. Business Plus, ödenmiş dönem bitene kadar aktif kalır.';
+  }
+  if (subscription.entitlementStatus == 'expired') {
+    return 'Business Plus süren dolmuş. Tekrar abone olarak ayrıcalıkları yeniden açabilirsin.';
+  }
+  return null;
+}
+
+String _formatBusinessPlusDate(DateTime value) {
+  final local = value.toLocal();
+  return '${_twoDigits(local.day)}.${_twoDigits(local.month)}.${local.year} '
+      '${_twoDigits(local.hour)}:${_twoDigits(local.minute)}';
+}
+
+String _twoDigits(int value) => value.toString().padLeft(2, '0');
 
 class _BenefitLine extends StatelessWidget {
   const _BenefitLine({required this.text});

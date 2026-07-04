@@ -16,6 +16,7 @@ class BusinessAccountState {
   const BusinessAccountState({
     required this.status,
     this.account,
+    this.plusSubscription,
     this.application,
     this.isAdmin = false,
     this.message,
@@ -24,12 +25,14 @@ class BusinessAccountState {
   const BusinessAccountState.initial()
     : status = BusinessAccountStatusState.initial,
       account = null,
+      plusSubscription = null,
       application = null,
       isAdmin = false,
       message = null;
 
   final BusinessAccountStatusState status;
   final BusinessAccount? account;
+  final BusinessPlusSubscription? plusSubscription;
   final BusinessApplication? application;
   final bool isAdmin;
   final String? message;
@@ -39,6 +42,7 @@ class BusinessAccountState {
   BusinessAccountState copyWith({
     required BusinessAccountStatusState status,
     BusinessAccount? account,
+    BusinessPlusSubscription? plusSubscription,
     BusinessApplication? application,
     bool? isAdmin,
     String? message,
@@ -47,6 +51,7 @@ class BusinessAccountState {
     return BusinessAccountState(
       status: status,
       account: account ?? this.account,
+      plusSubscription: plusSubscription ?? this.plusSubscription,
       application: application ?? this.application,
       isAdmin: isAdmin ?? this.isAdmin,
       message: clearMessage ? null : message ?? this.message,
@@ -243,11 +248,17 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
 
     try {
       final account = await _service.fetchMyBusinessAccount();
+      final plusSubscription = account == null
+          ? null
+          : await _service.fetchLatestBusinessPlusSubscription(
+              businessAccountId: account.id,
+            );
       final application = await _service.fetchMyLatestApplication();
       final isAdmin = await _service.isCurrentUserAdmin();
       state = BusinessAccountState(
         status: BusinessAccountStatusState.success,
         account: account,
+        plusSubscription: plusSubscription,
         application: application,
         isAdmin: isAdmin,
       );
@@ -255,6 +266,7 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
       state = BusinessAccountState(
         status: BusinessAccountStatusState.error,
         account: state.account,
+        plusSubscription: state.plusSubscription,
         application: state.application,
         isAdmin: state.isAdmin,
         message: _businessMessage(error),
@@ -333,6 +345,7 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
       state = BusinessAccountState(
         status: BusinessAccountStatusState.error,
         account: state.account,
+        plusSubscription: state.plusSubscription,
         application: state.application,
         isAdmin: state.isAdmin,
         message: _businessMessage(error),
@@ -360,6 +373,7 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
       state = BusinessAccountState(
         status: BusinessAccountStatusState.error,
         account: state.account,
+        plusSubscription: state.plusSubscription,
         application: state.application,
         isAdmin: state.isAdmin,
         message: _businessMessage(error),
@@ -391,6 +405,7 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
       state = BusinessAccountState(
         status: BusinessAccountStatusState.error,
         account: state.account,
+        plusSubscription: state.plusSubscription,
         application: state.application,
         isAdmin: state.isAdmin,
         message: _businessMessage(error),
@@ -426,6 +441,7 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
       state = BusinessAccountState(
         status: BusinessAccountStatusState.error,
         account: state.account,
+        plusSubscription: state.plusSubscription,
         application: state.application,
         isAdmin: state.isAdmin,
         message: _businessMessage(error),
@@ -452,6 +468,7 @@ class BusinessAccountController extends StateNotifier<BusinessAccountState> {
       state = BusinessAccountState(
         status: BusinessAccountStatusState.error,
         account: state.account,
+        plusSubscription: state.plusSubscription,
         application: state.application,
         isAdmin: state.isAdmin,
         message: _businessMessage(error),

@@ -62,6 +62,35 @@ class BusinessAccountService {
     return BusinessAccount.fromJson(data);
   }
 
+  Future<BusinessPlusSubscription?> fetchLatestBusinessPlusSubscription({
+    required String businessAccountId,
+  }) async {
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    if (userId == null) return null;
+
+    final data = await SupabaseService.client
+        .from('business_plus_subscriptions')
+        .select(
+          'id,business_account_id,entitlement_status,store_subscription_status,current_period_start,current_period_end,auto_renew_enabled,cancellation_time,grace_period_end,revocation_time,updated_at',
+        )
+        .eq('business_account_id', businessAccountId)
+        .eq('owner_user_id', userId)
+        .order('updated_at', ascending: false)
+        .limit(1)
+        .maybeSingle()
+        .catchError((Object error) {
+          logSupabaseDebug(
+            'Business',
+            'fetchLatestBusinessPlusSubscription',
+            error,
+          );
+          throw error;
+        });
+
+    if (data == null) return null;
+    return BusinessPlusSubscription.fromJson(data);
+  }
+
   Future<BusinessAccount> createBusinessAccount(
     BusinessAccountInput input,
   ) async {
