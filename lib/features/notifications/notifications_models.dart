@@ -27,17 +27,30 @@ class AppNotification {
 
   bool get isUnread => !isRead;
 
-  bool get canOpenEntity => opensEvent || opensProfile;
+  bool get canOpenEntity =>
+      opensEvent || opensProfile || opensDirectMessage || opensEventChat;
 
   bool get opensEvent {
     return entityId?.trim().isNotEmpty == true &&
-        entityType?.trim().toLowerCase() == 'event';
+        entityType?.trim().toLowerCase() == 'event' &&
+        type.trim().toLowerCase() != 'message';
   }
 
   bool get opensProfile {
     final entity = entityType?.trim().toLowerCase();
     return entityId?.trim().isNotEmpty == true &&
         (entity == 'profile' || entity == 'user' || entity == 'profile/user');
+  }
+
+  bool get opensDirectMessage {
+    return entityId?.trim().isNotEmpty == true &&
+        entityType?.trim().toLowerCase() == 'direct_message';
+  }
+
+  bool get opensEventChat {
+    return entityId?.trim().isNotEmpty == true &&
+        type.trim().toLowerCase() == 'message' &&
+        entityType?.trim().toLowerCase() == 'event';
   }
 
   bool get isFollowRequest {
@@ -72,6 +85,7 @@ class AppNotification {
       'follow_request_approved' => 'Takip isteğin onaylandı',
       'follow_request_rejected' => 'Takip isteğin reddedildi',
       'system' => 'Sistem bildirimi',
+      'message' => title.trim().isEmpty ? 'Yeni Mesaj' : title.trim(),
       _ => title.trim().isEmpty ? 'Bildirim' : title.trim(),
     };
   }
@@ -95,6 +109,7 @@ class AppNotification {
       'follow_request_approved' => 'Takip isteğin onaylandı.',
       'follow_request_rejected' => 'Takip isteğin reddedildi.',
       'system' => 'Akanzi güncellemesi.',
+      'message' => 'Yeni bir mesajın var.',
       _ => '',
     };
   }

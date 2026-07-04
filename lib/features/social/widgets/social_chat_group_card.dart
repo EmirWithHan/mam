@@ -52,7 +52,11 @@ class SocialChatGroupCard extends StatelessWidget {
                           Expanded(
                             child: Text(
                               group.title,
-                              style: AppTextStyles.bodyStrong,
+                              style: AppTextStyles.bodyStrong.copyWith(
+                                fontWeight: group.unreadCount > 0
+                                    ? FontWeight.bold
+                                    : null,
+                              ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                             ),
@@ -62,11 +66,35 @@ class SocialChatGroupCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        group.displaySubtitle,
-                        style: AppTextStyles.bodySmall,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              group.displaySubtitle,
+                              style: AppTextStyles.bodySmall.copyWith(
+                                fontWeight: group.unreadCount > 0
+                                    ? FontWeight.bold
+                                    : null,
+                                color: group.unreadCount > 0
+                                    ? AppColors.textPrimary
+                                    : null,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          if (group.unreadCount > 0) ...[
+                            const SizedBox(width: AppSpacing.xs),
+                            Container(
+                              width: 8,
+                              height: 8,
+                              decoration: const BoxDecoration(
+                                color: AppColors.primary,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
+                        ],
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       Wrap(

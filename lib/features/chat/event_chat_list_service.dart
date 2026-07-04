@@ -13,16 +13,19 @@ class EventChatListService {
 
     final participantRows = await SupabaseService.client
         .from('event_participants')
-        .select('event_id,role,attendance_status')
+        .select('event_id,role,attendance_status,last_read_message_id')
         .eq('user_id', userId)
         .inFilter('attendance_status', eventChatActiveParticipantStatuses);
 
     final rolesByEventId = <String, String>{};
+    final lastReadMessageIdByEventId = <String, String?>{};
     for (final row in participantRows) {
       final participant = Map<String, dynamic>.from(row);
       final eventId = participant['event_id'] as String?;
       if (eventId == null) continue;
       rolesByEventId[eventId] = participant['role'] as String? ?? 'participant';
+      lastReadMessageIdByEventId[eventId] =
+          participant['last_read_message_id'] as String?;
     }
 
     final eventIds = rolesByEventId.keys.toList();
@@ -62,12 +65,24 @@ class EventChatListService {
     final groups = eventRows.map((row) {
       final eventId = row['id'] as String;
       final latestMessage = latestMessagesByEventId[eventId];
+      final lastReadMsgId = lastReadMessageIdByEventId[eventId];
+
+      bool hasUnread = false;
+      if (latestMessage != null) {
+        final latestMsgId = latestMessage['id'] as String;
+        final latestSenderId = latestMessage['sender_id'] as String;
+        if (latestSenderId != userId) {
+          hasUnread = lastReadMsgId != latestMsgId;
+        }
+      }
+
       return EventChatGroup.fromEventJson(
         eventJson: row,
         role: rolesByEventId[eventId] ?? 'participant',
       ).copyWith(
         lastMessage: latestMessage?['message'] as String?,
         lastMessageAt: _dateTimeFromJson(latestMessage?['created_at']),
+        unreadCount: hasUnread ? 1 : 0,
       );
     }).toList();
 
@@ -85,7 +100,7 @@ class EventChatListService {
   ) async {
     final rows = await SupabaseService.client
         .from('event_messages')
-        .select('event_id,message,created_at')
+        .select('id,sender_id,event_id,message,created_at')
         .inFilter('event_id', eventIds)
         .order('created_at', ascending: false);
 

@@ -62,6 +62,7 @@ class DirectConversation {
     required this.updatedAt,
     required this.lastMessageAt,
     this.lastMessagePreview,
+    this.lastMessageSenderId,
     required this.participants,
   });
 
@@ -72,6 +73,7 @@ class DirectConversation {
   final DateTime updatedAt;
   final DateTime lastMessageAt;
   final String? lastMessagePreview;
+  final String? lastMessageSenderId;
   final List<DirectParticipant> participants;
 
   DirectParticipant? getOtherParticipant(String? currentUserId) {
@@ -94,13 +96,32 @@ class DirectConversation {
     if (me == null) return false;
     final myLastReadAt = me.lastReadAt;
     if (myLastReadAt == null) return lastMessagePreview != null;
-    return lastMessageAt.isAfter(myLastReadAt);
+
+    final isNewer = lastMessageAt.isAfter(myLastReadAt);
+    if (lastMessageSenderId != null) {
+      return isNewer && lastMessageSenderId != currentUserId;
+    }
+    return isNewer;
   }
 
   factory DirectConversation.fromJson(Map<String, dynamic> json) {
     final parts = (json['direct_conversation_participants'] as List? ?? [])
         .map((p) => DirectParticipant.fromJson(Map<String, dynamic>.from(p)))
         .toList();
+
+    final messages = json['direct_messages'] as List? ?? [];
+    String? senderId;
+    if (messages.isNotEmpty) {
+      final sorted = List<Map<String, dynamic>>.from(
+        messages.map((m) => Map<String, dynamic>.from(m)),
+      );
+      sorted.sort(
+        (a, b) => DateTime.parse(
+          b['created_at'].toString(),
+        ).compareTo(DateTime.parse(a['created_at'].toString())),
+      );
+      senderId = sorted.first['sender_user_id'] as String?;
+    }
 
     return DirectConversation(
       id: json['id'] as String,
@@ -110,19 +131,26 @@ class DirectConversation {
       updatedAt: DateTime.parse(json['updated_at'].toString()),
       lastMessageAt: DateTime.parse(json['last_message_at'].toString()),
       lastMessagePreview: json['last_message_preview'] as String?,
+      lastMessageSenderId: senderId,
       participants: parts,
     );
   }
 
-  DirectConversation copyWith({List<DirectParticipant>? participants}) {
+  DirectConversation copyWith({
+    String? lastMessagePreview,
+    DateTime? lastMessageAt,
+    String? lastMessageSenderId,
+    List<DirectParticipant>? participants,
+  }) {
     return DirectConversation(
       id: id,
       pairKey: pairKey,
       createdBy: createdBy,
       createdAt: createdAt,
       updatedAt: updatedAt,
-      lastMessageAt: lastMessageAt,
-      lastMessagePreview: lastMessagePreview,
+      lastMessageAt: lastMessageAt ?? this.lastMessageAt,
+      lastMessagePreview: lastMessagePreview ?? this.lastMessagePreview,
+      lastMessageSenderId: lastMessageSenderId ?? this.lastMessageSenderId,
       participants: participants ?? this.participants,
     );
   }

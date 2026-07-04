@@ -277,6 +277,22 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     }
 
     try {
+      if (notification.opensEventChat) {
+        context.pushNamed(
+          RouteNames.eventChat,
+          pathParameters: {'eventId': entityId},
+        );
+        return;
+      }
+
+      if (notification.opensDirectMessage) {
+        context.pushNamed(
+          RouteNames.directChat,
+          pathParameters: {'conversationId': entityId},
+        );
+        return;
+      }
+
       if (notification.opensEvent) {
         context.pushNamed(
           RouteNames.eventDetail,

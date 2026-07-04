@@ -46,6 +46,10 @@ class DirectMessagingService {
             updated_at,
             last_message_at,
             last_message_preview,
+            direct_messages(
+              sender_user_id,
+              created_at
+            ),
             direct_conversation_participants(
               user_id,
               last_read_at,

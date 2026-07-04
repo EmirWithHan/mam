@@ -53,7 +53,11 @@ class EventChatGroup {
     return sportType;
   }
 
-  EventChatGroup copyWith({String? lastMessage, DateTime? lastMessageAt}) {
+  EventChatGroup copyWith({
+    String? lastMessage,
+    DateTime? lastMessageAt,
+    int? unreadCount,
+  }) {
     return EventChatGroup(
       eventId: eventId,
       title: title,
@@ -65,7 +69,7 @@ class EventChatGroup {
       role: role,
       lastMessage: lastMessage ?? this.lastMessage,
       lastMessageAt: lastMessageAt ?? this.lastMessageAt,
-      unreadCount: unreadCount,
+      unreadCount: unreadCount ?? this.unreadCount,
     );
   }
 
