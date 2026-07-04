@@ -10,14 +10,31 @@ import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/app_logo.dart';
 import '../../core/widgets/error_view.dart';
 import 'business_models.dart';
+import 'business_plus_billing_provider.dart';
 import 'business_provider.dart';
 
-class BusinessPlusPage extends ConsumerWidget {
+class BusinessPlusPage extends ConsumerStatefulWidget {
   const BusinessPlusPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<BusinessPlusPage> createState() => _BusinessPlusPageState();
+}
+
+class _BusinessPlusPageState extends ConsumerState<BusinessPlusPage> {
+  @override
+  void initState() {
+    super.initState();
+    Future.microtask(() {
+      if (!mounted) return;
+      ref.read(myBusinessAccountProvider.notifier).loadMyBusinessAccount();
+      ref.read(businessPlusBillingProvider.notifier).loadProduct();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final businessState = ref.watch(myBusinessAccountProvider);
+    final billingState = ref.watch(businessPlusBillingProvider);
     final account = businessState.account;
 
     return Scaffold(
@@ -29,20 +46,44 @@ class BusinessPlusPage extends ConsumerWidget {
             ? const ErrorView(
                 message: 'Business Plus için aktif bir işletme hesabı gerekir.',
               )
-            : _BusinessPlusContent(account: account),
+            : _BusinessPlusContent(
+                account: account,
+                billingState: billingState,
+                onStartPurchase: () {
+                  ref
+                      .read(businessPlusBillingProvider.notifier)
+                      .startPurchase();
+                },
+                onRestorePurchases: () {
+                  ref
+                      .read(businessPlusBillingProvider.notifier)
+                      .restorePurchases();
+                },
+              ),
       ),
     );
   }
 }
 
 class _BusinessPlusContent extends StatelessWidget {
-  const _BusinessPlusContent({required this.account});
+  const _BusinessPlusContent({
+    required this.account,
+    required this.billingState,
+    required this.onStartPurchase,
+    required this.onRestorePurchases,
+  });
 
   final BusinessAccount account;
+  final BusinessPlusBillingState billingState;
+  final VoidCallback onStartPurchase;
+  final VoidCallback onRestorePurchases;
 
   @override
   Widget build(BuildContext context) {
     final isPlusActive = account.isPlusActive;
+    final priceLabel = billingState.priceLabel;
+    final canStartPurchase = !isPlusActive && billingState.canStartPurchase;
+    final canRestorePurchases = !isPlusActive && billingState.canRestore;
 
     return ListView(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -107,7 +148,20 @@ class _BusinessPlusContent extends StatelessWidget {
                 if (isPlusActive)
                   const _StatusPill(text: 'Business Plus aktif')
                 else
-                  const _StatusPill(text: 'Satın alma yakında aktif olacak'),
+                  _StatusPill(text: _billingStatusText(billingState)),
+                if (!isPlusActive && priceLabel != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Text(
+                    'Play fiyatı: $priceLabel',
+                    style: AppTextStyles.bodyStrong.copyWith(
+                      color: AppColors.tertiary,
+                    ),
+                  ),
+                ],
+                if (!isPlusActive && billingState.message != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  _BillingMessage(text: billingState.message!),
+                ],
                 const SizedBox(height: AppSpacing.lg),
                 const _BenefitLine(text: 'Daha esnek etkinlik planlama'),
                 const _BenefitLine(
@@ -121,14 +175,19 @@ class _BusinessPlusContent extends StatelessWidget {
                 if (!isPlusActive) ...[
                   const SizedBox(height: AppSpacing.lg),
                   AppButton(
-                    label: 'Business Plus’a Geç',
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Satın alma yakında aktif olacak.'),
-                        ),
-                      );
-                    },
+                    label: priceLabel == null
+                        ? 'Business Plus’a Geç'
+                        : 'Business Plus’a Geç - $priceLabel',
+                    isLoading:
+                        billingState.status ==
+                        BusinessPlusBillingStatus.purchasing,
+                    onPressed: canStartPurchase ? onStartPurchase : null,
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  AppButton(
+                    label: 'Satın almayı geri yükle',
+                    variant: AppButtonVariant.secondary,
+                    onPressed: canRestorePurchases ? onRestorePurchases : null,
                   ),
                 ],
               ],
@@ -136,6 +195,27 @@ class _BusinessPlusContent extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _BillingMessage extends StatelessWidget {
+  const _BillingMessage({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppColors.primarySoft,
+        borderRadius: AppRadius.lgBorder,
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.14)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Text(text, style: AppTextStyles.bodySmall),
+      ),
     );
   }
 }
@@ -159,6 +239,30 @@ class _StatusPill extends StatelessWidget {
       ),
       child: Text(text, style: AppTextStyles.bodyStrong),
     );
+  }
+}
+
+String _billingStatusText(BusinessPlusBillingState state) {
+  switch (state.status) {
+    case BusinessPlusBillingStatus.initial:
+    case BusinessPlusBillingStatus.loading:
+      return 'Ürün bilgisi yükleniyor';
+    case BusinessPlusBillingStatus.available:
+      return 'Satın alma hazır';
+    case BusinessPlusBillingStatus.unavailable:
+      return 'Satın alma şu anda kullanılamıyor';
+    case BusinessPlusBillingStatus.unsupportedPlatform:
+      return 'Satın alma bu platformda desteklenmiyor';
+    case BusinessPlusBillingStatus.productNotFound:
+      return 'Business Plus ürünü bulunamadı';
+    case BusinessPlusBillingStatus.purchasing:
+      return 'Satın alma açılıyor';
+    case BusinessPlusBillingStatus.pending:
+      return 'Satın alma beklemede';
+    case BusinessPlusBillingStatus.verificationPending:
+      return 'Doğrulama bekleniyor';
+    case BusinessPlusBillingStatus.error:
+      return 'Satın alma tamamlanamıyor';
   }
 }
 
