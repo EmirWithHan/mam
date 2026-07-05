@@ -80,4 +80,28 @@ class AdminService {
           throw error;
         });
   }
+
+  Future<void> resolveReport({
+    required String reportType,
+    required String reportId,
+    required String status,
+    String? reason,
+  }) async {
+    await SupabaseService.client
+        .rpc(
+          'resolve_report_as_admin',
+          params: {
+            'p_report_type': reportType,
+            'p_report_id': reportId,
+            'p_status': status,
+            'p_reason': reason != null && reason.trim().isNotEmpty
+                ? reason.trim()
+                : null,
+          },
+        )
+        .catchError((Object error) {
+          logSupabaseDebug('Admin', 'resolve_report_as_admin', error);
+          throw error;
+        });
+  }
 }

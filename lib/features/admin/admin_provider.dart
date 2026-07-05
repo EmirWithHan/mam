@@ -87,6 +87,34 @@ class AdminController extends StateNotifier<AdminState> {
       return false;
     }
   }
+
+  Future<bool> resolveReport({
+    required String reportType,
+    required String reportId,
+    required String status,
+    String? reason,
+  }) async {
+    state = const AdminState(loading: true);
+    try {
+      await _service.resolveReport(
+        reportType: reportType,
+        reportId: reportId,
+        status: status,
+        reason: reason,
+      );
+      state = const AdminState(success: true);
+      _ref.invalidate(adminDashboardProvider);
+      return true;
+    } catch (error) {
+      final errStr = error.toString().toLowerCase();
+      String message = 'Şikayet çözümlenirken bir hata oluştu.';
+      if (errStr.contains('not_admin')) {
+        message = 'Bu sayfaya erişim yetkin yok.';
+      }
+      state = AdminState(errorMessage: message);
+      return false;
+    }
+  }
 }
 
 final adminControllerProvider =

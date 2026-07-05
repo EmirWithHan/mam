@@ -2,29 +2,43 @@ class AdminDashboardData {
   final int totalUsers;
   final int totalEvents;
   final int pendingBusinessAppsCount;
+  final int pendingReportsCount;
+  final int pendingMessageReportsCount;
   final List<AdminRecentEvent> recentEvents;
   final List<AdminPendingBusinessApp> pendingBusinessApps;
   final List<AdminModerationAction> recentModerationActions;
+  final List<AdminUserReport> recentReports;
+  final List<AdminMessageReport> recentMessageReports;
 
   const AdminDashboardData({
     required this.totalUsers,
     required this.totalEvents,
     required this.pendingBusinessAppsCount,
+    required this.pendingReportsCount,
+    required this.pendingMessageReportsCount,
     required this.recentEvents,
     required this.pendingBusinessApps,
     required this.recentModerationActions,
+    required this.recentReports,
+    required this.recentMessageReports,
   });
 
   factory AdminDashboardData.fromJson(Map<String, dynamic> json) {
     final eventsList = json['recent_events'] as List? ?? [];
     final appsList = json['pending_business_apps_list'] as List? ?? [];
     final modsList = json['recent_moderation_actions'] as List? ?? [];
+    final reportsList = json['recent_reports'] as List? ?? [];
+    final msgReportsList = json['recent_message_reports'] as List? ?? [];
 
     return AdminDashboardData(
       totalUsers: (json['total_users'] as num?)?.toInt() ?? 0,
       totalEvents: (json['total_events'] as num?)?.toInt() ?? 0,
       pendingBusinessAppsCount:
           (json['pending_business_apps'] as num?)?.toInt() ?? 0,
+      pendingReportsCount:
+          (json['pending_reports_count'] as num?)?.toInt() ?? 0,
+      pendingMessageReportsCount:
+          (json['pending_message_reports_count'] as num?)?.toInt() ?? 0,
       recentEvents: eventsList
           .map(
             (e) =>
@@ -45,6 +59,95 @@ class AdminDashboardData {
             ),
           )
           .toList(),
+      recentReports: reportsList
+          .map(
+            (e) =>
+                AdminUserReport.fromJson(Map<String, dynamic>.from(e as Map)),
+          )
+          .toList(),
+      recentMessageReports: msgReportsList
+          .map(
+            (e) => AdminMessageReport.fromJson(
+              Map<String, dynamic>.from(e as Map),
+            ),
+          )
+          .toList(),
+    );
+  }
+}
+
+class AdminUserReport {
+  final String id;
+  final String reporterId;
+  final String targetType;
+  final String targetId;
+  final String reason;
+  final String? description;
+  final String status;
+  final DateTime createdAt;
+
+  const AdminUserReport({
+    required this.id,
+    required this.reporterId,
+    required this.targetType,
+    required this.targetId,
+    required this.reason,
+    this.description,
+    required this.status,
+    required this.createdAt,
+  });
+
+  factory AdminUserReport.fromJson(Map<String, dynamic> json) {
+    return AdminUserReport(
+      id: json['id']?.toString() ?? '',
+      reporterId: json['reporter_id']?.toString() ?? '',
+      targetType: json['target_type']?.toString() ?? '',
+      targetId: json['target_id']?.toString() ?? '',
+      reason: json['reason']?.toString() ?? '',
+      description: json['description']?.toString(),
+      status: json['status']?.toString() ?? 'open',
+      createdAt: DateTime.parse(json['created_at'].toString()),
+    );
+  }
+}
+
+class AdminMessageReport {
+  final String id;
+  final String messageId;
+  final String reporterId;
+  final String reason;
+  final DateTime createdAt;
+  final String reportedUserId;
+  final String messageType;
+  final String? eventId;
+  final String? conversationId;
+  final String status;
+
+  const AdminMessageReport({
+    required this.id,
+    required this.messageId,
+    required this.reporterId,
+    required this.reason,
+    required this.createdAt,
+    required this.reportedUserId,
+    required this.messageType,
+    required this.eventId,
+    required this.conversationId,
+    required this.status,
+  });
+
+  factory AdminMessageReport.fromJson(Map<String, dynamic> json) {
+    return AdminMessageReport(
+      id: json['id']?.toString() ?? '',
+      messageId: json['message_id']?.toString() ?? '',
+      reporterId: json['reporter_id']?.toString() ?? '',
+      reason: json['reason']?.toString() ?? '',
+      createdAt: DateTime.parse(json['created_at'].toString()),
+      reportedUserId: json['reported_user_id']?.toString() ?? '',
+      messageType: json['message_type']?.toString() ?? '',
+      eventId: json['event_id']?.toString(),
+      conversationId: json['conversation_id']?.toString(),
+      status: json['status']?.toString() ?? 'pending',
     );
   }
 }

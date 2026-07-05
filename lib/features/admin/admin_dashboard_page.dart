@@ -104,7 +104,7 @@ class _AdminDashboardBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 5,
       child: Column(
         children: [
           Padding(
@@ -140,14 +140,19 @@ class _AdminDashboardBody extends StatelessWidget {
               ],
             ),
           ),
-          const TabBar(
+          TabBar(
             labelColor: AppColors.primary,
             unselectedLabelColor: AppColors.textMuted,
             indicatorColor: AppColors.primary,
+            isScrollable: true,
             tabs: [
-              Tab(text: 'İşletme Başvuruları'),
-              Tab(text: 'Etkinlikler'),
-              Tab(text: 'Geri Bildirimler'),
+              const Tab(text: 'Başvurular'),
+              const Tab(text: 'Etkinlikler'),
+              Tab(text: 'Şikayetler (${data.pendingReportsCount})'),
+              Tab(
+                text: 'Mesaj Şikayetleri (${data.pendingMessageReportsCount})',
+              ),
+              const Tab(text: 'Geri Bildirimler'),
             ],
           ),
           Expanded(
@@ -155,6 +160,8 @@ class _AdminDashboardBody extends StatelessWidget {
               children: [
                 _BusinessAppsList(apps: data.pendingBusinessApps),
                 _EventsList(events: data.recentEvents),
+                _ReportsList(reports: data.recentReports),
+                _MessageReportsList(reports: data.recentMessageReports),
                 const _FeedbackListTab(),
               ],
             ),
@@ -530,6 +537,304 @@ class _Badge extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ReportsList extends ConsumerWidget {
+  const _ReportsList({required this.reports});
+
+  final List<AdminUserReport> reports;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (reports.isEmpty) {
+      return Center(
+        child: Text(
+          'Şikayet bulunmamaktadır.',
+          style: AppTextStyles.body.copyWith(color: AppColors.textMuted),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      itemCount: reports.length,
+      separatorBuilder: (_, index) => const SizedBox(height: AppSpacing.md),
+      itemBuilder: (context, index) {
+        final report = reports[index];
+        final isOpen = report.status == 'open';
+
+        return Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.lgBorder,
+            side: const BorderSide(color: AppColors.border),
+          ),
+          color: AppColors.surface,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Şikayet Nedeni: ${report.reason}',
+                        style: AppTextStyles.bodyStrong,
+                      ),
+                    ),
+                    if (report.status == 'open')
+                      const _Badge(
+                        label: 'Açık',
+                        color: Color(0xFFFFF3E0),
+                        textColor: Colors.orange,
+                      )
+                    else if (report.status == 'resolved')
+                      const _Badge(
+                        label: 'Çözüldü',
+                        color: Color(0xFFE8F5E9),
+                        textColor: AppColors.success,
+                      )
+                    else
+                      const _Badge(
+                        label: 'Reddedildi',
+                        color: Color(0xFFEEEEEE),
+                        textColor: AppColors.textMuted,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Raporlanan Hedef: [${report.targetType}] ${report.targetId}',
+                  style: AppTextStyles.bodySmall,
+                ),
+                Text(
+                  'Şikayet Eden: ${report.reporterId}',
+                  style: AppTextStyles.bodySmall,
+                ),
+                if (report.description != null &&
+                    report.description!.trim().isNotEmpty) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    'Açıklama: ${report.description}',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ],
+                Text(
+                  'Tarih: ${report.createdAt.toLocal()}',
+                  style: AppTextStyles.bodySmall,
+                ),
+                if (isOpen) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _showActionDialog(
+                            context,
+                            ref,
+                            title: 'Şikayeti Reddet',
+                            hintText: 'Reddetme gerekçesi (isteğe bağlı)',
+                            buttonLabel: 'Reddet',
+                            onConfirm: (reason) => ref
+                                .read(adminControllerProvider.notifier)
+                                .resolveReport(
+                                  reportType: 'user',
+                                  reportId: report.id,
+                                  status: 'rejected',
+                                  reason: reason,
+                                ),
+                          ),
+                          child: const Text('Reddet'),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => _showActionDialog(
+                            context,
+                            ref,
+                            title: 'Şikayeti Çözümle',
+                            hintText: 'Çözüm notu (isteğe bağlı)',
+                            buttonLabel: 'Çözümle',
+                            onConfirm: (reason) => ref
+                                .read(adminControllerProvider.notifier)
+                                .resolveReport(
+                                  reportType: 'user',
+                                  reportId: report.id,
+                                  status: 'resolved',
+                                  reason: reason,
+                                ),
+                          ),
+                          child: const Text('Çözümle'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _MessageReportsList extends ConsumerWidget {
+  const _MessageReportsList({required this.reports});
+
+  final List<AdminMessageReport> reports;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    if (reports.isEmpty) {
+      return Center(
+        child: Text(
+          'Mesaj şikayeti bulunmamaktadır.',
+          style: AppTextStyles.body.copyWith(color: AppColors.textMuted),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      itemCount: reports.length,
+      separatorBuilder: (_, index) => const SizedBox(height: AppSpacing.md),
+      itemBuilder: (context, index) {
+        final report = reports[index];
+        final isPending = report.status == 'pending';
+
+        return Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.lgBorder,
+            side: const BorderSide(color: AppColors.border),
+          ),
+          color: AppColors.surface,
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Şikayet Nedeni: ${report.reason}',
+                        style: AppTextStyles.bodyStrong,
+                      ),
+                    ),
+                    if (report.status == 'pending')
+                      const _Badge(
+                        label: 'Bekliyor',
+                        color: Color(0xFFFFF3E0),
+                        textColor: Colors.orange,
+                      )
+                    else if (report.status == 'resolved')
+                      const _Badge(
+                        label: 'Çözüldü',
+                        color: Color(0xFFE8F5E9),
+                        textColor: AppColors.success,
+                      )
+                    else
+                      const _Badge(
+                        label: 'Reddedildi',
+                        color: Color(0xFFEEEEEE),
+                        textColor: AppColors.textMuted,
+                      ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  'Şikayet Edilen Mesaj ID: ${report.messageId}',
+                  style: AppTextStyles.bodySmall,
+                ),
+                Text(
+                  'Mesaj Sahibi: ${report.reportedUserId}',
+                  style: AppTextStyles.bodySmall,
+                ),
+                Text(
+                  'Şikayet Eden: ${report.reporterId}',
+                  style: AppTextStyles.bodySmall,
+                ),
+                Text(
+                  'Mesaj Tipi: ${report.messageType}',
+                  style: AppTextStyles.bodySmall,
+                ),
+                if (report.eventId != null)
+                  Text(
+                    'Etkinlik ID: ${report.eventId}',
+                    style: AppTextStyles.bodySmall,
+                  ),
+                if (report.conversationId != null)
+                  Text(
+                    'Sohbet ID: ${report.conversationId}',
+                    style: AppTextStyles.bodySmall,
+                  ),
+                Text(
+                  'Tarih: ${report.createdAt.toLocal()}',
+                  style: AppTextStyles.bodySmall,
+                ),
+                if (isPending) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () => _showActionDialog(
+                            context,
+                            ref,
+                            title: 'Mesaj Şikayetini Reddet',
+                            hintText: 'Reddetme gerekçesi (isteğe bağlı)',
+                            buttonLabel: 'Reddet',
+                            onConfirm: (reason) => ref
+                                .read(adminControllerProvider.notifier)
+                                .resolveReport(
+                                  reportType: 'message',
+                                  reportId: report.id,
+                                  status: 'rejected',
+                                  reason: reason,
+                                ),
+                          ),
+                          child: const Text('Reddet'),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => _showActionDialog(
+                            context,
+                            ref,
+                            title: 'Mesaj Şikayetini Çözümle',
+                            hintText: 'Çözüm notu (isteğe bağlı)',
+                            buttonLabel: 'Çözümle',
+                            onConfirm: (reason) => ref
+                                .read(adminControllerProvider.notifier)
+                                .resolveReport(
+                                  reportType: 'message',
+                                  reportId: report.id,
+                                  status: 'resolved',
+                                  reason: reason,
+                                ),
+                          ),
+                          child: const Text('Çözümle'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
