@@ -339,6 +339,21 @@ class BusinessAccountService {
       );
     }
   }
+
+  Future<Map<String, dynamic>> fetchBusinessPlusAnalytics(
+    String businessId,
+  ) async {
+    final response = await SupabaseService.client
+        .rpc(
+          'get_business_plus_analytics',
+          params: {'p_business_account_id': businessId},
+        )
+        .catchError((Object error) {
+          logSupabaseDebug('Business', 'get_business_plus_analytics', error);
+          throw error;
+        });
+    return Map<String, dynamic>.from(response as Map);
+  }
 }
 
 String _friendlyBusinessApplicationError(Object error) {

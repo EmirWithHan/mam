@@ -17,6 +17,7 @@ import 'business_provider.dart';
 import 'business_reviews_models.dart';
 import 'business_reviews_provider.dart';
 import 'business_stats_page.dart';
+import 'business_plus_analytics_page.dart';
 import 'widgets/business_badge.dart';
 import 'widgets/business_plus_badge.dart';
 import '../profile/profile_badges.dart';
@@ -207,13 +208,29 @@ class _BusinessProfileBody extends ConsumerWidget {
           const SizedBox(height: AppSpacing.lg),
           _SectionCard(
             title: 'İstatistikler',
-            child: AppButton(
-              label: 'İstatistikler ve Analiz',
-              onPressed: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => BusinessStatsPage(account: account),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                AppButton(
+                  label: 'Genel İstatistikler',
+                  variant: AppButtonVariant.secondary,
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) => BusinessStatsPage(account: account),
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: AppSpacing.md),
+                AppButton(
+                  label: 'Business Plus Analizleri',
+                  onPressed: () => Navigator.of(context).push(
+                    MaterialPageRoute<void>(
+                      builder: (_) =>
+                          BusinessPlusAnalyticsPage(account: account),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
