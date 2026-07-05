@@ -104,4 +104,26 @@ class AdminService {
           throw error;
         });
   }
+
+  Future<void> removeReportedContent({
+    required String reportType,
+    required String reportId,
+    String? reason,
+  }) async {
+    await SupabaseService.client
+        .rpc(
+          'remove_reported_content_as_admin',
+          params: {
+            'p_report_type': reportType,
+            'p_report_id': reportId,
+            'p_reason': reason != null && reason.trim().isNotEmpty
+                ? reason.trim()
+                : null,
+          },
+        )
+        .catchError((Object error) {
+          logSupabaseDebug('Admin', 'remove_reported_content_as_admin', error);
+          throw error;
+        });
+  }
 }

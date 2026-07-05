@@ -85,6 +85,9 @@ class AdminUserReport {
   final String? description;
   final String status;
   final DateTime createdAt;
+  final String? reporterName;
+  final String? targetName;
+  final String? targetContent;
 
   const AdminUserReport({
     required this.id,
@@ -95,6 +98,9 @@ class AdminUserReport {
     this.description,
     required this.status,
     required this.createdAt,
+    this.reporterName,
+    this.targetName,
+    this.targetContent,
   });
 
   factory AdminUserReport.fromJson(Map<String, dynamic> json) {
@@ -107,6 +113,9 @@ class AdminUserReport {
       description: json['description']?.toString(),
       status: json['status']?.toString() ?? 'open',
       createdAt: DateTime.parse(json['created_at'].toString()),
+      reporterName: json['reporter_name']?.toString(),
+      targetName: json['target_name']?.toString(),
+      targetContent: json['target_content']?.toString(),
     );
   }
 }
@@ -122,6 +131,10 @@ class AdminMessageReport {
   final String? eventId;
   final String? conversationId;
   final String status;
+  final String? reporterName;
+  final String? reportedUserName;
+  final String? messageContent;
+  final String? eventTitle;
 
   const AdminMessageReport({
     required this.id,
@@ -134,6 +147,10 @@ class AdminMessageReport {
     required this.eventId,
     required this.conversationId,
     required this.status,
+    this.reporterName,
+    this.reportedUserName,
+    this.messageContent,
+    this.eventTitle,
   });
 
   factory AdminMessageReport.fromJson(Map<String, dynamic> json) {
@@ -148,6 +165,10 @@ class AdminMessageReport {
       eventId: json['event_id']?.toString(),
       conversationId: json['conversation_id']?.toString(),
       status: json['status']?.toString() ?? 'pending',
+      reporterName: json['reporter_name']?.toString(),
+      reportedUserName: json['reported_user_name']?.toString(),
+      messageContent: json['message_content']?.toString(),
+      eventTitle: json['event_title']?.toString(),
     );
   }
 }

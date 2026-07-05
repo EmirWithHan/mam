@@ -564,6 +564,7 @@ class _ReportsList extends ConsumerWidget {
       itemBuilder: (context, index) {
         final report = reports[index];
         final isOpen = report.status == 'open';
+        final isRemovable = report.targetType != 'user';
 
         return Card(
           elevation: 0,
@@ -608,26 +609,74 @@ class _ReportsList extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Raporlanan Hedef: [${report.targetType}] ${report.targetId}',
-                  style: AppTextStyles.bodySmall,
+                  'Şikayet Tipi: ${report.targetType.toUpperCase()}',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
+                const SizedBox(height: 2),
+                if (report.targetType == 'user') ...[
+                  Text(
+                    'Şikayet Edilen: ${report.targetName ?? 'Bilinmeyen'}',
+                    style: AppTextStyles.bodySmall,
+                  ),
+                ] else if (report.targetType == 'event') ...[
+                  Text(
+                    'Etkinlik Başlığı: ${report.targetName ?? 'Bilinmeyen'}',
+                    style: AppTextStyles.bodySmall,
+                  ),
+                ] else ...[
+                  Text(
+                    'İçerik Sahibi: ${report.targetName ?? 'Bilinmeyen'}',
+                    style: AppTextStyles.bodySmall,
+                  ),
+                  if (report.targetContent != null &&
+                      report.targetContent!.trim().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceSoft,
+                        borderRadius: AppRadius.smBorder,
+                      ),
+                      child: Text(
+                        report.targetContent!,
+                        style: AppTextStyles.bodySmall.copyWith(
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+                const SizedBox(height: 4),
                 Text(
-                  'Şikayet Eden: ${report.reporterId}',
+                  'Şikayet Eden: ${report.reporterName ?? 'Bilinmeyen'}',
                   style: AppTextStyles.bodySmall,
                 ),
                 if (report.description != null &&
                     report.description!.trim().isNotEmpty) ...[
-                  const SizedBox(height: AppSpacing.xs),
+                  const SizedBox(height: 4),
                   Text(
                     'Açıklama: ${report.description}',
                     style: AppTextStyles.bodySmall.copyWith(
-                      fontStyle: FontStyle.italic,
+                      color: AppColors.textMuted,
                     ),
                   ),
                 ],
+                const SizedBox(height: 4),
                 Text(
                   'Tarih: ${report.createdAt.toLocal()}',
-                  style: AppTextStyles.bodySmall,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Hedef ID: ${report.targetId} • Raporlayan ID: ${report.reporterId}',
+                  style: AppTextStyles.caption.copyWith(
+                    fontSize: 9,
+                    color: AppColors.textMuted,
+                  ),
                 ),
                 if (isOpen) ...[
                   const SizedBox(height: AppSpacing.md),
@@ -655,7 +704,7 @@ class _ReportsList extends ConsumerWidget {
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
-                        child: ElevatedButton(
+                        child: OutlinedButton(
                           onPressed: () => _showActionDialog(
                             context,
                             ref,
@@ -674,6 +723,32 @@ class _ReportsList extends ConsumerWidget {
                           child: const Text('Çözümle'),
                         ),
                       ),
+                      if (isRemovable) ...[
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.error,
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: () => _showActionDialog(
+                              context,
+                              ref,
+                              title: 'İçeriği Kaldır',
+                              hintText: 'Kaldırma gerekçesi (isteğe bağlı)',
+                              buttonLabel: 'İçeriği Kaldır',
+                              onConfirm: (reason) => ref
+                                  .read(adminControllerProvider.notifier)
+                                  .removeReportedContent(
+                                    reportType: 'user',
+                                    reportId: report.id,
+                                    reason: reason,
+                                  ),
+                            ),
+                            child: const Text('Kaldır'),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                 ],
@@ -753,34 +828,54 @@ class _MessageReportsList extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Şikayet Edilen Mesaj ID: ${report.messageId}',
+                  'Mesaj Sahibi: ${report.reportedUserName ?? 'Bilinmeyen'}',
+                  style: AppTextStyles.bodySmall,
+                ),
+                if (report.messageContent != null &&
+                    report.messageContent!.trim().isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceSoft,
+                      borderRadius: AppRadius.smBorder,
+                    ),
+                    child: Text(
+                      report.messageContent!,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 4),
+                Text(
+                  'Şikayet Eden: ${report.reporterName ?? 'Bilinmeyen'}',
                   style: AppTextStyles.bodySmall,
                 ),
                 Text(
-                  'Mesaj Sahibi: ${report.reportedUserId}',
+                  'Mesaj Tipi: ${report.messageType.toUpperCase()}',
                   style: AppTextStyles.bodySmall,
                 ),
-                Text(
-                  'Şikayet Eden: ${report.reporterId}',
-                  style: AppTextStyles.bodySmall,
-                ),
-                Text(
-                  'Mesaj Tipi: ${report.messageType}',
-                  style: AppTextStyles.bodySmall,
-                ),
-                if (report.eventId != null)
+                if (report.eventTitle != null)
                   Text(
-                    'Etkinlik ID: ${report.eventId}',
+                    'Etkinlik Context: ${report.eventTitle}',
                     style: AppTextStyles.bodySmall,
                   ),
-                if (report.conversationId != null)
-                  Text(
-                    'Sohbet ID: ${report.conversationId}',
-                    style: AppTextStyles.bodySmall,
-                  ),
+                const SizedBox(height: 4),
                 Text(
                   'Tarih: ${report.createdAt.toLocal()}',
-                  style: AppTextStyles.bodySmall,
+                  style: AppTextStyles.bodySmall.copyWith(
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Mesaj ID: ${report.messageId} • Gönderen ID: ${report.reportedUserId}',
+                  style: AppTextStyles.caption.copyWith(
+                    fontSize: 9,
+                    color: AppColors.textMuted,
+                  ),
                 ),
                 if (isPending) ...[
                   const SizedBox(height: AppSpacing.md),
@@ -808,7 +903,7 @@ class _MessageReportsList extends ConsumerWidget {
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(
-                        child: ElevatedButton(
+                        child: OutlinedButton(
                           onPressed: () => _showActionDialog(
                             context,
                             ref,
@@ -825,6 +920,30 @@ class _MessageReportsList extends ConsumerWidget {
                                 ),
                           ),
                           child: const Text('Çözümle'),
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Expanded(
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.error,
+                            foregroundColor: Colors.white,
+                          ),
+                          onPressed: () => _showActionDialog(
+                            context,
+                            ref,
+                            title: 'Mesajı Kaldır',
+                            hintText: 'Kaldırma gerekçesi (isteğe bağlı)',
+                            buttonLabel: 'Mesajı Kaldır',
+                            onConfirm: (reason) => ref
+                                .read(adminControllerProvider.notifier)
+                                .removeReportedContent(
+                                  reportType: 'message',
+                                  reportId: report.id,
+                                  reason: reason,
+                                ),
+                          ),
+                          child: const Text('Mesajı Kaldır'),
                         ),
                       ),
                     ],
