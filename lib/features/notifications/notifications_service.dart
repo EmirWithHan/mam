@@ -20,6 +20,7 @@ class NotificationsService {
             'id,recipient_id,actor_id,type,title,body,entity_type,entity_id,metadata,is_read,created_at',
           )
           .eq('recipient_id', userId)
+          .neq('type', 'message')
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
 
@@ -42,6 +43,7 @@ class NotificationsService {
           .select('id')
           .eq('recipient_id', userId)
           .eq('is_read', false)
+          .neq('type', 'message')
           .limit(100);
       return rows.length;
     } catch (error) {
