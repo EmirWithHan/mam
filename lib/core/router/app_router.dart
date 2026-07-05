@@ -13,7 +13,7 @@ import '../../features/auth/oauth_callback_page.dart';
 import '../../features/auth/register_page.dart';
 import '../../features/auth/reset_password_page.dart';
 import '../../features/business/business_profile_page.dart';
-import '../../features/business/admin_business_applications_page.dart';
+import '../../features/admin/admin_dashboard_page.dart';
 import '../../features/business/business_plus_page.dart';
 import '../../features/business/create_business_account_page.dart';
 import '../../features/chat/event_chat_page.dart';
@@ -362,7 +362,7 @@ GoRouter createAppRouter(AuthState authState) {
         name: RouteNames.admin,
         builder: (context, state) => const MainNavigationShell(
           currentIndex: 4,
-          child: AdminBusinessApplicationsPage(),
+          child: AdminDashboardPage(),
         ),
       ),
       GoRoute(

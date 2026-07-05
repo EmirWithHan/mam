@@ -13,6 +13,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/phone_verification.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_logo.dart';
+import '../admin/admin_provider.dart';
 import '../auth/auth_provider.dart';
 import '../business/business_models.dart';
 import '../business/business_provider.dart';
@@ -49,6 +50,9 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
     final profileState = ref.watch(profileControllerProvider);
     final authState = ref.watch(authControllerProvider);
     final businessState = ref.watch(myBusinessAccountProvider);
+    final isAdmin = ref
+        .watch(isAdminProvider)
+        .maybeWhen(data: (val) => val, orElse: () => false);
     final businessAccount = businessState.account;
     final businessApplication = businessState.application;
     final isBusinessMode = profile?.isBusinessAccount == true;
@@ -213,12 +217,13 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                     : () => _confirmDeleteBusinessAccount(context),
               ),
             ],
-            if (businessState.isAdmin) ...[
+            if (isAdmin) ...[
               const SizedBox(height: AppSpacing.md),
               SettingsMenuTile(
                 icon: Icons.admin_panel_settings_outlined,
-                title: 'Yönetici',
-                subtitle: 'İşletme başvurularını incele',
+                title: 'Yönetici Paneli',
+                subtitle:
+                    'Başvuruları, etkinlikleri ve geri bildirimleri yönet',
                 onTap: () => context.pushNamed(RouteNames.admin),
               ),
             ],
