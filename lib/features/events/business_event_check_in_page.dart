@@ -49,6 +49,10 @@ class _BusinessEventCheckInPageState
       (previous, next) {
         final message = next.message;
         if (message == null || message == previous?.message) return;
+        if (message.contains('Daha saati gelmedi') ||
+            message.contains('QR kod süresi doldu')) {
+          return;
+        }
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(message)));
@@ -675,11 +679,38 @@ class _RealQrScannerSheetState extends State<_RealQrScannerSheet> {
     if (!mounted) return;
 
     if (result == null) {
+      final msg = widget.controller.message;
+      final isTooEarly = msg != null && msg.contains('Daha saati gelmedi');
+      final isExpired = msg != null && msg.contains('QR kod süresi doldu');
+
+      if (isTooEarly || isExpired) {
+        // Pop the scanner sheet
+        Navigator.pop(context);
+        if (!context.mounted) return;
+
+        // Show modal popup dialog
+        await showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (dialogContext) => AlertDialog(
+            title: const Text('QR Kod Doğrulama'),
+            content: Text(msg),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(dialogContext),
+                child: const Text('Kapat'),
+              ),
+            ],
+          ),
+        );
+        return;
+      }
+
       setState(() {
         _isProcessing = false;
         _errorMessage =
             widget.controller.message ??
-            'QR do\u011Frulama ba\u015Far\u0131s\u0131z. L\u00FCtfen tekrar dene.';
+            'QR doğrulama başarısız. Lütfen tekrar dene.';
       });
       return;
     }
