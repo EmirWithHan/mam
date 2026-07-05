@@ -717,11 +717,14 @@ class EventsService {
       }).toList();
 
       // Sort: sponsored first, then sponsored priority DESC, then host trust score DESC, then approved count DESC
+      final now = DateTime.now();
       parsedEvents.sort((a, b) {
-        if (a.event.isSponsored != b.event.isSponsored) {
-          return a.event.isSponsored ? -1 : 1;
+        final aSponsored = a.event.isActiveSponsoredPlacement(now);
+        final bSponsored = b.event.isActiveSponsoredPlacement(now);
+        if (aSponsored != bSponsored) {
+          return aSponsored ? -1 : 1;
         }
-        if (a.event.isSponsored) {
+        if (aSponsored) {
           final aPriority = a.event.sponsoredPriority;
           final bPriority = b.event.sponsoredPriority;
           if (aPriority != bPriority) {
@@ -792,11 +795,14 @@ class EventsService {
       return _EventWithHostScore(event, trustScore);
     }).toList();
 
+    final now = DateTime.now();
     parsedEvents.sort((a, b) {
-      if (a.event.isSponsored != b.event.isSponsored) {
-        return a.event.isSponsored ? -1 : 1;
+      final aSponsored = a.event.isActiveSponsoredPlacement(now);
+      final bSponsored = b.event.isActiveSponsoredPlacement(now);
+      if (aSponsored != bSponsored) {
+        return aSponsored ? -1 : 1;
       }
-      if (a.event.isSponsored) {
+      if (aSponsored) {
         final aPriority = a.event.sponsoredPriority;
         final bPriority = b.event.sponsoredPriority;
         if (aPriority != bPriority) {
@@ -927,6 +933,33 @@ class EventsService {
       return [];
     }
   }
+
+  Future<Map<String, dynamic>> fetchBusinessBoostStats(
+    String businessId,
+  ) async {
+    final response = await SupabaseService.client.rpc(
+      'get_business_boost_stats',
+      params: {'p_business_account_id': businessId},
+    );
+    return Map<String, dynamic>.from((response as List).first as Map);
+  }
+
+  Future<bool> checkEventWasBoosted(String eventId) async {
+    final data = await SupabaseService.client
+        .from('business_event_boosts')
+        .select('id')
+        .eq('event_id', eventId)
+        .maybeSingle();
+    return data != null;
+  }
+
+  Future<Map<String, dynamic>> boostBusinessEvent(String eventId) async {
+    final response = await SupabaseService.client.rpc(
+      'boost_business_event',
+      params: {'p_event_id': eventId},
+    );
+    return Map<String, dynamic>.from((response as List).first as Map);
+  }
 }
 
 class _EventWithHostScore {
@@ -1021,8 +1054,7 @@ business_accounts:organizer_business_id(
   status
 )
 ''';
-
-bool _isMissingCapacitySchema(Object error) {
+bool _isMissingCapacitySchema(dynamic error) {
   final message = error.toString().toLowerCase();
   final isMissing =
       (message.contains('generic_capacity') ||

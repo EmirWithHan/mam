@@ -91,12 +91,7 @@ class EventCard extends ConsumerWidget {
                     spacing: AppSpacing.sm,
                     runSpacing: AppSpacing.xs,
                     children: [
-                      if (showSponsorChip)
-                        _Pill(
-                          label: 'Sponsorlu',
-                          color: const Color(0xFFFF7E79),
-                          textColor: Colors.white,
-                        ),
+                      if (showSponsorChip) const _BoostPill(),
                       if (status != null) ...[
                         if (_buildStatusPill(status!) != null)
                           _buildStatusPill(status!)!,
@@ -463,6 +458,43 @@ class _Pill extends StatelessWidget {
           style: AppTextStyles.label.copyWith(color: textColor),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    );
+  }
+}
+
+class _BoostPill extends StatelessWidget {
+  const _BoostPill();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFFFFF8E1),
+        border: Border.all(color: const Color(0xFFFFD54F), width: 0.8),
+        borderRadius: AppRadius.pillBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm,
+          vertical: AppSpacing.xs,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.star, color: Color(0xFFFFB300), size: 12),
+            const SizedBox(width: 4),
+            Text(
+              'Öne Çıkarıldı',
+              style: AppTextStyles.label.copyWith(
+                color: const Color(0xFFFF8F00),
+                fontWeight: FontWeight.bold,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ),
       ),
     );

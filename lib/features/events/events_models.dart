@@ -313,10 +313,12 @@ class Event {
   bool isActiveSponsoredPlacement(DateTime now) {
     final verifiedBusiness = businessOrganizer?.isVerified == true;
     final activeBusiness = businessOrganizer?.isActive == true;
+    final plusActive = businessOrganizer?.isPlusActive == true;
     if (!isSponsored ||
         !isBusinessEvent ||
         !verifiedBusiness ||
         !activeBusiness ||
+        !plusActive ||
         eventDate.isBefore(now)) {
       return false;
     }

@@ -262,6 +262,9 @@ class _BusinessPlusContent extends StatelessWidget {
                 ),
                 const _BenefitLine(text: 'Ayda 30 etkinlik oluşturma hakkı'),
                 const _BenefitLine(
+                  text: 'Ayda 5 etkinliği 24 saat öne çıkarma hakkı',
+                ),
+                const _BenefitLine(
                   text: 'İşletmeni daha profesyonel sunan Plus görünümü',
                 ),
                 const _BenefitLine(

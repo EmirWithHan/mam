@@ -134,6 +134,106 @@ final hostEventAnalyticsProvider =
       return ref.watch(eventsServiceProvider).fetchHostEventAnalytics(eventId);
     });
 
+class BusinessBoostStats {
+  final int boostsUsed;
+  final int boostsAllowed;
+  final DateTime periodEnd;
+
+  const BusinessBoostStats({
+    required this.boostsUsed,
+    required this.boostsAllowed,
+    required this.periodEnd,
+  });
+
+  factory BusinessBoostStats.fromJson(Map<String, dynamic> json) {
+    return BusinessBoostStats(
+      boostsUsed: (json['boosts_used'] as num?)?.toInt() ?? 0,
+      boostsAllowed: (json['boosts_allowed'] as num?)?.toInt() ?? 0,
+      periodEnd: DateTime.parse(json['period_end'].toString()),
+    );
+  }
+
+  int get remaining => (boostsAllowed - boostsUsed).clamp(0, 5);
+}
+
+final businessBoostStatsProvider =
+    FutureProvider.family<BusinessBoostStats, String>((ref, businessId) async {
+      final data = await ref
+          .watch(eventsServiceProvider)
+          .fetchBusinessBoostStats(businessId);
+      return BusinessBoostStats.fromJson(data);
+    });
+
+final eventWasBoostedProvider = FutureProvider.family<bool, String>((
+  ref,
+  eventId,
+) {
+  return ref.watch(eventsServiceProvider).checkEventWasBoosted(eventId);
+});
+
+class EventBoostState {
+  final bool loading;
+  final String? errorMessage;
+  final bool success;
+
+  const EventBoostState({
+    this.loading = false,
+    this.errorMessage,
+    this.success = false,
+  });
+}
+
+class EventBoostController extends StateNotifier<EventBoostState> {
+  EventBoostController(this._service, this._ref)
+    : super(const EventBoostState());
+
+  final EventsService _service;
+  final Ref _ref;
+
+  Future<bool> boostEvent(String eventId, String businessId) async {
+    state = const EventBoostState(loading: true);
+    try {
+      await _service.boostBusinessEvent(eventId);
+      state = const EventBoostState(success: true);
+
+      // Invalidate providers to refresh UI state
+      _ref.invalidate(businessBoostStatsProvider(businessId));
+      _ref.invalidate(eventWasBoostedProvider(eventId));
+      _ref.invalidate(eventDetailProvider(eventId));
+
+      // Refresh event lists/feeds
+      _ref.invalidate(myEventsProvider);
+      _ref.read(featuredEventsProvider.notifier).refreshEvents();
+      _ref.read(followingEventsProvider.notifier).refreshEvents();
+
+      return true;
+    } catch (error) {
+      final errStr = error.toString().toLowerCase();
+      String message = 'Öne çıkarma işlemi tamamlanamadı. Lütfen tekrar dene.';
+      if (errStr.contains('business_plus_required')) {
+        message = 'Etkinlik öne çıkarma Business Plus hesaplara özeldir.';
+      } else if (errStr.contains('boost_limit_reached') ||
+          errStr.contains('boost_limit_exceeded')) {
+        message = 'Bu ayki 5 öne çıkarma hakkını kullandın.';
+      } else if (errStr.contains('event_already_boosted_once')) {
+        message =
+            'Bu etkinlik daha önce öne çıkarıldı. Her etkinlik yalnızca bir kez öne çıkarılabilir.';
+      } else if (errStr.contains('not_authorized')) {
+        message = 'Bu etkinliği öne çıkarma yetkin yok.';
+      } else if (errStr.contains('event_already_boosted')) {
+        message = 'Bu etkinlik şu anda öne çıkarılıyor.';
+      }
+      state = EventBoostState(errorMessage: message);
+      return false;
+    }
+  }
+}
+
+final eventBoostControllerProvider =
+    StateNotifierProvider<EventBoostController, EventBoostState>((ref) {
+      return EventBoostController(ref.watch(eventsServiceProvider), ref);
+    });
+
 final businessEventCheckInControllerProvider =
     StateNotifierProvider.family<
       BusinessEventCheckInController,

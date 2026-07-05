@@ -335,6 +335,7 @@ class _EventDetailBody extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
         ],
+        if (isHost && event.isBusinessEvent) ...[_EventBoostCard(event: event)],
         if (isHost) ...[
           OutlinedButton.icon(
             key: const Key('host_analytics_button'),
@@ -1806,4 +1807,194 @@ String _formatCapacityBreakdown(Event event, Map<String, int>? counts) {
     'Kadın: $femaleUsed/${event.femaleCapacity}',
     'Toplam: ${event.safeApprovedCount}/${event.safeCapacityTotal}',
   ].join(' • ');
+}
+
+class _EventBoostCard extends ConsumerWidget {
+  const _EventBoostCard({required this.event});
+
+  final Event event;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final businessId = event.organizerBusinessId;
+    if (businessId == null) return const SizedBox.shrink();
+
+    final isPlusActive = event.businessOrganizer?.isPlusActive == true;
+
+    if (!isPlusActive) {
+      return Card(
+        margin: const EdgeInsets.only(bottom: AppSpacing.md),
+        color: AppColors.surface,
+        shape: RoundedRectangleBorder(
+          side: const BorderSide(color: AppColors.border),
+          borderRadius: AppRadius.lgBorder,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.star_border, color: AppColors.primary),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text('Etkinliği Öne Çıkar', style: AppTextStyles.bodyStrong),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                'Etkinlik öne çıkarma Business Plus hesaplara özeldir. Ayda 5 etkinliği 24 saat boyunca öne çıkararak daha fazla kişiye ulaşabilirsiniz.',
+                style: AppTextStyles.bodySmall,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              AppButton(
+                label: 'Business Plus Satın Al',
+                onPressed: () => context.pushNamed(RouteNames.businessPlus),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final statsAsync = ref.watch(businessBoostStatsProvider(businessId));
+    final wasBoostedAsync = ref.watch(eventWasBoostedProvider(event.id));
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      color: AppColors.surface,
+      shape: RoundedRectangleBorder(
+        side: const BorderSide(color: AppColors.border),
+        borderRadius: AppRadius.lgBorder,
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: statsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) =>
+              const Text('Öne çıkarma istatistikleri yüklenemedi.'),
+          data: (stats) {
+            return wasBoostedAsync.when(
+              loading: () => const Center(child: CircularProgressIndicator()),
+              error: (error, _) =>
+                  const Text('Öne çıkarma geçmişi yüklenemedi.'),
+              data: (wasBoosted) {
+                final now = DateTime.now();
+                final isCurrentlyBoosted = event.isActiveSponsoredPlacement(
+                  now,
+                );
+
+                Widget statusWidget;
+                Widget? actionWidget;
+
+                if (isCurrentlyBoosted) {
+                  final expiryStr = event.sponsoredUntil != null
+                      ? _formatExpiry(event.sponsoredUntil!)
+                      : '24 saat içinde';
+                  statusWidget = Row(
+                    children: [
+                      const Icon(
+                        Icons.check_circle,
+                        color: AppColors.success,
+                        size: 20,
+                      ),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          'Öne çıkarıldı · $expiryStr sona erecek',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                } else if (wasBoosted) {
+                  statusWidget = Text(
+                    'Bu etkinlik daha önce öne çıkarıldı. Her etkinlik yalnızca bir kez öne çıkarılabilir.',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.textMuted,
+                    ),
+                  );
+                } else {
+                  statusWidget = Text(
+                    'Bu ay kalan öne çıkarma hakkı: ${stats.remaining}/5',
+                    style: AppTextStyles.bodySmall,
+                  );
+
+                  final boostState = ref.watch(eventBoostControllerProvider);
+
+                  if (stats.remaining > 0) {
+                    actionWidget = Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: AppSpacing.md),
+                        AppButton(
+                          label: 'Etkinliği Öne Çıkar',
+                          isLoading: boostState.loading,
+                          onPressed: () async {
+                            final success = await ref
+                                .read(eventBoostControllerProvider.notifier)
+                                .boostEvent(event.id, businessId);
+                            if (context.mounted && !success) {
+                              final errorMsg =
+                                  ref
+                                      .read(eventBoostControllerProvider)
+                                      .errorMessage ??
+                                  'İşlem tamamlanamadı.';
+                              ScaffoldMessenger.of(
+                                context,
+                              ).showSnackBar(SnackBar(content: Text(errorMsg)));
+                            }
+                          },
+                        ),
+                      ],
+                    );
+                  } else {
+                    actionWidget = Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: AppSpacing.md),
+                        AppButton(
+                          label: 'Öne Çıkar (Limit Ulaşıldı)',
+                          onPressed: null,
+                        ),
+                      ],
+                    );
+                  }
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.star, color: AppColors.primary),
+                        const SizedBox(width: AppSpacing.sm),
+                        Text(
+                          'Etkinliği Öne Çıkar',
+                          style: AppTextStyles.bodyStrong,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    statusWidget,
+                    if (actionWidget != null) actionWidget,
+                  ],
+                );
+              },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  String _formatExpiry(DateTime expiry) {
+    final value = expiry.toLocal();
+    final hour = value.hour.toString().padLeft(2, '0');
+    final minute = value.minute.toString().padLeft(2, '0');
+    return '${value.day}.${value.month}.${value.year} $hour:$minute\'da';
+  }
 }
