@@ -34,7 +34,7 @@ String friendlyErrorMessage(Object error) {
         normalized.contains('mark_notification_read') ||
         normalized.contains('mark_all_notifications_read') ||
         normalized.contains('güncellenemedi')) {
-      return 'Bildirim güncellenemedi.';
+      return 'Bildirimler güncellenemedi. Lütfen tekrar dene.';
     }
     if (normalized.contains('select') ||
         normalized.contains('load') ||
@@ -42,6 +42,13 @@ String friendlyErrorMessage(Object error) {
         normalized.contains('yüklenemedi')) {
       return 'Bildirimler yüklenemedi.';
     }
+  }
+
+  if (normalized.contains('event_participants') ||
+      normalized.contains('last_read_message_id') ||
+      normalized.contains('read_message') ||
+      normalized.contains('okundu')) {
+    return 'Mesaj okundu olarak işaretlenemedi. Lütfen tekrar dene.';
   }
 
   if (normalized.contains('profil bilgileri kontrol edilemedi')) {

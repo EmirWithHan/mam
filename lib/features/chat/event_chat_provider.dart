@@ -332,7 +332,9 @@ class EventChatController extends StateNotifier<EventChatState> {
     try {
       await _service.markMessageAsRead(eventId: eventId, messageId: messageId);
       unawaited(_refreshChatList());
-    } catch (_) {}
+    } catch (error) {
+      state = state.copyWith(sendFailureMessage: friendlyErrorMessage(error));
+    }
   }
 
   void startRealtime() {

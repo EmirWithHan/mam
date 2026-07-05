@@ -87,16 +87,32 @@ class DirectInboxController extends StateNotifier<DirectInboxState> {
 
   void startRealtime() {
     if (_realtimeChannel != null) return;
+    final userId = SupabaseService.client.auth.currentUser?.id;
     try {
-      _realtimeChannel = SupabaseService.client
-          .channel('direct_inbox_messages')
-          .onPostgresChanges(
-            event: PostgresChangeEvent.insert,
-            schema: 'public',
-            table: 'direct_messages',
-            callback: (_) => _scheduleRefresh(),
-          )
-          .subscribe();
+      var channel = SupabaseService.client.channel('direct_inbox_messages');
+
+      channel = channel.onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'direct_messages',
+        callback: (_) => _scheduleRefresh(),
+      );
+
+      if (userId != null && userId.isNotEmpty) {
+        channel = channel.onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'direct_conversation_participants',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: userId,
+          ),
+          callback: (_) => _scheduleRefresh(),
+        );
+      }
+
+      _realtimeChannel = channel.subscribe();
     } catch (error) {
       debugPrint('[DirectMessaging] Inbox realtime failed: $error');
     }
@@ -388,7 +404,9 @@ class DirectChatController extends StateNotifier<DirectChatState> {
         messageId: messageId,
       );
       unawaited(_refreshInbox());
-    } catch (_) {}
+    } catch (error) {
+      state = state.copyWith(sendFailureMessage: friendlyErrorMessage(error));
+    }
   }
 
   List<DirectMessage> _mergeMessage(

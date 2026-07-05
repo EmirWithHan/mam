@@ -1,6 +1,10 @@
+import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/utils/error_messages.dart';
+import '../../services/supabase_service.dart';
 import 'event_chat_list_models.dart';
 import 'event_chat_list_service.dart';
 
@@ -43,7 +47,11 @@ final eventChatListServiceProvider = Provider<EventChatListService>((ref) {
 
 final eventChatListControllerProvider =
     StateNotifierProvider<EventChatListController, EventChatListState>((ref) {
-      return EventChatListController(ref.watch(eventChatListServiceProvider));
+      final controller = EventChatListController(
+        ref.watch(eventChatListServiceProvider),
+      );
+      ref.onDispose(controller.dispose);
+      return controller;
     });
 
 class EventChatListController extends StateNotifier<EventChatListState> {
@@ -51,6 +59,8 @@ class EventChatListController extends StateNotifier<EventChatListState> {
     : super(const EventChatListState.initial());
 
   final EventChatListService _service;
+  RealtimeChannel? _realtimeChannel;
+  Timer? _refreshDebounce;
 
   Future<void> loadChatGroups() async {
     state = state.copyWith(status: EventChatListStatus.loading);
@@ -61,6 +71,7 @@ class EventChatListController extends StateNotifier<EventChatListState> {
         status: EventChatListStatus.success,
         groups: groups,
       );
+      startRealtime();
     } catch (error) {
       state = EventChatListState(
         status: EventChatListStatus.error,
@@ -70,4 +81,60 @@ class EventChatListController extends StateNotifier<EventChatListState> {
   }
 
   Future<void> refreshChatGroups() => loadChatGroups();
+
+  void startRealtime() {
+    if (_realtimeChannel != null) return;
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    try {
+      var channel = SupabaseService.client.channel('event_chat_list_updates');
+
+      channel = channel.onPostgresChanges(
+        event: PostgresChangeEvent.insert,
+        schema: 'public',
+        table: 'event_messages',
+        callback: (_) => _scheduleRefresh(),
+      );
+
+      if (userId != null && userId.isNotEmpty) {
+        channel = channel.onPostgresChanges(
+          event: PostgresChangeEvent.update,
+          schema: 'public',
+          table: 'event_participants',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'user_id',
+            value: userId,
+          ),
+          callback: (_) => _scheduleRefresh(),
+        );
+      }
+
+      _realtimeChannel = channel.subscribe();
+    } catch (error) {
+      debugPrint('[EventChatList] Realtime failed: $error');
+    }
+  }
+
+  void _scheduleRefresh() {
+    _refreshDebounce?.cancel();
+    _refreshDebounce = Timer(const Duration(milliseconds: 350), () {
+      unawaited(refreshChatGroups());
+    });
+  }
+
+  void stopRealtime() {
+    _refreshDebounce?.cancel();
+    _refreshDebounce = null;
+    final channel = _realtimeChannel;
+    _realtimeChannel = null;
+    if (channel != null) {
+      unawaited(SupabaseService.client.removeChannel(channel));
+    }
+  }
+
+  @override
+  void dispose() {
+    stopRealtime();
+    super.dispose();
+  }
 }
