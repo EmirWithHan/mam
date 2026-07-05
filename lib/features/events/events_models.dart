@@ -192,10 +192,10 @@ class Event {
   }
 
   DateTime get attendanceWindowStart =>
-      eventStartDateTime.subtract(const Duration(hours: 1));
+      eventStartDateTime.subtract(const Duration(hours: 2));
 
   DateTime get attendanceWindowEnd =>
-      eventStartDateTime.add(const Duration(hours: 23));
+      eventStartDateTime.add(const Duration(hours: 22));
 
   bool isAttendanceWindowOpen([DateTime? now]) {
     final reference = now ?? DateTime.now();
@@ -662,10 +662,11 @@ class EventParticipationStatus {
     return isActiveApprovedParticipant(status);
   }
 
-  static bool hasLeftEvent(String? status) => status == left;
+  static bool hasLeftEvent(String? status) =>
+      status == left || status == cancelled;
 
   static bool canLeaveApprovedEvent(String? status) {
-    return isActiveApprovedParticipant(status);
+    return status == planned || status == confirmed;
   }
 
   static bool countsAsFinalParticipant({
@@ -742,7 +743,10 @@ class EventParticipation {
         EventParticipationStatus.isActiveApprovedParticipant(attendanceStatus);
   }
 
-  bool get canLeaveApprovedEvent => isActiveApprovedParticipant;
+  bool get canLeaveApprovedEvent {
+    return isParticipant &&
+        EventParticipationStatus.canLeaveApprovedEvent(attendanceStatus);
+  }
 
   bool countsAsFinalParticipant({required bool isBusinessEvent}) {
     return isParticipant &&

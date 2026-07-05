@@ -82,6 +82,14 @@ String friendlyErrorMessage(Object error) {
     return 'Etkinliğe 15 dakikadan az kaldığı için düzenleme kapandı.';
   }
 
+  if (normalized.contains('qr_too_early')) {
+    return 'Daha saati gelmedi. Etkinlikten 2 saat önce okutabilirsiniz.';
+  }
+
+  if (normalized.contains('qr_expired')) {
+    return 'QR kod süresi doldu. Etkinlikten sonra 22 saate kadar okutabilirsiniz.';
+  }
+
   if (normalized.contains('checkin_window_not_open')) {
     return 'QR okutma zamanı henüz başlamadı. Etkinlik saatine yaklaştığında tekrar dene.';
   }

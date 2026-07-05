@@ -567,10 +567,9 @@ class _EventDetailBody extends ConsumerWidget {
     } else {
       final res = await showAdaptiveConfirmDialog(
         context,
-        title: 'Etkinlikten çıkılsın mı?',
-        content:
-            'Bu etkinlikten çıkmak istediğinize emin misiniz? Zamanında ayrıldığınız için güven puanınız etkilenmeyecektir.',
-        confirmLabel: 'Etkinlikten çık',
+        title: 'Etkinlikten ayrıl',
+        content: 'Bu etkinlikten ayrılmak istediğine emin misin?',
+        confirmLabel: 'Ayrıl',
         cancelLabel: 'Vazgeç',
         isDestructive: true,
       );
@@ -608,9 +607,10 @@ class _EventDetailBody extends ConsumerWidget {
       return;
     }
 
-    final message = ref.read(eventsControllerProvider).message;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message ?? 'Etkinlikten çıkılamadı.')),
+      const SnackBar(
+        content: Text('Etkinlikten ayrılamadın. Lütfen tekrar dene.'),
+      ),
     );
   }
 
