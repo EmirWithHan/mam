@@ -621,6 +621,201 @@ class _ReportsList extends ConsumerWidget {
 
   final List<AdminUserReport> reports;
 
+  Widget _buildTargetContext(AdminUserReport report) {
+    if (report.targetType == 'user') {
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSoft,
+          borderRadius: AppRadius.mdBorder,
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Raporlanan Kullanıcı',
+              style: AppTextStyles.caption.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              report.targetName ?? 'Bilinmeyen',
+              style: AppTextStyles.bodyStrong,
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (report.targetType == 'event') {
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSoft,
+          borderRadius: AppRadius.mdBorder,
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Raporlanan Etkinlik Detayları',
+              style: AppTextStyles.caption.copyWith(
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              report.targetTitle ?? report.targetName ?? 'Başlıksız Etkinlik',
+              style: AppTextStyles.bodyStrong,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            if (report.targetHostName != null)
+              Text(
+                'Düzenleyen: ${report.targetHostName}',
+                style: AppTextStyles.bodySmall,
+              ),
+            if (report.targetDate != null)
+              Text(
+                'Tarih: ${report.targetDate} ${report.targetStartTime ?? ''}',
+                style: AppTextStyles.bodySmall,
+              ),
+            if (report.targetLocation != null)
+              Text(
+                'Konum: ${report.targetLocation}',
+                style: AppTextStyles.bodySmall,
+              ),
+            if (report.targetDescription != null &&
+                report.targetDescription!.trim().isNotEmpty) ...[
+              const Divider(height: AppSpacing.md),
+              Text(
+                report.targetDescription!,
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    if (report.targetType == 'post') {
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSoft,
+          borderRadius: AppRadius.mdBorder,
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Raporlanan Paylaşım (Post)',
+              style: AppTextStyles.caption.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            if (report.targetAuthorName != null)
+              Text(
+                'Paylaşan: ${report.targetAuthorName}',
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            const SizedBox(height: AppSpacing.xs),
+            if (report.targetImageUrl != null &&
+                report.targetImageUrl!.isNotEmpty) ...[
+              ClipRRect(
+                borderRadius: AppRadius.smBorder,
+                child: Image.network(
+                  report.targetImageUrl!,
+                  height: 140,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) => Container(
+                    height: 80,
+                    color: AppColors.border,
+                    alignment: Alignment.center,
+                    child: const Icon(
+                      Icons.broken_image_outlined,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xs),
+            ],
+            if (report.targetContent != null &&
+                report.targetContent!.trim().isNotEmpty)
+              Text(
+                report.targetContent!,
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
+    if (report.targetType == 'comment' || report.targetType == 'post_comment') {
+      return Container(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceSoft,
+          borderRadius: AppRadius.mdBorder,
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Raporlanan Yorum',
+              style: AppTextStyles.caption.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            if (report.targetAuthorName != null)
+              Text(
+                'Yazan: ${report.targetAuthorName}',
+                style: AppTextStyles.bodySmall.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              report.targetContent ?? 'İçerik bulunamadı.',
+              style: AppTextStyles.bodySmall.copyWith(
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+            if (report.parentPostPreview != null &&
+                report.parentPostPreview!.isNotEmpty) ...[
+              const Divider(height: AppSpacing.md),
+              Text(
+                'Paylaşım: ${report.parentPostPreview}',
+                style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textMuted,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     if (reports.isEmpty) {
@@ -692,41 +887,9 @@ class _ReportsList extends ConsumerWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 2),
-                if (report.targetType == 'user') ...[
-                  Text(
-                    'Şikayet Edilen: ${report.targetName ?? 'Bilinmeyen'}',
-                    style: AppTextStyles.bodySmall,
-                  ),
-                ] else if (report.targetType == 'event') ...[
-                  Text(
-                    'Etkinlik Başlığı: ${report.targetName ?? 'Bilinmeyen'}',
-                    style: AppTextStyles.bodySmall,
-                  ),
-                ] else ...[
-                  Text(
-                    'İçerik Sahibi: ${report.targetName ?? 'Bilinmeyen'}',
-                    style: AppTextStyles.bodySmall,
-                  ),
-                  if (report.targetContent != null &&
-                      report.targetContent!.trim().isNotEmpty) ...[
-                    const SizedBox(height: 4),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: AppColors.surfaceSoft,
-                        borderRadius: AppRadius.smBorder,
-                      ),
-                      child: Text(
-                        report.targetContent!,
-                        style: AppTextStyles.bodySmall.copyWith(
-                          fontStyle: FontStyle.italic,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-                const SizedBox(height: 4),
+                const SizedBox(height: AppSpacing.xs),
+                _buildTargetContext(report),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
                   'Şikayet Eden: ${report.reporterName ?? 'Bilinmeyen'}',
                   style: AppTextStyles.bodySmall,
@@ -907,39 +1070,44 @@ class _MessageReportsList extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(
-                  'Mesaj Sahibi: ${report.reportedUserName ?? 'Bilinmeyen'}',
-                  style: AppTextStyles.bodySmall,
+                  'Gönderen: ${report.reportedUserName ?? 'Bilinmeyen'}',
+                  style: AppTextStyles.bodySmall.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 if (report.messageContent != null &&
                     report.messageContent!.trim().isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Container(
-                    padding: const EdgeInsets.all(8),
+                    padding: const EdgeInsets.all(AppSpacing.md),
                     decoration: BoxDecoration(
                       color: AppColors.surfaceSoft,
-                      borderRadius: AppRadius.smBorder,
+                      borderRadius: AppRadius.mdBorder,
+                      border: Border.all(color: AppColors.border),
                     ),
                     child: Text(
-                      report.messageContent!,
+                      '"${report.messageContent!}"',
                       style: AppTextStyles.bodySmall.copyWith(
                         fontStyle: FontStyle.italic,
                       ),
                     ),
                   ),
                 ],
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Text(
                   'Şikayet Eden: ${report.reporterName ?? 'Bilinmeyen'}',
                   style: AppTextStyles.bodySmall,
                 ),
                 Text(
-                  'Mesaj Tipi: ${report.messageType.toUpperCase()}',
+                  'Sohbet Türü: ${report.messageType.toUpperCase()}',
                   style: AppTextStyles.bodySmall,
                 ),
                 if (report.eventTitle != null)
                   Text(
-                    'Etkinlik Context: ${report.eventTitle}',
-                    style: AppTextStyles.bodySmall,
+                    'Etkinlik: ${report.eventTitle}',
+                    style: AppTextStyles.bodySmall.copyWith(
+                      color: AppColors.secondary,
+                    ),
                   ),
                 const SizedBox(height: 4),
                 Text(

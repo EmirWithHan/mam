@@ -106,9 +106,9 @@ class AdminController extends StateNotifier<AdminState> {
       _ref.invalidate(adminDashboardProvider);
       return true;
     } catch (error) {
-      final errStr = error.toString().toLowerCase();
-      String message = 'Şikayet çözümlenirken bir hata oluştu.';
-      if (errStr.contains('not_admin')) {
+      final errStr = error.toString();
+      String message = 'Şikayet çözümlenirken bir hata oluştu: $errStr';
+      if (errStr.toLowerCase().contains('not_admin')) {
         message = 'Bu sayfaya erişim yetkin yok.';
       }
       state = AdminState(errorMessage: message);
@@ -132,9 +132,9 @@ class AdminController extends StateNotifier<AdminState> {
       _ref.invalidate(adminDashboardProvider);
       return true;
     } catch (error) {
-      final errStr = error.toString().toLowerCase();
-      String message = 'İçerik kaldırılırken bir hata oluştu.';
-      if (errStr.contains('not_admin')) {
+      final errStr = error.toString();
+      String message = 'İçerik kaldırılırken bir hata oluştu: $errStr';
+      if (errStr.toLowerCase().contains('not_admin')) {
         message = 'Bu sayfaya erişim yetkin yok.';
       }
       state = AdminState(errorMessage: message);

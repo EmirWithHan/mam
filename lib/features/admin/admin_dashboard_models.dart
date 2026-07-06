@@ -88,6 +88,15 @@ class AdminUserReport {
   final String? reporterName;
   final String? targetName;
   final String? targetContent;
+  final String? targetTitle;
+  final String? targetDescription;
+  final String? targetDate;
+  final String? targetStartTime;
+  final String? targetLocation;
+  final String? targetHostName;
+  final String? targetImageUrl;
+  final String? targetAuthorName;
+  final String? parentPostPreview;
 
   const AdminUserReport({
     required this.id,
@@ -101,6 +110,15 @@ class AdminUserReport {
     this.reporterName,
     this.targetName,
     this.targetContent,
+    this.targetTitle,
+    this.targetDescription,
+    this.targetDate,
+    this.targetStartTime,
+    this.targetLocation,
+    this.targetHostName,
+    this.targetImageUrl,
+    this.targetAuthorName,
+    this.parentPostPreview,
   });
 
   factory AdminUserReport.fromJson(Map<String, dynamic> json) {
@@ -116,6 +134,15 @@ class AdminUserReport {
       reporterName: json['reporter_name']?.toString(),
       targetName: json['target_name']?.toString(),
       targetContent: json['target_content']?.toString(),
+      targetTitle: json['target_title']?.toString(),
+      targetDescription: json['target_description']?.toString(),
+      targetDate: json['target_date']?.toString(),
+      targetStartTime: json['target_start_time']?.toString(),
+      targetLocation: json['target_location']?.toString(),
+      targetHostName: json['target_host_name']?.toString(),
+      targetImageUrl: json['target_image_url']?.toString(),
+      targetAuthorName: json['target_author_name']?.toString(),
+      parentPostPreview: json['parent_post_preview']?.toString(),
     );
   }
 }
