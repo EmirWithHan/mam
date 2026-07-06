@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_radius.dart';
@@ -9,6 +10,7 @@ import '../../core/utils/date_formatter.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_loader.dart';
 import '../../core/widgets/error_view.dart';
+import '../../services/supabase_service.dart';
 import '../feedback/feedback_provider.dart';
 import 'admin_dashboard_models.dart';
 import 'admin_provider.dart';
@@ -21,6 +23,9 @@ class AdminDashboardPage extends ConsumerStatefulWidget {
 }
 
 class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
+  RealtimeChannel? _realtimeChannel;
+  DateTime? _lastRefreshTime;
+
   @override
   void initState() {
     super.initState();
@@ -28,7 +33,76 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
       if (!mounted) return;
       // Load initial feedback list for Geri Bildirimler tab
       ref.read(adminFeedbackProvider.notifier).load();
+      _setupRealtime();
     });
+  }
+
+  Future<void> _setupRealtime() async {
+    if (_realtimeChannel != null) return;
+
+    try {
+      final isAdmin = await ref.read(adminServiceProvider).isCurrentUserAdmin();
+      if (!isAdmin || !mounted) return;
+
+      final channel = SupabaseService.client.channel(
+        'admin_dashboard_realtime',
+      );
+      _realtimeChannel = channel;
+
+      channel
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'reports',
+            callback: (_) => _debouncedRefresh(),
+          )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.update,
+            schema: 'public',
+            table: 'reports',
+            callback: (_) => _debouncedRefresh(),
+          )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'message_reports',
+            callback: (_) => _debouncedRefresh(),
+          )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.update,
+            schema: 'public',
+            table: 'message_reports',
+            callback: (_) => _debouncedRefresh(),
+          )
+          .subscribe();
+    } catch (e) {
+      // Handle error silently without crashing
+    }
+  }
+
+  void _debouncedRefresh() {
+    if (!mounted) return;
+    final now = DateTime.now();
+    if (_lastRefreshTime != null &&
+        now.difference(_lastRefreshTime!) < const Duration(seconds: 2)) {
+      return;
+    }
+    _lastRefreshTime = now;
+    ref.invalidate(adminDashboardProvider);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Yeni şikayet geldi.'),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    if (_realtimeChannel != null) {
+      SupabaseService.client.removeChannel(_realtimeChannel!);
+    }
+    super.dispose();
   }
 
   @override
@@ -145,6 +219,7 @@ class _AdminDashboardBody extends StatelessWidget {
             unselectedLabelColor: AppColors.textMuted,
             indicatorColor: AppColors.primary,
             isScrollable: true,
+            labelPadding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
             tabs: [
               const Tab(text: 'Başvurular'),
               const Tab(text: 'Etkinlikler'),
@@ -574,7 +649,10 @@ class _ReportsList extends ConsumerWidget {
           ),
           color: AppColors.surface,
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.lg,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -723,34 +801,32 @@ class _ReportsList extends ConsumerWidget {
                           child: const Text('Çözümle'),
                         ),
                       ),
-                      if (isRemovable) ...[
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.error,
-                              foregroundColor: Colors.white,
-                            ),
-                            onPressed: () => _showActionDialog(
-                              context,
-                              ref,
-                              title: 'İçeriği Kaldır',
-                              hintText: 'Kaldırma gerekçesi (isteğe bağlı)',
-                              buttonLabel: 'İçeriği Kaldır',
-                              onConfirm: (reason) => ref
-                                  .read(adminControllerProvider.notifier)
-                                  .removeReportedContent(
-                                    reportType: 'user',
-                                    reportId: report.id,
-                                    reason: reason,
-                                  ),
-                            ),
-                            child: const Text('Kaldır'),
-                          ),
-                        ),
-                      ],
                     ],
                   ),
+                  if (isRemovable) ...[
+                    const SizedBox(height: AppSpacing.sm),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.error,
+                        foregroundColor: Colors.white,
+                      ),
+                      onPressed: () => _showActionDialog(
+                        context,
+                        ref,
+                        title: 'İçeriği Kaldır',
+                        hintText: 'Kaldırma gerekçesi (isteğe bağlı)',
+                        buttonLabel: 'İçeriği Kaldır',
+                        onConfirm: (reason) => ref
+                            .read(adminControllerProvider.notifier)
+                            .removeReportedContent(
+                              reportType: 'user',
+                              reportId: report.id,
+                              reason: reason,
+                            ),
+                      ),
+                      child: const Text('Kaldır'),
+                    ),
+                  ],
                 ],
               ],
             ),
@@ -793,7 +869,10 @@ class _MessageReportsList extends ConsumerWidget {
           ),
           color: AppColors.surface,
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg,
+              vertical: AppSpacing.lg,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
@@ -922,31 +1001,29 @@ class _MessageReportsList extends ConsumerWidget {
                           child: const Text('Çözümle'),
                         ),
                       ),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.error,
-                            foregroundColor: Colors.white,
-                          ),
-                          onPressed: () => _showActionDialog(
-                            context,
-                            ref,
-                            title: 'Mesajı Kaldır',
-                            hintText: 'Kaldırma gerekçesi (isteğe bağlı)',
-                            buttonLabel: 'Mesajı Kaldır',
-                            onConfirm: (reason) => ref
-                                .read(adminControllerProvider.notifier)
-                                .removeReportedContent(
-                                  reportType: 'message',
-                                  reportId: report.id,
-                                  reason: reason,
-                                ),
-                          ),
-                          child: const Text('Mesajı Kaldır'),
-                        ),
-                      ),
                     ],
+                  ),
+                  const SizedBox(height: AppSpacing.sm),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.error,
+                      foregroundColor: Colors.white,
+                    ),
+                    onPressed: () => _showActionDialog(
+                      context,
+                      ref,
+                      title: 'Mesajı Kaldır',
+                      hintText: 'Kaldırma gerekçesi (isteğe bağlı)',
+                      buttonLabel: 'Mesajı Kaldır',
+                      onConfirm: (reason) => ref
+                          .read(adminControllerProvider.notifier)
+                          .removeReportedContent(
+                            reportType: 'message',
+                            reportId: report.id,
+                            reason: reason,
+                          ),
+                    ),
+                    child: const Text('Mesajı Kaldır'),
                   ),
                 ],
               ],
@@ -993,7 +1070,13 @@ void _showActionDialog(
               final success = await onConfirm(reason);
               if (context.mounted) {
                 Navigator.of(context).pop();
-                if (!success) {
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('İşlem başarıyla tamamlandı.'),
+                    ),
+                  );
+                } else {
                   final errorMsg =
                       ref.read(adminControllerProvider).errorMessage ??
                       'İşlem başarısız.';
