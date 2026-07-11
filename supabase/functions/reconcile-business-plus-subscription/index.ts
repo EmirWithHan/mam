@@ -72,7 +72,7 @@ Deno.serve(async (req) => {
   ) {
     return json({ error: "reconciliation_configuration_error" }, 500);
   }
-  const suppliedSecret = bearerToken(req.headers.get("authorization"));
+  const suppliedSecret = req.headers.get("x-reconcile-worker-secret")?.trim();
   if (!suppliedSecret || !constantTimeEqual(suppliedSecret, internalSecret)) {
     return json({ error: "unauthorized" }, 401);
   }
@@ -606,12 +606,6 @@ async function eligibleSubscriptionCount(serviceClient: any): Promise<number> {
     ]);
   if (error) throw error;
   return count ?? 0;
-}
-
-function bearerToken(header: string | null): string | null {
-  if (!header?.startsWith("Bearer ")) return null;
-  const value = header.slice("Bearer ".length).trim();
-  return value.length > 0 ? value : null;
 }
 
 function constantTimeEqual(left: string, right: string): boolean {
