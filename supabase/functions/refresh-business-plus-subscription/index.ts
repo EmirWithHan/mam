@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { parseGoogleBusinessPlusEntitlement } from "../_shared/business_plus_entitlement.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -35,11 +36,25 @@ type SubscriptionRow = {
   business_account_id: string;
   owner_user_id: string;
   product_id: string | null;
+  base_plan_id?: string | null;
+  original_transaction_id?: string | null;
+  external_purchase_identity_hash: string;
+  purchase_time?: string | null;
+  current_period_start?: string | null;
+  environment?: string | null;
   updated_at?: string;
   entitlement_status?: string;
   current_period_end?: string;
   store_subscription_status?: string;
   auto_renew_enabled?: boolean;
+};
+
+type StoredSubscription = {
+  entitlement_status: string;
+  store_subscription_status: string | null;
+  current_period_end: string | null;
+  ends_at: string | null;
+  auto_renew_enabled: boolean;
 };
 
 Deno.serve(async (req) => {
@@ -107,7 +122,7 @@ Deno.serve(async (req) => {
   const { data: subscription, error: subscriptionError } = await serviceClient
     .from("business_plus_subscriptions")
     .select(
-      "id,business_account_id,owner_user_id,product_id,updated_at,entitlement_status,current_period_end,store_subscription_status,auto_renew_enabled",
+      "id,business_account_id,owner_user_id,product_id,base_plan_id,original_transaction_id,external_purchase_identity_hash,purchase_time,current_period_start,environment,updated_at,entitlement_status,current_period_end,store_subscription_status,auto_renew_enabled",
     )
     .eq("business_account_id", business.id)
     .eq("owner_user_id", user.id)
@@ -134,31 +149,6 @@ Deno.serve(async (req) => {
     return json({ error: "forbidden_subscription_owner" }, 403);
   }
 
-  if (subscription.updated_at) {
-    const updatedAt = new Date(subscription.updated_at).getTime();
-    const now = Date.now();
-    const diffMinutes = (now - updatedAt) / (1000 * 60);
-
-    if (diffMinutes < 2) {
-      const entitlementStatus = subscription.entitlement_status ?? "unknown";
-      const currentPeriodEnd = subscription.current_period_end ?? null;
-      const isPast = currentPeriodEnd && new Date(currentPeriodEnd).getTime() <= now;
-      const isExpiredOrNone = entitlementStatus === "expired" || entitlementStatus === "none";
-
-      if (!(isExpiredOrNone && isPast)) {
-        return json({
-          refreshed: false,
-          active: entitlementStatus === "active" || entitlementStatus === "grace_period",
-          entitlement_status: entitlementStatus,
-          subscription_state: subscription.store_subscription_status ?? null,
-          current_period_end: currentPeriodEnd,
-          auto_renew_enabled: subscription.auto_renew_enabled ?? null,
-          message: "Durum kısa süre önce yenilendi.",
-        });
-      }
-    }
-  }
-
   const { data: proof, error: proofError } = await serviceClient
     .schema("private")
     .from("business_plus_subscription_proofs")
@@ -175,7 +165,27 @@ Deno.serve(async (req) => {
   }
   const purchaseToken = proof?.purchase_token?.toString().trim();
   if (!purchaseToken) {
-    return noSubscriptionResponse(business.id);
+    await persistInactiveSubscription({
+      serviceClient,
+      subscription,
+      purchaseToken: null,
+      rawPayload: { missing_purchase_proof: true, user_refresh: true },
+    });
+    const result = await databaseSubscriptionState(
+      serviceClient,
+      subscription,
+      subscription.external_purchase_identity_hash,
+    );
+    return json({
+      refreshed: true,
+      active: result.active,
+      entitlement_status: result.stored.entitlement_status,
+      subscription_state: result.stored.store_subscription_status,
+      current_period_end:
+        result.stored.current_period_end ?? result.stored.ends_at,
+      auto_renew_enabled: result.stored.auto_renew_enabled,
+      message: "Business Plus aboneliğin aktif görünmüyor.",
+    });
   }
 
   try {
@@ -221,6 +231,29 @@ async function refreshGooglePlaySubscription({
   try {
     googlePurchase = await getGoogleSubscription({ accessToken, purchaseToken });
   } catch (error) {
+    if (safeErrorMessage(error) === "google_subscription_not_found") {
+      await persistInactiveSubscription({
+        serviceClient,
+        subscription,
+        purchaseToken,
+        rawPayload: { google_purchase_missing: true, user_refresh: true },
+      });
+      const result = await databaseSubscriptionState(
+        serviceClient,
+        subscription,
+        subscription.external_purchase_identity_hash,
+      );
+      return {
+        refreshed: true,
+        active: result.active,
+        entitlement_status: result.stored.entitlement_status,
+        subscription_state: result.stored.store_subscription_status,
+        current_period_end:
+          result.stored.current_period_end ?? result.stored.ends_at,
+        auto_renew_enabled: result.stored.auto_renew_enabled,
+        message: "Business Plus aboneliğin aktif görünmüyor.",
+      };
+    }
     console.error("google_verification_failed", {
       business_id: subscription.business_account_id,
       product_id: productId,
@@ -230,10 +263,43 @@ async function refreshGooglePlaySubscription({
   }
 
   const lineItem = findBusinessPlusLineItem(googlePurchase, productId);
-  if (!lineItem) throw new Error("google_product_mismatch");
+  if (!lineItem) {
+    await persistInactiveSubscription({
+      serviceClient,
+      subscription,
+      purchaseToken,
+      rawPayload: {
+        google_subscription: sanitizedGooglePurchase(googlePurchase),
+        malformed_product_response: true,
+        user_refresh: true,
+      },
+    });
+    const result = await databaseSubscriptionState(
+      serviceClient,
+      subscription,
+      subscription.external_purchase_identity_hash,
+    );
+    return {
+      refreshed: true,
+      active: result.active,
+      entitlement_status: result.stored.entitlement_status,
+      subscription_state: result.stored.store_subscription_status,
+      current_period_end:
+        result.stored.current_period_end ?? result.stored.ends_at,
+      auto_renew_enabled: result.stored.auto_renew_enabled,
+      message: "Business Plus aboneliğin aktif görünmüyor.",
+    };
+  }
 
-  const subscriptionState = googlePurchase.subscriptionState ?? "unknown";
-  const sync = syncFieldsForGooglePurchase(googlePurchase, lineItem);
+  const sync = parseGoogleBusinessPlusEntitlement({
+    subscriptionState: googlePurchase.subscriptionState,
+    expiryTime: lineItem.expiryTime,
+    gracePeriodExpiryTime: lineItem.expiryTime,
+    canceledStateContext: googlePurchase.canceledStateContext,
+    autoRenewEnabled: lineItem.autoRenewingPlan?.autoRenewEnabled,
+    purchaseTime: googlePurchase.startTime,
+  });
+  const subscriptionState = sync.rawStoreState;
   const tokenHash = await sha256Hex(purchaseToken);
 
   const { error } = await serviceClient.rpc(
@@ -251,18 +317,14 @@ async function refreshGooglePlaySubscription({
         null,
       p_external_purchase_identity_hash: tokenHash,
       p_store_subscription_status: subscriptionState,
-      p_entitlement_status: sync.entitlementStatus,
-      p_purchase_time: googlePurchase.startTime ?? null,
-      p_current_period_start: googlePurchase.startTime ?? null,
-      p_current_period_end: sync.expiryTime,
+      p_entitlement_status: sync.candidateEntitlementStatus,
+      p_purchase_time: sync.purchaseTime,
+      p_current_period_start: sync.purchaseTime,
+      p_current_period_end: sync.currentPeriodEnd,
       p_auto_renew_enabled: sync.autoRenewEnabled,
-      p_cancellation_time: cancellationTime(googlePurchase),
-      p_grace_period_end: sync.entitlementStatus === "grace_period"
-        ? sync.expiryTime
-        : null,
-      p_revocation_time: sync.entitlementStatus === "revoked"
-        ? new Date().toISOString()
-        : null,
+      p_cancellation_time: sync.cancellationTime,
+      p_grace_period_end: sync.gracePeriodEnd,
+      p_revocation_time: sync.revocationTime,
       p_environment: googlePurchase.testPurchase ? "sandbox" : "production",
       p_purchase_context_id: null,
       p_purchase_token: purchaseToken,
@@ -277,20 +339,27 @@ async function refreshGooglePlaySubscription({
       business_id: subscription.business_account_id,
       product_id: productId,
       subscription_state: subscriptionState,
-      entitlement_status: sync.entitlementStatus,
+      entitlement_status: sync.candidateEntitlementStatus,
       error: error.message,
     });
     throw error;
   }
 
+  const result = await databaseSubscriptionState(
+    serviceClient,
+    subscription,
+    tokenHash,
+  );
+
   return {
     refreshed: true,
-    active: sync.active,
-    entitlement_status: sync.entitlementStatus,
-    subscription_state: subscriptionState,
-    current_period_end: sync.expiryTime,
-    auto_renew_enabled: sync.autoRenewEnabled,
-    message: sync.active
+    active: result.active,
+    entitlement_status: result.stored.entitlement_status,
+    subscription_state: result.stored.store_subscription_status,
+    current_period_end:
+      result.stored.current_period_end ?? result.stored.ends_at,
+    auto_renew_enabled: result.stored.auto_renew_enabled,
+    message: result.active
       ? "Business Plus durumu güncellendi."
       : "Business Plus aboneliğin aktif görünmüyor.",
   };
@@ -379,55 +448,11 @@ async function getGoogleSubscription({
   const response = await fetch(url, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
+  if (response.status === 404 || response.status === 410) {
+    throw new Error("google_subscription_not_found");
+  }
   if (!response.ok) throw new Error("google_subscription_get_failed");
   return await response.json();
-}
-
-function syncFieldsForGooglePurchase(
-  purchase: GoogleSubscriptionPurchase,
-  lineItem: GoogleLineItem,
-) {
-  const state = purchase.subscriptionState ?? "unknown";
-  const expiryTime = lineItem.expiryTime ?? null;
-  const expiryInFuture = expiryTime == null ||
-    new Date(expiryTime).getTime() > Date.now();
-  let entitlementStatus = "expired";
-  let active = false;
-  let autoRenewEnabled = lineItem.autoRenewingPlan?.autoRenewEnabled ?? false;
-
-  switch (state) {
-    case "SUBSCRIPTION_STATE_ACTIVE":
-      entitlementStatus = "active";
-      active = expiryInFuture;
-      autoRenewEnabled = lineItem.autoRenewingPlan?.autoRenewEnabled ?? true;
-      break;
-    case "SUBSCRIPTION_STATE_IN_GRACE_PERIOD":
-      entitlementStatus = "grace_period";
-      active = expiryInFuture;
-      break;
-    case "SUBSCRIPTION_STATE_ON_HOLD":
-      entitlementStatus = "billing_retry";
-      break;
-    case "SUBSCRIPTION_STATE_PAUSED":
-      entitlementStatus = "paused";
-      break;
-    case "SUBSCRIPTION_STATE_CANCELED":
-      entitlementStatus = expiryInFuture ? "active" : "expired";
-      active = expiryInFuture;
-      autoRenewEnabled = false;
-      break;
-    case "SUBSCRIPTION_STATE_EXPIRED":
-      entitlementStatus = "expired";
-      break;
-    default:
-      entitlementStatus = "expired";
-      break;
-  }
-
-  if (!active && entitlementStatus === "active") {
-    entitlementStatus = "expired";
-  }
-  return { entitlementStatus, active, expiryTime, autoRenewEnabled };
 }
 
 function findBusinessPlusLineItem(
@@ -440,8 +465,83 @@ function findBusinessPlusLineItem(
   return null;
 }
 
-function cancellationTime(purchase: GoogleSubscriptionPurchase): string | null {
-  return purchase.canceledStateContext ? new Date().toISOString() : null;
+async function databaseActive(
+  serviceClient: any,
+  businessAccountId: string,
+): Promise<boolean> {
+  const { data, error } = await serviceClient.rpc(
+    "check_business_plus_active",
+    { p_business_account_id: businessAccountId },
+  );
+  if (error || typeof data !== "boolean") {
+    throw new Error(error?.message ?? "invalid_active_result");
+  }
+  return data;
+}
+
+async function databaseSubscriptionState(
+  serviceClient: any,
+  subscription: SubscriptionRow,
+  purchaseIdentityHash: string,
+): Promise<{ active: boolean; stored: StoredSubscription }> {
+  const active = await databaseActive(
+    serviceClient,
+    subscription.business_account_id,
+  );
+  const { data, error } = await serviceClient
+    .from("business_plus_subscriptions")
+    .select(
+      "entitlement_status,store_subscription_status,current_period_end,ends_at,auto_renew_enabled",
+    )
+    .eq("business_account_id", subscription.business_account_id)
+    .eq("owner_user_id", subscription.owner_user_id)
+    .eq("store", "google_play")
+    .eq("external_purchase_identity_hash", purchaseIdentityHash)
+    .maybeSingle();
+  if (error || !data) {
+    throw new Error(error?.message ?? "stored_subscription_missing");
+  }
+  return { active, stored: data as StoredSubscription };
+}
+
+async function persistInactiveSubscription({
+  serviceClient,
+  subscription,
+  purchaseToken,
+  rawPayload,
+}: {
+  serviceClient: any;
+  subscription: SubscriptionRow;
+  purchaseToken: string | null;
+  rawPayload: Record<string, unknown>;
+}): Promise<void> {
+  const { error } = await serviceClient.rpc(
+    "service_verify_and_upsert_subscription",
+    {
+      p_business_account_id: subscription.business_account_id,
+      p_owner_user_id: subscription.owner_user_id,
+      p_store: "google_play",
+      p_product_id: subscription.product_id ?? businessPlusProductId,
+      p_base_plan_id: subscription.base_plan_id ?? null,
+      p_original_transaction_id: subscription.original_transaction_id ?? null,
+      p_external_purchase_identity_hash:
+        subscription.external_purchase_identity_hash,
+      p_store_subscription_status: "unknown",
+      p_entitlement_status: "expired",
+      p_purchase_time: subscription.purchase_time ?? null,
+      p_current_period_start: subscription.current_period_start ?? null,
+      p_current_period_end: null,
+      p_auto_renew_enabled: false,
+      p_cancellation_time: null,
+      p_grace_period_end: null,
+      p_revocation_time: null,
+      p_environment: subscription.environment ?? null,
+      p_purchase_context_id: null,
+      p_purchase_token: purchaseToken,
+      p_raw_payload: rawPayload,
+    },
+  );
+  if (error) throw error;
 }
 
 function sanitizedGooglePurchase(

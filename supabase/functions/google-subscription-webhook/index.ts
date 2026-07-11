@@ -1,4 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createRemoteJWKSet, jwtVerify } from "https://deno.land/x/jose@v5.9.6/index.ts";
+import { parseGoogleBusinessPlusEntitlement } from "../_shared/business_plus_entitlement.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -11,6 +13,9 @@ const androidPublisherScope =
 const googleTokenUrl = "https://oauth2.googleapis.com/token";
 const businessPlusProductId = "business_plus_monthly";
 const defaultPackageName = "com.matchaman.app";
+const googleOidcJwks = createRemoteJWKSet(
+  new URL("https://www.googleapis.com/oauth2/v3/certs"),
+);
 
 type PubSubPushBody = {
   message?: {
@@ -45,6 +50,7 @@ type GoogleSubscriptionPurchase = {
   testPurchase?: unknown;
   lineItems?: GoogleLineItem[];
   canceledStateContext?: Record<string, unknown>;
+  acknowledgementState?: string;
 };
 
 type SubscriptionRow = {
@@ -61,19 +67,52 @@ Deno.serve(async (req) => {
     return json({ error: "method_not_allowed" }, 405);
   }
 
-  const verificationToken = Deno.env.get("GOOGLE_RTDN_VERIFICATION_TOKEN");
-  if (verificationToken) {
-    const url = new URL(req.url);
-    const token = url.searchParams.get("token");
-    if (!token || token !== verificationToken) {
-      return json({ error: "forbidden" }, 403);
-    }
+  const oidcAudience = requiredEnv("GOOGLE_RTDN_OIDC_AUDIENCE");
+  const allowedEmail = requiredEnv("GOOGLE_RTDN_SERVICE_ACCOUNT_EMAIL");
+  const verificationToken = requiredEnv("GOOGLE_RTDN_VERIFICATION_TOKEN");
+  const supabaseUrl = requiredEnv("SUPABASE_URL");
+  const serviceKeySource = selectedServiceKeySource();
+  const serviceKey = serviceKeySource == null
+    ? null
+    : requiredEnv(serviceKeySource);
+  if (
+    !oidcAudience || !allowedEmail || !verificationToken || !supabaseUrl ||
+    !serviceKey || !hasGoogleServiceAccountConfiguration()
+  ) {
+    return json({ error: "webhook_configuration_error" }, 500);
   }
 
-  const serviceKeySource = selectedServiceKeySource();
-  console.log("service_key_source", { source: serviceKeySource });
+  const authHeader = req.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return json({ error: "unauthorized" }, 401);
+  }
+  try {
+    const { payload } = await jwtVerify(
+      authHeader.slice("Bearer ".length),
+      googleOidcJwks,
+      {
+        audience: oidcAudience,
+        issuer: ["https://accounts.google.com", "accounts.google.com"],
+        algorithms: ["RS256"],
+        maxTokenAge: "10m",
+        clockTolerance: "30s",
+      },
+    );
+    if (payload.email !== allowedEmail || payload.email_verified !== true) {
+      return json({ error: "forbidden" }, 403);
+    }
+  } catch {
+    return json({ error: "unauthorized" }, 401);
+  }
 
-  const serviceClient = serviceSupabaseClient(serviceKeySource);
+  const requestToken = new URL(req.url).searchParams.get("token");
+  if (!requestToken || !constantTimeEqual(requestToken, verificationToken)) {
+    return json({ error: "forbidden" }, 403);
+  }
+
+  const serviceClient = createClient(supabaseUrl, serviceKey, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
   let body: PubSubPushBody;
   try {
     body = await req.json();
@@ -154,32 +193,30 @@ Deno.serve(async (req) => {
     return json({ ok: true, ignored: "subscription_not_found" });
   }
 
-  const result = await reconcileGooglePlayToken({
-    serviceClient,
-    purchaseToken,
-    productId,
-    businessId: subscription.business_account_id,
-    ownerUserId: subscription.owner_user_id,
-    notificationId,
-    notificationType,
-  });
+  let result;
+  try {
+    result = await reconcileGooglePlayToken({
+      serviceClient,
+      purchaseToken,
+      productId,
+      businessId: subscription.business_account_id,
+      ownerUserId: subscription.owner_user_id,
+      notificationId,
+      notificationType,
+    });
+  } catch (error) {
+    console.error("rtdn_processing_failed", {
+      business_id: subscription.business_account_id,
+      product_id: productId,
+      message_id: notificationId,
+      error: safeErrorMessage(error),
+    });
+    return json({ error: "rtdn_processing_failed" }, 500);
+  }
 
   await recordNotification(serviceClient, notificationId);
   return json({ ok: true, ...result });
 });
-
-function serviceSupabaseClient(serviceKeySource: string | null) {
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const serviceKey = serviceKeySource == null
-    ? undefined
-    : Deno.env.get(serviceKeySource);
-  if (!supabaseUrl || !serviceKey) {
-    throw new Error("missing_supabase_secrets");
-  }
-  return createClient(supabaseUrl, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
 
 async function isDuplicateNotification(
   serviceClient: any,
@@ -247,6 +284,7 @@ async function reconcileGooglePlayToken({
   notificationId?: string;
   notificationType?: number;
 }) {
+  const tokenHash = await sha256Hex(purchaseToken);
   let accessToken: string;
   try {
     accessToken = await googleAccessToken();
@@ -263,6 +301,26 @@ async function reconcileGooglePlayToken({
   try {
     googlePurchase = await getGoogleSubscription({ accessToken, purchaseToken });
   } catch (error) {
+    if (safeErrorMessage(error) === "google_subscription_not_found") {
+      await persistInactiveWebhook({
+        serviceClient,
+        businessId,
+        ownerUserId,
+        productId,
+        tokenHash,
+        purchaseToken,
+        rawPayload: { google_purchase_missing: true },
+      });
+      return {
+        reconciled: true,
+        ...(await storedSubscriptionState(
+          serviceClient,
+          businessId,
+          ownerUserId,
+          tokenHash,
+        )),
+      };
+    }
     console.error("google_verification_failed", {
       product_id: productId,
       notification_type: notificationType ?? null,
@@ -273,17 +331,35 @@ async function reconcileGooglePlayToken({
 
   const lineItem = findBusinessPlusLineItem(googlePurchase, productId);
   if (!lineItem) {
-    console.error("unsupported_notification_type", {
-      product_id: productId,
-      notification_type: notificationType ?? null,
+    await persistInactiveWebhook({
+      serviceClient,
+      businessId,
+      ownerUserId,
+      productId,
+      tokenHash,
+      purchaseToken,
+      rawPayload: { malformed_product_response: true },
     });
-    throw new Error("google_product_mismatch");
+    return {
+      reconciled: true,
+      ...(await storedSubscriptionState(
+        serviceClient,
+        businessId,
+        ownerUserId,
+        tokenHash,
+      )),
+    };
   }
 
-  const subscriptionState = googlePurchase.subscriptionState ?? "unknown";
-  const sync = syncFieldsForGooglePurchase(googlePurchase, lineItem);
-  const tokenHash = await sha256Hex(purchaseToken);
-
+  const sync = parseGoogleBusinessPlusEntitlement({
+    subscriptionState: googlePurchase.subscriptionState,
+    expiryTime: lineItem.expiryTime,
+    gracePeriodExpiryTime: lineItem.expiryTime,
+    canceledStateContext: googlePurchase.canceledStateContext,
+    autoRenewEnabled: lineItem.autoRenewingPlan?.autoRenewEnabled,
+    purchaseTime: googlePurchase.startTime,
+  });
+  const subscriptionState = sync.rawStoreState;
   const { error } = await serviceClient.rpc(
     "service_verify_and_upsert_subscription",
     {
@@ -299,18 +375,14 @@ async function reconcileGooglePlayToken({
         null,
       p_external_purchase_identity_hash: tokenHash,
       p_store_subscription_status: subscriptionState,
-      p_entitlement_status: sync.entitlementStatus,
-      p_purchase_time: googlePurchase.startTime ?? null,
-      p_current_period_start: googlePurchase.startTime ?? null,
-      p_current_period_end: sync.expiryTime,
+      p_entitlement_status: sync.candidateEntitlementStatus,
+      p_purchase_time: sync.purchaseTime,
+      p_current_period_start: sync.purchaseTime,
+      p_current_period_end: sync.currentPeriodEnd,
       p_auto_renew_enabled: sync.autoRenewEnabled,
-      p_cancellation_time: cancellationTime(googlePurchase),
-      p_grace_period_end: sync.entitlementStatus === "grace_period"
-        ? sync.expiryTime
-        : null,
-      p_revocation_time: sync.entitlementStatus === "revoked"
-        ? new Date().toISOString()
-        : null,
+      p_cancellation_time: sync.cancellationTime,
+      p_grace_period_end: sync.gracePeriodEnd,
+      p_revocation_time: sync.revocationTime,
       p_environment: googlePurchase.testPurchase ? "sandbox" : "production",
       p_purchase_context_id: null,
       p_purchase_token: purchaseToken,
@@ -326,19 +398,38 @@ async function reconcileGooglePlayToken({
       product_id: productId,
       notification_type: notificationType ?? null,
       subscription_state: subscriptionState,
-      entitlement_status: sync.entitlementStatus,
+      entitlement_status: sync.candidateEntitlementStatus,
       business_id: businessId,
       error: error.message,
     });
     throw error;
   }
 
+  const stored = await storedSubscriptionState(
+    serviceClient,
+    businessId,
+    ownerUserId,
+    tokenHash,
+  );
+  if (
+    googlePurchase.acknowledgementState === "ACKNOWLEDGEMENT_STATE_PENDING" &&
+    stored.active &&
+    ["active", "cancelled", "grace_period"].includes(stored.entitlement_status) &&
+    isFutureTimestamp(stored.ends_at ?? stored.current_period_end)
+  ) {
+    await acknowledgeGoogleSubscription({
+      accessToken,
+      productId,
+      purchaseToken,
+    });
+  }
+
   return {
     reconciled: true,
-    active: sync.active,
-    entitlement_status: sync.entitlementStatus,
-    subscription_state: subscriptionState,
-    message: sync.active
+    active: stored.active,
+    entitlement_status: stored.entitlement_status,
+    subscription_state: stored.store_subscription_status,
+    message: stored.active
       ? "Business Plus entitlement is active."
       : "Business Plus entitlement is not active.",
   };
@@ -413,55 +504,11 @@ async function getGoogleSubscription({
   const response = await fetch(url, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
+  if (response.status === 404 || response.status === 410) {
+    throw new Error("google_subscription_not_found");
+  }
   if (!response.ok) throw new Error("google_subscription_get_failed");
   return await response.json();
-}
-
-function syncFieldsForGooglePurchase(
-  purchase: GoogleSubscriptionPurchase,
-  lineItem: GoogleLineItem,
-) {
-  const state = purchase.subscriptionState ?? "unknown";
-  const expiryTime = lineItem.expiryTime ?? null;
-  const expiryInFuture = expiryTime == null ||
-    new Date(expiryTime).getTime() > Date.now();
-  let entitlementStatus = "expired";
-  let active = false;
-  let autoRenewEnabled = lineItem.autoRenewingPlan?.autoRenewEnabled ?? false;
-
-  switch (state) {
-    case "SUBSCRIPTION_STATE_ACTIVE":
-      entitlementStatus = "active";
-      active = expiryInFuture;
-      autoRenewEnabled = lineItem.autoRenewingPlan?.autoRenewEnabled ?? true;
-      break;
-    case "SUBSCRIPTION_STATE_IN_GRACE_PERIOD":
-      entitlementStatus = "grace_period";
-      active = expiryInFuture;
-      break;
-    case "SUBSCRIPTION_STATE_ON_HOLD":
-      entitlementStatus = "billing_retry";
-      break;
-    case "SUBSCRIPTION_STATE_PAUSED":
-      entitlementStatus = "paused";
-      break;
-    case "SUBSCRIPTION_STATE_CANCELED":
-      entitlementStatus = expiryInFuture ? "active" : "expired";
-      active = expiryInFuture;
-      autoRenewEnabled = false;
-      break;
-    case "SUBSCRIPTION_STATE_EXPIRED":
-      entitlementStatus = "expired";
-      break;
-    default:
-      entitlementStatus = "expired";
-      break;
-  }
-
-  if (!active && entitlementStatus === "active") {
-    entitlementStatus = "expired";
-  }
-  return { entitlementStatus, active, expiryTime, autoRenewEnabled };
 }
 
 function findBusinessPlusLineItem(
@@ -472,10 +519,6 @@ function findBusinessPlusLineItem(
     if (item.productId === productId) return item;
   }
   return null;
-}
-
-function cancellationTime(purchase: GoogleSubscriptionPurchase): string | null {
-  return purchase.canceledStateContext ? new Date().toISOString() : null;
 }
 
 function sanitizedGooglePurchase(
@@ -495,6 +538,140 @@ function selectedServiceKeySource(): string | null {
     return "MAM_SUPABASE_SERVICE_KEY";
   }
   return null;
+}
+
+function requiredEnv(name: string): string | null {
+  const value = Deno.env.get(name)?.trim();
+  return value ? value : null;
+}
+
+function constantTimeEqual(left: string, right: string): boolean {
+  const leftBytes = new TextEncoder().encode(left);
+  const rightBytes = new TextEncoder().encode(right);
+  const length = Math.max(leftBytes.length, rightBytes.length);
+  let difference = leftBytes.length ^ rightBytes.length;
+  for (let index = 0; index < length; index++) {
+    difference |= (leftBytes[index] ?? 0) ^ (rightBytes[index] ?? 0);
+  }
+  return difference === 0;
+}
+
+function hasGoogleServiceAccountConfiguration(): boolean {
+  const raw = Deno.env.get("GOOGLE_PLAY_SERVICE_ACCOUNT_JSON")?.trim();
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed.client_email && parsed.private_key) return true;
+    } catch {
+      return false;
+    }
+  }
+  return Boolean(
+    Deno.env.get("GOOGLE_PLAY_CLIENT_EMAIL")?.trim() &&
+      Deno.env.get("GOOGLE_PLAY_PRIVATE_KEY")?.trim(),
+  );
+}
+
+async function storedSubscriptionState(
+  serviceClient: any,
+  businessId: string,
+  ownerUserId: string,
+  purchaseIdentityHash: string,
+) {
+  const { data: active, error: activeError } = await serviceClient.rpc(
+    "check_business_plus_active",
+    { p_business_account_id: businessId },
+  );
+  const { data, error } = await serviceClient
+    .from("business_plus_subscriptions")
+    .select(
+      "entitlement_status,store_subscription_status,current_period_end,ends_at,auto_renew_enabled",
+    )
+    .eq("business_account_id", businessId)
+    .eq("owner_user_id", ownerUserId)
+    .eq("store", "google_play")
+    .eq("external_purchase_identity_hash", purchaseIdentityHash)
+    .maybeSingle();
+  if (activeError || typeof active !== "boolean" || error || !data) {
+    throw new Error("stored_subscription_read_failed");
+  }
+  return { active, ...data };
+}
+
+async function persistInactiveWebhook({
+  serviceClient,
+  businessId,
+  ownerUserId,
+  productId,
+  tokenHash,
+  purchaseToken,
+  rawPayload,
+}: {
+  serviceClient: any;
+  businessId: string;
+  ownerUserId: string;
+  productId: string;
+  tokenHash: string;
+  purchaseToken: string;
+  rawPayload: Record<string, unknown>;
+}) {
+  const { error } = await serviceClient.rpc(
+    "service_verify_and_upsert_subscription",
+    {
+      p_business_account_id: businessId,
+      p_owner_user_id: ownerUserId,
+      p_store: "google_play",
+      p_product_id: productId,
+      p_base_plan_id: null,
+      p_original_transaction_id: null,
+      p_external_purchase_identity_hash: tokenHash,
+      p_store_subscription_status: "unknown",
+      p_entitlement_status: "expired",
+      p_purchase_time: null,
+      p_current_period_start: null,
+      p_current_period_end: null,
+      p_auto_renew_enabled: false,
+      p_cancellation_time: null,
+      p_grace_period_end: null,
+      p_revocation_time: null,
+      p_environment: null,
+      p_purchase_context_id: null,
+      p_purchase_token: purchaseToken,
+      p_raw_payload: rawPayload,
+    },
+  );
+  if (error) throw error;
+}
+
+function isFutureTimestamp(value: unknown): boolean {
+  if (typeof value !== "string") return false;
+  const time = Date.parse(value);
+  return Number.isFinite(time) && time > Date.now();
+}
+
+async function acknowledgeGoogleSubscription({
+  accessToken,
+  productId,
+  purchaseToken,
+}: {
+  accessToken: string;
+  productId: string;
+  purchaseToken: string;
+}) {
+  const packageName =
+    Deno.env.get("GOOGLE_PLAY_PACKAGE_NAME")?.trim() || defaultPackageName;
+  const response = await fetch(
+    `https://androidpublisher.googleapis.com/androidpublisher/v3/applications/${encodeURIComponent(packageName)}/purchases/subscriptions/${encodeURIComponent(productId)}/tokens/${encodeURIComponent(purchaseToken)}:acknowledge`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "content-type": "application/json",
+      },
+      body: "{}",
+    },
+  );
+  if (!response.ok) throw new Error("google_subscription_ack_failed");
 }
 
 function base64Decode(value: string): string {
