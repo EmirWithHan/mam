@@ -3,7 +3,7 @@ RETURNS void
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = ''
-AS $$
+AS $function$
 DECLARE
   v_configured_url text;
   v_base_url text;
@@ -72,7 +72,7 @@ BEGIN
     body := jsonb_build_object('limit', 500)
   );
 END;
-$$;
+$function$;
 
 REVOKE ALL ON FUNCTION private.invoke_business_plus_reconciliation()
   FROM PUBLIC, anon, authenticated;
