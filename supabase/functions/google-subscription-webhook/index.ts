@@ -67,8 +67,13 @@ Deno.serve(async (req) => {
     return json({ error: "method_not_allowed" }, 405);
   }
 
-  const oidcAudience = requiredEnv("GOOGLE_RTDN_OIDC_AUDIENCE");
-  const allowedEmail = requiredEnv("GOOGLE_RTDN_SERVICE_ACCOUNT_EMAIL");
+  const oidcAudience =
+    requiredEnv("GOOGLE_RTDN_OIDC_AUDIENCE") ??
+    requiredEnv("GOOGLE_PLAY_PUBSUB_AUDIENCE");
+
+  const allowedEmail =
+    requiredEnv("GOOGLE_RTDN_SERVICE_ACCOUNT_EMAIL") ??
+    requiredEnv("GOOGLE_PLAY_PUBSUB_ALLOWED_SERVICE_ACCOUNT");
   const verificationToken = requiredEnv("GOOGLE_RTDN_VERIFICATION_TOKEN");
   const supabaseUrl = requiredEnv("SUPABASE_URL");
   const serviceKeySource = selectedServiceKeySource();
