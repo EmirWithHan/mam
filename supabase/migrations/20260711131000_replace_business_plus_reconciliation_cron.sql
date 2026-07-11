@@ -13,10 +13,11 @@ DECLARE
   v_supabase_url text;
   v_worker_secret text;
 BEGIN
-  v_supabase_url := NULLIF(
-    btrim(current_setting('app.settings.supabase_url', true)),
-    ''
-  );
+  SELECT NULLIF(btrim(secret.decrypted_secret), '')
+  INTO v_supabase_url
+  FROM vault.decrypted_secrets secret
+  WHERE secret.name = 'reconcile_supabase_url'
+  LIMIT 1;
 
   SELECT NULLIF(btrim(secret.decrypted_secret), '')
   INTO v_worker_secret
