@@ -21,7 +21,33 @@ class AdminService {
           logSupabaseDebug('Admin', 'get_admin_dashboard', error);
           throw error;
         });
-    return Map<String, dynamic>.from(response as Map);
+    final dashboard = Map<String, dynamic>.from(response as Map);
+
+    final directReportsResponse = await SupabaseService.client
+        .rpc(
+          'admin_list_direct_message_reports',
+          params: {'p_status': null, 'p_limit': 15, 'p_offset': 0},
+        )
+        .catchError((Object error) {
+          logSupabaseDebug('Admin', 'admin_list_direct_message_reports', error);
+          throw error;
+        });
+    final eventReports = (dashboard['recent_message_reports'] as List? ?? [])
+        .where((row) {
+          final map = Map<String, dynamic>.from(row as Map);
+          return map['message_type']?.toString() != 'direct_dm';
+        });
+    final directReports = directReportsResponse as List? ?? [];
+    final reports = <dynamic>[...eventReports, ...directReports]
+      ..sort((a, b) {
+        final left = Map<String, dynamic>.from(a as Map);
+        final right = Map<String, dynamic>.from(b as Map);
+        return right['created_at'].toString().compareTo(
+          left['created_at'].toString(),
+        );
+      });
+    dashboard['recent_message_reports'] = reports.take(15).toList();
+    return dashboard;
   }
 
   Future<void> removeEvent(String eventId, String? reason) async {

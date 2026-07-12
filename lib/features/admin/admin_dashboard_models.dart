@@ -183,7 +183,10 @@ class AdminMessageReport {
   factory AdminMessageReport.fromJson(Map<String, dynamic> json) {
     return AdminMessageReport(
       id: json['id']?.toString() ?? '',
-      messageId: json['message_id']?.toString() ?? '',
+      messageId:
+          json['message_id']?.toString() ??
+          json['direct_message_id']?.toString() ??
+          '',
       reporterId: json['reporter_id']?.toString() ?? '',
       reason: json['reason']?.toString() ?? '',
       createdAt: DateTime.parse(json['created_at'].toString()),
@@ -194,7 +197,9 @@ class AdminMessageReport {
       status: json['status']?.toString() ?? 'pending',
       reporterName: json['reporter_name']?.toString(),
       reportedUserName: json['reported_user_name']?.toString(),
-      messageContent: json['message_content']?.toString(),
+      messageContent:
+          json['message_content']?.toString() ??
+          json['reported_message_snapshot']?.toString(),
       eventTitle: json['event_title']?.toString(),
     );
   }

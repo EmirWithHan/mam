@@ -32,9 +32,13 @@ Deno.serve(async (req) => {
   const projectId = Deno.env.get("FCM_PROJECT_ID");
   const clientEmail = Deno.env.get("FCM_CLIENT_EMAIL");
   const privateKey = Deno.env.get("FCM_PRIVATE_KEY")?.replace(/\\n/g, "\n");
-  const workerSecret = Deno.env.get("PUSH_WORKER_SECRET");
+  const workerSecret = Deno.env.get("PUSH_WORKER_SECRET")?.trim();
 
-  if (workerSecret && req.headers.get("x-worker-secret") !== workerSecret) {
+  if (!workerSecret) {
+    return json({ error: "missing_worker_secret" }, 500);
+  }
+  const suppliedSecret = req.headers.get("x-worker-secret")?.trim();
+  if (!suppliedSecret || !constantTimeEqual(suppliedSecret, workerSecret)) {
     return json({ error: "unauthorized_worker" }, 401);
   }
 
@@ -73,30 +77,6 @@ Deno.serve(async (req) => {
     });
   }
 
-  const { data: rows, error } = await supabase
-    .from("push_notification_outbox")
-    .select(
-      "id,recipient_id,title,body,entity_type,entity_id,metadata,attempts",
-    )
-    .eq("status", "pending")
-    .order("created_at", { ascending: true })
-    .limit(25);
-
-  if (error) {
-    return json(
-      { error: "db_select_failed", detail: safeError(error.message) },
-      500,
-    );
-  }
-
-  let sent = 0;
-  let skipped = 0;
-  let failed = 0;
-
-  if (!rows || rows.length === 0) {
-    return json({ ok: true, processed: 0, sent, skipped, failed });
-  }
-
   if (!projectId || !clientEmail || !privateKey) {
     return json({ error: "missing_fcm_secrets" }, 500);
   }
@@ -111,18 +91,26 @@ Deno.serve(async (req) => {
     return json({ error: "fcm_access_token_failed" }, 500);
   }
 
-  for (const row of (rows ?? []) as OutboxRow[]) {
-    const nextAttempts = row.attempts + 1;
-    await supabase
-      .from("push_notification_outbox")
-      .update({
-        status: "processing",
-        attempts: nextAttempts,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", row.id)
-      .eq("status", "pending");
+  const { data: rows, error } = await supabase.rpc(
+    "service_claim_push_notification_outbox",
+    { p_limit: 25 },
+  );
+  if (error) {
+    return json(
+      { error: "outbox_claim_failed", detail: safeError(error.message) },
+      500,
+    );
+  }
 
+  let sent = 0;
+  let skipped = 0;
+  let failed = 0;
+
+  if (!rows || rows.length === 0) {
+    return json({ ok: true, processed: 0, sent, skipped, failed });
+  }
+
+  for (const row of (rows ?? []) as OutboxRow[]) {
     const { data: tokens, error: tokenError } = await supabase
       .from("user_push_tokens")
       .select("token,platform")
@@ -146,7 +134,8 @@ Deno.serve(async (req) => {
           last_error: "no_push_tokens",
           updated_at: new Date().toISOString(),
         })
-        .eq("id", row.id);
+        .eq("id", row.id)
+        .eq("status", "processing");
       continue;
     }
 
@@ -178,7 +167,8 @@ Deno.serve(async (req) => {
           updated_at: new Date().toISOString(),
           last_error: null,
         })
-        .eq("id", row.id);
+        .eq("id", row.id)
+        .eq("status", "processing");
       continue;
     }
 
@@ -295,7 +285,20 @@ async function markFailed(
       last_error: message,
       updated_at: new Date().toISOString(),
     })
-    .eq("id", id);
+    .eq("id", id)
+    .eq("status", "processing");
+}
+
+function constantTimeEqual(left: string, right: string): boolean {
+  const encoder = new TextEncoder();
+  const leftBytes = encoder.encode(left);
+  const rightBytes = encoder.encode(right);
+  const length = Math.max(leftBytes.length, rightBytes.length);
+  let difference = leftBytes.length ^ rightBytes.length;
+  for (let index = 0; index < length; index += 1) {
+    difference |= (leftBytes[index] ?? 0) ^ (rightBytes[index] ?? 0);
+  }
+  return difference === 0;
 }
 
 async function sendFcm({
