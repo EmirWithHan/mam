@@ -93,8 +93,23 @@ void main() {
       expect(function, contains('service_claim_push_notification_outbox'));
       expect(function, contains('p_limit'));
       expect(function, contains('.eq("status", "processing")'));
+      expect(function, isNot(contains('.eq("status", "pending")')));
+      expect(function, isNot(contains('.eq(\'status\', \'pending\')')));
+      expect(function, isNot(contains('nextAttempts')));
+      expect(function, isNot(contains('attempts: attempts + 1')));
       expect(function, isNot(contains('Firebase Auth')));
       expect(function, isNot(contains('Firebase Firestore')));
+
+      final migrationClaims = File(
+        'supabase/migrations/20260712104000_recover_stale_push_claims.sql',
+      ).readAsStringSync();
+      expect(
+        migrationClaims,
+        contains('public.service_claim_push_notification_outbox'),
+      );
+      expect(migrationClaims, contains('attempts = outbox.attempts + 1'));
+      expect(migrationClaims, contains("status = 'processing'"));
+      expect(migrationClaims, contains('for update skip locked'));
     });
 
     test('edge function can be protected by optional worker secret', () {
