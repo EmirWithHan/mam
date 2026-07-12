@@ -14,7 +14,7 @@ void main() {
         const MaterialApp(home: LegalInfoPage(type: LegalInfoType.termsOfUse)),
       );
 
-      expect(find.text('Match A Man Kullanıcı Sözleşmesi'), findsOneWidget);
+      expect(find.text('Akanzi Kullanıcı Sözleşmesi'), findsOneWidget);
 
       final legalPage = File(
         'lib/features/settings/legal_info_page.dart',
@@ -22,10 +22,10 @@ void main() {
 
       expect(legalPage, contains('Kullanıcı Sözleşmesi'));
       expect(legalPage, contains('terms_v1_2026_06_10'));
-      expect(legalPage, contains('Match A Man'));
+      expect(legalPage, contains('Akanzi'));
       expect(
         legalPage,
-        contains('Match A Man bir sosyal spor ve etkinlik platformudur'),
+        contains('Akanzi bir sosyal spor ve etkinlik platformudur'),
       );
       expect(legalPage, contains('etkinlik'));
       expect(legalPage, contains('platform'));
@@ -87,7 +87,7 @@ void main() {
       );
 
       expect(
-        find.text('Match A Man Gizlilik Politikası ve KVKK Aydınlatma Metni'),
+        find.text('Akanzi Gizlilik Politikası ve KVKK Aydınlatma Metni'),
         findsOneWidget,
       );
 
@@ -126,10 +126,7 @@ void main() {
         const MaterialApp(home: LegalInfoPage(type: LegalInfoType.support)),
       );
 
-      expect(
-        find.text('Match A Man Hesap Silme Bilgilendirmesi'),
-        findsOneWidget,
-      );
+      expect(find.text('Akanzi Hesap Silme Bilgilendirmesi'), findsOneWidget);
       expect(legalPage, contains('account_deletion_v1_2026_06_10'));
       expect(legalPage, contains('Ayarlar > Hesabımı sil'));
       expect(legalPage, contains('anlık fiziksel silme'));

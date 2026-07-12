@@ -26,18 +26,30 @@ class UserFeedbackRules {
   }
 
   static String? validationError(UserFeedbackInput input) {
-    if (!isValidRating(input.rating)) {
-      return 'Puan 1 ile 5 aras\u0131nda olmal\u0131.';
+    if (input.rating != null &&
+        (input.rating! < minRating || input.rating! > maxRating)) {
+      return 'Puan 1 ile 5 arasında olmalı.';
     }
 
-    final message = normalizeMessage(input.message);
-    if (message.isEmpty) return 'Mesaj bo\u015F olamaz.';
-    if (message.length < minMessageLength) {
-      return 'Mesaj en az 10 karakter olmal\u0131.';
+    final normMessage = normalizeMessage(input.message);
+    final normCategory = (input.category ?? '').trim();
+    final hasRating = input.rating != null;
+    final hasCategory = normCategory.isNotEmpty;
+    final hasMessage = normMessage.isNotEmpty;
+
+    if (!hasRating && !hasCategory && !hasMessage) {
+      return 'Puan, kategori veya mesaj ekle.';
     }
-    if (message.length > maxMessageLength) {
-      return 'Mesaj en fazla 1000 karakter olabilir.';
+
+    if (hasMessage) {
+      if (normMessage.length < minMessageLength) {
+        return 'Mesaj en az 10 karakter olmalı.';
+      }
+      if (normMessage.length > maxMessageLength) {
+        return 'Mesaj en fazla 1000 karakter olabilir.';
+      }
     }
+
     return null;
   }
 }
@@ -156,5 +168,5 @@ class ReviewPromptRules {
 }
 
 String friendlyFeedbackErrorMessage(Object error) {
-  return 'G\u00F6nderilemedi. L\u00FCtfen tekrar dene.';
+  return 'Geri bildirim gönderilemedi. Tekrar dene.';
 }

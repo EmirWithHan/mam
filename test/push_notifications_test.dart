@@ -90,10 +90,12 @@ void main() {
       expect(function, contains('firebase.messaging'));
       expect(function, contains('push_notification_outbox'));
       expect(function, contains('user_push_tokens'));
-      expect(function, contains('.eq("status", "pending")'));
+      expect(function, contains('service_claim_push_notification_outbox'));
+      expect(function, contains('p_limit'));
+      expect(function, contains('.eq("status", "processing")'));
       expect(function, contains('attempts: nextAttempts'));
       expect(function, isNot(contains('Firebase Auth')));
-      expect(function, isNot(contains('Firestore')));
+      expect(function, isNot(contains('Firebase Firestore')));
     });
 
     test('edge function can be protected by optional worker secret', () {

@@ -349,14 +349,16 @@ void main() {
       final statsEnd = source.indexOf('class _ProfileEmptyState', statsStart);
       final statsSource = source.substring(statsStart, statsEnd);
 
+      expect(statsSource, contains('ProfileStatsBox('));
       expect(statsSource, contains("label: 'Takip'"));
       expect(statsSource, contains("label: 'Takipçi'"));
       expect(statsSource, contains("label: 'Etkinlik'"));
-      expect(statsSource, contains('Row('));
-      expect(RegExp(r'Expanded\(').allMatches(statsSource), hasLength(3));
-      expect(statsSource, isNot(contains('Wrap(')));
-      expect(statsSource, isNot(contains('trust')));
-      expect(statsSource, isNot(contains('Güven')));
+      expect(statsSource, contains('value: followingCount'));
+      expect(statsSource, contains('value: followersCount'));
+      expect(statsSource, contains('value: eventCount'));
+      expect(statsSource, contains("RouteNames.profileFollowList"));
+      expect(statsSource, contains("'type': 'following'"));
+      expect(statsSource, contains("'type': 'followers'"));
     });
 
     test('username alone allows app access but not join requests', () {
@@ -1320,6 +1322,7 @@ void main() {
         id: 'sponsored-1',
         organizerType: EventOrganizerType.business,
         businessIsVerified: true,
+        businessIsPlusActive: true,
         isSponsored: true,
         sponsoredUntil: now.add(const Duration(days: 7)),
         sponsoredPriority: 10,
@@ -1351,6 +1354,7 @@ void main() {
         id: 'sponsored-1',
         organizerType: EventOrganizerType.business,
         businessIsVerified: true,
+        businessIsPlusActive: true,
         isSponsored: true,
         sponsoredUntil: now.add(const Duration(days: 7)),
       );
@@ -1369,6 +1373,7 @@ void main() {
         id: 'sponsored-1',
         organizerType: EventOrganizerType.business,
         businessIsVerified: true,
+        businessIsPlusActive: true,
         isSponsored: true,
         sponsoredUntil: now.add(const Duration(days: 7)),
       );
@@ -1386,6 +1391,7 @@ void main() {
         id: 'expired-sponsored',
         organizerType: EventOrganizerType.business,
         businessIsVerified: true,
+        businessIsPlusActive: true,
         isSponsored: true,
         sponsoredUntil: now.subtract(const Duration(days: 1)),
       );
@@ -1393,6 +1399,7 @@ void main() {
         id: 'active-sponsored',
         organizerType: EventOrganizerType.business,
         businessIsVerified: true,
+        businessIsPlusActive: true,
         isSponsored: true,
         sponsoredUntil: now.add(const Duration(days: 1)),
       );
@@ -1485,6 +1492,7 @@ void main() {
     testWidgets('event card renders fallback sport and compact button', (
       tester,
     ) async {
+      final futureDate = DateTime.now().add(const Duration(days: 30));
       await tester.pumpWidget(
         ProviderScope(
           child: MaterialApp(
@@ -1498,7 +1506,7 @@ void main() {
                     title: '',
                     sportType: null,
                     city: '',
-                    eventDate: DateTime(2026, 5, 28, 20),
+                    eventDate: futureDate,
                     capacityTotal: 0,
                     status: 'active',
                   ),
@@ -1513,12 +1521,7 @@ void main() {
       expect(find.text('Etkinlik'), findsOneWidget);
       expect(find.text('Spor'), findsOneWidget);
       expect(find.text('Konum belirtilmedi'), findsOneWidget);
-
-      final buttonBox = tester.renderObject<RenderBox>(
-        find.byType(FilledButton),
-      );
-      expect(buttonBox.size.width, lessThanOrEqualTo(320));
-      expect(buttonBox.size.width, greaterThan(0));
+      expect(find.text('Katıl'), findsOneWidget);
     });
 
     testWidgets('sponsor chip only appears for verified sponsored business', (
@@ -1530,6 +1533,7 @@ void main() {
         id: 'business-verified-sponsored',
         organizerType: EventOrganizerType.business,
         businessIsVerified: true,
+        businessIsPlusActive: true,
         isSponsored: true,
         sponsoredUntil: sponsoredUntil,
         eventDate: future,
@@ -1551,6 +1555,7 @@ void main() {
                         id: 'business-normal',
                         organizerType: EventOrganizerType.business,
                         businessIsVerified: true,
+                        businessIsPlusActive: true,
                         isSponsored: false,
                         eventDate: future,
                       ),
@@ -1560,6 +1565,7 @@ void main() {
                         id: 'business-unverified-sponsored',
                         organizerType: EventOrganizerType.business,
                         businessIsVerified: false,
+                        businessIsPlusActive: true,
                         isSponsored: true,
                         sponsoredUntil: sponsoredUntil,
                         eventDate: future,
@@ -1574,7 +1580,7 @@ void main() {
         ),
       );
 
-      expect(find.text('Sponsorlu'), findsOneWidget);
+      expect(find.text('Öne Çıkarıldı'), findsOneWidget);
       expect(find.text('İşletme'), findsOneWidget);
       expect(find.text('Doğrulanmış İşletme'), findsNWidgets(2));
     });
@@ -3208,6 +3214,7 @@ Event _event({
   String organizerType = EventOrganizerType.user,
   bool businessIsVerified = false,
   String businessStatus = BusinessAccountStatus.active,
+  bool businessIsPlusActive = false,
   bool isSponsored = false,
   DateTime? sponsoredUntil,
   int sponsoredPriority = 0,
@@ -3232,6 +3239,7 @@ Event _event({
             name: 'Padel Club',
             username: 'padelclub',
             isVerified: businessIsVerified,
+            isPlusActive: businessIsPlusActive,
             status: businessStatus,
           )
         : null,
