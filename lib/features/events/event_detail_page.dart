@@ -1682,6 +1682,18 @@ class _LocationCard extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                         ),
                       ],
+                      if (event.locationDescription != null &&
+                          event.locationDescription!.trim().isNotEmpty) ...[
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          event.locationDescription!,
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         'Haritada aç',

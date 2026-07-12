@@ -6,6 +6,7 @@ class SportTypes {
   static const other = 'Diğer';
 
   static const values = [
+    other,
     'Futbol',
     'Basketbol',
     'Voleybol',
@@ -34,7 +35,6 @@ class SportTypes {
     'Tırmanış',
     'Satranç',
     'Masa oyunları',
-    other,
   ];
 }
 

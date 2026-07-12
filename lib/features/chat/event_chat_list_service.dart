@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import '../../services/supabase_service.dart';
 import 'event_chat_service.dart';
 import 'event_chat_list_models.dart';
@@ -86,13 +87,49 @@ class EventChatListService {
       );
     }).toList();
 
-    groups.sort((a, b) {
+    final hiddenMap = <String, DateTime>{};
+    try {
+      final hiddenRows = await SupabaseService.client
+          .from('user_hidden_conversations')
+          .select('conversation_key, hidden_at')
+          .eq('user_id', userId)
+          .eq('conversation_type', 'event');
+
+      if (hiddenRows != null) {
+        for (final row in hiddenRows as List) {
+          final rowMap = Map<String, dynamic>.from(row as Map);
+          final key = rowMap['conversation_key'] as String?;
+          final hiddenAtStr = rowMap['hidden_at']?.toString();
+          if (key != null && hiddenAtStr != null) {
+            final parsed = DateTime.tryParse(hiddenAtStr);
+            if (parsed != null) {
+              hiddenMap[key] = parsed.toUtc();
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('[EventChatList] Failed to fetch hidden conversations: $e');
+    }
+
+    final filteredGroups = groups.where((g) {
+      final hiddenAt = hiddenMap[g.eventId];
+      if (hiddenAt == null) return true;
+
+      final msgTime = g.lastMessageAt;
+      if (msgTime == null) {
+        return false;
+      }
+      return msgTime.toUtc().isAfter(hiddenAt);
+    }).toList();
+
+    filteredGroups.sort((a, b) {
       final aTime = a.lastMessageAt ?? a.eventDate;
       final bTime = b.lastMessageAt ?? b.eventDate;
       return bTime.compareTo(aTime);
     });
 
-    return groups;
+    return filteredGroups;
   }
 
   Future<Map<String, Map<String, dynamic>>> _fetchLatestMessages(
@@ -118,5 +155,35 @@ class EventChatListService {
   DateTime? _dateTimeFromJson(Object? value) {
     if (value == null) return null;
     return DateTime.tryParse(value.toString());
+  }
+
+  Future<void> deleteEventChatFromHistory(String eventId) async {
+    final userId = SupabaseService.client.auth.currentUser?.id;
+    debugPrint(
+      '[EventChatList] deleteEventChatFromHistory: '
+      'currentUserIdIsNull=${userId == null}, '
+      'currentUserIdLength=${userId?.length ?? 0}, '
+      'conversationType=event, '
+      'conversationKey=$eventId, '
+      'conversationKeyIsEmpty=${eventId.isEmpty}, '
+      'payloadKeys=[user_id, conversation_type, conversation_key, hidden_at]',
+    );
+    if (userId == null) throw StateError('Giriş yapılmalıdır.');
+
+    try {
+      await SupabaseService.client.from('user_hidden_conversations').upsert({
+        'user_id': userId,
+        'conversation_type': 'event',
+        'conversation_key': eventId,
+        'hidden_at': DateTime.now().toUtc().toIso8601String(),
+      }, onConflict: 'user_id,conversation_type,conversation_key');
+      debugPrint('[EventChatList] deleteEventChatFromHistory succeeded');
+    } catch (e, stack) {
+      debugPrint(
+        '[EventChatList] deleteEventChatFromHistory failed: '
+        'errorType=${e.runtimeType}, error=$e\n$stack',
+      );
+      rethrow;
+    }
   }
 }

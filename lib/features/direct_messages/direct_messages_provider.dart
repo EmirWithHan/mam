@@ -85,6 +85,21 @@ class DirectInboxController extends StateNotifier<DirectInboxState> {
 
   Future<void> refresh() => loadInbox();
 
+  Future<bool> deleteConversationFromHistory(String conversationId) async {
+    try {
+      await _service.deleteConversationFromHistory(conversationId);
+      final list =
+          state.conversations.where((c) => c.id != conversationId).toList();
+      state = state.copyWith(conversations: list);
+      return true;
+    } catch (error) {
+      debugPrint(
+        '[DirectMessaging] Error deleting conversation from history: $error',
+      );
+      return false;
+    }
+  }
+
   void startRealtime() {
     if (_realtimeChannel != null) return;
     final userId = SupabaseService.client.auth.currentUser?.id;
@@ -218,6 +233,7 @@ class DirectChatController extends StateNotifier<DirectChatState> {
   final DirectMessagingService _service;
   final Ref _ref;
   RealtimeChannel? _realtimeChannel;
+  final Set<String> _reportingMessageIds = <String>{};
 
   Future<void> loadMessages() async {
     state = state.copyWith(loading: true, clearMessage: true);
@@ -388,13 +404,21 @@ class DirectChatController extends StateNotifier<DirectChatState> {
   }
 
   Future<bool> reportMessage(String messageId, String reason) async {
-    final userId = _service.currentUserId;
-    if (userId == null) return false;
-    debugPrint(
-      '[DirectMessaging] Direct message reports are not schema-enabled yet: '
-      'messageId=$messageId reason=$reason',
-    );
-    return false;
+    if (messageId.trim().isEmpty ||
+        _service.currentUserId == null ||
+        _reportingMessageIds.contains(messageId)) {
+      return false;
+    }
+
+    _reportingMessageIds.add(messageId);
+    try {
+      await _service.reportMessage(messageId: messageId, reason: reason);
+      return true;
+    } catch (_) {
+      return false;
+    } finally {
+      _reportingMessageIds.remove(messageId);
+    }
   }
 
   Future<void> markRead(String messageId) async {

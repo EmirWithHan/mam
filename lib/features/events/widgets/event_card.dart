@@ -96,8 +96,8 @@ class EventCard extends ConsumerWidget {
                         if (_buildStatusPill(status!) != null)
                           _buildStatusPill(status!)!,
                       ] else if (event.isPast)
-                        _Pill(
-                          label: 'Gecmis',
+                        const _Pill(
+                          label: 'Geçmiş',
                           color: AppColors.border,
                           textColor: AppColors.textMuted,
                         ),
@@ -144,13 +144,15 @@ class EventCard extends ConsumerWidget {
                           const SizedBox(height: AppSpacing.sm),
                           Row(
                             children: [
-                              Expanded(
-                                child: _OpenEventButton(
-                                  eventId: event.id,
-                                  fullWidth: true,
+                              if (!event.isPast) ...[
+                                Expanded(
+                                  child: _OpenEventButton(
+                                    eventId: event.id,
+                                    fullWidth: true,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: AppSpacing.sm),
+                                const SizedBox(width: AppSpacing.sm),
+                              ],
                               IconButton(
                                 icon: const Icon(
                                   Icons.share_outlined,
@@ -194,8 +196,10 @@ class EventCard extends ConsumerWidget {
                             );
                           },
                         ),
-                        const SizedBox(width: AppSpacing.xs),
-                        _OpenEventButton(eventId: event.id),
+                        if (!event.isPast) ...[
+                          const SizedBox(width: AppSpacing.xs),
+                          _OpenEventButton(eventId: event.id),
+                        ],
                       ],
                     );
                   },

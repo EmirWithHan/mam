@@ -22,12 +22,24 @@ class NotificationsService {
           .eq('recipient_id', userId)
           .neq('type', 'message')
           .order('created_at', ascending: false)
-          .range(offset, offset + limit - 1);
+          .limit(300);
 
-      return rows
+      final cutoff = DateTime.now().subtract(const Duration(days: 30));
+
+      final allNotifications = rows
           .map(
             (row) => AppNotification.fromJson(Map<String, dynamic>.from(row)),
           )
+          .toList();
+
+      final filteredNotifications = allNotifications.where((n) {
+        if (n.createdAt.isAfter(cutoff)) return true;
+        return n.isActionable;
+      }).toList();
+
+      return filteredNotifications
+          .skip(offset)
+          .take(limit)
           .toList(growable: false);
     } catch (error) {
       logSupabaseDebug('Notifications', 'fetchNotifications', error);
@@ -40,12 +52,28 @@ class NotificationsService {
       final userId = _currentUserId();
       final rows = await SupabaseService.client
           .from('notifications')
-          .select('id')
+          .select(
+            'id,recipient_id,actor_id,type,title,body,entity_type,entity_id,metadata,is_read,created_at',
+          )
           .eq('recipient_id', userId)
           .eq('is_read', false)
           .neq('type', 'message')
           .limit(100);
-      return rows.length;
+
+      final cutoff = DateTime.now().subtract(const Duration(days: 30));
+
+      final allNotifications = rows
+          .map(
+            (row) => AppNotification.fromJson(Map<String, dynamic>.from(row)),
+          )
+          .toList();
+
+      final filteredCount = allNotifications.where((n) {
+        if (n.createdAt.isAfter(cutoff)) return true;
+        return n.isActionable;
+      }).length;
+
+      return filteredCount;
     } catch (error) {
       logSupabaseDebug('Notifications', 'fetchUnreadCount', error);
       throw Exception(_notificationError(error, 'Bildirimler yüklenemedi.'));

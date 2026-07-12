@@ -190,49 +190,7 @@ class DirectMessageBubble extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                  AppSpacing.sm,
-                ),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Emoji b\u0131rak',
-                    style: AppTextStyles.bodyStrong,
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md,
-                  0,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: _reactionEmojis.map((emoji) {
-                    return InkWell(
-                      borderRadius: AppRadius.pillBorder,
-                      onTap: () {
-                        Navigator.pop(context);
-                        onReact?.call(emoji);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.xs),
-                        child: Text(
-                          emoji,
-                          style: const TextStyle(fontSize: 28),
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                ),
-              ),
-              const Divider(height: 1),
+              // Emoji reactions are disabled for the initial release candidate.
               ListTile(
                 leading: const Icon(Icons.reply_outlined),
                 title: const Text('Yan\u0131tla'),
@@ -249,14 +207,15 @@ class DirectMessageBubble extends StatelessWidget {
                   onCopy?.call();
                 },
               ),
-              ListTile(
-                leading: const Icon(Icons.report_problem_outlined),
-                title: const Text('\u015Eikayet et'),
-                onTap: () {
-                  Navigator.pop(context);
-                  onReport?.call();
-                },
-              ),
+              if (!isMine && onReport != null)
+                ListTile(
+                  leading: const Icon(Icons.report_problem_outlined),
+                  title: const Text('\u015Eikayet et'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    onReport?.call();
+                  },
+                ),
             ],
           ),
         );

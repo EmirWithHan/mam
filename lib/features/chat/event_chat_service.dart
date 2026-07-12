@@ -212,14 +212,17 @@ class EventChatService {
     required String messageId,
     required String reason,
   }) async {
-    final userId = SupabaseService.client.auth.currentUser?.id;
-    if (userId == null) return;
+    if (SupabaseService.client.auth.currentUser == null) {
+      throw StateError('You must be signed in to report messages.');
+    }
 
-    await SupabaseService.client.from('message_reports').insert({
-      'message_id': messageId,
-      'reporter_id': userId,
-      'reason': reason,
-    });
+    final result = await SupabaseService.client.rpc(
+      'report_event_message',
+      params: {'p_message_id': messageId, 'p_reason': reason},
+    );
+    if (result is! Map || result['report_id'] == null) {
+      throw StateError('Message report could not be submitted.');
+    }
   }
 
   Future<void> muteChat(String eventId) async {

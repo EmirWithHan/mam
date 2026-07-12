@@ -670,18 +670,28 @@ class EventsController extends StateNotifier<EventsState> {
 
 class FeaturedEventsController extends StateNotifier<EventsState> {
   FeaturedEventsController(this._eventsService)
-    : super(const EventsState.initial()) {
-    loadEvents();
-  }
+    : super(const EventsState.initial());
 
   final EventsService _eventsService;
+  EventFilters _currentFilters = const EventFilters();
+  String _currentSearchQuery = '';
 
-  Future<void> loadEvents({bool force = false}) async {
+  Future<void> loadEvents({
+    EventFilters? filters,
+    String? searchQuery,
+    bool force = false,
+  }) async {
+    if (filters != null) _currentFilters = filters;
+    if (searchQuery != null) _currentSearchQuery = searchQuery;
+
     if (!force && state.status == EventsStatus.success) return;
     state = state.copyWith(status: EventsStatus.loading, clearMessage: true);
 
     try {
-      final events = await _eventsService.fetchFeaturedEvents();
+      final events = await _eventsService.fetchFeaturedEvents(
+        filters: _currentFilters,
+        searchQuery: _currentSearchQuery,
+      );
       state = EventsState(
         status: EventsStatus.success,
         events: events,
@@ -709,6 +719,8 @@ class FeaturedEventsController extends StateNotifier<EventsState> {
     try {
       final nextEvents = await _eventsService.fetchFeaturedEvents(
         offset: state.events.length,
+        filters: _currentFilters,
+        searchQuery: _currentSearchQuery,
       );
       state = state.copyWith(
         status: EventsStatus.success,
@@ -733,18 +745,28 @@ final featuredEventsProvider =
 
 class FollowingEventsController extends StateNotifier<EventsState> {
   FollowingEventsController(this._eventsService)
-    : super(const EventsState.initial()) {
-    loadEvents();
-  }
+    : super(const EventsState.initial());
 
   final EventsService _eventsService;
+  EventFilters _currentFilters = const EventFilters();
+  String _currentSearchQuery = '';
 
-  Future<void> loadEvents({bool force = false}) async {
+  Future<void> loadEvents({
+    EventFilters? filters,
+    String? searchQuery,
+    bool force = false,
+  }) async {
+    if (filters != null) _currentFilters = filters;
+    if (searchQuery != null) _currentSearchQuery = searchQuery;
+
     if (!force && state.status == EventsStatus.success) return;
     state = state.copyWith(status: EventsStatus.loading, clearMessage: true);
 
     try {
-      final events = await _eventsService.fetchFollowingEvents();
+      final events = await _eventsService.fetchFollowingEvents(
+        filters: _currentFilters,
+        searchQuery: _currentSearchQuery,
+      );
       state = EventsState(
         status: EventsStatus.success,
         events: events,
@@ -772,6 +794,8 @@ class FollowingEventsController extends StateNotifier<EventsState> {
     try {
       final nextEvents = await _eventsService.fetchFollowingEvents(
         offset: state.events.length,
+        filters: _currentFilters,
+        searchQuery: _currentSearchQuery,
       );
       state = state.copyWith(
         status: EventsStatus.success,

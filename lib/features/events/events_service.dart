@@ -679,16 +679,240 @@ class EventsService {
     );
   }
 
+  String _normalize(String value) {
+    return value
+        .trim()
+        .toLowerCase()
+        .replaceAll('ç', 'c')
+        .replaceAll('ğ', 'g')
+        .replaceAll('ı', 'i')
+        .replaceAll('i̇', 'i')
+        .replaceAll('ö', 'o')
+        .replaceAll('ş', 's')
+        .replaceAll('ü', 'u')
+        .replaceAll('Ã§', 'c')
+        .replaceAll('ÄŸ', 'g')
+        .replaceAll('Ä±', 'i')
+        .replaceAll('Ã¶', 'o')
+        .replaceAll('ÅŸ', 's')
+        .replaceAll('Ã¼', 'u')
+        .replaceAll('ÃƒÂ§', 'c')
+        .replaceAll('Ã„Å¸', 'g')
+        .replaceAll('Ã„Â±', 'i')
+        .replaceAll('ÃƒÂ¶', 'o')
+        .replaceAll('Ã…Å¸', 's')
+        .replaceAll('ÃƒÂ¼', 'u');
+  }
+
+  dynamic _applyDbFilters(
+    dynamic query,
+    EventFilters filters,
+    String searchQuery,
+  ) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    DateTime? dbStartDate;
+    DateTime? dbEndDate;
+
+    if (!filters.showPastEvents) {
+      dbStartDate = now;
+    }
+
+    switch (filters.dateFilter) {
+      case EventDateFilter.all:
+        break;
+      case EventDateFilter.today:
+        final tomorrow = today.add(const Duration(days: 1));
+        final start = !filters.showPastEvents && now.isAfter(today)
+            ? now
+            : today;
+        dbStartDate = start;
+        dbEndDate = tomorrow;
+        break;
+      case EventDateFilter.tomorrow:
+        final tomorrow = today.add(const Duration(days: 1));
+        final dayAfter = today.add(const Duration(days: 2));
+        dbStartDate = tomorrow;
+        dbEndDate = dayAfter;
+        break;
+      case EventDateFilter.thisWeek:
+        final end = today.add(const Duration(days: 7));
+        final start = !filters.showPastEvents && now.isAfter(today)
+            ? now
+            : today;
+        dbStartDate = start;
+        dbEndDate = end;
+        break;
+      case EventDateFilter.weekend:
+        final start = !filters.showPastEvents && now.isAfter(today)
+            ? now
+            : today;
+        dbStartDate = start;
+        break;
+      case EventDateFilter.upcoming:
+        dbStartDate = now;
+        break;
+    }
+
+    if (dbStartDate != null) {
+      query = query.gte('event_date', dbStartDate.toUtc().toIso8601String());
+    }
+    if (dbEndDate != null) {
+      query = query.lt('event_date', dbEndDate.toUtc().toIso8601String());
+    }
+
+    if (filters.selectedSportType != null) {
+      query = query.eq('sport_type', filters.selectedSportType);
+    }
+
+    if (filters.selectedCity != null) {
+      query = query.eq('city', filters.selectedCity);
+    }
+
+    switch (filters.priceFilter) {
+      case EventPriceFilter.all:
+        break;
+      case EventPriceFilter.free:
+        query = query.eq('is_paid', false);
+        break;
+      case EventPriceFilter.paid:
+        query = query.eq('is_paid', true);
+        break;
+    }
+
+    if (searchQuery.trim().isNotEmpty) {
+      final escapedQuery = searchQuery.trim().replaceAll(',', ' ');
+      query = query.or(
+        'title.ilike.%$escapedQuery%,'
+        'description.ilike.%$escapedQuery%,'
+        'city.ilike.%$escapedQuery%,'
+        'district.ilike.%$escapedQuery%,'
+        'sport_type.ilike.%$escapedQuery%,'
+        'location_text.ilike.%$escapedQuery%',
+      );
+    }
+
+    query = query.limit(300);
+
+    return query;
+  }
+
+  List<Event> _applyFiltersAndSorting({
+    required List<Event> events,
+    required EventFilters filters,
+    required String searchQuery,
+  }) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    var result = events.where((event) {
+      if (!filters.showPastEvents && event.isPast) {
+        return false;
+      }
+
+      if (searchQuery.trim().isNotEmpty) {
+        final query = _normalize(searchQuery);
+        final matchesSearch = [
+          event.titleLabel,
+          event.sportType ?? '',
+          event.description ?? '',
+          event.city,
+          event.district ?? '',
+          event.locationText ?? '',
+        ].any((value) => _normalize(value).contains(query));
+
+        if (!matchesSearch) return false;
+      }
+
+      if (filters.selectedSportType != null) {
+        if (_normalize(event.sportType ?? '') !=
+            _normalize(filters.selectedSportType!)) {
+          return false;
+        }
+      }
+
+      if (filters.selectedCity != null) {
+        if (_normalize(event.city) != _normalize(filters.selectedCity!)) {
+          return false;
+        }
+      }
+
+      if (filters.onlyAvailableSpots &&
+          event.safeApprovedCount >= event.safeCapacityTotal) {
+        return false;
+      }
+
+      switch (filters.priceFilter) {
+        case EventPriceFilter.all:
+          break;
+        case EventPriceFilter.free:
+          if (event.isPaid) return false;
+          break;
+        case EventPriceFilter.paid:
+          if (!event.isPaid) return false;
+          break;
+      }
+
+      switch (filters.dateFilter) {
+        case EventDateFilter.all:
+          break;
+        case EventDateFilter.today:
+          if (event.eventDate.year != now.year ||
+              event.eventDate.month != now.month ||
+              event.eventDate.day != now.day) {
+            return false;
+          }
+          break;
+        case EventDateFilter.tomorrow:
+          final tomorrow = today.add(const Duration(days: 1));
+          if (event.eventDate.year != tomorrow.year ||
+              event.eventDate.month != tomorrow.month ||
+              event.eventDate.day != tomorrow.day) {
+            return false;
+          }
+          break;
+        case EventDateFilter.thisWeek:
+          final end = today.add(const Duration(days: 7));
+          if (event.eventDate.isBefore(today) ||
+              !event.eventDate.isBefore(end)) {
+            return false;
+          }
+          break;
+        case EventDateFilter.weekend:
+          final weekday = event.eventDate.weekday;
+          if (weekday != DateTime.saturday && weekday != DateTime.sunday) {
+            return false;
+          }
+          break;
+        case EventDateFilter.upcoming:
+          if (!event.eventDate.isAfter(now)) {
+            return false;
+          }
+          break;
+      }
+
+      return true;
+    }).toList();
+
+    return result;
+  }
+
   Future<List<Event>> fetchFeaturedEvents({
     int limit = SupabasePageSizes.events,
     int offset = 0,
+    EventFilters filters = const EventFilters(),
+    String searchQuery = '',
   }) async {
     try {
       final selectQuery = _eventSelect;
-      final data = await SupabaseService.client
+      dynamic dbQuery = SupabaseService.client
           .from('events')
           .select(selectQuery)
           .inFilter('status', ['active', 'completed']);
+
+      dbQuery = _applyDbFilters(dbQuery, filters, searchQuery);
+      final List<dynamic> data = await dbQuery;
 
       final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
       final currentUserId = SupabaseService.client.auth.currentUser?.id;
@@ -710,48 +934,89 @@ class EventsService {
         }
       }
 
-      final parsedEvents = data.map((row) {
-        final event = Event.fromJson(row);
-        final trustScore = trustScores[event.hostId] ?? 50;
-        return _EventWithHostScore(event, trustScore);
-      }).toList();
-
-      // Sort: sponsored first, then sponsored priority DESC, then host trust score DESC, then approved count DESC
-      final now = DateTime.now();
-      parsedEvents.sort((a, b) {
-        final aSponsored = a.event.isActiveSponsoredPlacement(now);
-        final bSponsored = b.event.isActiveSponsoredPlacement(now);
-        if (aSponsored != bSponsored) {
-          return aSponsored ? -1 : 1;
-        }
-        if (aSponsored) {
-          final aPriority = a.event.sponsoredPriority;
-          final bPriority = b.event.sponsoredPriority;
-          if (aPriority != bPriority) {
-            return bPriority.compareTo(aPriority);
-          }
-        }
-        if (a.hostTrustScore != b.hostTrustScore) {
-          return b.hostTrustScore.compareTo(a.hostTrustScore);
-        }
-        final aApproved = a.event.approvedCount;
-        final bApproved = b.event.approvedCount;
-        return bApproved.compareTo(aApproved);
-      });
-
-      return parsedEvents
-          .map((item) => item.event)
+      List<Event> eventsList = data
+          .map((row) => Event.fromJson(Map<String, dynamic>.from(row as Map)))
           .where((event) => !blockedUserIds.contains(event.hostId))
           .where(
             (event) =>
                 event.isVisibleInEventsList(currentUserId: currentUserId),
           )
-          .skip(offset)
-          .take(limit)
           .toList();
-    } catch (error) {
+
+      eventsList = _applyFiltersAndSorting(
+        events: eventsList,
+        filters: filters,
+        searchQuery: searchQuery,
+      );
+
+      if (filters.sortOption == EventSortOption.recommended) {
+        final parsedEvents = eventsList.map((event) {
+          final trustScore = trustScores[event.hostId] ?? 50;
+          return _EventWithHostScore(event, trustScore);
+        }).toList();
+
+        final now = DateTime.now();
+        parsedEvents.sort((a, b) {
+          final aSponsored = a.event.isActiveSponsoredPlacement(now);
+          final bSponsored = b.event.isActiveSponsoredPlacement(now);
+          if (aSponsored != bSponsored) {
+            return aSponsored ? -1 : 1;
+          }
+          if (aSponsored) {
+            final aPriority = a.event.sponsoredPriority;
+            final bPriority = b.event.sponsoredPriority;
+            if (aPriority != bPriority) {
+              return bPriority.compareTo(aPriority);
+            }
+          }
+          if (a.hostTrustScore != b.hostTrustScore) {
+            return b.hostTrustScore.compareTo(a.hostTrustScore);
+          }
+          final aApproved = a.event.approvedCount;
+          final bApproved = b.event.approvedCount;
+          return bApproved.compareTo(aApproved);
+        });
+
+        eventsList = parsedEvents.map((item) => item.event).toList();
+      } else {
+        switch (filters.sortOption) {
+          case EventSortOption.newest:
+            eventsList.sort((a, b) {
+              final timeA = a.createdAt ?? a.eventDate;
+              final timeB = b.createdAt ?? b.eventDate;
+              return timeB.compareTo(timeA);
+            });
+            break;
+          case EventSortOption.oldest:
+            eventsList.sort((a, b) {
+              final timeA = a.createdAt ?? a.eventDate;
+              final timeB = b.createdAt ?? b.eventDate;
+              return timeA.compareTo(timeB);
+            });
+            break;
+          case EventSortOption.dateAsc:
+            eventsList.sort((a, b) => a.eventDate.compareTo(b.eventDate));
+            break;
+          case EventSortOption.dateDesc:
+            eventsList.sort((a, b) => b.eventDate.compareTo(a.eventDate));
+            break;
+          default:
+            break;
+        }
+      }
+
+      return eventsList.skip(offset).take(limit).toList();
+    } catch (error, stackTrace) {
+      debugPrint(
+        '[Events] fetchFeaturedEvents failed type=${error.runtimeType} message=$error\n$stackTrace',
+      );
       if (_isMissingCapacitySchema(error)) {
-        return _fetchFeaturedEventsLegacy(limit: limit, offset: offset);
+        return _fetchFeaturedEventsLegacy(
+          limit: limit,
+          offset: offset,
+          filters: filters,
+          searchQuery: searchQuery,
+        );
       }
       logSupabaseDebug('Events', 'fetchFeaturedEvents', error);
       rethrow;
@@ -761,76 +1026,124 @@ class EventsService {
   Future<List<Event>> _fetchFeaturedEventsLegacy({
     required int limit,
     required int offset,
+    EventFilters filters = const EventFilters(),
+    String searchQuery = '',
   }) async {
-    final selectQuery = _legacyEventSelect;
-    final data = await SupabaseService.client
-        .from('events')
-        .select(selectQuery)
-        .inFilter('status', ['active', 'completed']);
+    try {
+      final selectQuery = _legacyEventSelect;
+      dynamic dbQuery = SupabaseService.client
+          .from('events')
+          .select(selectQuery)
+          .inFilter('status', ['active', 'completed']);
 
-    final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
-    final currentUserId = SupabaseService.client.auth.currentUser?.id;
+      dbQuery = _applyDbFilters(dbQuery, filters, searchQuery);
+      final List<dynamic> data = await dbQuery;
 
-    final hostIds = data
-        .map((row) => row['host_id']?.toString())
-        .whereType<String>()
-        .toSet()
-        .toList();
-    final Map<String, int> trustScores = {};
-    if (hostIds.isNotEmpty) {
-      const publicProfileService = PublicProfileService();
-      final previewMap = await publicProfileService.fetchPublicProfilePreviews(
-        hostIds,
-      );
-      for (final entry in previewMap.entries) {
-        final uid = entry.key;
-        final score = entry.value.trustScore ?? 50;
-        trustScores[uid] = score;
-      }
-    }
+      final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
+      final currentUserId = SupabaseService.client.auth.currentUser?.id;
 
-    final parsedEvents = data.map((row) {
-      final event = Event.fromJson(row);
-      final trustScore = trustScores[event.hostId] ?? 50;
-      return _EventWithHostScore(event, trustScore);
-    }).toList();
-
-    final now = DateTime.now();
-    parsedEvents.sort((a, b) {
-      final aSponsored = a.event.isActiveSponsoredPlacement(now);
-      final bSponsored = b.event.isActiveSponsoredPlacement(now);
-      if (aSponsored != bSponsored) {
-        return aSponsored ? -1 : 1;
-      }
-      if (aSponsored) {
-        final aPriority = a.event.sponsoredPriority;
-        final bPriority = b.event.sponsoredPriority;
-        if (aPriority != bPriority) {
-          return bPriority.compareTo(aPriority);
+      final hostIds = data
+          .map((row) => row['host_id']?.toString())
+          .whereType<String>()
+          .toSet()
+          .toList();
+      final Map<String, int> trustScores = {};
+      if (hostIds.isNotEmpty) {
+        const publicProfileService = PublicProfileService();
+        final previewMap = await publicProfileService
+            .fetchPublicProfilePreviews(hostIds);
+        for (final entry in previewMap.entries) {
+          final uid = entry.key;
+          final score = entry.value.trustScore ?? 50;
+          trustScores[uid] = score;
         }
       }
-      if (a.hostTrustScore != b.hostTrustScore) {
-        return b.hostTrustScore.compareTo(a.hostTrustScore);
-      }
-      final aApproved = a.event.approvedCount;
-      final bApproved = b.event.approvedCount;
-      return bApproved.compareTo(aApproved);
-    });
 
-    return parsedEvents
-        .map((item) => item.event)
-        .where((event) => !blockedUserIds.contains(event.hostId))
-        .where(
-          (event) => event.isVisibleInEventsList(currentUserId: currentUserId),
-        )
-        .skip(offset)
-        .take(limit)
-        .toList();
+      List<Event> eventsList = data
+          .map((row) => Event.fromJson(Map<String, dynamic>.from(row as Map)))
+          .where((event) => !blockedUserIds.contains(event.hostId))
+          .where(
+            (event) =>
+                event.isVisibleInEventsList(currentUserId: currentUserId),
+          )
+          .toList();
+
+      eventsList = _applyFiltersAndSorting(
+        events: eventsList,
+        filters: filters,
+        searchQuery: searchQuery,
+      );
+
+      if (filters.sortOption == EventSortOption.recommended) {
+        final parsedEvents = eventsList.map((event) {
+          final trustScore = trustScores[event.hostId] ?? 50;
+          return _EventWithHostScore(event, trustScore);
+        }).toList();
+
+        final now = DateTime.now();
+        parsedEvents.sort((a, b) {
+          final aSponsored = a.event.isActiveSponsoredPlacement(now);
+          final bSponsored = b.event.isActiveSponsoredPlacement(now);
+          if (aSponsored != bSponsored) {
+            return aSponsored ? -1 : 1;
+          }
+          if (aSponsored) {
+            final aPriority = a.event.sponsoredPriority;
+            final bPriority = b.event.sponsoredPriority;
+            if (aPriority != bPriority) {
+              return bPriority.compareTo(aPriority);
+            }
+          }
+          if (a.hostTrustScore != b.hostTrustScore) {
+            return b.hostTrustScore.compareTo(a.hostTrustScore);
+          }
+          final aApproved = a.event.approvedCount;
+          final bApproved = b.event.approvedCount;
+          return bApproved.compareTo(aApproved);
+        });
+
+        eventsList = parsedEvents.map((item) => item.event).toList();
+      } else {
+        switch (filters.sortOption) {
+          case EventSortOption.newest:
+            eventsList.sort((a, b) {
+              final timeA = a.createdAt ?? a.eventDate;
+              final timeB = b.createdAt ?? b.eventDate;
+              return timeB.compareTo(timeA);
+            });
+            break;
+          case EventSortOption.oldest:
+            eventsList.sort((a, b) {
+              final timeA = a.createdAt ?? a.eventDate;
+              final timeB = b.createdAt ?? b.eventDate;
+              return timeA.compareTo(timeB);
+            });
+            break;
+          case EventSortOption.dateAsc:
+            eventsList.sort((a, b) => a.eventDate.compareTo(b.eventDate));
+            break;
+          case EventSortOption.dateDesc:
+            eventsList.sort((a, b) => b.eventDate.compareTo(a.eventDate));
+            break;
+          default:
+            break;
+        }
+      }
+
+      return eventsList.skip(offset).take(limit).toList();
+    } catch (error, stackTrace) {
+      debugPrint(
+        '[Events] _fetchFeaturedEventsLegacy failed type=${error.runtimeType} message=$error\n$stackTrace',
+      );
+      rethrow;
+    }
   }
 
   Future<List<Event>> fetchFollowingEvents({
     int limit = SupabasePageSizes.events,
     int offset = 0,
+    EventFilters filters = const EventFilters(),
+    String searchQuery = '',
   }) async {
     try {
       final userId = SupabaseService.client.auth.currentUser?.id;
@@ -842,34 +1155,78 @@ class EventsService {
           .eq('follower_id', userId);
 
       final followedIds = followsData
-          .map((row) => row['following_id'] as String)
+          .map((row) => (row as Map)['following_id']?.toString())
+          .whereType<String>()
           .where((id) => id != userId)
           .toList();
 
       if (followedIds.isEmpty) return [];
 
-      final data = await SupabaseService.client
+      dynamic dbQuery = SupabaseService.client
           .from('events')
           .select(_eventSelect)
           .inFilter('status', ['active', 'completed'])
-          .inFilter('host_id', followedIds)
-          .order('event_date')
-          .range(offset, offset + limit - 1);
+          .inFilter('host_id', followedIds);
+
+      dbQuery = _applyDbFilters(dbQuery, filters, searchQuery);
+      final List<dynamic> data = await dbQuery;
 
       final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
       final currentUserId = SupabaseService.client.auth.currentUser?.id;
 
-      return data
-          .map(Event.fromJson)
+      List<Event> eventsList = data
+          .map((row) => Event.fromJson(Map<String, dynamic>.from(row as Map)))
           .where((event) => !blockedUserIds.contains(event.hostId))
           .where(
             (event) =>
                 event.isVisibleInEventsList(currentUserId: currentUserId),
           )
           .toList();
-    } catch (error) {
+
+      eventsList = _applyFiltersAndSorting(
+        events: eventsList,
+        filters: filters,
+        searchQuery: searchQuery,
+      );
+
+      switch (filters.sortOption) {
+        case EventSortOption.recommended:
+          eventsList.sort((a, b) => a.eventDate.compareTo(b.eventDate));
+          break;
+        case EventSortOption.newest:
+          eventsList.sort((a, b) {
+            final timeA = a.createdAt ?? a.eventDate;
+            final timeB = b.createdAt ?? b.eventDate;
+            return timeB.compareTo(timeA);
+          });
+          break;
+        case EventSortOption.oldest:
+          eventsList.sort((a, b) {
+            final timeA = a.createdAt ?? a.eventDate;
+            final timeB = b.createdAt ?? b.eventDate;
+            return timeA.compareTo(timeB);
+          });
+          break;
+        case EventSortOption.dateAsc:
+          eventsList.sort((a, b) => a.eventDate.compareTo(b.eventDate));
+          break;
+        case EventSortOption.dateDesc:
+          eventsList.sort((a, b) => b.eventDate.compareTo(a.eventDate));
+          break;
+      }
+
+      return eventsList.skip(offset).take(limit).toList();
+    } catch (error, stackTrace) {
+      debugPrint(
+        '[Events] fetchFollowingEvents failed type=${error.runtimeType} message=$error\n$stackTrace',
+      );
       if (_isMissingCapacitySchema(error)) {
-        return _fetchFollowingEventsLegacy(limit: limit, offset: offset);
+        return _fetchFollowingEventsLegacy(
+          limit: limit,
+          offset: offset,
+          filters: filters,
+          searchQuery: searchQuery,
+        );
       }
       logSupabaseDebug('Events', 'fetchFollowingEvents', error);
       rethrow;
@@ -879,40 +1236,86 @@ class EventsService {
   Future<List<Event>> _fetchFollowingEventsLegacy({
     required int limit,
     required int offset,
+    EventFilters filters = const EventFilters(),
+    String searchQuery = '',
   }) async {
-    final userId = SupabaseService.client.auth.currentUser?.id;
-    if (userId == null) return [];
+    try {
+      final userId = SupabaseService.client.auth.currentUser?.id;
+      if (userId == null) return [];
 
-    final followsData = await SupabaseService.client
-        .from('follows')
-        .select('following_id')
-        .eq('follower_id', userId);
+      final followsData = await SupabaseService.client
+          .from('follows')
+          .select('following_id')
+          .eq('follower_id', userId);
 
-    final followedIds = followsData
-        .map((row) => row['following_id'] as String)
-        .where((id) => id != userId)
-        .toList();
+      final followedIds = followsData
+          .map((row) => (row as Map)['following_id']?.toString())
+          .whereType<String>()
+          .where((id) => id != userId)
+          .toList();
 
-    if (followedIds.isEmpty) return [];
+      if (followedIds.isEmpty) return [];
 
-    final data = await SupabaseService.client
-        .from('events')
-        .select(_legacyEventSelect)
-        .inFilter('status', ['active', 'completed'])
-        .inFilter('host_id', followedIds)
-        .order('event_date')
-        .range(offset, offset + limit - 1);
+      dynamic dbQuery = SupabaseService.client
+          .from('events')
+          .select(_legacyEventSelect)
+          .inFilter('status', ['active', 'completed'])
+          .inFilter('host_id', followedIds);
 
-    final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
-    final currentUserId = SupabaseService.client.auth.currentUser?.id;
+      dbQuery = _applyDbFilters(dbQuery, filters, searchQuery);
+      final List<dynamic> data = await dbQuery;
 
-    return data
-        .map(Event.fromJson)
-        .where((event) => !blockedUserIds.contains(event.hostId))
-        .where(
-          (event) => event.isVisibleInEventsList(currentUserId: currentUserId),
-        )
-        .toList();
+      final blockedUserIds = await _blocksService.fetchMyBlockedUserIds();
+      final currentUserId = SupabaseService.client.auth.currentUser?.id;
+
+      List<Event> eventsList = data
+          .map((row) => Event.fromJson(Map<String, dynamic>.from(row as Map)))
+          .where((event) => !blockedUserIds.contains(event.hostId))
+          .where(
+            (event) =>
+                event.isVisibleInEventsList(currentUserId: currentUserId),
+          )
+          .toList();
+
+      eventsList = _applyFiltersAndSorting(
+        events: eventsList,
+        filters: filters,
+        searchQuery: searchQuery,
+      );
+
+      switch (filters.sortOption) {
+        case EventSortOption.recommended:
+          eventsList.sort((a, b) => a.eventDate.compareTo(b.eventDate));
+          break;
+        case EventSortOption.newest:
+          eventsList.sort((a, b) {
+            final timeA = a.createdAt ?? a.eventDate;
+            final timeB = b.createdAt ?? b.eventDate;
+            return timeB.compareTo(timeA);
+          });
+          break;
+        case EventSortOption.oldest:
+          eventsList.sort((a, b) {
+            final timeA = a.createdAt ?? a.eventDate;
+            final timeB = b.createdAt ?? b.eventDate;
+            return timeA.compareTo(timeB);
+          });
+          break;
+        case EventSortOption.dateAsc:
+          eventsList.sort((a, b) => a.eventDate.compareTo(b.eventDate));
+          break;
+        case EventSortOption.dateDesc:
+          eventsList.sort((a, b) => b.eventDate.compareTo(a.eventDate));
+          break;
+      }
+
+      return eventsList.skip(offset).take(limit).toList();
+    } catch (error, stackTrace) {
+      debugPrint(
+        '[Events] _fetchFollowingEventsLegacy failed type=${error.runtimeType} message=$error\n$stackTrace',
+      );
+      rethrow;
+    }
   }
 
   Future<List<Map<String, dynamic>>> fetchBusinessRecommendationsData({
@@ -977,6 +1380,7 @@ sport_type,
 city,
 district,
 location_text,
+location_description,
 location_lat,
 location_lng,
 event_date,
@@ -1025,6 +1429,7 @@ sport_type,
 city,
 district,
 location_text,
+location_description,
 location_lat,
 location_lng,
 event_date,

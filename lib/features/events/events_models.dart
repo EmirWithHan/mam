@@ -81,8 +81,14 @@ class EventBusinessOrganizer {
       name: json['name']?.toString() ?? '',
       username: json['username']?.toString() ?? '',
       businessTag: json['business_tag']?.toString(),
-      isVerified: json['is_verified'] as bool? ?? false,
-      isPlusActive: json['is_plus_active'] as bool? ?? false,
+      isVerified:
+          json['is_verified'] == true ||
+          json['is_verified'] == 1 ||
+          json['is_verified']?.toString() == 'true',
+      isPlusActive:
+          json['is_plus_active'] == true ||
+          json['is_plus_active'] == 1 ||
+          json['is_plus_active']?.toString() == 'true',
       status: json['status']?.toString() ?? BusinessAccountStatus.active,
     );
   }
@@ -127,6 +133,7 @@ class Event {
     this.priceType,
     this.organizerEditCount = 0,
     this.organizerLastEditedAt,
+    this.locationDescription,
   });
 
   final String id;
@@ -166,6 +173,7 @@ class Event {
   final String? priceType;
   final int organizerEditCount;
   final DateTime? organizerLastEditedAt;
+  final String? locationDescription;
 
   bool isHost(String? userId) => userId != null && hostId == userId;
 
@@ -401,32 +409,44 @@ class Event {
   }
 
   factory Event.fromJson(Map<String, dynamic> json) {
-    final isPaid = json['is_paid'] as bool? ?? false;
+    final isPaid =
+        json['is_paid'] == true ||
+        json['is_paid'] == 1 ||
+        json['is_paid']?.toString() == 'true';
     return Event(
       id: json['id']?.toString() ?? '',
       hostId: json['host_id']?.toString() ?? '',
       title: json['title']?.toString() ?? '',
-      description: json['description'] as String?,
+      description: json['description']?.toString(),
       sportType: json['sport_type']?.toString(),
       city: json['city']?.toString() ?? '',
       district: json['district']?.toString(),
       locationText: json['location_text']?.toString(),
-      locationLat: (json['location_lat'] as num?)?.toDouble(),
-      locationLng: (json['location_lng'] as num?)?.toDouble(),
+      locationLat: double.tryParse(json['location_lat']?.toString() ?? ''),
+      locationLng: double.tryParse(json['location_lng']?.toString() ?? ''),
       eventDate: _dateTimeFromJson(json['event_date']) ?? DateTime.now(),
       capacityTotal: _intFromJson(json['capacity_total']),
-      capacityMale:
-          (json['male_capacity'] as num?)?.toInt() ??
-          (json['capacity_male'] as num?)?.toInt(),
-      capacityFemale:
-          (json['female_capacity'] as num?)?.toInt() ??
-          (json['capacity_female'] as num?)?.toInt(),
-      capacityAny:
-          (json['generic_capacity'] as num?)?.toInt() ??
-          (json['capacity_any'] as num?)?.toInt(),
+      capacityMale: int.tryParse(
+        json['male_capacity']?.toString() ??
+            json['capacity_male']?.toString() ??
+            '',
+      ),
+      capacityFemale: int.tryParse(
+        json['female_capacity']?.toString() ??
+            json['capacity_female']?.toString() ??
+            '',
+      ),
+      capacityAny: int.tryParse(
+        json['generic_capacity']?.toString() ??
+            json['capacity_any']?.toString() ??
+            '',
+      ),
       approvedCount: _intFromJson(json['approved_count']),
       status: json['status']?.toString() ?? 'active',
-      isSponsored: json['is_sponsored'] as bool? ?? false,
+      isSponsored:
+          json['is_sponsored'] == true ||
+          json['is_sponsored'] == 1 ||
+          json['is_sponsored']?.toString() == 'true',
       sponsoredUntil: _dateTimeFromJson(json['sponsored_until']),
       sponsoredPriority: _intFromJson(json['sponsored_priority']),
       organizerType:
@@ -434,6 +454,7 @@ class Event {
       organizerUserId: json['organizer_user_id']?.toString(),
       organizerBusinessId: json['organizer_business_id']?.toString(),
       businessOrganizer: _businessOrganizerFromJson(json['business_accounts']),
+      locationDescription: json['location_description']?.toString(),
       isPaid: isPaid,
       priceAmount: _doubleFromJson(json['price_amount']),
       priceCurrency: json['price_currency']?.toString() ?? 'TRY',
@@ -500,6 +521,7 @@ class Event {
     String? priceType,
     int? organizerEditCount,
     DateTime? organizerLastEditedAt,
+    String? locationDescription,
   }) {
     return Event(
       id: id ?? this.id,
@@ -540,6 +562,7 @@ class Event {
       organizerEditCount: organizerEditCount ?? this.organizerEditCount,
       organizerLastEditedAt:
           organizerLastEditedAt ?? this.organizerLastEditedAt,
+      locationDescription: locationDescription ?? this.locationDescription,
     );
   }
 }
@@ -594,6 +617,7 @@ class EventFilters {
     this.priceFilter = EventPriceFilter.all,
     this.sortOption = EventSortOption.recommended,
     this.onlyAvailableSpots = false,
+    this.showPastEvents = false,
   });
 
   final String? selectedSportType;
@@ -602,6 +626,7 @@ class EventFilters {
   final EventPriceFilter priceFilter;
   final EventSortOption sortOption;
   final bool onlyAvailableSpots;
+  final bool showPastEvents;
 
   bool get isActive {
     return selectedSportType?.trim().isNotEmpty == true ||
@@ -609,7 +634,8 @@ class EventFilters {
         dateFilter != EventDateFilter.all ||
         priceFilter != EventPriceFilter.all ||
         sortOption != EventSortOption.recommended ||
-        onlyAvailableSpots;
+        onlyAvailableSpots ||
+        showPastEvents;
   }
 
   EventFilters copyWith({
@@ -619,6 +645,7 @@ class EventFilters {
     EventPriceFilter? priceFilter,
     EventSortOption? sortOption,
     bool? onlyAvailableSpots,
+    bool? showPastEvents,
     bool clearSportType = false,
     bool clearCity = false,
   }) {
@@ -631,6 +658,7 @@ class EventFilters {
       priceFilter: priceFilter ?? this.priceFilter,
       sortOption: sortOption ?? this.sortOption,
       onlyAvailableSpots: onlyAvailableSpots ?? this.onlyAvailableSpots,
+      showPastEvents: showPastEvents ?? this.showPastEvents,
     );
   }
 }
@@ -984,6 +1012,7 @@ class CreateEventInput {
     this.eventStartTime,
     this.eventEndTime,
     this.priceType,
+    this.locationDescription,
   });
 
   final String title;
@@ -1008,6 +1037,7 @@ class CreateEventInput {
   final String? eventStartTime;
   final String? eventEndTime;
   final String? priceType;
+  final String? locationDescription;
 
   bool get isBusinessEvent => organizerType == EventOrganizerType.business;
 
@@ -1054,6 +1084,7 @@ class CreateEventInput {
       'city': city.trim(),
       'district': _nullableTrim(district),
       'location_text': _nullableTrim(locationText),
+      'location_description': _nullableTrim(locationDescription),
       if (locationLat != null) 'location_lat': locationLat,
       if (locationLng != null) 'location_lng': locationLng,
       'event_date': eventDate.toIso8601String(),
@@ -1090,6 +1121,7 @@ class CreateEventInput {
       'city': city.trim(),
       'district': _nullableTrim(district),
       'location_text': _nullableTrim(locationText),
+      'location_description': _nullableTrim(locationDescription),
       if (locationLat != null) 'location_lat': locationLat,
       if (locationLng != null) 'location_lng': locationLng,
       'event_date': eventDate.toIso8601String(),
@@ -1122,6 +1154,7 @@ class UpdateEventInput {
     this.eventStartTime,
     this.eventEndTime,
     this.priceType,
+    this.locationDescription,
   });
 
   final String title;
@@ -1145,6 +1178,7 @@ class UpdateEventInput {
   final String? eventStartTime;
   final String? eventEndTime;
   final String? priceType;
+  final String? locationDescription;
 
   bool get hasEventLocationInfo => locationText?.trim().isNotEmpty == true;
 
@@ -1156,6 +1190,7 @@ class UpdateEventInput {
       'city': city.trim(),
       'district': _nullableTrim(district),
       'location_text': _nullableTrim(locationText),
+      'location_description': _nullableTrim(locationDescription),
       'location_lat': locationLat,
       'location_lng': locationLng,
       'event_date': eventDate.toIso8601String(),
@@ -1183,6 +1218,7 @@ class UpdateEventInput {
       'city': city.trim(),
       'district': _nullableTrim(district),
       'location_text': _nullableTrim(locationText),
+      'location_description': _nullableTrim(locationDescription),
       'location_lat': locationLat,
       'location_lng': locationLng,
       'event_date': eventDate.toIso8601String(),

@@ -82,6 +82,20 @@ class EventChatListController extends StateNotifier<EventChatListState> {
 
   Future<void> refreshChatGroups() => loadChatGroups();
 
+  Future<bool> deleteEventChatFromHistory(String eventId) async {
+    try {
+      await _service.deleteEventChatFromHistory(eventId);
+      final list = state.groups.where((g) => g.eventId != eventId).toList();
+      state = state.copyWith(status: state.status, groups: list);
+      return true;
+    } catch (error) {
+      debugPrint(
+        '[EventChatList] Error deleting event chat from history: $error',
+      );
+      return false;
+    }
+  }
+
   void startRealtime() {
     if (_realtimeChannel != null) return;
     final userId = SupabaseService.client.auth.currentUser?.id;

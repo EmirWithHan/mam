@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -29,14 +31,19 @@ class EventsPage extends ConsumerStatefulWidget {
 class _EventsPageState extends ConsumerState<EventsPage> {
   final _searchController = TextEditingController();
   var _filters = const EventFilters();
+  Timer? _searchDebounce;
 
   @override
   void initState() {
     super.initState();
     Future.microtask(() {
       if (!mounted) return;
-      ref.read(featuredEventsProvider.notifier).loadEvents();
-      ref.read(followingEventsProvider.notifier).loadEvents();
+      ref
+          .read(featuredEventsProvider.notifier)
+          .loadEvents(filters: _filters, searchQuery: _searchController.text);
+      ref
+          .read(followingEventsProvider.notifier)
+          .loadEvents(filters: _filters, searchQuery: _searchController.text);
       ref
           .read(notificationsControllerProvider.notifier)
           .startRealtime(ref.read(authControllerProvider).userId);
@@ -46,7 +53,22 @@ class _EventsPageState extends ConsumerState<EventsPage> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchDebounce?.cancel();
     super.dispose();
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() {});
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 500), () {
+      if (!mounted) return;
+      ref
+          .read(featuredEventsProvider.notifier)
+          .loadEvents(filters: _filters, searchQuery: query, force: true);
+      ref
+          .read(followingEventsProvider.notifier)
+          .loadEvents(filters: _filters, searchQuery: query, force: true);
+    });
   }
 
   @override
@@ -82,7 +104,7 @@ class _EventsPageState extends ConsumerState<EventsPage> {
                       compact: compact,
                       controller: _searchController,
                       filtersActive: _filters.isActive,
-                      onSearchChanged: (_) => setState(() {}),
+                      onSearchChanged: _onSearchChanged,
                       onFilterPressed: _openFilterSheet,
                     ),
                   ),
@@ -108,8 +130,6 @@ class _EventsPageState extends ConsumerState<EventsPage> {
               children: [
                 _EventsTabList(
                   eventsState: ref.watch(featuredEventsProvider),
-                  searchQuery: _searchController.text,
-                  filters: _filters,
                   onLoadMore: () => ref
                       .read(featuredEventsProvider.notifier)
                       .loadMoreEvents(),
@@ -119,8 +139,6 @@ class _EventsPageState extends ConsumerState<EventsPage> {
                 ),
                 _EventsTabList(
                   eventsState: ref.watch(followingEventsProvider),
-                  searchQuery: _searchController.text,
-                  filters: _filters,
                   onLoadMore: () => ref
                       .read(followingEventsProvider.notifier)
                       .loadMoreEvents(),
@@ -149,6 +167,20 @@ class _EventsPageState extends ConsumerState<EventsPage> {
     );
     if (filters == null || !mounted) return;
     setState(() => _filters = filters);
+    ref
+        .read(featuredEventsProvider.notifier)
+        .loadEvents(
+          filters: filters,
+          searchQuery: _searchController.text,
+          force: true,
+        );
+    ref
+        .read(followingEventsProvider.notifier)
+        .loadEvents(
+          filters: filters,
+          searchQuery: _searchController.text,
+          force: true,
+        );
   }
 
   void _clearSearchAndFilters() {
@@ -156,6 +188,20 @@ class _EventsPageState extends ConsumerState<EventsPage> {
       _filters = const EventFilters();
       _searchController.clear();
     });
+    ref
+        .read(featuredEventsProvider.notifier)
+        .loadEvents(
+          filters: const EventFilters(),
+          searchQuery: '',
+          force: true,
+        );
+    ref
+        .read(followingEventsProvider.notifier)
+        .loadEvents(
+          filters: const EventFilters(),
+          searchQuery: '',
+          force: true,
+        );
   }
 }
 
@@ -198,53 +244,19 @@ class _NotificationBell extends StatelessWidget {
 class _EventsTabList extends ConsumerWidget {
   const _EventsTabList({
     required this.eventsState,
-    required this.searchQuery,
-    required this.filters,
     required this.onLoadMore,
     required this.onRefresh,
     required this.onClearFilters,
   });
 
   final EventsState eventsState;
-  final String searchQuery;
-  final EventFilters filters;
   final VoidCallback onLoadMore;
   final Future<void> Function() onRefresh;
   final VoidCallback onClearFilters;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final filteredEvents = eventsState.events
-        .where((event) => _matchesSearch(event, searchQuery))
-        .where((event) => _matchesFilters(event, filters))
-        .toList();
-
-    // Apply sorting
-    switch (filters.sortOption) {
-      case EventSortOption.recommended:
-        break;
-      case EventSortOption.newest:
-        filteredEvents.sort((a, b) {
-          final timeA = a.createdAt ?? a.eventDate;
-          final timeB = b.createdAt ?? b.eventDate;
-          return timeB.compareTo(timeA);
-        });
-        break;
-      case EventSortOption.oldest:
-        filteredEvents.sort((a, b) {
-          final timeA = a.createdAt ?? a.eventDate;
-          final timeB = b.createdAt ?? b.eventDate;
-          return timeA.compareTo(timeB);
-        });
-        break;
-      case EventSortOption.dateAsc:
-        filteredEvents.sort((a, b) => a.eventDate.compareTo(b.eventDate));
-        break;
-      case EventSortOption.dateDesc:
-        filteredEvents.sort((a, b) => b.eventDate.compareTo(a.eventDate));
-        break;
-    }
-
+    final filteredEvents = List<Event>.from(eventsState.events);
     final itemsList = eventsWithSponsoredPlacement(filteredEvents);
 
     if (eventsState.isLoading && eventsState.events.isEmpty) {
@@ -327,94 +339,6 @@ class _EventsTabList extends ConsumerWidget {
         },
       ),
     );
-  }
-
-  bool _matchesSearch(Event event, String searchQuery) {
-    final query = _normalize(searchQuery);
-    if (query.isEmpty) return true;
-    return [
-      event.title,
-      event.sportType ?? '',
-      event.city,
-      event.district ?? '',
-      event.locationText ?? '',
-    ].any((value) => _normalize(value).contains(query));
-  }
-
-  bool _matchesFilters(Event event, EventFilters filters) {
-    final sport = filters.selectedSportType;
-    if (sport != null &&
-        _normalize(event.sportType ?? '') != _normalize(sport)) {
-      return false;
-    }
-
-    final city = filters.selectedCity;
-    if (city != null && _normalize(event.city) != _normalize(city)) {
-      return false;
-    }
-
-    if (filters.onlyAvailableSpots &&
-        event.safeApprovedCount >= event.safeCapacityTotal) {
-      return false;
-    }
-
-    // Price Filter
-    switch (filters.priceFilter) {
-      case EventPriceFilter.all:
-        break;
-      case EventPriceFilter.free:
-        if (event.isPaid) return false;
-        break;
-      case EventPriceFilter.paid:
-        if (!event.isPaid) return false;
-        break;
-    }
-
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    switch (filters.dateFilter) {
-      case EventDateFilter.all:
-        return true;
-      case EventDateFilter.today:
-        return DateUtils.isSameDay(event.eventDate, now);
-      case EventDateFilter.tomorrow:
-        final tomorrow = today.add(const Duration(days: 1));
-        return DateUtils.isSameDay(event.eventDate, tomorrow);
-      case EventDateFilter.thisWeek:
-        final end = today.add(const Duration(days: 7));
-        return !event.eventDate.isBefore(today) &&
-            event.eventDate.isBefore(end);
-      case EventDateFilter.weekend:
-        final weekday = event.eventDate.weekday;
-        return weekday == DateTime.saturday || weekday == DateTime.sunday;
-      case EventDateFilter.upcoming:
-        return event.eventDate.isAfter(now);
-    }
-  }
-
-  String _normalize(String value) {
-    return value
-        .trim()
-        .toLowerCase()
-        .replaceAll('ç', 'c')
-        .replaceAll('ğ', 'g')
-        .replaceAll('ı', 'i')
-        .replaceAll('i̇', 'i')
-        .replaceAll('ö', 'o')
-        .replaceAll('ş', 's')
-        .replaceAll('ü', 'u')
-        .replaceAll('Ã§', 'c')
-        .replaceAll('ÄŸ', 'g')
-        .replaceAll('Ä±', 'i')
-        .replaceAll('Ã¶', 'o')
-        .replaceAll('ÅŸ', 's')
-        .replaceAll('Ã¼', 'u')
-        .replaceAll('ÃƒÂ§', 'c')
-        .replaceAll('Ã„Å¸', 'g')
-        .replaceAll('Ã„Â±', 'i')
-        .replaceAll('ÃƒÂ¶', 'o')
-        .replaceAll('Ã…Å¸', 's')
-        .replaceAll('ÃƒÂ¼', 'u');
   }
 }
 

@@ -59,11 +59,41 @@ class DirectMessagingService {
           .inFilter('id', conversationIds)
           .order('last_message_at', ascending: false);
 
+      final hiddenMap = <String, DateTime>{};
+      try {
+        final hiddenRows = await SupabaseService.client
+            .from('user_hidden_conversations')
+            .select('conversation_key, hidden_at')
+            .eq('user_id', userId)
+            .eq('conversation_type', 'direct');
+
+        if (hiddenRows != null) {
+          for (final row in hiddenRows as List) {
+            final rowMap = Map<String, dynamic>.from(row as Map);
+            final key = rowMap['conversation_key'] as String?;
+            final hiddenAtStr = rowMap['hidden_at']?.toString();
+            if (key != null && hiddenAtStr != null) {
+              final parsed = DateTime.tryParse(hiddenAtStr);
+              if (parsed != null) {
+                hiddenMap[key] = parsed.toUtc();
+              }
+            }
+          }
+        }
+      } catch (e) {
+        debugPrint('[DirectMessaging] Failed to fetch hidden conversations: $e');
+      }
+
       final conversations = (data as List)
           .map(
             (row) =>
                 DirectConversation.fromJson(Map<String, dynamic>.from(row)),
           )
+          .where((c) {
+            final hiddenAt = hiddenMap[c.id];
+            if (hiddenAt == null) return true;
+            return c.lastMessageAt.toUtc().isAfter(hiddenAt);
+          })
           .toList();
 
       // Step 3: Fetch all participant profiles from PublicProfileService
@@ -197,20 +227,65 @@ class DirectMessagingService {
   }
 
   Future<void> reportMessage({
-    required String conversationId,
     required String messageId,
     required String reason,
+    String? details,
   }) async {
-    final userId = currentUserId;
-    if (userId == null) return;
+    if (currentUserId == null) {
+      throw const DirectMessagingUnavailableException(
+        '\u015Eikayet g\u00F6nderilemedi. L\u00FCtfen tekrar deneyin.',
+      );
+    }
 
-    await SupabaseService.client.from('message_reports').insert({
-      'message_id': messageId,
-      'reporter_id': userId,
-      'reason': reason,
-      'message_type': 'direct_dm',
-      'conversation_id': conversationId,
-    });
+    try {
+      final result = await SupabaseService.client.rpc(
+        'report_direct_message',
+        params: {
+          'p_direct_message_id': messageId,
+          'p_reason': reason,
+          'p_details': details,
+        },
+      );
+      if (result is! Map || result['report_id'] == null) {
+        throw const DirectMessagingUnavailableException(
+          '\u015Eikayet g\u00F6nderilemedi. L\u00FCtfen tekrar deneyin.',
+        );
+      }
+    } catch (_) {
+      throw const DirectMessagingUnavailableException(
+        '\u015Eikayet g\u00F6nderilemedi. L\u00FCtfen tekrar deneyin.',
+      );
+    }
+  }
+
+  Future<void> deleteConversationFromHistory(String conversationId) async {
+    final userId = currentUserId;
+    debugPrint(
+      '[DirectMessaging] deleteConversationFromHistory: '
+      'currentUserIdIsNull=${userId == null}, '
+      'currentUserIdLength=${userId?.length ?? 0}, '
+      'conversationType=direct, '
+      'conversationKey=$conversationId, '
+      'conversationKeyIsEmpty=${conversationId.isEmpty}, '
+      'payloadKeys=[user_id, conversation_type, conversation_key, hidden_at]',
+    );
+    if (userId == null) throw StateError('Giriş yapılmalıdır.');
+
+    try {
+      await SupabaseService.client.from('user_hidden_conversations').upsert({
+        'user_id': userId,
+        'conversation_type': 'direct',
+        'conversation_key': conversationId,
+        'hidden_at': DateTime.now().toUtc().toIso8601String(),
+      }, onConflict: 'user_id,conversation_type,conversation_key');
+      debugPrint('[DirectMessaging] deleteConversationFromHistory succeeded');
+    } catch (e, stack) {
+      debugPrint(
+        '[DirectMessaging] deleteConversationFromHistory failed: '
+        'errorType=${e.runtimeType}, error=$e\n$stack',
+      );
+      rethrow;
+    }
   }
 
   Never _handleDatabaseError(Object error, String actionName) {

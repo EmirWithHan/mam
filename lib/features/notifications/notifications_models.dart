@@ -131,6 +131,29 @@ class AppNotification {
     };
   }
 
+  bool get isActionable {
+    final typeClean = type.trim().toLowerCase();
+
+    // Follow request still pending
+    if (isFollowRequest && canRespondToFollowRequest) return true;
+
+    // Event join request still pending
+    if (typeClean == 'event_join_request') {
+      final status = metadata['request_status'] ?? metadata['status'];
+      if (status == null ||
+          status.toString().trim().toLowerCase() == 'pending') {
+        return true;
+      }
+    }
+
+    // Business event confirmation required
+    if (typeClean == 'business_event_confirm_required') {
+      return true;
+    }
+
+    return false;
+  }
+
   AppNotification copyWith({bool? isRead, Map<String, dynamic>? metadata}) {
     return AppNotification(
       id: id,

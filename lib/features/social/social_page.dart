@@ -51,6 +51,88 @@ class _SocialPageState extends ConsumerState<SocialPage> {
     super.dispose();
   }
 
+  void _confirmDeleteEventChatHistory(BuildContext context, WidgetRef ref, String eventId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sohbet geçmişinden silinsin mi?'),
+        content: const Text(
+          'Bu işlem sohbeti yalnızca senin geçmişinden kaldırır. Mesajlar karşı taraftan silinmez. Yeni mesaj gelirse sohbet tekrar görünür.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final success = await ref
+                  .read(eventChatListControllerProvider.notifier)
+                  .deleteEventChatFromHistory(eventId);
+              if (mounted) {
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Sohbet geçmişinden kaldırıldı.')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Hata: Sohbet geçmişinden kaldırılamadı.')),
+                  );
+                }
+              }
+            },
+            child: const Text(
+              'Sil',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _confirmDeleteDirectChatHistory(BuildContext context, WidgetRef ref, String conversationId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sohbet geçmişinden silinsin mi?'),
+        content: const Text(
+          'Bu işlem sohbeti yalnızca senin geçmişinden kaldırır. Mesajlar karşı taraftan silinmez. Yeni mesaj gelirse sohbet tekrar görünür.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final success = await ref
+                  .read(directInboxProvider.notifier)
+                  .deleteConversationFromHistory(conversationId);
+              if (mounted) {
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Sohbet geçmişinden kaldırıldı.')),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Hata: Sohbet geçmişinden kaldırılamadı.')),
+                  );
+                }
+              }
+            },
+            child: const Text(
+              'Sil',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final eventState = ref.watch(eventChatListControllerProvider);
@@ -180,23 +262,37 @@ class _SocialPageState extends ConsumerState<SocialPage> {
                   (item) => Padding(
                     padding: const EdgeInsets.only(bottom: AppSpacing.md),
                     child: item.eventChat != null
-                        ? SocialChatGroupCard(
-                            group: item.eventChat!,
-                            onTap: () => context.pushNamed(
-                              RouteNames.eventChat,
-                              pathParameters: {
-                                'eventId': item.eventChat!.eventId,
-                              },
+                        ? GestureDetector(
+                            onLongPress: () => _confirmDeleteEventChatHistory(
+                              context,
+                              ref,
+                              item.eventChat!.eventId,
+                            ),
+                            child: SocialChatGroupCard(
+                              group: item.eventChat!,
+                              onTap: () => context.pushNamed(
+                                RouteNames.eventChat,
+                                pathParameters: {
+                                  'eventId': item.eventChat!.eventId,
+                                },
+                              ),
                             ),
                           )
-                        : _DirectChatCard(
-                            conversation: item.directChat!,
-                            myUserId: myUserId,
-                            onTap: () => context.pushNamed(
-                              RouteNames.directChat,
-                              pathParameters: {
-                                'conversationId': item.directChat!.id,
-                              },
+                        : GestureDetector(
+                            onLongPress: () => _confirmDeleteDirectChatHistory(
+                              context,
+                              ref,
+                              item.directChat!.id,
+                            ),
+                            child: _DirectChatCard(
+                              conversation: item.directChat!,
+                              myUserId: myUserId,
+                              onTap: () => context.pushNamed(
+                                RouteNames.directChat,
+                                pathParameters: {
+                                  'conversationId': item.directChat!.id,
+                                },
+                              ),
                             ),
                           ),
                   ),

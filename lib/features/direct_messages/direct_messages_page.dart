@@ -33,6 +33,52 @@ class _DirectConversationsPageState
     });
   }
 
+  void _confirmDeleteConversation(String conversationId) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sohbet geçmişinden silinsin mi?'),
+        content: const Text(
+          'Bu işlem sohbeti yalnızca senin geçmişinden kaldırır. Mesajlar karşı taraftan silinmez. Yeni mesaj gelirse sohbet tekrar görünür.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              final success = await ref
+                  .read(directInboxProvider.notifier)
+                  .deleteConversationFromHistory(conversationId);
+              if (mounted) {
+                if (success) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Sohbet geçmişinden kaldırıldı.'),
+                    ),
+                  );
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content:
+                          Text('Hata: Sohbet geçmişinden kaldırılamadı.'),
+                    ),
+                  );
+                }
+              }
+            },
+            child: const Text(
+              'Sil',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final inboxState = ref.watch(directInboxProvider);
@@ -97,6 +143,7 @@ class _DirectConversationsPageState
         final hasUnread = conversation.hasUnread(myUserId);
 
         return ListTile(
+          onLongPress: () => _confirmDeleteConversation(conversation.id),
           contentPadding: const EdgeInsets.symmetric(
             vertical: AppSpacing.xs,
             horizontal: AppSpacing.sm,

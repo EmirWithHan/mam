@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 
@@ -7,12 +6,17 @@ import '../theme/app_colors.dart';
 
 /// Utility to crop an image file using the system image cropper.
 ///
-/// Returns the cropped [File] or `null` when the user cancels.
-Future<File?> cropImage(
+/// Returns the cropped [CroppedFile] or `null` when the user cancels.
+Future<CroppedFile?> cropImage(
   String sourcePath, {
   CropAspectRatioPreset? initialAspectRatio,
 }) async {
   try {
+    if (kIsWeb) {
+      // On web, skip cropping and return the original source path wrapped in CroppedFile
+      return CroppedFile(sourcePath);
+    }
+
     final croppedFile = await ImageCropper().cropImage(
       sourcePath: sourcePath,
       compressQuality: 88,
@@ -49,10 +53,9 @@ Future<File?> cropImage(
       ],
     );
 
-    if (croppedFile == null) return null;
-    return File(croppedFile.path);
+    return croppedFile;
   } catch (e) {
     debugPrint('Error cropping image: $e');
-    return File(sourcePath);
+    return CroppedFile(sourcePath);
   }
 }

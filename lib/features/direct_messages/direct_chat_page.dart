@@ -59,6 +59,39 @@ class _DirectChatPageState extends ConsumerState<DirectChatPage> {
     setState(() {});
   }
 
+  void _confirmDeleteHistory() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sohbet geçmişinden silinsin mi?'),
+        content: const Text(
+          'Bu işlem sohbeti yalnızca senin geçmişinden kaldırır. Mesajlar karşı taraftan silinmez. Yeni mesaj gelirse sohbet tekrar görünür.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await ref
+                  .read(directInboxProvider.notifier)
+                  .deleteConversationFromHistory(widget.conversationId);
+              if (mounted) {
+                Navigator.pop(context);
+              }
+            },
+            child: const Text(
+              'Sil',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _sendMessage() async {
     final text = _messageController.text;
     if (text.trim().isEmpty) return;
@@ -139,6 +172,21 @@ class _DirectChatPageState extends ConsumerState<DirectChatPage> {
             ),
           ],
         ),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'delete_history') {
+                _confirmDeleteHistory();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'delete_history',
+                child: Text('Sohbet geçmişinden sil'),
+              ),
+            ],
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -290,12 +338,14 @@ class _DirectChatPageState extends ConsumerState<DirectChatPage> {
                 const SnackBar(content: Text('Mesaj kopyalandı.')),
               );
             },
-            onReport: () => _showSafeReportDialog(
-              context,
-              ref,
-              widget.conversationId,
-              message.id,
-            ),
+            onReport: isMine || message.id.trim().isEmpty
+                ? null
+                : () => _showSafeReportDialog(
+                    context,
+                    ref,
+                    widget.conversationId,
+                    message.id,
+                  ),
           ),
         );
       },
@@ -441,42 +491,6 @@ class _ReplyPreviewBanner extends StatelessWidget {
   }
 }
 
-// ignore: unused_element
-void _showReportDialog(
-  BuildContext context,
-  WidgetRef ref,
-  String conversationId,
-  String messageId,
-) {
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: const Text('Mesajı şikayet et'),
-        content: const Text('Bu mesajı inceleme için bildirmek istiyor musun?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Vazgeç'),
-          ),
-          TextButton(
-            onPressed: () {
-              ref
-                  .read(directChatControllerProvider(conversationId).notifier)
-                  .reportMessage(messageId, 'Kullanıcı şikayeti');
-              Navigator.pop(context);
-              ScaffoldMessenger.of(
-                context,
-              ).showSnackBar(const SnackBar(content: Text('Şikayet alındı.')));
-            },
-            child: const Text('Şikayet et'),
-          ),
-        ],
-      );
-    },
-  );
-}
-
 void _showSafeReportDialog(
   BuildContext context,
   WidgetRef ref,
@@ -486,41 +500,58 @@ void _showSafeReportDialog(
   showDialog(
     context: context,
     builder: (dialogContext) {
-      return AlertDialog(
-        title: const Text('Mesaj\u0131 \u015Fikayet et'),
-        content: const Text(
-          'Bu mesaj\u0131 inceleme i\u00E7in bildirmek istiyor musun?',
+      var submitting = false;
+      return StatefulBuilder(
+        builder: (dialogContext, setDialogState) => AlertDialog(
+          title: const Text('Mesaj\u0131 \u015Fikayet et'),
+          content: const Text(
+            'Bu mesaj\u0131 inceleme i\u00E7in bildirmek istiyor musun?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: submitting
+                  ? null
+                  : () => Navigator.pop(dialogContext),
+              child: const Text('Vazge\u00E7'),
+            ),
+            TextButton(
+              onPressed: submitting
+                  ? null
+                  : () async {
+                      setDialogState(() => submitting = true);
+                      final messenger = ScaffoldMessenger.of(context);
+                      final navigator = Navigator.of(dialogContext);
+                      final ok = await ref
+                          .read(
+                            directChatControllerProvider(
+                              conversationId,
+                            ).notifier,
+                          )
+                          .reportMessage(
+                            messageId,
+                            'Kullan\u0131c\u0131 \u015Fikayeti',
+                          );
+                      if (!dialogContext.mounted) return;
+                      navigator.pop();
+                      messenger.showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            ok
+                                ? '\u015Eikayetiniz incelemeye al\u0131nd\u0131.'
+                                : '\u015Eikayet g\u00F6nderilemedi. L\u00FCtfen tekrar deneyin.',
+                          ),
+                        ),
+                      );
+                    },
+              child: submitting
+                  ? const SizedBox.square(
+                      dimension: 16,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Text('\u015Eikayet et'),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Vazge\u00E7'),
-          ),
-          TextButton(
-            onPressed: () async {
-              final messenger = ScaffoldMessenger.of(context);
-              final navigator = Navigator.of(dialogContext);
-              final ok = await ref
-                  .read(directChatControllerProvider(conversationId).notifier)
-                  .reportMessage(
-                    messageId,
-                    'Kullan\u0131c\u0131 \u015Fikayeti',
-                  );
-              if (!dialogContext.mounted) return;
-              navigator.pop();
-              messenger.showSnackBar(
-                SnackBar(
-                  content: Text(
-                    ok
-                        ? '\u015Eikayet al\u0131nd\u0131.'
-                        : '\u015Eikayet \u015Fu anda g\u00F6nderilemedi. L\u00FCtfen tekrar dene.',
-                  ),
-                ),
-              );
-            },
-            child: const Text('\u015Eikayet et'),
-          ),
-        ],
       );
     },
   );

@@ -159,6 +159,24 @@ class _EventFilterSheetState extends State<EventFilterSheet> {
                       },
                     ),
                   ),
+                  const SizedBox(height: AppSpacing.md),
+                  _SectionCard(
+                    title: 'Geçmiş etkinlikler',
+                    child: SwitchListTile.adaptive(
+                      contentPadding: EdgeInsets.zero,
+                      activeThumbColor: AppColors.primary,
+                      title: const Text(
+                        'Geçmişleri göster',
+                        style: AppTextStyles.bodySmall,
+                      ),
+                      value: _filters.showPastEvents,
+                      onChanged: (value) {
+                        setState(() {
+                          _filters = _filters.copyWith(showPastEvents: value);
+                        });
+                      },
+                    ),
+                  ),
                   const SizedBox(height: AppSpacing.xl),
                   Row(
                     children: [

@@ -18,6 +18,7 @@ import '../events/events_models.dart';
 import '../events/events_provider.dart';
 import '../profile/widgets/public_profile_name.dart';
 import 'event_chat_models.dart';
+import 'event_chat_list_provider.dart';
 import 'event_chat_provider.dart';
 import 'widgets/message_bubble.dart';
 import 'widgets/poll_card.dart';
@@ -205,6 +206,21 @@ class _EventChatPageState extends ConsumerState<EventChatPage> {
             ),
           ],
         ),
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'delete_history') {
+                _confirmDeleteEventChatHistory();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'delete_history',
+                child: Text('Sohbet geçmişinden sil'),
+              ),
+            ],
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -309,6 +325,39 @@ class _EventChatPageState extends ConsumerState<EventChatPage> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  void _confirmDeleteEventChatHistory() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Sohbet geçmişinden silinsin mi?'),
+        content: const Text(
+          'Bu işlem sohbeti yalnızca senin geçmişinden kaldırır. Mesajlar karşı taraftan silinmez. Yeni mesaj gelirse sohbet tekrar görünür.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Vazgeç'),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await ref
+                  .read(eventChatListControllerProvider.notifier)
+                  .deleteEventChatFromHistory(widget.eventId);
+              if (mounted) {
+                _goBack(context);
+              }
+            },
+            child: const Text(
+              'Sil',
+              style: TextStyle(color: AppColors.error),
+            ),
+          ),
+        ],
       ),
     );
   }

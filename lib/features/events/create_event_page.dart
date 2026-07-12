@@ -45,6 +45,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
   final _cityController = TextEditingController();
   final _districtController = TextEditingController();
   final _locationTextController = TextEditingController();
+  final _locationDescriptionController = TextEditingController();
   final _eventDateController = TextEditingController();
   final _capacityTotalController = TextEditingController();
   final _capacityMaleController = TextEditingController(text: '0');
@@ -147,6 +148,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     _cityController.dispose();
     _districtController.dispose();
     _locationTextController.dispose();
+    _locationDescriptionController.dispose();
     _eventDateController.dispose();
     _capacityTotalController.dispose();
     _capacityMaleController.dispose();
@@ -230,6 +232,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
             : null,
         eventEndTime: isBusinessEvent ? _closeTimeController.text.trim() : null,
         priceType: isBusinessEvent ? _priceType : 'free',
+        locationDescription: _locationDescriptionController.text.trim(),
       );
 
       final event = await ref
@@ -288,6 +291,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
       eventStartTime: isBusinessEvent ? _openTimeController.text.trim() : null,
       eventEndTime: isBusinessEvent ? _closeTimeController.text.trim() : null,
       priceType: isBusinessEvent ? _priceType : 'free',
+      locationDescription: _locationDescriptionController.text.trim(),
     );
 
     final event = await ref
@@ -1005,6 +1009,14 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                         ],
                       ),
                     ],
+                    const SizedBox(height: AppSpacing.md),
+                    AppTextField(
+                      label: 'Açık adres',
+                      controller: _locationDescriptionController,
+                      prefixIcon: const Icon(Icons.info_outline),
+                      hintText:
+                          'Apartman, saha adı, kapı, tarif veya buluşma noktası',
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                     Wrap(
                       spacing: AppSpacing.sm,
@@ -1209,6 +1221,7 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
     _cityController.text = event.city;
     _districtController.text = event.district ?? '';
     _locationTextController.text = event.locationText ?? '';
+    _locationDescriptionController.text = event.locationDescription ?? '';
     _selectedEventDate = event.eventDate;
     _eventDateController.text = DateFormatter.formatEventDateTime(
       event.eventDate,
