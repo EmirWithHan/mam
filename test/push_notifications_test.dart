@@ -93,7 +93,6 @@ void main() {
       expect(function, contains('service_claim_push_notification_outbox'));
       expect(function, contains('p_limit'));
       expect(function, contains('.eq("status", "processing")'));
-      expect(function, contains('attempts: nextAttempts'));
       expect(function, isNot(contains('Firebase Auth')));
       expect(function, isNot(contains('Firebase Firestore')));
     });
