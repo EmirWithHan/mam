@@ -14,11 +14,13 @@ import '../../core/utils/phone_verification.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_logo.dart';
 import '../admin/admin_provider.dart';
+import '../auth/auth_models.dart';
 import '../auth/auth_provider.dart';
 import '../business/business_models.dart';
 import '../business/business_provider.dart';
 import '../business/widgets/business_badge.dart';
 import '../events/events_provider.dart';
+import '../notifications/notifications_provider.dart';
 import '../profile/profile_models.dart';
 import '../profile/profile_provider.dart';
 import 'widgets/settings_menu_tile.dart';
@@ -31,6 +33,8 @@ class SettingsPage extends ConsumerStatefulWidget {
 }
 
 class _SettingsPageState extends ConsumerState<SettingsPage> {
+  bool _isDeletingAccount = false;
+
   @override
   void initState() {
     super.initState();
@@ -306,35 +310,84 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
   }
 
   Future<void> _confirmDeleteAccount(BuildContext context) async {
+    if (_isDeletingAccount) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => const _AccountDeletionConfirmationDialog(),
     );
 
     if (confirmed != true) return;
+    if (_isDeletingAccount) return;
+    setState(() => _isDeletingAccount = true);
+    try {
+      final success = await ref
+          .read(profileControllerProvider.notifier)
+          .requestAccountDeletion();
+      if (!success) {
+        if (context.mounted) {
+          final message = ref.read(profileControllerProvider).message;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                message ?? 'Hesap silme talebi alınamadı. Tekrar dene.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
 
-    final success = await ref
-        .read(profileControllerProvider.notifier)
-        .requestAccountDeletion();
-    if (!context.mounted) return;
-
-    if (!success) {
-      final message = ref.read(profileControllerProvider).message;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            message ?? 'Hesap silme talebi alınamadı. Tekrar dene.',
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Hesap erişimin kapatıldı. Kalıcı silme işlemin sürüyor ve en geç '
+              '24 saat içinde tamamlanması hedefleniyor.',
+            ),
           ),
-        ),
-      );
-      return;
-    }
+        );
+      }
+      try {
+        await ref
+            .read(pushRegistrationControllerProvider)
+            .deleteCurrentToken();
+      } catch (_) {
+        // Push kaydı temizliği en iyi çabadır; çıkışı engellemez.
+      }
+      try {
+        await ref.read(authControllerProvider.notifier).signOut();
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Hesabın kapatıldı ancak bu cihazdaki oturum kapatılamadı. '
+                'Uygulamayı yeniden başlatıp tekrar giriş yapma.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Hesap silme talebin alındı.')),
-    );
-    await ref.read(authControllerProvider.notifier).signOut();
-    if (context.mounted) context.goNamed(RouteNames.auth);
+      if (ref.read(authControllerProvider).status !=
+          AuthStatus.unauthenticated) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Hesabın kapatıldı ancak bu cihazdaki oturum kapatılamadı. '
+                'Uygulamayı yeniden başlatıp tekrar giriş yapma.',
+              ),
+            ),
+          );
+        }
+        return;
+      }
+      if (context.mounted) context.goNamed(RouteNames.auth);
+    } finally {
+      if (mounted) setState(() => _isDeletingAccount = false);
+    }
   }
 }
 
@@ -380,8 +433,9 @@ class _AccountDeletionConfirmationDialogState
         children: [
           const Text(
             'Profilin pasifleştirilecek, herkese açık kimliğin gizlenecek ve '
-            'gelecekteki etkinliklerin yayından kaldırılacak. Nihai veri silme '
-            'işlemi beta sürecinde manuel olarak tamamlanır.',
+            'gelecekteki etkinliklerin yayından kaldırılacak. Hesap erişimin '
+            'hemen kapatılacak; kalıcı silme işleminin en geç 24 saat içinde '
+            'tamamlanması hedeflenir.',
           ),
           const SizedBox(height: AppSpacing.md),
           const Text('Devam etmek için SİL yaz.'),
