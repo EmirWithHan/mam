@@ -149,8 +149,8 @@ class HomeFeedService {
         fetchPastParticipantPosts(),
       ]);
 
-      final followedPosts = results[0] as List<PostWithStats>;
-      final pastParticipantPosts = results[1] as List<PostWithStats>;
+      final followedPosts = results[0];
+      final pastParticipantPosts = results[1];
 
       // Combine and Interleave
       final List<dynamic> mixedFeed = _mixFeedItems(

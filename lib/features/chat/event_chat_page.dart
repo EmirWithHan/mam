@@ -330,32 +330,30 @@ class _EventChatPageState extends ConsumerState<EventChatPage> {
   }
 
   void _confirmDeleteEventChatHistory() {
+    final pageContext = context;
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: pageContext,
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Sohbet geçmişinden silinsin mi?'),
         content: const Text(
           'Bu işlem sohbeti yalnızca senin geçmişinden kaldırır. Mesajlar karşı taraftan silinmez. Yeni mesaj gelirse sohbet tekrar görünür.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Vazgeç'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               await ref
                   .read(eventChatListControllerProvider.notifier)
                   .deleteEventChatFromHistory(widget.eventId);
-              if (mounted) {
-                _goBack(context);
+              if (pageContext.mounted) {
+                _goBack(pageContext);
               }
             },
-            child: const Text(
-              'Sil',
-              style: TextStyle(color: AppColors.error),
-            ),
+            child: const Text('Sil', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),

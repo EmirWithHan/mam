@@ -9,14 +9,6 @@ import '../../../core/utils/date_formatter.dart';
 import '../../profile/widgets/safe_avatar.dart';
 import '../direct_messages_models.dart';
 
-const _reactionEmojis = <String>[
-  '\u{1F44D}',
-  '\u2764\uFE0F',
-  '\u{1F602}',
-  '\u{1F62E}',
-  '\u{1F44F}',
-];
-
 class DirectMessageBubble extends StatelessWidget {
   const DirectMessageBubble({
     super.key,

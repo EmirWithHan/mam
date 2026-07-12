@@ -34,45 +34,42 @@ class _DirectConversationsPageState
   }
 
   void _confirmDeleteConversation(String conversationId) {
+    final pageContext = context;
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: pageContext,
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Sohbet geçmişinden silinsin mi?'),
         content: const Text(
           'Bu işlem sohbeti yalnızca senin geçmişinden kaldırır. Mesajlar karşı taraftan silinmez. Yeni mesaj gelirse sohbet tekrar görünür.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Vazgeç'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               final success = await ref
                   .read(directInboxProvider.notifier)
                   .deleteConversationFromHistory(conversationId);
-              if (mounted) {
+              if (pageContext.mounted) {
                 if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(pageContext).showSnackBar(
                     const SnackBar(
                       content: Text('Sohbet geçmişinden kaldırıldı.'),
                     ),
                   );
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
+                  ScaffoldMessenger.of(pageContext).showSnackBar(
                     const SnackBar(
-                      content:
-                          Text('Hata: Sohbet geçmişinden kaldırılamadı.'),
+                      content: Text('Hata: Sohbet geçmişinden kaldırılamadı.'),
                     ),
                   );
                 }
               }
             },
-            child: const Text(
-              'Sil',
-              style: TextStyle(color: AppColors.error),
-            ),
+            child: const Text('Sil', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),

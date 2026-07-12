@@ -1992,7 +1992,7 @@ class _EventBoostCard extends ConsumerWidget {
                     ),
                     const SizedBox(height: AppSpacing.xs),
                     statusWidget,
-                    if (actionWidget != null) actionWidget,
+                    ?actionWidget,
                   ],
                 );
               },

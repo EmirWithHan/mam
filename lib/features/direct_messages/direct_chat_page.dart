@@ -60,32 +60,30 @@ class _DirectChatPageState extends ConsumerState<DirectChatPage> {
   }
 
   void _confirmDeleteHistory() {
+    final pageContext = context;
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: pageContext,
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Sohbet geçmişinden silinsin mi?'),
         content: const Text(
           'Bu işlem sohbeti yalnızca senin geçmişinden kaldırır. Mesajlar karşı taraftan silinmez. Yeni mesaj gelirse sohbet tekrar görünür.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Vazgeç'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               await ref
                   .read(directInboxProvider.notifier)
                   .deleteConversationFromHistory(widget.conversationId);
-              if (mounted) {
-                Navigator.pop(context);
+              if (pageContext.mounted) {
+                Navigator.pop(pageContext);
               }
             },
-            child: const Text(
-              'Sil',
-              style: TextStyle(color: AppColors.error),
-            ),
+            child: const Text('Sil', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
@@ -509,9 +507,7 @@ void _showSafeReportDialog(
           ),
           actions: [
             TextButton(
-              onPressed: submitting
-                  ? null
-                  : () => Navigator.pop(dialogContext),
+              onPressed: submitting ? null : () => Navigator.pop(dialogContext),
               child: const Text('Vazge\u00E7'),
             ),
             TextButton(

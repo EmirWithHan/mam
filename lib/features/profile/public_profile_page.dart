@@ -109,8 +109,9 @@ class _PublicProfilePageState extends ConsumerState<PublicProfilePage> {
           try {
             final hexColor = detail.businessCustomThemeColor!;
             final buffer = StringBuffer();
-            if (hexColor.length == 6 || hexColor.length == 7)
+            if (hexColor.length == 6 || hexColor.length == 7) {
               buffer.write('ff');
+            }
             buffer.write(hexColor.replaceFirst('#', ''));
             final color = Color(int.parse(buffer.toString(), radix: 16));
             pageTheme = pageTheme.copyWith(

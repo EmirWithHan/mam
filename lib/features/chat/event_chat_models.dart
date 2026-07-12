@@ -46,8 +46,8 @@ class EventMessage {
       'event_id': eventId,
       'sender_id': senderId,
       'message': message.trim(),
-      if (replyToMessageId != null) 'reply_to_message_id': replyToMessageId,
-      if (metadata != null) 'metadata': metadata,
+      'reply_to_message_id': ?replyToMessageId,
+      'metadata': ?metadata,
     };
   }
 

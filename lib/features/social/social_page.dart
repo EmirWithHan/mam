@@ -51,82 +51,92 @@ class _SocialPageState extends ConsumerState<SocialPage> {
     super.dispose();
   }
 
-  void _confirmDeleteEventChatHistory(BuildContext context, WidgetRef ref, String eventId) {
+  void _confirmDeleteEventChatHistory(
+    BuildContext outerContext,
+    WidgetRef ref,
+    String eventId,
+  ) {
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: outerContext,
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Sohbet geçmişinden silinsin mi?'),
         content: const Text(
           'Bu işlem sohbeti yalnızca senin geçmişinden kaldırır. Mesajlar karşı taraftan silinmez. Yeni mesaj gelirse sohbet tekrar görünür.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Vazgeç'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               final success = await ref
                   .read(eventChatListControllerProvider.notifier)
                   .deleteEventChatFromHistory(eventId);
-              if (mounted) {
+              if (outerContext.mounted) {
                 if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Sohbet geçmişinden kaldırıldı.')),
+                  ScaffoldMessenger.of(outerContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Sohbet geçmişinden kaldırıldı.'),
+                    ),
                   );
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Hata: Sohbet geçmişinden kaldırılamadı.')),
+                  ScaffoldMessenger.of(outerContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Hata: Sohbet geçmişinden kaldırılamadı.'),
+                    ),
                   );
                 }
               }
             },
-            child: const Text(
-              'Sil',
-              style: TextStyle(color: AppColors.error),
-            ),
+            child: const Text('Sil', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),
     );
   }
 
-  void _confirmDeleteDirectChatHistory(BuildContext context, WidgetRef ref, String conversationId) {
+  void _confirmDeleteDirectChatHistory(
+    BuildContext outerContext,
+    WidgetRef ref,
+    String conversationId,
+  ) {
     showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
+      context: outerContext,
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Sohbet geçmişinden silinsin mi?'),
         content: const Text(
           'Bu işlem sohbeti yalnızca senin geçmişinden kaldırır. Mesajlar karşı taraftan silinmez. Yeni mesaj gelirse sohbet tekrar görünür.',
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Vazgeç'),
           ),
           TextButton(
             onPressed: () async {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               final success = await ref
                   .read(directInboxProvider.notifier)
                   .deleteConversationFromHistory(conversationId);
-              if (mounted) {
+              if (outerContext.mounted) {
                 if (success) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Sohbet geçmişinden kaldırıldı.')),
+                  ScaffoldMessenger.of(outerContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Sohbet geçmişinden kaldırıldı.'),
+                    ),
                   );
                 } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Hata: Sohbet geçmişinden kaldırılamadı.')),
+                  ScaffoldMessenger.of(outerContext).showSnackBar(
+                    const SnackBar(
+                      content: Text('Hata: Sohbet geçmişinden kaldırılamadı.'),
+                    ),
                   );
                 }
               }
             },
-            child: const Text(
-              'Sil',
-              style: TextStyle(color: AppColors.error),
-            ),
+            child: const Text('Sil', style: TextStyle(color: AppColors.error)),
           ),
         ],
       ),

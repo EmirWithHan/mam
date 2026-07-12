@@ -95,16 +95,14 @@ class EventChatListService {
           .eq('user_id', userId)
           .eq('conversation_type', 'event');
 
-      if (hiddenRows != null) {
-        for (final row in hiddenRows as List) {
-          final rowMap = Map<String, dynamic>.from(row as Map);
-          final key = rowMap['conversation_key'] as String?;
-          final hiddenAtStr = rowMap['hidden_at']?.toString();
-          if (key != null && hiddenAtStr != null) {
-            final parsed = DateTime.tryParse(hiddenAtStr);
-            if (parsed != null) {
-              hiddenMap[key] = parsed.toUtc();
-            }
+      for (final row in hiddenRows) {
+        final rowMap = Map<String, dynamic>.from(row);
+        final key = rowMap['conversation_key'] as String?;
+        final hiddenAtStr = rowMap['hidden_at']?.toString();
+        if (key != null && hiddenAtStr != null) {
+          final parsed = DateTime.tryParse(hiddenAtStr);
+          if (parsed != null) {
+            hiddenMap[key] = parsed.toUtc();
           }
         }
       }
