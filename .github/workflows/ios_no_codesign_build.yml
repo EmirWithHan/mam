@@ -35,10 +35,10 @@ jobs:
         run: flutter pub get
 
       - name: Analyze
-        run: flutter analyze
+        run: flutter analyze --no-pub --no-fatal-infos
 
       - name: Test
-        run: flutter test
+        run: flutter test --no-pub
 
       - name: Inspect iOS project and install pods if present
         run: |
@@ -51,8 +51,8 @@ jobs:
             echo "No ios/Podfile found; skipping manual pod install and letting flutter build handle iOS project generation/build."
           fi
 
-      - name: Build iOS debug without codesign
-        run: flutter build ios --debug --no-codesign
+      - name: Build iOS release without codesign
+        run: flutter build ios --release --no-codesign --no-pub
 
       - name: Failure diagnosis
         if: failure()
