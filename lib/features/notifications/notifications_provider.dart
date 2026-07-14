@@ -87,23 +87,130 @@ final pushRegistrationControllerProvider = Provider<PushRegistrationController>(
   (ref) {
     final controller = PushRegistrationController(
       service: ref.watch(notificationsServiceProvider),
+      messaging: FirebasePushMessagingClient(),
     );
     ref.onDispose(controller.dispose);
     return controller;
   },
 );
 
+typedef PushNotificationRouteCallback =
+    bool Function(Map<String, dynamic> data);
+
+PushNotificationRouteCallback? _pushNotificationRouteCallback;
+
+void configurePushNotificationRouteCallback(
+  PushNotificationRouteCallback callback,
+) {
+  _pushNotificationRouteCallback = callback;
+}
+
+enum PushClientPlatform { android, ios, unsupported }
+
+PushClientPlatform resolvePushClientPlatform({
+  required bool isWeb,
+  required TargetPlatform platform,
+}) {
+  if (isWeb) return PushClientPlatform.unsupported;
+  return switch (platform) {
+    TargetPlatform.android => PushClientPlatform.android,
+    TargetPlatform.iOS => PushClientPlatform.ios,
+    _ => PushClientPlatform.unsupported,
+  };
+}
+
+extension on PushClientPlatform {
+  String? get backendValue => switch (this) {
+    PushClientPlatform.android => 'android',
+    PushClientPlatform.ios => 'ios',
+    PushClientPlatform.unsupported => null,
+  };
+}
+
+abstract class PushMessagingClient {
+  Future<bool> requestPermission();
+  Future<String?> getAPNSToken();
+  Future<String?> getToken();
+  Future<RemoteMessage?> getInitialMessage();
+  Stream<String> get onTokenRefresh;
+  Stream<RemoteMessage> get onMessage;
+  Stream<RemoteMessage> get onMessageOpenedApp;
+}
+
+class FirebasePushMessagingClient implements PushMessagingClient {
+  FirebaseMessaging get _messaging => FirebaseMessaging.instance;
+
+  @override
+  Future<bool> requestPermission() async {
+    final settings = await _messaging.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+    return settings.authorizationStatus != AuthorizationStatus.denied;
+  }
+
+  @override
+  Future<String?> getAPNSToken() => _messaging.getAPNSToken();
+
+  @override
+  Future<String?> getToken() => _messaging.getToken();
+
+  @override
+  Future<RemoteMessage?> getInitialMessage() => _messaging.getInitialMessage();
+
+  @override
+  Stream<String> get onTokenRefresh => _messaging.onTokenRefresh;
+
+  @override
+  Stream<RemoteMessage> get onMessage => FirebaseMessaging.onMessage;
+
+  @override
+  Stream<RemoteMessage> get onMessageOpenedApp =>
+      FirebaseMessaging.onMessageOpenedApp;
+}
+
 class PushRegistrationController {
-  PushRegistrationController({required NotificationsService service})
-    : _service = service;
+  PushRegistrationController({
+    required NotificationsService service,
+    required PushMessagingClient messaging,
+    PushClientPlatform? platform,
+    bool Function()? hasAuthenticatedUser,
+    PushNotificationRouteCallback? routeNotification,
+    Future<void> Function(Duration)? delay,
+  }) : _service = service,
+       _messaging = messaging,
+       _platform =
+           platform ??
+           resolvePushClientPlatform(
+             isWeb: kIsWeb,
+             platform: defaultTargetPlatform,
+           ),
+       _hasAuthenticatedUser =
+           hasAuthenticatedUser ??
+           (() => SupabaseService.client.auth.currentUser != null),
+       _routeNotification =
+           routeNotification ??
+           ((data) => _pushNotificationRouteCallback?.call(data) ?? false),
+       _delay = delay ?? Future<void>.delayed;
 
   final NotificationsService _service;
+  final PushMessagingClient _messaging;
+  final PushClientPlatform _platform;
+  final bool Function() _hasAuthenticatedUser;
+  final PushNotificationRouteCallback _routeNotification;
+  final Future<void> Function(Duration) _delay;
   StreamSubscription<String>? _tokenRefreshSubscription;
   StreamSubscription<RemoteMessage>? _foregroundMessageSubscription;
+  StreamSubscription<RemoteMessage>? _messageOpenedSubscription;
   String? _currentToken;
   bool _initialized = false;
+  bool _routingInitialized = false;
+  bool _routingReady = false;
   bool _loggedAlreadyInitialized = false;
   String? _lastReadinessSignature;
+  final Map<String, RemoteMessage> _pendingTappedMessages = {};
+  final Set<String> _routedMessageKeys = {};
 
   void debugAuthReadiness({
     required bool isAuthenticated,
@@ -114,9 +221,16 @@ class PushRegistrationController {
     final signature =
         'auth=$isAuthenticated user=$hasUserId '
         'profile=$isProfileCompleted terms=$hasAcceptedTerms';
-    if (_lastReadinessSignature == signature) return;
-    _lastReadinessSignature = signature;
-    debugPrint('[Notifications] push readiness $signature');
+    _routingReady =
+        isAuthenticated && hasUserId && isProfileCompleted && hasAcceptedTerms;
+    unawaited(_initializeNotificationRouting());
+    if (_routingReady) {
+      _flushPendingNotificationTaps();
+    }
+    if (_lastReadinessSignature != signature) {
+      _lastReadinessSignature = signature;
+      debugPrint('[Notifications] push readiness $signature');
+    }
   }
 
   Future<void> initializeForAuthenticatedUser() async {
@@ -132,7 +246,8 @@ class PushRegistrationController {
     _initialized = true;
     _loggedAlreadyInitialized = false;
 
-    if (kIsWeb || defaultTargetPlatform != TargetPlatform.android) {
+    final backendPlatform = _platform.backendValue;
+    if (backendPlatform == null) {
       debugPrint(
         '[Notifications] FCM registration skipped: unsupported platform',
       );
@@ -140,55 +255,45 @@ class PushRegistrationController {
     }
 
     try {
-      final hasUser = SupabaseService.client.auth.currentUser != null;
+      final hasUser = _hasAuthenticatedUser();
       debugPrint('[Notifications] FCM registration started hasUser=$hasUser');
-      final messaging = FirebaseMessaging.instance;
-      final settings = await messaging.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-      debugPrint(
-        '[Notifications] FCM permission status='
-        '${settings.authorizationStatus.name}',
-      );
+      if (!hasUser) {
+        debugPrint(
+          '[Notifications] FCM registration skipped: no authenticated user',
+        );
+        _initialized = false;
+        return;
+      }
 
-      if (settings.authorizationStatus == AuthorizationStatus.denied) {
+      final permissionGranted = await _messaging.requestPermission();
+      if (!permissionGranted) {
         debugPrint(
           '[Notifications] FCM registration skipped: permission denied',
         );
         return;
       }
 
-      final token = await messaging.getToken();
-      debugPrint(
-        '[Notifications] FCM token present=${token != null} '
-        'length=${token?.length ?? 0}',
-      );
+      _installMessageSubscriptions(backendPlatform);
+
+      if (_platform == PushClientPlatform.ios) {
+        final apnsReady = await _waitForAPNSToken();
+        if (!apnsReady) {
+          debugPrint(
+            '[Notifications] FCM registration deferred: APNs token unavailable',
+          );
+          _initialized = false;
+          return;
+        }
+      }
+
+      final token = await _messaging.getToken();
+      debugPrint('[Notifications] FCM token present=${token != null}');
       if (token != null && token.trim().isNotEmpty) {
         _currentToken = token;
-        await registerToken(token: token, platform: 'android');
+        await registerToken(token: token, platform: backendPlatform);
       } else {
         debugPrint('[Notifications] FCM registration skipped: token empty');
       }
-
-      _tokenRefreshSubscription ??= FirebaseMessaging.instance.onTokenRefresh
-          .listen((token) {
-            _currentToken = token;
-            debugPrint(
-              '[Notifications] FCM token refresh received length=${token.length}',
-            );
-            unawaited(registerToken(token: token, platform: 'android'));
-          });
-
-      _foregroundMessageSubscription ??= FirebaseMessaging.onMessage.listen((
-        message,
-      ) {
-        debugPrint(
-          '[Notifications] foreground FCM message type='
-          '${message.data['type'] ?? 'unknown'}',
-        );
-      });
     } catch (error) {
       debugPrint('[Notifications] FCM init failed: ${error.runtimeType}');
       _initialized = false;
@@ -196,15 +301,115 @@ class PushRegistrationController {
     }
   }
 
+  Future<bool> _waitForAPNSToken() async {
+    for (var attempt = 0; attempt < 20; attempt += 1) {
+      final token = await _messaging.getAPNSToken();
+      if (token?.trim().isNotEmpty == true) return true;
+      await _delay(const Duration(milliseconds: 250));
+    }
+    return false;
+  }
+
+  void _installMessageSubscriptions(String backendPlatform) {
+    _tokenRefreshSubscription ??= _messaging.onTokenRefresh.listen((token) {
+      _currentToken = token;
+      debugPrint('[Notifications] FCM token refresh received');
+      unawaited(registerToken(token: token, platform: backendPlatform));
+    });
+
+    _foregroundMessageSubscription ??= _messaging.onMessage.listen((message) {
+      debugPrint(
+        '[Notifications] foreground FCM message type='
+        '${message.data['type'] ?? 'unknown'}',
+      );
+    });
+  }
+
+  Future<void> _initializeNotificationRouting() async {
+    if (_routingInitialized || _platform == PushClientPlatform.unsupported) {
+      return;
+    }
+    _routingInitialized = true;
+    try {
+      _messageOpenedSubscription ??= _messaging.onMessageOpenedApp.listen(
+        handleNotificationTap,
+      );
+      final initialMessage = await _messaging.getInitialMessage();
+      if (initialMessage != null) {
+        handleNotificationTap(initialMessage);
+      }
+    } catch (error) {
+      _routingInitialized = false;
+      debugPrint(
+        '[Notifications] notification routing init failed: '
+        '${error.runtimeType}',
+      );
+    }
+  }
+
+  @visibleForTesting
+  void handleNotificationTap(RemoteMessage message) {
+    final key = _messageKey(message);
+    if (_routedMessageKeys.contains(key) ||
+        _pendingTappedMessages.containsKey(key)) {
+      return;
+    }
+    if (!_routingReady || !_hasAuthenticatedUser()) {
+      _pendingTappedMessages[key] = message;
+      return;
+    }
+    if (_routeNotification(message.data)) {
+      _rememberRoutedMessage(key);
+      return;
+    }
+    _pendingTappedMessages[key] = message;
+  }
+
+  void _flushPendingNotificationTaps() {
+    if (!_routingReady || !_hasAuthenticatedUser()) return;
+    final pending = Map<String, RemoteMessage>.from(_pendingTappedMessages);
+    for (final entry in pending.entries) {
+      if (_routeNotification(entry.value.data)) {
+        _pendingTappedMessages.remove(entry.key);
+        _rememberRoutedMessage(entry.key);
+      }
+    }
+  }
+
+  String _messageKey(RemoteMessage message) {
+    final messageId = message.messageId?.trim();
+    if (messageId != null && messageId.isNotEmpty) return messageId;
+    final notificationId = message.data['notification_id']?.toString().trim();
+    if (notificationId != null && notificationId.isNotEmpty) {
+      return notificationId;
+    }
+    return '${message.data['entity_type'] ?? ''}:'
+        '${message.data['entity_id'] ?? ''}:'
+        '${message.sentTime?.millisecondsSinceEpoch ?? 0}';
+  }
+
+  void _rememberRoutedMessage(String key) {
+    _routedMessageKeys.add(key);
+    if (_routedMessageKeys.length > 50) {
+      _routedMessageKeys.remove(_routedMessageKeys.first);
+    }
+  }
+
   Future<void> registerToken({
     required String token,
     required String platform,
   }) async {
+    if (!_hasAuthenticatedUser()) {
+      debugPrint(
+        '[Notifications] Supabase push token save skipped: '
+        'no authenticated user',
+      );
+      return;
+    }
     try {
-      final hasUser = SupabaseService.client.auth.currentUser != null;
       debugPrint(
         '[Notifications] Supabase push token save started '
-        'hasUser=$hasUser platform=$platform tokenLength=${token.length}',
+        'platform=$platform',
       );
       await _service.registerPushToken(
         PushTokenRegistration(token: token, platform: platform),
@@ -230,12 +435,11 @@ class PushRegistrationController {
     final token = _currentToken;
     _currentToken = null;
     _initialized = false;
+    _routingReady = false;
+    _pendingTappedMessages.clear();
     _loggedAlreadyInitialized = false;
     if (token != null && token.trim().isNotEmpty) {
-      debugPrint(
-        '[Notifications] Supabase push token delete started '
-        'tokenLength=${token.length}',
-      );
+      debugPrint('[Notifications] Supabase push token delete started');
       await deleteToken(token);
     } else {
       debugPrint(
@@ -247,6 +451,7 @@ class PushRegistrationController {
   void dispose() {
     _tokenRefreshSubscription?.cancel();
     _foregroundMessageSubscription?.cancel();
+    _messageOpenedSubscription?.cancel();
   }
 }
 

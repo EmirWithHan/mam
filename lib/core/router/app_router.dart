@@ -29,6 +29,7 @@ import '../../features/home/create_hub_page.dart';
 import '../../features/home/home_page.dart';
 import '../../features/notifications/notifications_page.dart';
 import '../../features/notifications/follow_requests_page.dart';
+import '../../features/notifications/notifications_provider.dart';
 import '../../features/profile/profile_completion_page.dart';
 import '../../features/profile/profile_follow_list_page.dart';
 import '../../features/profile/profile_follow_list_provider.dart';
@@ -53,7 +54,7 @@ import 'route_names.dart';
 GoRouter createAppRouter(AuthState authState) {
   _ensureWebPathUrlStrategy();
 
-  return GoRouter(
+  final router = GoRouter(
     initialLocation: RoutePaths.splash,
     redirect: (context, state) {
       final location = state.matchedLocation;
@@ -491,6 +492,51 @@ GoRouter createAppRouter(AuthState authState) {
       ),
     ],
   );
+  configurePushNotificationRouteCallback(
+    (data) => _routePushNotification(router, data),
+  );
+  return router;
+}
+
+bool _routePushNotification(GoRouter router, Map<String, dynamic> data) {
+  final entityType = data['entity_type']?.toString().trim().toLowerCase();
+  final entityId = data['entity_id']?.toString().trim();
+
+  try {
+    if (entityId != null && entityId.isNotEmpty) {
+      if (entityType == 'direct_message') {
+        router.pushNamed(
+          RouteNames.directChat,
+          pathParameters: {'conversationId': entityId},
+        );
+        return true;
+      }
+      if (entityType == 'event') {
+        router.pushNamed(
+          RouteNames.eventDetail,
+          pathParameters: {'eventId': entityId},
+        );
+        return true;
+      }
+      if (entityType == 'profile' ||
+          entityType == 'user' ||
+          entityType == 'profile/user') {
+        router.pushNamed(
+          RouteNames.publicProfile,
+          pathParameters: {'userId': entityId},
+        );
+        return true;
+      }
+    }
+
+    router.pushNamed(RouteNames.notifications);
+    return true;
+  } catch (error) {
+    debugPrint(
+      '[Notifications] notification route failed: ${error.runtimeType}',
+    );
+    return false;
+  }
 }
 
 var _webPathUrlStrategyReady = false;

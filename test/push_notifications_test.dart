@@ -1,7 +1,13 @@
 import 'dart:io';
+import 'dart:async';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:match_a_man/bootstrap.dart';
 import 'package:match_a_man/features/notifications/notifications_models.dart';
+import 'package:match_a_man/features/notifications/notifications_provider.dart';
+import 'package:match_a_man/features/notifications/notifications_service.dart';
 
 void main() {
   group('push notification MVP', () {
@@ -181,5 +187,291 @@ void main() {
       expect(appGradle, contains('applicationId = "com.matchaman.app"'));
       expect(manifest, contains('android.permission.POST_NOTIFICATIONS'));
     });
+
+    test('Android platform registration sends android', () async {
+      final service = _FakeNotificationsService();
+      final messaging = _FakePushMessagingClient(token: _validToken('a'));
+      final controller = _controller(
+        service: service,
+        messaging: messaging,
+        platform: PushClientPlatform.android,
+      );
+
+      await controller.initializeForAuthenticatedUser();
+
+      expect(service.registrations.single.platform, 'android');
+      controller.dispose();
+      await messaging.dispose();
+    });
+
+    test('iOS waits for APNs before registering ios token', () async {
+      final service = _FakeNotificationsService();
+      final messaging = _FakePushMessagingClient(
+        token: _validToken('i'),
+        apnsTokens: [null, 'apns-token'],
+      );
+      final controller = _controller(
+        service: service,
+        messaging: messaging,
+        platform: PushClientPlatform.ios,
+      );
+
+      await controller.initializeForAuthenticatedUser();
+
+      expect(messaging.calls, ['permission', 'apns', 'apns', 'fcm']);
+      expect(service.registrations.single.platform, 'ios');
+      controller.dispose();
+      await messaging.dispose();
+    });
+
+    test('unsupported platform does not register with backend', () async {
+      final service = _FakeNotificationsService();
+      final messaging = _FakePushMessagingClient(token: _validToken('u'));
+      final controller = _controller(
+        service: service,
+        messaging: messaging,
+        platform: PushClientPlatform.unsupported,
+      );
+
+      await controller.initializeForAuthenticatedUser();
+
+      expect(service.registrations, isEmpty);
+      expect(messaging.calls, isEmpty);
+      controller.dispose();
+      await messaging.dispose();
+    });
+
+    test('token refresh preserves the resolved platform', () async {
+      for (final entry in const {
+        PushClientPlatform.android: 'android',
+        PushClientPlatform.ios: 'ios',
+      }.entries) {
+        final service = _FakeNotificationsService();
+        final messaging = _FakePushMessagingClient(token: _validToken('a'));
+        final controller = _controller(
+          service: service,
+          messaging: messaging,
+          platform: entry.key,
+        );
+        await controller.initializeForAuthenticatedUser();
+
+        messaging.emitTokenRefresh(_validToken('r'));
+        await _flushAsync();
+
+        expect(service.registrations.map((item) => item.platform), [
+          entry.value,
+          entry.value,
+        ]);
+        controller.dispose();
+        await messaging.dispose();
+      }
+    });
+
+    test(
+      'initial message routes once even if open stream repeats it',
+      () async {
+        final service = _FakeNotificationsService();
+        final initialMessage = RemoteMessage(
+          messageId: 'initial-1',
+          data: const {'entity_type': 'event', 'entity_id': 'event-1'},
+        );
+        final messaging = _FakePushMessagingClient(
+          token: _validToken('a'),
+          initialMessage: initialMessage,
+        );
+        final routed = <Map<String, dynamic>>[];
+        final controller = _controller(
+          service: service,
+          messaging: messaging,
+          platform: PushClientPlatform.android,
+          routeNotification: (data) {
+            routed.add(data);
+            return true;
+          },
+        );
+
+        _setRoutingReady(controller, true);
+        await _flushAsync();
+        messaging.emitMessageOpened(initialMessage);
+        await _flushAsync();
+
+        expect(routed, hasLength(1));
+        controller.dispose();
+        await messaging.dispose();
+      },
+    );
+
+    test('onMessageOpenedApp invokes notification routing', () async {
+      final service = _FakeNotificationsService();
+      final messaging = _FakePushMessagingClient(token: _validToken('a'));
+      final routed = <Map<String, dynamic>>[];
+      final controller = _controller(
+        service: service,
+        messaging: messaging,
+        platform: PushClientPlatform.android,
+        routeNotification: (data) {
+          routed.add(data);
+          return true;
+        },
+      );
+      _setRoutingReady(controller, true);
+      await _flushAsync();
+
+      messaging.emitMessageOpened(
+        RemoteMessage(
+          messageId: 'opened-1',
+          data: const {
+            'entity_type': 'direct_message',
+            'entity_id': 'conversation-1',
+          },
+        ),
+      );
+      await _flushAsync();
+
+      expect(routed.single['entity_id'], 'conversation-1');
+      controller.dispose();
+      await messaging.dispose();
+    });
+
+    test('tap waits until authenticated routing is ready', () async {
+      final service = _FakeNotificationsService();
+      final messaging = _FakePushMessagingClient(token: _validToken('a'));
+      final routed = <Map<String, dynamic>>[];
+      final controller = _controller(
+        service: service,
+        messaging: messaging,
+        platform: PushClientPlatform.android,
+        routeNotification: (data) {
+          routed.add(data);
+          return true;
+        },
+      );
+      _setRoutingReady(controller, false);
+      await _flushAsync();
+
+      messaging.emitMessageOpened(
+        RemoteMessage(
+          messageId: 'queued-1',
+          data: const {'notification_id': 'notification-1'},
+        ),
+      );
+      await _flushAsync();
+      expect(routed, isEmpty);
+
+      _setRoutingReady(controller, true);
+      await _flushAsync();
+      expect(routed, hasLength(1));
+      controller.dispose();
+      await messaging.dispose();
+    });
+
+    test('Firebase initialization failure remains non-fatal', () async {
+      final ready = await initializeFirebaseForPush(
+        initializeApp: () => Future<FirebaseApp>.error(
+          StateError('missing iOS Firebase configuration'),
+        ),
+      );
+
+      expect(ready, isFalse);
+    });
   });
+}
+
+String _validToken(String character) => List.filled(32, character).join();
+
+PushRegistrationController _controller({
+  required _FakeNotificationsService service,
+  required _FakePushMessagingClient messaging,
+  required PushClientPlatform platform,
+  PushNotificationRouteCallback? routeNotification,
+}) {
+  return PushRegistrationController(
+    service: service,
+    messaging: messaging,
+    platform: platform,
+    hasAuthenticatedUser: () => true,
+    routeNotification: routeNotification,
+    delay: (_) async {},
+  );
+}
+
+void _setRoutingReady(PushRegistrationController controller, bool isReady) {
+  controller.debugAuthReadiness(
+    isAuthenticated: isReady,
+    hasUserId: isReady,
+    isProfileCompleted: isReady,
+    hasAcceptedTerms: isReady,
+  );
+}
+
+Future<void> _flushAsync() => Future<void>.delayed(Duration.zero);
+
+class _FakeNotificationsService extends NotificationsService {
+  final registrations = <PushTokenRegistration>[];
+
+  @override
+  Future<void> registerPushToken(PushTokenRegistration registration) async {
+    registrations.add(registration);
+  }
+}
+
+class _FakePushMessagingClient implements PushMessagingClient {
+  _FakePushMessagingClient({
+    required this.token,
+    this.initialMessage,
+    List<String?> apnsTokens = const ['apns-token'],
+  }) : _apnsTokens = List<String?>.from(apnsTokens);
+
+  final String? token;
+  final RemoteMessage? initialMessage;
+  final List<String?> _apnsTokens;
+  final calls = <String>[];
+  final _tokenRefreshController = StreamController<String>.broadcast();
+  final _messageController = StreamController<RemoteMessage>.broadcast();
+  final _messageOpenedController = StreamController<RemoteMessage>.broadcast();
+  var _apnsIndex = 0;
+
+  @override
+  Future<bool> requestPermission() async {
+    calls.add('permission');
+    return true;
+  }
+
+  @override
+  Future<String?> getAPNSToken() async {
+    calls.add('apns');
+    final index = _apnsIndex.clamp(0, _apnsTokens.length - 1);
+    _apnsIndex += 1;
+    return _apnsTokens[index];
+  }
+
+  @override
+  Future<String?> getToken() async {
+    calls.add('fcm');
+    return token;
+  }
+
+  @override
+  Future<RemoteMessage?> getInitialMessage() async => initialMessage;
+
+  @override
+  Stream<RemoteMessage> get onMessage => _messageController.stream;
+
+  @override
+  Stream<RemoteMessage> get onMessageOpenedApp =>
+      _messageOpenedController.stream;
+
+  @override
+  Stream<String> get onTokenRefresh => _tokenRefreshController.stream;
+
+  void emitTokenRefresh(String value) => _tokenRefreshController.add(value);
+
+  void emitMessageOpened(RemoteMessage message) =>
+      _messageOpenedController.add(message);
+
+  Future<void> dispose() async {
+    await _tokenRefreshController.close();
+    await _messageController.close();
+    await _messageOpenedController.close();
+  }
 }

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 
 import 'app.dart';
 import 'services/supabase_service.dart';
@@ -16,7 +17,12 @@ Future<void> bootstrap() {
 
     try {
       await SupabaseService.initialize();
-      await _initializeFirebaseForPush();
+      final firebaseReady = await initializeFirebaseForPush();
+      if (firebaseReady) {
+        FirebaseMessaging.onBackgroundMessage(
+          firebaseMessagingBackgroundHandler,
+        );
+      }
       runApp(const MatchAManApp());
     } catch (error, stackTrace) {
       _logStartupError(error, stackTrace);
@@ -26,13 +32,32 @@ Future<void> bootstrap() {
   return startup ?? Future.value();
 }
 
-Future<void> _initializeFirebaseForPush() async {
+@visibleForTesting
+Future<bool> initializeFirebaseForPush({
+  Future<FirebaseApp> Function()? initializeApp,
+}) async {
   try {
     debugPrint('[Startup] Firebase push init started');
-    await Firebase.initializeApp();
+    await (initializeApp ?? Firebase.initializeApp)();
     debugPrint('[Startup] Firebase initialized for push transport');
+    return true;
   } catch (error) {
     debugPrint('[Startup] Firebase push init skipped: ${error.runtimeType}');
+    return false;
+  }
+}
+
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  try {
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp();
+    }
+  } catch (error) {
+    debugPrint(
+      '[Notifications] background Firebase init skipped: '
+      '${error.runtimeType}',
+    );
   }
 }
 
