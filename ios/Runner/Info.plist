@@ -38,11 +38,11 @@
 		<key>LSRequiresIPhoneOS</key>
 		<true/>
 		<key>NSLocationWhenInUseUsageDescription</key>
-		<string>Konumun, etkinlik konumunu otomatik doldurmak icin kullanilir.</string>
+		<string>Akanzi, yakındaki konumları bulmak ve etkinlik konumunu otomatik doldurmak için konumunu kullanır.</string>
 		<key>NSPhotoLibraryUsageDescription</key>
-		<string>Galerinden profil avatarini veya paylasim fotografini secmek icin kullanilir.</string>
+		<string>Akanzi, profil, paylaşım ve işletme görsellerini seçebilmen için fotoğraf arşivine erişir.</string>
 		<key>NSCameraUsageDescription</key>
-		<string>Yoklama doğrulamak amacıyla QR kod taramak için kamerayı kullanır.</string>
+		<string>Akanzi, etkinlik katılımını doğrulayan QR kodları tarayabilmen için kamerayı kullanır.</string>
 		<key>UIApplicationSceneManifest</key>
 		<dict>
 			<key>UIApplicationSupportsMultipleScenes</key>
