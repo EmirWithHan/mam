@@ -108,6 +108,22 @@ class FollowService {
         .eq('following_id', targetUserId);
   }
 
+  Future<void> removeFollower(String followerId) async {
+    final userId = currentUserId;
+    if (userId == null) {
+      throw StateError('You must be signed in to remove followers.');
+    }
+    if (followerId == userId) {
+      throw StateError('You cannot remove yourself as a follower.');
+    }
+
+    await SupabaseService.client
+        .from('follows')
+        .delete()
+        .eq('follower_id', followerId)
+        .eq('following_id', userId);
+  }
+
   Future<FollowActionResult?> toggleFollow({
     required String targetUserId,
     required bool currentlyFollowing,

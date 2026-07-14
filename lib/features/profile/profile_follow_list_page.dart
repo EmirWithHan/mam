@@ -9,6 +9,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/widgets/app_button.dart';
 import '../../core/widgets/app_loader.dart';
+import '../../core/widgets/adaptive_dialog.dart';
 import '../../core/widgets/empty_state.dart';
 import '../../core/widgets/error_view.dart';
 import '../auth/auth_provider.dart';
@@ -107,6 +108,10 @@ class _ProfileFollowListPageState extends ConsumerState<ProfileFollowListPage> {
       profileFollowListControllerProvider(_args).notifier,
     );
     final currentUserId = ref.watch(authControllerProvider).userId;
+    final canManageFollowers =
+        widget.type == ProfileFollowListType.followers &&
+        currentUserId != null &&
+        currentUserId == widget.userId;
 
     return Scaffold(
       appBar: AppBar(
@@ -136,9 +141,34 @@ class _ProfileFollowListPageState extends ConsumerState<ProfileFollowListPage> {
             scrollController: _scrollController,
             onRetry: controller.loadInitial,
             onToggleFollow: controller.toggleFollow,
+            canManageFollowers: canManageFollowers,
+            onRemoveFollower: _confirmRemoveFollower,
           ),
         ),
       ),
+    );
+  }
+
+  Future<void> _confirmRemoveFollower(PublicProfileFollowListItem item) async {
+    final confirmed = await showAdaptiveConfirmDialog(
+      context,
+      title: 'Takipçiyi çıkar?',
+      content:
+          'Bu kişiyi takipçilerinden çıkarmak istiyor musun?\n'
+          'Kendisine bildirim gönderilmeyecek.',
+      confirmLabel: 'Çıkar',
+      cancelLabel: 'Vazgeç',
+      isDestructive: true,
+    );
+    if (!mounted || confirmed != true) return;
+
+    final success = await ref
+        .read(profileFollowListControllerProvider(_args).notifier)
+        .removeFollower(item);
+    if (!mounted || success) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Takipçi çıkarılamadı. Tekrar dene.')),
     );
   }
 
@@ -160,6 +190,8 @@ class _ProfileFollowListBody extends StatelessWidget {
     required this.scrollController,
     required this.onRetry,
     required this.onToggleFollow,
+    required this.canManageFollowers,
+    required this.onRemoveFollower,
   });
 
   final ProfileFollowListState state;
@@ -168,6 +200,8 @@ class _ProfileFollowListBody extends StatelessWidget {
   final ScrollController scrollController;
   final VoidCallback onRetry;
   final ValueChanged<PublicProfileFollowListItem> onToggleFollow;
+  final bool canManageFollowers;
+  final ValueChanged<PublicProfileFollowListItem> onRemoveFollower;
 
   @override
   Widget build(BuildContext context) {
@@ -215,7 +249,10 @@ class _ProfileFollowListBody extends StatelessWidget {
           item: item,
           isMe: item.userId == currentUserId,
           isToggling: state.togglingUserIds.contains(item.userId),
+          isRemoving: state.removingUserIds.contains(item.userId),
+          canRemoveFollower: canManageFollowers && item.userId != currentUserId,
           onToggleFollow: () => onToggleFollow(item),
+          onRemoveFollower: () => onRemoveFollower(item),
         );
       },
     );
@@ -228,12 +265,18 @@ class _ProfileFollowListTile extends StatelessWidget {
     required this.isMe,
     required this.isToggling,
     required this.onToggleFollow,
+    required this.isRemoving,
+    required this.canRemoveFollower,
+    required this.onRemoveFollower,
   });
 
   final PublicProfileFollowListItem item;
   final bool isMe;
   final bool isToggling;
   final VoidCallback onToggleFollow;
+  final bool isRemoving;
+  final bool canRemoveFollower;
+  final VoidCallback onRemoveFollower;
 
   @override
   Widget build(BuildContext context) {
@@ -268,11 +311,40 @@ class _ProfileFollowListTile extends StatelessWidget {
               Expanded(child: _FollowListText(item: item)),
               if (!isMe) ...[
                 const SizedBox(width: AppSpacing.sm),
-                _FollowListButton(
-                  isFollowing: item.isFollowingByMe,
-                  requestPending: item.pendingFollowRequestByMe,
-                  isLoading: isToggling,
-                  onPressed: onToggleFollow,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    _FollowListButton(
+                      isFollowing: item.isFollowingByMe,
+                      requestPending: item.pendingFollowRequestByMe,
+                      isLoading: isToggling,
+                      onPressed: onToggleFollow,
+                    ),
+                    if (canRemoveFollower) ...[
+                      const SizedBox(height: AppSpacing.xs),
+                      PopupMenuButton<String>(
+                        key: ValueKey('remove-follower-${item.userId}'),
+                        tooltip: 'Takipçi işlemleri',
+                        enabled: !isRemoving,
+                        onSelected: (_) => onRemoveFollower(),
+                        itemBuilder: (context) => const [
+                          PopupMenuItem<String>(
+                            value: 'remove',
+                            child: Text('Takipçilerden çıkar'),
+                          ),
+                        ],
+                        child: isRemoving
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Icon(Icons.more_horiz),
+                      ),
+                    ],
+                  ],
                 ),
               ],
             ],

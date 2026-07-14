@@ -55,6 +55,7 @@ class ProfileFollowListState {
     this.hasMore = true,
     this.message,
     this.togglingUserIds = const {},
+    this.removingUserIds = const {},
   });
 
   final List<PublicProfileFollowListItem> items;
@@ -63,6 +64,7 @@ class ProfileFollowListState {
   final bool hasMore;
   final String? message;
   final Set<String> togglingUserIds;
+  final Set<String> removingUserIds;
 
   bool get hasError => message != null;
 
@@ -74,6 +76,7 @@ class ProfileFollowListState {
     String? message,
     bool clearMessage = false,
     Set<String>? togglingUserIds,
+    Set<String>? removingUserIds,
   }) {
     return ProfileFollowListState(
       items: items ?? this.items,
@@ -82,6 +85,7 @@ class ProfileFollowListState {
       hasMore: hasMore ?? this.hasMore,
       message: clearMessage ? null : message ?? this.message,
       togglingUserIds: togglingUserIds ?? this.togglingUserIds,
+      removingUserIds: removingUserIds ?? this.removingUserIds,
     );
   }
 }
@@ -96,8 +100,27 @@ final profileFollowListControllerProvider =
         args: args,
         profileService: ref.watch(profileServiceProvider),
         followService: const FollowService(),
+        onFollowerRemoved: (followerId) =>
+            _invalidateRemovedFollowerSurfaces(ref, args, followerId),
       );
     });
+
+void _invalidateRemovedFollowerSurfaces(
+  Ref ref,
+  ProfileFollowListArgs args,
+  String followerId,
+) {
+  ref.invalidate(publicProfileDetailProvider(args.userId));
+  ref.invalidate(publicProfileDetailProvider(followerId));
+  ref.invalidate(
+    profileFollowListControllerProvider(
+      ProfileFollowListArgs(
+        userId: followerId,
+        type: ProfileFollowListType.following,
+      ),
+    ),
+  );
+}
 
 class ProfileFollowListController
     extends StateNotifier<ProfileFollowListState> {
@@ -105,9 +128,11 @@ class ProfileFollowListController
     required ProfileFollowListArgs args,
     required ProfileService profileService,
     required FollowService followService,
+    void Function(String followerId)? onFollowerRemoved,
   }) : _args = args,
        _profileService = profileService,
        _followService = followService,
+       _onFollowerRemoved = onFollowerRemoved,
        super(const ProfileFollowListState());
 
   static const _pageSize = 30;
@@ -115,6 +140,7 @@ class ProfileFollowListController
   final ProfileFollowListArgs _args;
   final ProfileService _profileService;
   final FollowService _followService;
+  final void Function(String followerId)? _onFollowerRemoved;
 
   Future<void> loadInitial() async {
     if (state.isLoading) return;
@@ -210,6 +236,39 @@ class ProfileFollowListController
     } finally {
       final togglingIds = {...state.togglingUserIds}..remove(item.userId);
       state = state.copyWith(togglingUserIds: togglingIds);
+    }
+  }
+
+  Future<bool> removeFollower(PublicProfileFollowListItem item) async {
+    final currentUserId = _followService.currentUserId;
+    final canRemove =
+        _args.type == ProfileFollowListType.followers &&
+        currentUserId != null &&
+        currentUserId == _args.userId &&
+        item.userId != currentUserId;
+    if (!canRemove) return false;
+    if (state.removingUserIds.contains(item.userId)) return false;
+
+    state = state.copyWith(
+      removingUserIds: {...state.removingUserIds, item.userId},
+      clearMessage: true,
+    );
+
+    try {
+      await _followService.removeFollower(item.userId);
+      state = state.copyWith(
+        items: state.items
+            .where((candidate) => candidate.userId != item.userId)
+            .toList(growable: false),
+      );
+      _onFollowerRemoved?.call(item.userId);
+      return true;
+    } catch (_) {
+      state = state.copyWith(message: 'Takipçi çıkarılamadı. Tekrar dene.');
+      return false;
+    } finally {
+      final removingIds = {...state.removingUserIds}..remove(item.userId);
+      state = state.copyWith(removingUserIds: removingIds);
     }
   }
 
