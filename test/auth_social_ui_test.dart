@@ -20,7 +20,6 @@ void main() {
             isLoading: false,
             onGooglePressed: () {},
             onApplePressed: () {},
-            showAppleButton: false,
           ),
         ),
       ),

@@ -82,7 +82,7 @@ _LegalContent _content(LegalInfoType type) {
     LegalInfoType.privacyPolicy => const _LegalContent(
       title: 'Akanzi Gizlilik Politikası ve KVKK Aydınlatma Metni',
       notice:
-          'Sürüm: privacy_v1_2026_06_10\nSon güncelleme: 10 Haziran 2026\nBu metin kapalı test MVP sürümü için hazırlanmış gizlilik ve aydınlatma bilgilendirmesidir.',
+          'Sürüm: privacy_v1_2026_06_10\nSon güncelleme: 10 Haziran 2026\nBu metin Akanzi gizlilik ve aydınlatma bilgilendirmesidir.',
       sections: [
         _LegalSection(
           title: 'Veri sorumlusu ve iletişim',
@@ -97,7 +97,7 @@ _LegalContent _content(LegalInfoType type) {
         _LegalSection(
           title: 'İşlenen kişisel veri kategorileri',
           body:
-              'Kapalı test MVP sürümünde hesap kimliği, e-posta, giriş yöntemi, kullanıcı adı, etiket, ad, doğum tarihi, cinsiyet tercihi, şehir/ilçe, telefon numarası, profil açıklaması, avatar/profil fotoğrafı URL bilgisi, gizli hesap tercihi, güven puanı, hesap durumu, etkinlik katılımı, bildirimler, raporlar, engellemeler, geri bildirimler ve işletme başvuru bilgileri gibi uygulamanın çalışması için gerekli veriler işlenebilir.',
+              'Hesap kimliği, e-posta, giriş yöntemi, kullanıcı adı, etiket, ad, doğum tarihi, cinsiyet tercihi, şehir/ilçe, telefon numarası, profil açıklaması, avatar/profil fotoğrafı URL bilgisi, gizli hesap tercihi, güven puanı, hesap durumu, etkinlik katılımı, bildirimler, raporlar, engellemeler, geri bildirimler ve işletme başvuru bilgileri gibi uygulamanın çalışması için gerekli veriler işlenebilir.',
         ),
         _LegalSection(
           title: 'Hesap ve kimlik verileri',
@@ -132,7 +132,7 @@ _LegalContent _content(LegalInfoType type) {
         _LegalSection(
           title: 'Geri bildirim ve destek verileri',
           body:
-              'Kullanıcılar puan, kategori, mesaj, kaynak ekran ve benzeri geri bildirim bilgileri paylaşabilir. Bu veriler hata çözümü, ürün iyileştirme, destek, kapalı test değerlendirmesi ve kötüye kullanım incelemeleri için kullanılabilir.',
+              'Kullanıcılar puan, kategori, mesaj, kaynak ekran ve benzeri geri bildirim bilgileri paylaşabilir. Bu veriler hata çözümü, ürün iyileştirme, destek ve kötüye kullanım incelemeleri için kullanılabilir.',
         ),
         _LegalSection(
           title: 'İşletme başvurusu ve işletme verileri',
@@ -157,7 +157,7 @@ _LegalContent _content(LegalInfoType type) {
         _LegalSection(
           title: 'Ödeme, reklam ve analiz durumu',
           body:
-              'Mevcut kapalı test sürümünde uygulama içi ödeme, cüzdan, ücretli abonelik veya reklam sistemi bulunmamaktadır. Kod tabanında ödeme sağlayıcısı, cüzdan bakiyesi, Firebase Analytics veya Crashlytics entegrasyonu bulunmamaktadır. İleride bu tür özellikler eklenirse gizlilik metni ve gerekiyorsa ayrı rıza süreçleri güncellenmelidir.',
+              'Akanzi’nin ilk iOS sürümünde uygulama içi ödeme, cüzdan, ücretli abonelik veya reklam sunulmamaktadır. Firebase Analytics veya Crashlytics entegrasyonu kullanılmamaktadır. Bu veri işleme faaliyetleri ileride eklenirse gizlilik metni ve gerekiyorsa ayrı rıza süreçleri güncellenir.',
         ),
         _LegalSection(
           title: 'Saklama süresi ve silme ilkeleri',
@@ -194,7 +194,7 @@ _LegalContent _content(LegalInfoType type) {
     LegalInfoType.termsOfUse => const _LegalContent(
       title: 'Akanzi Kullanıcı Sözleşmesi',
       notice:
-          'Sürüm: terms_v1_2026_06_10\nSon güncelleme: 10 Haziran 2026\nBu metin kapalı test MVP sürümü için hazırlanmıştır.',
+          'Sürüm: terms_v1_2026_06_10\nSon güncelleme: 10 Haziran 2026\nBu metin Akanzi kullanıcıları için hazırlanmıştır.',
       sections: [
         _LegalSection(
           title: 'Taraflar ve platform açıklaması',
@@ -257,9 +257,9 @@ _LegalContent _content(LegalInfoType type) {
               'Akanzi flört veya dating uygulaması değildir. Platformun amacı kullanıcıları romantik eşleşme için değil, sosyal spor ve etkinlik deneyimleri etrafında bir araya getirmektir. Taciz edici, ısrarcı, cinsel içerikli veya rahatsız edici iletişim topluluk kurallarına aykırıdır.',
         ),
         _LegalSection(
-          title: 'Kapalı test ve ödeme durumu',
+          title: 'Ödeme durumu',
           body:
-              'Mevcut kapalı test sürümünde uygulama içi ödeme, cüzdan veya ücretli biletleme sunulmamaktadır. Bazı işletme etkinliklerinde fiyat bilgisi görüntülenebilir; bu bilgi uygulama içi tahsilat, cüzdan bakiyesi, satın alma veya iade süreci anlamına gelmez. İleride ücretli özellikler eklenirse ayrı ödeme şartları, bilgilendirmeler veya politikalar yayımlanabilir.',
+              'Akanzi’nin ilk iOS sürümünde uygulama içi ödeme, cüzdan veya ücretli biletleme sunulmamaktadır. Bazı işletme etkinliklerinde fiyat bilgisi görüntülenebilir; bu bilgi uygulama içi tahsilat, cüzdan bakiyesi, satın alma veya iade süreci anlamına gelmez. Ücretli özellikler eklenirse ayrı ödeme şartları, bilgilendirmeler veya politikalar yayımlanır.',
         ),
         _LegalSection(
           title: 'İşletme hesapları',
@@ -274,7 +274,7 @@ _LegalContent _content(LegalInfoType type) {
         _LegalSection(
           title: 'Hizmetin kullanılabilirliği',
           body:
-              'Kapalı test ve MVP sürümü hata, kesinti, gecikme, eksik özellik veya beklenmeyen davranışlar içerebilir. Akanzi hizmeti güvenli ve kullanılabilir tutmak için makul çabayı gösterir; ancak uygulamanın her zaman kesintisiz, hatasız veya tüm cihazlarda aynı şekilde çalışacağı garanti edilmez.',
+              'Akanzi hizmeti güvenli ve kullanılabilir tutmak için makul çabayı gösterir; ancak bakım, teknik arıza veya üçüncü taraf hizmet kesintileri nedeniyle uygulamanın her zaman kesintisiz, hatasız veya tüm cihazlarda aynı şekilde çalışacağı garanti edilmez.',
         ),
         _LegalSection(
           title: 'Sorumluluğun sınırları',
@@ -365,7 +365,7 @@ _LegalContent _content(LegalInfoType type) {
     LegalInfoType.support => const _LegalContent(
       title: 'Akanzi Hesap Silme Bilgilendirmesi',
       notice:
-          'Sürüm: account_deletion_v1_2026_06_10\nSon güncelleme: 10 Haziran 2026\nBu metin hesap silme, veri talepleri ve destek kanalları için kapalı test MVP bilgilendirmesidir.',
+          'Sürüm: account_deletion_v1_2026_06_10\nSon güncelleme: 10 Haziran 2026\nBu metin hesap silme, veri talepleri ve destek kanalları bilgilendirmesidir.',
       sections: [
         _LegalSection(
           title: 'Uygulama içinden hesap silme talebi',
@@ -375,7 +375,7 @@ _LegalContent _content(LegalInfoType type) {
         _LegalSection(
           title: 'Talep sonrası işleyiş',
           body:
-              'Mevcut kapalı test sürümünde hesap silme işlemi anlık fiziksel silme olarak tamamlanmayabilir. Talep alındıktan sonra herkese açık profil kimliğin pasifleştirilebilir, profil görünürlüğün kapatılabilir, gelecek etkinliklerin yayından kaldırılabilir ve nihai veri silme/anonimleştirme işlemi kısa bir inceleme veya manuel backend süreci sonrasında tamamlanabilir.',
+              'Hesap silme işlemi anlık fiziksel silme olarak tamamlanmayabilir. Talep alındıktan sonra herkese açık profil kimliğin pasifleştirilebilir, profil görünürlüğün kapatılabilir, gelecek etkinliklerin yayından kaldırılabilir ve nihai veri silme/anonimleştirme işlemi kısa bir inceleme veya güvenli backend süreci sonrasında tamamlanabilir.',
         ),
         _LegalSection(
           title: 'Silinen veya anonimleştirilen veriler',

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -198,7 +199,8 @@ class _SettingsPageState extends ConsumerState<SettingsPage> {
                   context.pushNamed(RouteNames.businessCreate);
                 },
               ),
-            if (isBusinessMode) ...[
+            if (isBusinessMode &&
+                defaultTargetPlatform != TargetPlatform.iOS) ...[
               const SizedBox(height: AppSpacing.md),
               SettingsMenuTile(
                 icon: Icons.star_outline_rounded,

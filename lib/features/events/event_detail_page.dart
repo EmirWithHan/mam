@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -335,7 +336,11 @@ class _EventDetailBody extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.md),
         ],
-        if (isHost && event.isBusinessEvent) ...[_EventBoostCard(event: event)],
+        if (isHost &&
+            event.isBusinessEvent &&
+            defaultTargetPlatform != TargetPlatform.iOS) ...[
+          _EventBoostCard(event: event),
+        ],
         if (isHost) ...[
           OutlinedButton.icon(
             key: const Key('host_analytics_button'),
@@ -962,7 +967,8 @@ class _EventHeroCard extends StatelessWidget {
                   BusinessBadge(
                     isVerified: event.businessOrganizer?.isVerified ?? false,
                   ),
-                  if (event.businessOrganizer?.isPlusActive == true)
+                  if (event.businessOrganizer?.isPlusActive == true &&
+                      defaultTargetPlatform != TargetPlatform.iOS)
                     const BusinessPlusBadge(),
                   _MiniChip(
                     label: event.priceLabel,

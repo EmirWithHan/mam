@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -21,11 +20,8 @@ class SocialAuthButtons extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final shouldShowAppleButton =
-        onApplePressed != null &&
-        (showAppleButton ??
-            (defaultTargetPlatform == TargetPlatform.iOS ||
-                defaultTargetPlatform == TargetPlatform.macOS));
+    final shouldShowAppleButton = onApplePressed != null &&
+        (showAppleButton ?? false);
 
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -741,7 +742,9 @@ class _CreateEventPageState extends ConsumerState<CreateEventPage> {
                 style: AppTextStyles.body,
               ),
               const SizedBox(height: AppSpacing.lg),
-              if (isBusinessEvent && businessAccount != null) ...[
+              if (isBusinessEvent &&
+                  businessAccount != null &&
+                  defaultTargetPlatform != TargetPlatform.iOS) ...[
                 CheckboxListTile(
                   title: const Text(
                     'İşletme bilgilerini varsayılan olarak kullan',

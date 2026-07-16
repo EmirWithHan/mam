@@ -85,6 +85,11 @@ GoRouter createAppRouter(AuthState authState) {
       final isAccountDeletionPendingRoute =
           location == RoutePaths.accountDeletionPending;
 
+      if (defaultTargetPlatform == TargetPlatform.iOS &&
+          location == RoutePaths.businessPlus) {
+        return RoutePaths.settings;
+      }
+
       debugPrint(
         '[Router] location=$location path=${uri.path} '
         'queryKeys=${uri.queryParameters.keys.join(',')} '

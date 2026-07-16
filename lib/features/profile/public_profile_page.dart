@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -267,7 +268,9 @@ class _PublicProfileHeader extends StatelessWidget {
               children: [
                 if (detail.isBusinessAccount) ...[
                   BusinessBadge(isVerified: detail.businessIsVerified),
-                  if (detail.businessIsPlusActive) const BusinessPlusBadge(),
+                  if (detail.businessIsPlusActive &&
+                      defaultTargetPlatform != TargetPlatform.iOS)
+                    const BusinessPlusBadge(),
                   if (detail.businessCategoryLabel != null)
                     _InfoPill(
                       icon: Icons.category_outlined,

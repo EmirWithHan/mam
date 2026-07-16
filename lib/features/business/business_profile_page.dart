@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -129,7 +130,9 @@ class _BusinessProfileBody extends ConsumerWidget {
                   alignment: WrapAlignment.center,
                   children: [
                     BusinessBadge(isVerified: account.isVerified),
-                    if (account.isPlusActive) const BusinessPlusBadge(),
+                    if (account.isPlusActive &&
+                        defaultTargetPlatform != TargetPlatform.iOS)
+                      const BusinessPlusBadge(),
                     _InfoChip(label: account.displayCategory),
                     if (isOwner) _InfoChip(label: account.statusLabel),
                   ],
@@ -178,7 +181,7 @@ class _BusinessProfileBody extends ConsumerWidget {
         ),
         const SizedBox(height: AppSpacing.lg),
         _BusinessBadgesSection(businessId: account.id),
-        if (isOwner) ...[
+        if (isOwner && defaultTargetPlatform != TargetPlatform.iOS) ...[
           const SizedBox(height: AppSpacing.lg),
           _SubscriptionStatusCard(account: account),
           const SizedBox(height: AppSpacing.lg),

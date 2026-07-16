@@ -31,7 +31,7 @@ void main() {
       expect(legalPage, contains('platform'));
       expect(legalPage, contains('Topluluk kuralları ve yasak davranışlar'));
       expect(legalPage, contains('Spor ve fiziksel aktivite riskleri'));
-      expect(legalPage, contains('Kapalı test ve ödeme durumu'));
+      expect(legalPage, contains("title: 'Ödeme durumu'"));
       expect(
         legalPage,
         contains('uygulama içi ödeme, cüzdan veya ücretli biletleme'),
@@ -111,7 +111,7 @@ void main() {
       expect(
         legalPage,
         contains(
-          'uygulama içi ödeme, cüzdan, ücretli abonelik veya reklam sistemi',
+          'uygulama içi ödeme, cüzdan, ücretli abonelik veya reklam',
         ),
       );
       expect(legalPage, isNot(contains('verileri sınırsız işleriz')));

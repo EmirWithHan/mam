@@ -8,6 +8,9 @@ String friendlyErrorMessage(Object error) {
   final normalized = message.toLowerCase();
 
   if (normalized.contains('rate_limit_exceeded')) {
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      return 'Etkinlik veya işlem limitine ulaştın. Güvenilir sporcular günde 3, yeni sporcular günde 2, standart işletmeler ise ayda 3 etkinlik oluşturabilir.';
+    }
     return 'Etkinlik veya işlem limitine ulaştın. Güvenilir sporcular günde 3, yeni sporcular günde 2, standart işletmeler ise ayda 3 etkinlik oluşturabilir. Limiti artırmak için Business Plus\'a geçebilirsin.';
   }
 
